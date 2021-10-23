@@ -1,0 +1,4 @@
+namespace Renderer
+{
+	void init();
+}
