@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.6)
 project(Zephyr)
 add_executable(${PROJECT_NAME} Zephyr.cpp)
 
-add_subdirectory(Renderer)
 add_subdirectory(External/GLFW) # Git Submodule GLFW
+add_subdirectory(External/spdlog) # Git Submodule GLFW
+add_subdirectory(Renderer)
 
 target_include_directories(${PROJECT_NAME} 
 PUBLIC Renderer
