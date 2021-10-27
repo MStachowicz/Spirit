@@ -8,7 +8,7 @@ add_subdirectory(External/spdlog) # Git Submodule GLFW
 add_subdirectory(Renderer)
 
 target_include_directories(${PROJECT_NAME} 
-PUBLIC Renderer
+PRIVATE Renderer
 )
 
 target_link_directories(${PROJECT_NAME} 

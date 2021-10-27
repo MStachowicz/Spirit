@@ -2,7 +2,7 @@ project(Renderer)
 add_library(${PROJECT_NAME} Renderer.hpp Renderer.cpp )
 
 target_include_directories(${PROJECT_NAME} 
-PUBLIC ../external/GLFW/include
+PRIVATE ../external/GLFW/include
 )
 
 target_link_directories(${PROJECT_NAME} 
