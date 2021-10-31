@@ -6,17 +6,21 @@ add_executable(${PROJECT_NAME} Zephyr.cpp)
 add_subdirectory(External/GLFW) # Git Submodule GLFW
 add_subdirectory(External/spdlog) # Git Submodule GLFW
 add_subdirectory(Renderer)
+add_subdirectory(Logger)
 
 target_include_directories(${PROJECT_NAME} 
 PRIVATE Renderer
+PRIVATE Logger
 )
 
 target_link_directories(${PROJECT_NAME} 
 PRIVATE Renderer
+PRIVATE Logger
 )
 
 target_link_libraries(${PROJECT_NAME} 
 Renderer
+Logger
 )
 
 # Setting properties for SLN projects 

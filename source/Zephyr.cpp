@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <cstdlib>
 #include "Renderer.hpp"
+#include "Logger.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -14,6 +15,7 @@ int main(int argc, char* argv[])
         << static_cast<void*>(argv[argc]) << '\n';
     /*...*/
 
+    Logger::init();
 	Renderer::init();
 
 	return argc == 3 ? EXIT_SUCCESS : EXIT_FAILURE; // optional return value
