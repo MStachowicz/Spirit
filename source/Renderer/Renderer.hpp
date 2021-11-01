@@ -1,4 +1,4 @@
 namespace Renderer
 {
-	void init();
+	bool init();
 }

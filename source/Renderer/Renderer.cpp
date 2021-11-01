@@ -1,15 +1,16 @@
 #include "Renderer.hpp"
 #include "GLFW/glfw3.h"
-#include <cstdlib>
+#include "Logger.hpp"
 
 namespace Renderer
 {
-	void init()
+	bool init()
 	{
-		//glfwSetErrorCallback(error_callback);
-
 		if (!glfwInit())
-			exit(EXIT_FAILURE);
+		{
+			LOG_CRITICAL("GLFW initialisation failed");
+			return false;
+		}
 
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -20,11 +21,11 @@ namespace Renderer
 		GLFWwindow *window = glfwCreateWindow(800, 600, "Zephyr", NULL, NULL);
 		if (!window)
 		{
+			LOG_CRITICAL("GLFW window creation failed");
 			glfwTerminate();
-			exit(EXIT_FAILURE);
+			return false;
 		}
 
-		while (true)
-		{}
+		return true;
 	}
 }
