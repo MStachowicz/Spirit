@@ -4,3 +4,7 @@
 [submodule "source\\External\\spdlog"]
 	path = source\\External\\spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "source/External/GLAD2"]
+	path = source/External/GLAD2
+	url = https://github.com/Dav1dde/glad.git
+	branch = glad2
