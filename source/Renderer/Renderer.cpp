@@ -4,6 +4,12 @@
 
 namespace Renderer
 {
+    void windowSizeChanged(GLFWwindow* window, int pWidth, int pHeight)
+    {
+		LOG_INFO("Window size changed to {}, {}", pWidth, pHeight);
+    	//glViewport(0, 0, width, height);
+    }
+    
 	bool init()
 	{
 		if (!glfwInit())
@@ -26,6 +32,13 @@ namespace Renderer
 			return false;
 		}
 
+		glfwFocusWindow(window);
+		glfwMakeContextCurrent(window);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwSetFramebufferSizeCallback(window, Renderer::windowSizeChanged);
+
 		return true;
 	}
+
+
 }
