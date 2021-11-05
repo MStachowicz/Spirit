@@ -1,10 +1,11 @@
 # Zephyr
 The goal of Zephyr is to be a CMake generated cross-platform renderer/game engine which allows hot-swapping of APIs (OpenGL/Vulkan/DirectX).
 
-## Requirements to run Zephyr
+## Requirements to generate and run Zephyr
 Git (Submodules)\
 CMake (Generate... everything)\
-Python3 (GLAD2)
+Python3 (GLAD2)\
+[Jinja2](https://pypi.org/project/Jinja2/) (Python module) (GLAD2)
 
 ## How to grab the source code
 ``` git clone https://github.com/MStachowicz/Zephyr.git --recursive ```
