@@ -5,6 +5,7 @@ add_executable(${PROJECT_NAME} Zephyr.cpp)
 
 add_subdirectory(External/GLFW) # Git Submodule GLFW
 add_subdirectory(External/spdlog) # Git Submodule GLFW
+add_subdirectory(External/GLAD2/cmake) # Git Submodule GLAD2
 add_subdirectory(Renderer)
 add_subdirectory(Logger)
 
