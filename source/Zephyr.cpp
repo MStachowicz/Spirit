@@ -16,8 +16,5 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    while(true)
-    {}
-
     return EXIT_SUCCESS;
 }
