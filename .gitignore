@@ -49,3 +49,6 @@ _deps
 
 # Build directories
 [Bb]uild
+
+# Windows folder settings
+*.ini
