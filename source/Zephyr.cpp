@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     for (int index{}; index != argc; ++index)
         LOG_INFO("Argument {}: {}", index, argv[index]);
 
-    if (!Renderer::init())
+    if (!Renderer::initialise())
     {
         LOG_CRITICAL("Failed to initalise Renderer");
         return EXIT_FAILURE;

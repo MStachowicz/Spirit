@@ -1,4 +1,4 @@
 namespace Renderer
 {
-	bool init();
+	bool initialise();
 }
