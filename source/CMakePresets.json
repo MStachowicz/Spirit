@@ -1,0 +1,72 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 6,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "description": "Sets the build and install directory",
+            "hidden": true,
+            "binaryDir": "../build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "../install/${presetName}"
+            }
+        },
+        {
+            "name": "visual-studio-17-2022-x64",
+            "displayName": "Visual Studio 17 2022 x64",
+            "inherits": [
+                "base"
+            ],
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64",
+                "strategy": "set"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "set"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "release",
+            "hidden": true,
+            "configuration": "Release"
+        },
+        {
+            "name": "debug",
+            "hidden": true,
+            "configuration": "Debug"
+        },
+        {
+            "name": "all",
+            "hidden": true,
+            "targets": [
+                "all"
+            ]
+        },
+        {
+            "name": "visual-studio-debug-all",
+            "displayName": "Debug all (VS)",
+            "configurePreset": "visual-studio-17-2022-x64",
+            "inherits": [
+                "debug",
+                "all"
+            ]
+        },
+        {
+            "name": "visual-studio-release-all",
+            "displayName": "Release all (VS)",
+            "configurePreset": "visual-studio-17-2022-x64",
+            "inherits": [
+                "release",
+                "all"
+            ]
+        }
+    ]
+}
