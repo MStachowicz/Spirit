@@ -6,7 +6,6 @@ std::shared_ptr<spdlog::logger> Logger::sLogger;
 
 void Logger::init()
 {
-    //auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     consoleSink->set_pattern("%^[%H:%M:%S.%e] %v%$");
 
