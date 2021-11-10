@@ -10,9 +10,9 @@
             "name": "base",
             "description": "Sets the build and install directory",
             "hidden": true,
-            "binaryDir": "../build/${presetName}",
+            "binaryDir": "build/${presetName}",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "../install/${presetName}"
+                "CMAKE_INSTALL_PREFIX": "install/${presetName}"
             }
         },
         {
