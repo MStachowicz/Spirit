@@ -10,11 +10,16 @@ int main(int argc, char *argv[])
     for (int index{}; index != argc; ++index)
         LOG_INFO("Argument {}: {}", index, argv[index]);
 
-    if (!Renderer::initialise())
+    Renderer renderer;
+
+    if (!renderer.initialise())
     {
         LOG_CRITICAL("Failed to initalise Renderer");
         return EXIT_FAILURE;
     }
+
+    // Continuous loop until the main window is marked for closing
+    renderer.drawLoop();
 
     return EXIT_SUCCESS;
 }
