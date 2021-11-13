@@ -8,3 +8,4 @@ add_subdirectory(source/External/spdlog) # Git Submodule spdlog
 add_subdirectory(source/External/GLAD2/cmake) # Git Submodule GLAD2
 add_subdirectory(source/Renderer)
 add_subdirectory(source/Logger)
+add_subdirectory(source/Input)
