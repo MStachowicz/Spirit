@@ -8,12 +8,12 @@ public:
 	~OpenGLContext();
 
 	// Inherited from Context.hpp
-	bool initialise() override;
-	bool isClosing() override;
-	void clearWindow() override;
-	void swapBuffers() override;
-	void pollEvents() override;
-
+	bool initialise() 	override;
+	bool isClosing() 	override;
+	void close() 		override;
+	void clearWindow() 	override;
+	void swapBuffers() 	override;
+	void pollEvents() 	override;
 private:
 	// OpenGL version set in glad_add_library() in CMakeLists.txt
 	const int cOpenGLVersionMajor = 3, cOpenGLVersionMinor = 3;

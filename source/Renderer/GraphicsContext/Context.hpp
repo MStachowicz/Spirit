@@ -6,6 +6,8 @@ class Context
 public:
 	virtual bool initialise()	= 0;
 	virtual bool isClosing() 	= 0;
+	
+	virtual void close() 		= 0;
 	virtual void clearWindow() 	= 0;
 	virtual void swapBuffers() 	= 0;
 	virtual void pollEvents() 	= 0;

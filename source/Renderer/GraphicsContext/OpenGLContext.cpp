@@ -92,6 +92,11 @@ bool OpenGLContext::isClosing()
 	return glfwWindowShouldClose(mainWindow);
 }
 
+void OpenGLContext::close() 
+{
+	glfwSetWindowShouldClose(mainWindow, GL_TRUE);
+}
+
 void OpenGLContext::clearWindow()
 {
 	glfwMakeContextCurrent(mainWindow);
