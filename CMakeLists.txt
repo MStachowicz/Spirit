@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
+add_compile_options("$<$<CONFIG:DEBUG>:-DZEPHYR_CONFIG_DEBUG>$<$<CONFIG:RELEASE>:-DZEPHYR_CONFIG_RELEASE>")
 
 project(Zephyr)
 
