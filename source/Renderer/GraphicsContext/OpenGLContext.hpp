@@ -1,10 +1,15 @@
 #include "Context.hpp"
 
-// Implements OpenGL API and a window using GLAD
-// and GLFW respectively.
+typedef struct GLFWwindow GLFWwindow;
+struct GladGLContext;
+
+// Implements OpenGL API via GLAD2 and binds it to mWindow provided by GLFW.
+// GLFW also provides input functionality which is set to callback to static functions
+// keyCallback() and windowSizeCallback()
 class OpenGLContext : public Context
 {
 public:
+	OpenGLContext();
 	~OpenGLContext();
 
 	// Inherited from Context.hpp
@@ -16,9 +21,15 @@ public:
 	void pollEvents() 	override;
 private:
 	// OpenGL version set in glad_add_library() in CMakeLists.txt
-	const int cOpenGLVersionMajor = 3, cOpenGLVersionMinor = 3;
+	const int 		cOpenGLVersionMajor, cOpenGLVersionMinor;
+	GLFWwindow* 	mWindow;
+	GladGLContext* 	mGLADContext;
 
 	void shutdown();
 	bool createWindow(const char *pName, int pWidth, int pHeight, bool pResizable = true);
 	void setClearColour(float pRed, float pGreen, float pBlue);
+
+	// Callbacks required by GLFW to be static/global
+	static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode);
+	static void windowSizeCallback(GLFWwindow *window, int width, int height);
 };

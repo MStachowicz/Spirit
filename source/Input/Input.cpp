@@ -2,17 +2,14 @@
 #include "Logger.hpp"
 #include "Context.hpp"
 
- void Input::initialise(Context* pContext)
- {
-     mGraphicsContext = pContext;
- }
+Context* Input::linkedGraphicsContext = nullptr; 
 
 void Input::onInput(const InputType &pInput)
 {
     switch (pInput)
     {
     case InputType::Key_Escape:
-        mGraphicsContext->close();
+        linkedGraphicsContext->close();
         break;
     case InputType::Unknown:
     default:

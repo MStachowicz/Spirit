@@ -7,16 +7,19 @@ target_include_directories(${PROJECT_NAME}
 PRIVATE ../../../build/GraphicsContext/gladsources/glad_gl/include
 PRIVATE ../../external/GLFW/include
 PRIVATE ../../Logger
+PRIVATE ../../Input
 )
 
 target_link_directories(${PROJECT_NAME} 
 PRIVATE ../../../build/GraphicsContext/gladsources/glad_gl/src
 PRIVATE ../../external/GLFW/src
 PRIVATE ../../Logger
+PRIVATE ../../Input
 )
 
 target_link_libraries(${PROJECT_NAME} 
 glad_gl
 glfw
 Logger
+Input
 )

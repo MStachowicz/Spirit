@@ -1,34 +1,21 @@
 #include "OpenGLContext.hpp"
-#include "Logger.hpp"
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
+#include "Logger.hpp"
+#include "Input.hpp"
 
-// Globally defined members and functions allowing the header for 
-// OpenGLContext to not include GLFW and GLAD.
-// ---------------------------------------------------------------------
-
-GLFWwindow *mainWindow = nullptr;
-GladGLContext *context = nullptr;
-
-void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
-void windowSizeCallback(GLFWwindow *window, int width, int height)
-{
-	LOG_INFO("Window size changed to {}, {}", width, height);
-	//glViewport(0, 0, width, height);
-}
-// ---------------------------------------------------------------------
+OpenGLContext::OpenGLContext()
+: cOpenGLVersionMajor(3)
+, cOpenGLVersionMinor(3)
+, mWindow(nullptr)
+, mGLADContext(nullptr)
+{}
 
 OpenGLContext::~OpenGLContext()
 {
 	shutdown();
 }
 
-// Initialises OpenGL via GLAD using GLFW as the windowing context
 bool OpenGLContext::initialise()
 {
 	{ // Setup GLFW
@@ -59,10 +46,10 @@ bool OpenGLContext::initialise()
 	}
 
 	{ // Setup GLAD
-		glfwMakeContextCurrent(mainWindow);
-		context = (GladGLContext *)malloc(sizeof(GladGLContext));
-		int version = gladLoadGLContext(context, glfwGetProcAddress);
-		if (!context || version == 0)
+		glfwMakeContextCurrent(mWindow);
+		mGLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
+		int version = gladLoadGLContext(mGLADContext, glfwGetProcAddress);
+		if (!mGLADContext || version == 0)
 		{
 			LOG_CRITICAL("Failed to initialise GLAD GL context");
 
@@ -78,9 +65,10 @@ bool OpenGLContext::initialise()
 	}
 
 	{ // Setup GLFW callbacks for input and window changes
-		glfwSetWindowSizeCallback(mainWindow, windowSizeCallback);
-		glfwSetKeyCallback(mainWindow, keyCallback);
-		glfwSetInputMode(mainWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		Input::linkedGraphicsContext = this;
+		glfwSetWindowSizeCallback(mWindow, windowSizeCallback);
+		glfwSetKeyCallback(mWindow, keyCallback);
+		glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
@@ -89,23 +77,23 @@ bool OpenGLContext::initialise()
 
 bool OpenGLContext::isClosing()
 {
-	return glfwWindowShouldClose(mainWindow);
+	return glfwWindowShouldClose(mWindow);
 }
 
 void OpenGLContext::close() 
 {
-	glfwSetWindowShouldClose(mainWindow, GL_TRUE);
+	glfwSetWindowShouldClose(mWindow, GL_TRUE);
 }
 
 void OpenGLContext::clearWindow()
 {
-	glfwMakeContextCurrent(mainWindow);
-	context->Clear(GL_COLOR_BUFFER_BIT);
+	glfwMakeContextCurrent(mWindow);
+	mGLADContext->Clear(GL_COLOR_BUFFER_BIT);
 }
 
 void OpenGLContext::swapBuffers()
 {
-	glfwSwapBuffers(mainWindow);
+	glfwSwapBuffers(mWindow);
 }
 
 void OpenGLContext::pollEvents()
@@ -117,16 +105,16 @@ void OpenGLContext::shutdown()
 {
 	LOG_INFO("Shutting down OpenGLContext. Terminating GLFW and freeing GLAD memory.");
 	glfwTerminate();
-	if (context)
-		free(context);
+	if (mGLADContext)
+		free(mGLADContext);
 }
 
 bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, bool pResizable)
 {
 	glfwWindowHint(GLFW_RESIZABLE, pResizable ? GL_TRUE : GL_FALSE);
-	mainWindow = glfwCreateWindow(pWidth, pHeight, pName, NULL, NULL);
+	mWindow = glfwCreateWindow(pWidth, pHeight, pName, NULL, NULL);
 
-	if (!mainWindow)
+	if (!mWindow)
 	{
 		LOG_WARN("Failed to create GLFW window");
 		return false;
@@ -135,9 +123,30 @@ bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, boo
 		return true;
 }
 
-// Set the clear colour for this window (RGB 0-255)
 void OpenGLContext::setClearColour(float pRed, float pGreen, float pBlue)
 {
-	glfwMakeContextCurrent(mainWindow);
-	context->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
+	glfwMakeContextCurrent(mWindow);
+	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
+}
+
+void OpenGLContext::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
+{
+	if (action == GLFW_PRESS)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_ESCAPE:
+			Input::onInput(Input::InputType::Key_Escape);
+		default:
+			LOG_WARN("Cannot convert the GLFW key input to Zephyr input.");
+			Input::onInput(Input::InputType::Unknown);
+			break;
+		}
+	}
+}
+
+void OpenGLContext::windowSizeCallback(GLFWwindow *window, int width, int height)
+{
+	LOG_INFO("Window size changed to {}, {}", width, height);
+	//glViewport(0, 0, width, height);
 }
