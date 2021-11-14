@@ -132,17 +132,7 @@ bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, boo
 void OpenGLContext::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
 {
 	if (action == GLFW_PRESS)
-	{
-		switch (key)
-		{
-		case GLFW_KEY_ESCAPE:
-			Input::onInput(Input::InputType::Key_Escape);
-		default:
-			LOG_WARN("Cannot convert the GLFW key input to Zephyr input.");
-			Input::onInput(Input::InputType::Unknown);
-			break;
-		}
-	}
+		Input::onInput(key);
 }
 
 void OpenGLContext::windowSizeCallback(GLFWwindow *window, int width, int height)

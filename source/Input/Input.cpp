@@ -2,18 +2,27 @@
 #include "Logger.hpp"
 #include "Context.hpp"
 
+// ZEPHYR_KEY values match the GLFW_KEY values in glfw3.h
+#define ZEPHYR_KEY_ESCAPE   256
+#define ZEPHYR_KEY_ENTER    257
+#define ZEPHYR_KEY_UNKNOWN  -1
+
 Context* Input::linkedGraphicsContext = nullptr; 
 
-void Input::onInput(const InputType &pInput)
+// This function is linked to the GLFW key callback
+void Input::onInput(const int& pInputKey)
 {
-    switch (pInput)
+    switch (pInputKey)
     {
-    case InputType::Key_Escape:
+    case ZEPHYR_KEY_ESCAPE:
         linkedGraphicsContext->close();
         break;
-    case InputType::Unknown:
+    case ZEPHYR_KEY_ENTER:
+        linkedGraphicsContext->setClearColour(255,255,255);
+        break;
+    case ZEPHYR_KEY_UNKNOWN:
     default:
-        LOG_WARN("Unknown key pressed passed to input library");
+        LOG_WARN("Unknown key press of value {}", pInputKey);
         break;
     }
 }

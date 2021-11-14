@@ -6,13 +6,7 @@ class Context;
 class Input
 {
 public:
-    enum class InputType
-    {
-        Key_Escape,
-        Unknown
-    };
-    static void onInput(const InputType &pInput);
-    
+    static void onInput(const int& pInputKey);
     // The linked graphics context this input manager will manipulate.
     static Context* linkedGraphicsContext; 
 };
