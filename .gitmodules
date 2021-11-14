@@ -8,6 +8,3 @@
 	path = source/External/GLAD2
 	url = https://github.com/Dav1dde/glad.git
 	branch = glad2
-[submodule "source/External/gainput"]
-	path = source/External/gainput
-	url = https://github.com/jkuhlmann/gainput.git
