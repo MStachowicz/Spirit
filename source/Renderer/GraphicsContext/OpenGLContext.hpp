@@ -19,6 +19,7 @@ public:
 	void clearWindow() 	override;
 	void swapBuffers() 	override;
 	void pollEvents() 	override;
+	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) override;
 private:
 	// OpenGL version set in glad_add_library() in CMakeLists.txt
 	const int 		cOpenGLVersionMajor, cOpenGLVersionMinor;
@@ -27,7 +28,7 @@ private:
 
 	void shutdown();
 	bool createWindow(const char *pName, int pWidth, int pHeight, bool pResizable = true);
-	void setClearColour(float pRed, float pGreen, float pBlue);
+
 
 	// Callbacks required by GLFW to be static/global
 	static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode);

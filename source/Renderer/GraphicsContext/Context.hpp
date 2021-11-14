@@ -11,4 +11,6 @@ public:
 	virtual void clearWindow() 	= 0;
 	virtual void swapBuffers() 	= 0;
 	virtual void pollEvents() 	= 0;
+
+	virtual void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) = 0;
 };

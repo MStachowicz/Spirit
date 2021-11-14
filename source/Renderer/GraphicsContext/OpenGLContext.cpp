@@ -101,6 +101,12 @@ void OpenGLContext::pollEvents()
 	glfwPollEvents();
 }
 
+void OpenGLContext::setClearColour(const float& pRed, const float& pGreen, const float& pBlue)
+{
+	glfwMakeContextCurrent(mWindow);
+	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
+}
+
 void OpenGLContext::shutdown()
 {
 	LOG_INFO("Shutting down OpenGLContext. Terminating GLFW and freeing GLAD memory.");
@@ -121,12 +127,6 @@ bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, boo
 	}
 	else
 		return true;
-}
-
-void OpenGLContext::setClearColour(float pRed, float pGreen, float pBlue)
-{
-	glfwMakeContextCurrent(mWindow);
-	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
 }
 
 void OpenGLContext::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
