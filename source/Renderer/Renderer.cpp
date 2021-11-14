@@ -33,5 +33,5 @@ void Renderer::drawLoop()
 		mGraphicsContext->swapBuffers();
 	}
 
-	LOG_INFO("Graphics context has requested closure exiting.");
+	LOG_INFO("Graphics context has requested closure exiting render loop.");
 }

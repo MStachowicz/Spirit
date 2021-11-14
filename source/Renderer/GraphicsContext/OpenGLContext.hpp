@@ -29,7 +29,6 @@ private:
 	void shutdown();
 	bool createWindow(const char *pName, int pWidth, int pHeight, bool pResizable = true);
 
-
 	// Callbacks required by GLFW to be static/global
 	static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode);
 	static void windowSizeCallback(GLFWwindow *window, int width, int height);
