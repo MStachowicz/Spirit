@@ -8,3 +8,6 @@
 	path = source/External/GLAD2
 	url = https://github.com/Dav1dde/glad.git
 	branch = glad2
+[submodule "source/external/imgui"]
+	path = source/external/imgui
+	url = https://github.com/ocornut/imgui.git
