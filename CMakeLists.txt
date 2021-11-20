@@ -1,12 +1,121 @@
 cmake_minimum_required(VERSION 3.6)
+# Setup the preprocessor debug and release defines based on the configuartion selected in CMakePresets.json
 add_compile_options("$<$<CONFIG:DEBUG>:-DZEPHYR_CONFIG_DEBUG>$<$<CONFIG:RELEASE>:-DZEPHYR_CONFIG_RELEASE>")
+# specify the C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# ------------------------ ZEPHYR ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding Zephyr executable")
 project(Zephyr)
 
-add_subdirectory(source)
-add_subdirectory(source/External/GLFW) # Git Submodule GLFW
-add_subdirectory(source/External/spdlog) # Git Submodule spdlog
-add_subdirectory(source/External/GLAD2/cmake) # Git Submodule GLAD2
-add_subdirectory(source/Renderer)
-add_subdirectory(source/Logger)
-add_subdirectory(source/Input)
+add_executable(Zephyr 
+source/Zephyr.cpp
+)
+target_include_directories(Zephyr 
+PRIVATE source/Logger
+PRIVATE source/Renderer
+)
+target_link_directories(Zephyr
+PRIVATE source/Logger
+PRIVATE source/Renderer
+)
+target_link_libraries(Zephyr
+Logger
+Renderer
+)
+# ------------------------ ZEPHYR ---------------------------- 
+
+# ------------------------ LOGGER ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding Git spdlog module")
+add_subdirectory(source/External/spdlog External/spdlog)
+
+message(STATUS "\n[ZEPHYR] -- Adding Logger static library")
+add_library(Logger 
+source/Logger/Logger.hpp 
+source/Logger/Logger.cpp 
+)
+target_include_directories(Logger 
+PRIVATE source/External/spdlog/include
+)
+target_link_directories(Logger
+PRIVATE source/External/spdlog/src
+)
+target_link_libraries(Logger
+spdlog
+)
+# ------------------------ LOGGER ---------------------------- 
+
+# ------------------------ RENDERER ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
+add_library(Renderer 
+source/renderer/Renderer.hpp 
+source/renderer/Renderer.cpp 
+)
+target_include_directories(Renderer
+PRIVATE source/Logger
+PRIVATE source/Renderer/GraphicsContext
+)
+target_link_directories(Renderer
+PRIVATE source/Logger
+PRIVATE source/Renderer/GraphicsContext
+)
+target_link_libraries(Renderer
+Logger
+GraphicsContext
+)
+# ------------------------ RENDERER ---------------------------- 
+
+# ------------------------ GRAPHICS CONTEXT ---------------------------- 
+#First generate the required git projects providing the API to link as static libraries (GLFW + GLAD2)
+message(STATUS "\n[ZEPHYR] -- Adding Git GLFW module")
+add_subdirectory(source/External/GLFW External/GLFW)
+message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
+add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
+glad_add_library(glad_GL REPRODUCIBLE MX API gl:core=3.3)
+
+add_library(GraphicsContext 
+source/Renderer/GraphicsContext/Context.hpp 
+source/Renderer/GraphicsContext/OpenGLContext.hpp 
+source/Renderer/GraphicsContext/OpenGLContext.cpp 
+)
+
+target_include_directories(GraphicsContext
+PRIVATE build/gladsources/glad_GL/include
+PRIVATE source/External/GLFW/include
+PRIVATE source/Logger
+PRIVATE source/Input
+)
+target_link_directories(GraphicsContext
+PRIVATE build/gladsources/glad_GL/src
+PRIVATE source/External/GLFW/src
+PRIVATE source/Logger
+PRIVATE source/Input
+)
+target_link_libraries(GraphicsContext
+glad_GL
+glfw
+Logger
+Input
+)
+# ------------------------ GRAPHICS CONTEXT ---------------------------- 
+
+# ------------------------ INPUT ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding Input static library")
+add_library(Input 
+source/Input/Input.hpp 
+source/Input/Input.cpp 
+)
+target_include_directories(Input 
+PRIVATE source/Logger
+PRIVATE source/Renderer/GraphicsContext
+)
+target_link_directories(Input
+PRIVATE source/Logger
+PRIVATE source/Renderer/GraphicsContext
+)
+target_link_libraries(Input 
+Logger
+GraphicsContext
+)
+# ------------------------ INPUT ---------------------------- 
