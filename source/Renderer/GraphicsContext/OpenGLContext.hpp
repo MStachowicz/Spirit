@@ -20,6 +20,8 @@ public:
 	void swapBuffers() 	override;
 	void pollEvents() 	override;
 	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) override;
+	void newImGuiFrame() override;
+	void renderImGuiFrame() override;
 
 protected:
 	bool initialiseImGui() 	override;

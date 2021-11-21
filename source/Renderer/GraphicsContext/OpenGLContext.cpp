@@ -136,6 +136,19 @@ void OpenGLContext::setClearColour(const float& pRed, const float& pGreen, const
 	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
 }
 
+void OpenGLContext::newImGuiFrame()
+{
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+void OpenGLContext::renderImGuiFrame()
+{
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
 void OpenGLContext::shutdown()
 {
 	LOG_INFO("Shutting down OpenGLContext. Terminating GLFW and freeing GLAD memory.");
