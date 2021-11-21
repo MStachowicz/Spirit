@@ -20,9 +20,15 @@ public:
 	void swapBuffers() 	override;
 	void pollEvents() 	override;
 	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) override;
+
+protected:
+	bool initialiseImGui() 	override;
+	void shutdownImGui() 	override;
+
 private:
 	// OpenGL version set in glad_add_library() in CMakeLists.txt
 	const int 		cOpenGLVersionMajor, cOpenGLVersionMinor;
+	const char*		cGLSLVersion;
 	GLFWwindow* 	mWindow;
 	GladGLContext* 	mGLADContext;
 

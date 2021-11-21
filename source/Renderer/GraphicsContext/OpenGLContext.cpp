@@ -1,12 +1,18 @@
 #include "OpenGLContext.hpp"
+// The imgui headers must be included before the graphics context
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
+#include "imgui.h"
+#include "imgui_draw.cpp"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 #include "Logger.hpp"
 #include "Input.hpp"
 
 OpenGLContext::OpenGLContext()
 : cOpenGLVersionMajor(3)
 , cOpenGLVersionMinor(3)
+, cGLSLVersion("#version 330")
 , mWindow(nullptr)
 , mGLADContext(nullptr)
 {}
@@ -71,8 +77,31 @@ bool OpenGLContext::initialise()
 		glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 
+	{ // Setup ImGui
+		initialiseImGui();
+	}
+
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
 	return true;
+}
+
+bool OpenGLContext::initialiseImGui()
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	(void)io;
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+	ImGui_ImplOpenGL3_Init(cGLSLVersion);
+	return true;
+}
+
+void OpenGLContext::shutdownImGui()
+{
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 }
 
 bool OpenGLContext::isClosing()
@@ -113,6 +142,8 @@ void OpenGLContext::shutdown()
 	glfwTerminate();
 	if (mGLADContext)
 		free(mGLADContext);
+
+	shutdownImGui();	
 }
 
 bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, bool pResizable)
