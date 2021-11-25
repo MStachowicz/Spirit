@@ -14,6 +14,19 @@ bool Renderer::initialise()
 		return true;
 }
 
+void Renderer::prepareFrame()
+{
+	mGraphicsContext->pollEvents();
+	mGraphicsContext->clearWindow();
+	mGraphicsContext->newImGuiFrame();
+}
+
+void Renderer::drawFrame()
+{
+	mGraphicsContext->renderImGuiFrame();
+	mGraphicsContext->swapBuffers();
+}
+
 void Renderer::drawLoop()
 {
 	if(!mGraphicsContext)
@@ -24,13 +37,9 @@ void Renderer::drawLoop()
 
 	while (!mGraphicsContext->isClosing())
 	{
-		mGraphicsContext->pollEvents();
-		
-		mGraphicsContext->clearWindow();
-
+		prepareFrame();
 		// call drawing functions here
-
-		mGraphicsContext->swapBuffers();
+		drawFrame();
 	}
 
 	LOG_INFO("Graphics context has requested closure exiting render loop.");
