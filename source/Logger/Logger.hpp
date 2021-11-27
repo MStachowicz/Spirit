@@ -1,3 +1,5 @@
+#pragma once
+
 #include "spdlog/spdlog.h"
 
 // Static logger using spdlog via macros
