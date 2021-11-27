@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include "Logger.hpp"
+#include "JobSystem.hpp"
 #include "Renderer.hpp"
 
 int main(int argc, char *argv[])
@@ -9,6 +10,8 @@ int main(int argc, char *argv[])
     LOG_INFO("Number of arguments passed on launch: {}", argc);
     for (int index{}; index != argc; ++index)
         LOG_INFO("Argument {}: {}", index, argv[index]);
+    
+    JobSystem::initialise();
 
     Renderer renderer;
     if (!renderer.initialise())

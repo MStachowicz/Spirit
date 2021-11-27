@@ -18,6 +18,7 @@ PRIVATE source/Renderer
 target_link_libraries(Zephyr
 Logger
 Renderer
+JobSystem
 )
 # ------------------------ ZEPHYR ---------------------------- 
 
@@ -118,3 +119,17 @@ Logger
 GraphicsContext
 )
 # ------------------------ INPUT ---------------------------- 
+
+# ------------------------ Job System ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding Job System static library")
+add_library(JobSystem 
+source/JobSystem/JobSystem.hpp 
+source/JobSystem/JobSystem.cpp 
+)
+target_include_directories(JobSystem 
+PUBLIC source/JobSystem # Linking JobSystem exposes its include directory
+)
+target_link_libraries(JobSystem 
+Logger
+)
+# ------------------------ Job System ---------------------------- 
