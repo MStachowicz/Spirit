@@ -125,6 +125,7 @@ message(STATUS "\n[ZEPHYR] -- Adding Job System static library")
 add_library(JobSystem 
 source/JobSystem/JobSystem.hpp 
 source/JobSystem/JobSystem.cpp 
+source/JobSystem/Test.hpp 
 )
 target_include_directories(JobSystem 
 PUBLIC source/JobSystem # Linking JobSystem exposes its include directory
