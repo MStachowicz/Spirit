@@ -71,6 +71,7 @@ bool OpenGLContext::initialise()
 	}
 
 	{ // Setup GLFW callbacks for input and window changes
+		mGLADContext->Viewport(0, 0, 1920, 1080);
 		Input::linkedGraphicsContext = this;
 		glfwSetWindowSizeCallback(mWindow, windowSizeCallback);
 		glfwSetKeyCallback(mWindow, keyCallback);
@@ -182,5 +183,5 @@ void OpenGLContext::keyCallback(GLFWwindow *window, int key, int scancode, int a
 void OpenGLContext::windowSizeCallback(GLFWwindow *window, int width, int height)
 {
 	LOG_INFO("Window size changed to {}, {}", width, height);
-	//glViewport(0, 0, width, height);
+	glViewport(0, 0, width, height);
 }

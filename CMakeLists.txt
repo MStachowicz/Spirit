@@ -81,7 +81,7 @@ add_subdirectory(source/External/GLFW External/GLFW)
 # ------------------------ GLAD ---------------------------- 
 message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
 add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
-glad_add_library(glad_GL REPRODUCIBLE MX API gl:core=3.3)
+glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
 # ------------------------ GLAD ---------------------------- 
 
 # ------------------------ GRAPHICS CONTEXT ---------------------------- 
@@ -91,7 +91,6 @@ source/Renderer/GraphicsContext/OpenGLContext.hpp
 source/Renderer/GraphicsContext/OpenGLContext.cpp 
 )
 target_include_directories(GraphicsContext
-PRIVATE build/gladsources/glad_GL/include
 PRIVATE source/External/GLFW/include
 PRIVATE source/External/imgui
 PRIVATE source/Input
