@@ -8,6 +8,7 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "Logger.hpp"
 #include "Input.hpp"
+#include "FileSystem.hpp"
 
 OpenGLContext::OpenGLContext()
 : cOpenGLVersionMajor(3)
@@ -76,6 +77,16 @@ bool OpenGLContext::initialise()
 		glfwSetWindowSizeCallback(mWindow, windowSizeCallback);
 		glfwSetKeyCallback(mWindow, keyCallback);
 		glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+
+	{// Initialise shaders
+		if (!initialiseShaderProgram())
+		{
+			LOG_ERROR("Shader program failed to initialise");
+			return false;
+		}
+		LOG_INFO("Shader program loaded successfully with ID: {}", mShaderProgram);
+		glUseProgram(mShaderProgram);
 	}
 
 	{ // Setup ImGui
@@ -172,6 +183,82 @@ bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, boo
 	}
 	else
 		return true;
+}
+
+enum ProgramType
+{
+	VertexShader, FragmentShader, ShaderProgram
+};
+
+bool checkCompileErrors(const unsigned int pProgramID, const ProgramType& pType)
+{
+	int success;
+	if (pType == ShaderProgram)
+	{
+		glGetProgramiv(pProgramID, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			char infoLog[1024];
+			glGetProgramInfoLog(pProgramID, 1024, NULL, infoLog);
+			LOG_ERROR("Program linking failed with info: {}", infoLog);
+			return false;
+		}
+	}
+	else
+	{
+		glGetShaderiv(pProgramID, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			char infoLog[1024];
+			glGetShaderInfoLog(pProgramID, 1024, NULL, infoLog);
+			LOG_ERROR("Shader compilation failed with info: {}", infoLog);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool OpenGLContext::initialiseShaderProgram()
+{
+	unsigned int vertexShader;
+	{
+		vertexShader = glCreateShader(GL_VERTEX_SHADER);
+		std::string path = File::shaderDirectory + "triangle.vert";
+		std::string source = File::readFromFile(path);
+		const char* vertexShaderSource = source.c_str(); 
+		glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+		glCompileShader(vertexShader);
+		if (!checkCompileErrors(vertexShader, VertexShader))
+			return false;
+	}
+
+	unsigned int fragmentShader;
+	{
+		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+		std::string source = File::readFromFile(File::shaderDirectory + "triangle.frag");
+		const char* fragmentShaderSource = source.c_str(); 
+		glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+		glCompileShader(fragmentShader);
+		if (!checkCompileErrors(fragmentShader, FragmentShader))
+			return false;
+	}
+
+	unsigned int shaderProgram;
+	{
+		shaderProgram = glCreateProgram();
+		glAttachShader(shaderProgram, vertexShader);
+		glAttachShader(shaderProgram, fragmentShader);
+		glLinkProgram(shaderProgram);
+		if (!checkCompileErrors(shaderProgram, ShaderProgram))
+			return false;
+	}
+
+	// Delete the shaders after linking as they're no longer needed
+	glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+	mShaderProgram = shaderProgram;
+	return true;
 }
 
 void OpenGLContext::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)

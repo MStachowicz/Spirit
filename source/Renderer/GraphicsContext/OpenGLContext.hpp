@@ -1,5 +1,7 @@
 #include "Context.hpp"
 
+#pragma once
+
 typedef struct GLFWwindow GLFWwindow;
 struct GladGLContext;
 
@@ -31,11 +33,13 @@ private:
 	// OpenGL version set in glad_add_library() in CMakeLists.txt
 	const int 		cOpenGLVersionMajor, cOpenGLVersionMinor;
 	const char*		cGLSLVersion;
+	unsigned int	mShaderProgram;
 	GLFWwindow* 	mWindow;
 	GladGLContext* 	mGLADContext;
 
 	void shutdown();
 	bool createWindow(const char *pName, int pWidth, int pHeight, bool pResizable = true);
+	bool initialiseShaderProgram();
 
 	// Callbacks required by GLFW to be static/global
 	static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode);
