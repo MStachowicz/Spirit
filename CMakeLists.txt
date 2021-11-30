@@ -149,3 +149,17 @@ target_link_libraries(FileSystem
 Logger
 )
 # ------------------------ File System ---------------------------- 
+
+# ------------------------ Entity Component System ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
+add_library(ECS INTERFACE
+source/ECS/Entity.hpp 
+source/ECS/ComponentManager.hpp
+)
+target_include_directories(ECS 
+INTERFACE source/ECS
+)
+target_link_libraries(ECS 
+INTERFACE Logger
+)
+# ------------------------ Entity Component System ---------------------------- 
