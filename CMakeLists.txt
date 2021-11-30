@@ -94,13 +94,15 @@ target_include_directories(GraphicsContext
 PRIVATE source/External/GLFW/include
 PRIVATE source/External/imgui
 PRIVATE source/Input
+PRIVATE source/FileSystem
 )
 target_link_libraries(GraphicsContext
 glad_GL
 glfw
-Logger
-Input
 ImGui
+Input
+FileSystem
+Logger
 )
 # ------------------------ GRAPHICS CONTEXT ---------------------------- 
 
@@ -133,3 +135,17 @@ target_link_libraries(JobSystem
 Logger
 )
 # ------------------------ Job System ---------------------------- 
+
+# ------------------------ File System ---------------------------- 
+message(STATUS "\n[ZEPHYR] -- Adding File System static library")
+add_library(FileSystem 
+source/FileSystem/FileSystem.hpp 
+source/FileSystem/FileSystem.cpp 
+)
+target_include_directories(FileSystem 
+PRIVATE source/FileSystem
+)
+target_link_libraries(FileSystem 
+Logger
+)
+# ------------------------ File System ---------------------------- 
