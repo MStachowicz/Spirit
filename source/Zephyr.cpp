@@ -2,20 +2,23 @@
 #include "Logger.hpp"
 #include "JobSystem.hpp"
 #include "Renderer.hpp"
+#include "FileSystem.hpp"
 
-
-void printArguments(int argc, char *argv[])
+void processArguments(int argc, char *argv[])
 {
     LOG_INFO("Number of arguments passed on launch: {}", argc);
     for (int index{}; index != argc; ++index)
         LOG_INFO("Argument {}: {}", index + 1, argv[index]);
+
+    ZEPHYR_ASSERT(argc > 0, "No arguments supplied to executable, directories cannot be initialised")
+    File::setupDirectories(argv[0]);
 }
 
 int main(int argc, char *argv[])
 {
     Logger::init();
 
-    printArguments(argc, argv);
+    processArguments(argc, argv);
 
     JobSystem::initialise();
 
