@@ -14,11 +14,13 @@ source/Zephyr.cpp
 )
 target_include_directories(Zephyr 
 PRIVATE source/Renderer
+PRIVATE source/FileSystem
 )
 target_link_libraries(Zephyr
 Logger
-Renderer
 JobSystem
+Renderer
+FileSystem
 )
 # ------------------------ ZEPHYR ---------------------------- 
 
