@@ -1,6 +1,9 @@
+#pragma once
+
 #include <vector>
 #include <unordered_map>
 #include "Logger.hpp"
+#include "Entity.hpp"
 
 namespace ECS
 {

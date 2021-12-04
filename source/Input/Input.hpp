@@ -1,3 +1,5 @@
+#pragma once
+
 class Context;
 
 // This is a fully static input class allowing it to be linked to GLFW's input callbacks

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 
 namespace ECS
@@ -6,7 +8,7 @@ namespace ECS
     static const Entity INVALID_ENTITY = 0;
     static Entity next = 0;
 
-    Entity CreateEntity()
+    inline Entity CreateEntity()
     {
         return ++next;
     }

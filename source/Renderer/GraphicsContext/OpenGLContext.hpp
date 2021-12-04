@@ -1,6 +1,6 @@
-#include "Context.hpp"
-
 #pragma once
+
+#include "Context.hpp"
 
 typedef struct GLFWwindow GLFWwindow;
 struct GladGLContext;

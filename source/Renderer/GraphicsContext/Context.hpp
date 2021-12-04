@@ -1,3 +1,5 @@
+#pragma once
+
 // Context is an interface for specific graphics API's to implement.
 // Renderer then uses the interface to call the correct implementation 
 // based on the API selected at generation time.
