@@ -24,6 +24,14 @@ void Renderer::prepareFrame()
 void Renderer::drawFrame()
 {
 	mGraphicsContext->renderImGuiFrame();
+
+	// Draw all the render information components
+	for (size_t i = 0; i < mMeshComponents.GetCount(); ++i)
+	{
+		if (mMeshComponents[i].mDrawMode != Mesh::DrawMode::Unknown)
+			mGraphicsContext->draw(mMeshComponents[i]);
+	}
+
 	mGraphicsContext->swapBuffers();
 }
 
@@ -38,7 +46,6 @@ void Renderer::drawLoop()
 	while (!mGraphicsContext->isClosing())
 	{
 		prepareFrame();
-		// call drawing functions here
 		drawFrame();
 	}
 

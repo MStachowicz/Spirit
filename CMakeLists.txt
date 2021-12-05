@@ -50,10 +50,12 @@ source/renderer/Renderer.cpp
 )
 target_include_directories(Renderer
 PRIVATE source/Renderer/GraphicsContext
+PRIVATE source/ECS
 )
 target_link_libraries(Renderer
 Logger
 GraphicsContext
+ECS
 )
 # ------------------------ RENDERER ---------------------------- 
 
