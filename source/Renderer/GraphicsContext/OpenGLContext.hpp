@@ -21,6 +21,10 @@ public:
 	void clearWindow() 	override;
 	void swapBuffers() 	override;
 	void pollEvents() 	override;
+
+	void draw(const Mesh& pMesh) override;
+	void setHandle(Mesh& pMesh) override;
+
 	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) override;
 	void newImGuiFrame() override;
 	void renderImGuiFrame() override;

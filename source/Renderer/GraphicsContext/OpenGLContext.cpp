@@ -121,7 +121,7 @@ bool OpenGLContext::isClosing()
 	return glfwWindowShouldClose(mWindow);
 }
 
-void OpenGLContext::close() 
+void OpenGLContext::close()
 {
 	glfwSetWindowShouldClose(mWindow, GL_TRUE);
 }
@@ -140,6 +140,33 @@ void OpenGLContext::swapBuffers()
 void OpenGLContext::pollEvents()
 {
 	glfwPollEvents();
+}
+
+void OpenGLContext::draw(const Mesh& pMesh)
+{
+	glPolygonMode(GL_FRONT_AND_BACK, castToUnderlyingType(pMesh.mPolygonMode));
+	glBindVertexArray(pMesh.mVAO);
+	glDrawArrays(castToUnderlyingType(pMesh.mDrawMode), 0, static_cast<GLsizei>(pMesh.mVertices.size()));
+}
+
+void OpenGLContext::setHandle(Mesh& pMesh)
+{
+	if (!pMesh.mVertices.empty())
+	{
+		pMesh.mDrawMode = Mesh::DrawMode::Triangles;
+		glGenVertexArrays(1, &pMesh.mVAO);
+
+		unsigned int VBO;
+		glGenBuffers(1, &VBO);
+
+		// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+		glBindVertexArray(pMesh.mVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, pMesh.mVertices.size() * sizeof(float), &pMesh.mVertices.front(), GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+		glEnableVertexAttribArray(0);
+	}
 }
 
 void OpenGLContext::setClearColour(const float& pRed, const float& pGreen, const float& pBlue)
@@ -168,7 +195,7 @@ void OpenGLContext::shutdown()
 	if (mGLADContext)
 		free(mGLADContext);
 
-	shutdownImGui();	
+	shutdownImGui();
 }
 
 bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, bool pResizable)
@@ -226,7 +253,7 @@ bool OpenGLContext::initialiseShaderProgram()
 		vertexShader = glCreateShader(GL_VERTEX_SHADER);
 		std::string path = File::shaderDirectory + "triangle.vert";
 		std::string source = File::readFromFile(path);
-		const char* vertexShaderSource = source.c_str(); 
+		const char* vertexShaderSource = source.c_str();
 		glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 		glCompileShader(vertexShader);
 		if (!checkCompileErrors(vertexShader, VertexShader))
@@ -237,7 +264,7 @@ bool OpenGLContext::initialiseShaderProgram()
 	{
 		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 		std::string source = File::readFromFile(File::shaderDirectory + "triangle.frag");
-		const char* fragmentShaderSource = source.c_str(); 
+		const char* fragmentShaderSource = source.c_str();
 		glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 		glCompileShader(fragmentShader);
 		if (!checkCompileErrors(fragmentShader, FragmentShader))
