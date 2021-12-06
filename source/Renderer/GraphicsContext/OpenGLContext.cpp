@@ -155,17 +155,31 @@ void OpenGLContext::setHandle(Mesh& pMesh)
 	{
 		pMesh.mDrawMode = Mesh::DrawMode::Triangles;
 		glGenVertexArrays(1, &pMesh.mVAO);
-
-		unsigned int VBO;
-		glGenBuffers(1, &VBO);
-
-		// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 		glBindVertexArray(pMesh.mVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, pMesh.mVertices.size() * sizeof(float), &pMesh.mVertices.front(), GL_STATIC_DRAW);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-		glEnableVertexAttribArray(0);
+		// Send Mesh vertex data to GPU
+		{ // POSITIONS
+			unsigned int VBO;
+			glGenBuffers(1, &VBO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferData(GL_ARRAY_BUFFER, pMesh.mVertices.size() * sizeof(float), &pMesh.mVertices.front(), GL_STATIC_DRAW);
+			const GLint attributeIndex = glGetAttribLocation(mShaderProgram, "VertexPosition");
+			ZEPHYR_ASSERT(attributeIndex != -1, "Failed to find the location of position attribute in shader program. Attribute string searched for: 'VertexPosition' in shader program with ID: '{}'", mShaderProgram);
+			glVertexAttribPointer(attributeIndex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+			glEnableVertexAttribArray(attributeIndex);
+		}
+		{ // COLOURS
+			ZEPHYR_ASSERT(pMesh.mColours.size() == pMesh.mVertices.size(), ("Size of colour data ({}) does not match size of position data ({}), cannot buffer the colour data", pMesh.mColours.size(), pMesh.mVertices.size()));
+
+			unsigned int VBO;
+			glGenBuffers(1, &VBO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferData(GL_ARRAY_BUFFER, pMesh.mColours.size() * sizeof(float), &pMesh.mColours.front(), GL_STATIC_DRAW);
+			const GLint attributeIndex = glGetAttribLocation(mShaderProgram, "VertexColour");
+			ZEPHYR_ASSERT(attributeIndex != -1, "Failed to find the location of position attribute in shader program. Attribute string searched for: 'VertexColour' in shader program with ID: '{}'", mShaderProgram);
+			glVertexAttribPointer(attributeIndex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+			glEnableVertexAttribArray(attributeIndex);
+		}
 	}
 }
 

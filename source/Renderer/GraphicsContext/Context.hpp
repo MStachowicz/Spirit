@@ -35,15 +35,12 @@ protected:
 // mDrawMode and mPolygon mode are runtime draw options that take effect at the Context::draw(Mesh) call.
 struct Mesh
 {
-	unsigned int mVAO = 0;
-	std::vector<float> mVertices;
 	// Draw modes map directly to OpenGL draw modes found in gl.h
 	enum class DrawMode : unsigned int
 	{
 		Triangles = 0x0004,
 		Unknown = 0 // The default (un-initialised) drawMode, this is set in Context::setHandle(Mesh).
 	};
-	DrawMode mDrawMode = DrawMode::Unknown;
 
 	// Polygon modes map directly to OpenGL polygon modes found in gl.h
 	enum class PolygonMode : unsigned int
@@ -51,6 +48,11 @@ struct Mesh
 		Fill = 0x1B02,
 		Wireframe = 0x1B01
 	};
+
+	unsigned int mVAO = 0;
+	std::vector<float> mVertices;
+	std::vector<float> mColours;
+	DrawMode mDrawMode = DrawMode::Unknown;
 	PolygonMode mPolygonMode = PolygonMode::Fill;
 };
 
