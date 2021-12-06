@@ -28,8 +28,8 @@ void Renderer::drawFrame()
 	// Draw all the render information components
 	for (size_t i = 0; i < mMeshComponents.GetCount(); ++i)
 	{
-		if (mMeshComponents[i].mDrawMode != Mesh::DrawMode::Unknown)
-			mGraphicsContext->draw(mMeshComponents[i]);
+		ZEPHYR_ASSERT(mMeshComponents[i].mDrawMode != Mesh::DrawMode::Unknown, "Attempting to draw a mesh that was un-initialised using the graphics context")
+		mGraphicsContext->draw(mMeshComponents[i]);
 	}
 
 	mGraphicsContext->swapBuffers();
