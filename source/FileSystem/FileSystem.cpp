@@ -16,7 +16,7 @@ std::string File::readFromFile(const std::string& pPath)
        LOG_ERROR("File with path {} doesnt exist", pPath);
        return "";
     }
-    
+
     std::ifstream file;
     // ensure ifstream objects can throw exceptions
     file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -50,7 +50,7 @@ void File::setupDirectories(const std::string &pExecutePath)
     std::replace(executablePath.begin(), executablePath.end(), '\\', '/');
 
     const auto &found = executablePath.find("Zephyr");
-    ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executeDirectory)
+    ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath)
 
     rootDirectory = executablePath.substr(0, found + 6); // offset substr by length of "Zephyr"
     LOG_INFO("Root directory initialised to \"{}\"", rootDirectory);
