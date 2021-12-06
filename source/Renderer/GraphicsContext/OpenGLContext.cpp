@@ -146,10 +146,14 @@ void OpenGLContext::draw(const Mesh& pMesh)
 {
 	glPolygonMode(GL_FRONT_AND_BACK, castToUnderlyingType(pMesh.mPolygonMode));
 	glBindVertexArray(pMesh.mVAO);
-	glDrawArrays(castToUnderlyingType(pMesh.mDrawMode), 0, static_cast<GLsizei>(pMesh.mVertices.size()));
+
+	if (!pMesh.mIndices.empty())
+		glDrawElements(castToUnderlyingType(pMesh.mDrawMode), static_cast<GLsizei>(pMesh.mIndices.size()), GL_UNSIGNED_INT, 0);
+	else
+		glDrawArrays(castToUnderlyingType(pMesh.mDrawMode), 0, static_cast<GLsizei>(pMesh.mVertices.size()));
 }
 
-void OpenGLContext::setHandle(Mesh& pMesh)
+void OpenGLContext::setHandle(Mesh &pMesh)
 {
 	if (!pMesh.mVertices.empty())
 	{
@@ -157,7 +161,15 @@ void OpenGLContext::setHandle(Mesh& pMesh)
 		glGenVertexArrays(1, &pMesh.mVAO);
 		glBindVertexArray(pMesh.mVAO);
 
-		// Send Mesh vertex data to GPU
+		if (!pMesh.mIndices.empty())
+		{ // INDICES (Element buffer - re-using data)
+			unsigned int EBO;
+			glGenBuffers(1, &EBO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, pMesh.mIndices.size() * sizeof(int), &pMesh.mIndices.front(), GL_STATIC_DRAW);
+		}
+
+		// Per vertex attributes
 		{ // POSITIONS
 			unsigned int VBO;
 			glGenBuffers(1, &VBO);

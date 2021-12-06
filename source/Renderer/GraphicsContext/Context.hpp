@@ -50,10 +50,12 @@ struct Mesh
 	};
 
 	unsigned int mVAO = 0;
-	std::vector<float> mVertices;
-	std::vector<float> mColours;
-	DrawMode mDrawMode = DrawMode::Unknown;
-	PolygonMode mPolygonMode = PolygonMode::Fill;
+	std::vector<float> mVertices;	// Per-vertex position attributes.
+	std::vector<float> mColours;	// Per-vertex colour attributes.
+	std::vector<int>   mIndices; // Allows indexing into the mVertices and mColours data to specify an indexed draw order.
+
+	DrawMode 	mDrawMode 		= DrawMode::Unknown;
+	PolygonMode mPolygonMode 	= PolygonMode::Fill;
 };
 
 // This function is useful for converting enums to their underlying types such as DrawMode for setting up draw calls with its underlying value.
