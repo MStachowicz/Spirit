@@ -5,14 +5,14 @@ add_compile_options("$<$<CONFIG:DEBUG>:-DZEPHYR_CONFIG_DEBUG>$<$<CONFIG:RELEASE>
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# ------------------------ ZEPHYR ---------------------------- 
+# ------------------------ ZEPHYR ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Zephyr executable")
 project(Zephyr)
 
-add_executable(Zephyr 
+add_executable(Zephyr
 source/Zephyr.cpp
 )
-target_include_directories(Zephyr 
+target_include_directories(Zephyr
 PRIVATE source/Renderer
 PRIVATE source/FileSystem
 )
@@ -22,31 +22,31 @@ JobSystem
 Renderer
 FileSystem
 )
-# ------------------------ ZEPHYR ---------------------------- 
+# ------------------------ ZEPHYR ----------------------------
 
-# ------------------------ LOGGER ---------------------------- 
+# ------------------------ LOGGER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Git spdlog module")
 add_subdirectory(source/External/spdlog External/spdlog)
 
 message(STATUS "\n[ZEPHYR] -- Adding Logger static library")
-add_library(Logger 
-source/Logger/Logger.hpp 
-source/Logger/Logger.cpp 
+add_library(Logger
+source/Logger/Logger.hpp
+source/Logger/Logger.cpp
 )
-target_include_directories(Logger 
+target_include_directories(Logger
 PRIVATE source/External/spdlog/include
 PUBLIC source/Logger # Linking Logger exposes its include directory
 )
 target_link_libraries(Logger
 spdlog
 )
-# ------------------------ LOGGER ---------------------------- 
+# ------------------------ LOGGER ----------------------------
 
-# ------------------------ RENDERER ---------------------------- 
+# ------------------------ RENDERER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
-add_library(Renderer 
-source/renderer/Renderer.hpp 
-source/renderer/Renderer.cpp 
+add_library(Renderer
+source/renderer/Renderer.hpp
+source/renderer/Renderer.cpp
 )
 target_include_directories(Renderer
 PRIVATE source/Renderer/GraphicsContext
@@ -57,9 +57,9 @@ Logger
 GraphicsContext
 ECS
 )
-# ------------------------ RENDERER ---------------------------- 
+# ------------------------ RENDERER ----------------------------
 
-# ------------------------ IMGUI ---------------------------- 
+# ------------------------ IMGUI ----------------------------
 # imgui has no cMakeLists.txt file so need to generate a library for it
 message(STATUS "\n[ZEPHYR] -- Generating imgui static library")
 add_library(ImGui
@@ -75,24 +75,24 @@ target_include_directories(ImGui
 PRIVATE source/External/imgui
 PRIVATE source/External/GLFW/include
 )
-# ------------------------ IMGUI ---------------------------- 
+# ------------------------ IMGUI ----------------------------
 
-# ------------------------ GLFW ---------------------------- 
+# ------------------------ GLFW ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Git GLFW module")
 add_subdirectory(source/External/GLFW External/GLFW)
-# ------------------------ GLFW ---------------------------- 
+# ------------------------ GLFW ----------------------------
 
-# ------------------------ GLAD ---------------------------- 
+# ------------------------ GLAD ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
 add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
 glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
-# ------------------------ GLAD ---------------------------- 
+# ------------------------ GLAD ----------------------------
 
-# ------------------------ GRAPHICS CONTEXT ---------------------------- 
-add_library(GraphicsContext 
-source/Renderer/GraphicsContext/Context.hpp 
-source/Renderer/GraphicsContext/OpenGLContext.hpp 
-source/Renderer/GraphicsContext/OpenGLContext.cpp 
+# ------------------------ GRAPHICS CONTEXT ----------------------------
+add_library(GraphicsContext
+source/Renderer/GraphicsContext/Context.hpp
+source/Renderer/GraphicsContext/OpenGLContext.hpp
+source/Renderer/GraphicsContext/OpenGLContext.cpp
 )
 target_include_directories(GraphicsContext
 PRIVATE source/External/GLFW/include
@@ -108,62 +108,63 @@ Input
 FileSystem
 Logger
 )
-# ------------------------ GRAPHICS CONTEXT ---------------------------- 
+# ------------------------ GRAPHICS CONTEXT ----------------------------
 
-# ------------------------ INPUT ---------------------------- 
+# ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")
-add_library(Input 
-source/Input/Input.hpp 
-source/Input/Input.cpp 
+add_library(Input
+source/Input/Input.hpp
+source/Input/Input.cpp
 )
 target_include_directories(Input
 PRIVATE source/Renderer/GraphicsContext
 )
-target_link_libraries(Input 
+target_link_libraries(Input
 Logger
 GraphicsContext
 )
-# ------------------------ INPUT ---------------------------- 
+# ------------------------ INPUT ----------------------------
 
-# ------------------------ Job System ---------------------------- 
+# ------------------------ Job System ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Job System static library")
-add_library(JobSystem 
-source/JobSystem/JobSystem.hpp 
-source/JobSystem/JobSystem.cpp 
-source/JobSystem/Test.hpp 
+add_library(JobSystem
+source/JobSystem/JobSystem.hpp
+source/JobSystem/JobSystem.cpp
+source/JobSystem/Test.hpp
 )
-target_include_directories(JobSystem 
+target_include_directories(JobSystem
 PUBLIC source/JobSystem # Linking JobSystem exposes its include directory
 )
-target_link_libraries(JobSystem 
+target_link_libraries(JobSystem
 Logger
 )
-# ------------------------ Job System ---------------------------- 
+# ------------------------ Job System ----------------------------
 
-# ------------------------ File System ---------------------------- 
+# ------------------------ File System ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding File System static library")
-add_library(FileSystem 
-source/FileSystem/FileSystem.hpp 
-source/FileSystem/FileSystem.cpp 
+add_library(FileSystem
+source/FileSystem/FileSystem.hpp
+source/FileSystem/FileSystem.cpp
 )
-target_include_directories(FileSystem 
+target_include_directories(FileSystem
 PRIVATE source/FileSystem
+PRIVATE source/External/stb
 )
-target_link_libraries(FileSystem 
+target_link_libraries(FileSystem
 Logger
 )
-# ------------------------ File System ---------------------------- 
+# ------------------------ File System ----------------------------
 
-# ------------------------ Entity Component System ---------------------------- 
+# ------------------------ Entity Component System ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
 add_library(ECS INTERFACE
-source/ECS/Entity.hpp 
+source/ECS/Entity.hpp
 source/ECS/ComponentManager.hpp
 )
-target_include_directories(ECS 
+target_include_directories(ECS
 INTERFACE source/ECS
 )
-target_link_libraries(ECS 
+target_link_libraries(ECS
 INTERFACE Logger
 )
-# ------------------------ Entity Component System ---------------------------- 
+# ------------------------ Entity Component System ----------------------------
