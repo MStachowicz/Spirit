@@ -37,9 +37,9 @@ protected:
 private:
 	enum class ProgramType
 	{
-		VertexShader,
-		FragmentShader,
-		ShaderProgram
+		VertexShader
+		, FragmentShader
+		, ShaderProgram
 	};
 
 	// All the data representing HOW a mesh should be rendered. While all the Mesh data
@@ -50,9 +50,9 @@ private:
 		static const unsigned int invalidHandle = 0;
 		enum class DrawMethod
 		{
-			Indices,
-			Array,
-			Null
+			Indices
+			, Array
+			, Null
 		};
 
 		// OpenGL handles
@@ -74,7 +74,7 @@ private:
 	const std::string cGLSLVersion;
 	const size_t cMaxTextureUnits; // The limit on the number of texture units available in the shaders using sampler2D
 
-	unsigned int mShaderProgram;
+	unsigned int mRegularShader;
 	unsigned int mTextureShader;
 	GLFWwindow *mWindow;
 	GladGLContext *mGLADContext;

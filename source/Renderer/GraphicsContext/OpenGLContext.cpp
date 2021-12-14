@@ -11,7 +11,14 @@
 #include "FileSystem.hpp"
 
 OpenGLContext::OpenGLContext()
-	: cOpenGLVersionMajor(3), cOpenGLVersionMinor(3), cGLSLVersion("#version 330"), cMaxTextureUnits(2), mShaderProgram(0), mTextureShader(0), mWindow(nullptr), mGLADContext(nullptr)
+	: cOpenGLVersionMajor(3)
+	, cOpenGLVersionMinor(3)
+	, cGLSLVersion("#version 330")
+	, cMaxTextureUnits(2)
+	, mRegularShader(0)
+	, mTextureShader(0)
+	, mWindow(nullptr)
+	, mGLADContext(nullptr)
 {}
 
 OpenGLContext::~OpenGLContext()
@@ -144,7 +151,7 @@ void OpenGLContext::setHandle(Mesh &pMesh)
 	drawInfo.mPolygonMode = GL_FILL;   //Wireframe = 0x1B01
 	drawInfo.mDrawMethod = pMesh.mIndices.empty() ? DrawInfo::DrawMethod::Array : DrawInfo::DrawMethod::Indices;
 	drawInfo.mDrawSize = pMesh.mIndices.empty() ? pMesh.mVertices.size() : pMesh.mIndices.size();
-	drawInfo.mShaderID = pMesh.mTextureCoordinates.empty() ? mShaderProgram : mTextureShader;
+	drawInfo.mShaderID = pMesh.mTextureCoordinates.empty() ? mRegularShader : mTextureShader;
 
 	glUseProgram(drawInfo.mShaderID);
 	glGenVertexArrays(1, &drawInfo.mVAO);
@@ -303,7 +310,7 @@ unsigned int OpenGLContext::loadTexture(const std::string &pFileName)
 
 void OpenGLContext::initialiseShaders()
 {
-	mShaderProgram = loadShader(File::shaderDirectory + "triangle.vert", File::shaderDirectory + "triangle.frag");
+	mRegularShader = loadShader(File::shaderDirectory + "triangle.vert", File::shaderDirectory + "triangle.frag");
 	mTextureShader = loadShader(File::shaderDirectory + "texture.vert", File::shaderDirectory + "texture.frag");
 }
 
