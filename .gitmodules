@@ -14,3 +14,6 @@
 [submodule "source/External/stb"]
 	path = source/External/stb
 	url = https://github.com/nothings/stb.git
+[submodule "source/External/GLM"]
+	path = source/External/GLM
+	url = https://github.com/g-truc/glm.git
