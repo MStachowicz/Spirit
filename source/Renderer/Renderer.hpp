@@ -1,7 +1,8 @@
 #pragma once
 
-#include "ComponentManager.hpp"
-#include "GraphicsContext/Context.hpp"
+//#include "ComponentManager.hpp"
+
+class Context;
 
 class Renderer
 {
@@ -13,5 +14,5 @@ public:
 
 	private:
 		Context *mGraphicsContext;
-		ECS::ComponentManager<Mesh> mMeshComponents;
+		//ECS::ComponentManager<Mesh> mMeshComponents;
 };
