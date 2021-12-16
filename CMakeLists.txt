@@ -50,6 +50,7 @@ source/renderer/Renderer.cpp
 )
 target_include_directories(Renderer
 PRIVATE source/Renderer/GraphicsContext
+PRIVATE source/External/GLM
 PRIVATE source/ECS
 )
 target_link_libraries(Renderer
@@ -88,6 +89,11 @@ add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
 glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
 # ------------------------ GLAD ----------------------------
 
+# ------------------------ GLM ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding GLM module")
+add_subdirectory(source/External/GLM)
+# ------------------------ GLM ----------------------------
+
 # ------------------------ GRAPHICS CONTEXT ----------------------------
 add_library(GraphicsContext
 source/Renderer/GraphicsContext/Context.hpp
@@ -97,6 +103,7 @@ source/Renderer/GraphicsContext/OpenGLContext.cpp
 target_include_directories(GraphicsContext
 PRIVATE source/External/GLFW/include
 PRIVATE source/External/imgui
+INTERFACE source/External/GLM   #GLM is an interface as it's included in Context.hpp header
 PRIVATE source/Input
 PRIVATE source/FileSystem
 )
