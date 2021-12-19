@@ -20,7 +20,6 @@ void Input::onInput(const int& pInputKey)
     switch (pInputKey)
     {
     case ZEPHYR_KEY_ESCAPE:
-        LOG_INFO("INPUT - Escape key pressed");
         linkedGraphicsContext->close();
         break;
     case ZEPHYR_KEY_ENTER:
