@@ -11,16 +11,20 @@ project(Zephyr)
 
 add_executable(Zephyr
 source/Zephyr.cpp
+source/Application.hpp
+source/Application.cpp
 )
 target_include_directories(Zephyr
 PRIVATE source/Renderer
 PRIVATE source/FileSystem
+PRIVATE source/Input
 )
 target_link_libraries(Zephyr
 Logger
 JobSystem
 Renderer
 FileSystem
+Input
 )
 # ------------------------ ZEPHYR ----------------------------
 

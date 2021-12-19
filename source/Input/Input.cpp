@@ -7,7 +7,12 @@
 #define ZEPHYR_KEY_ENTER    257
 #define ZEPHYR_KEY_UNKNOWN  -1
 
-Context* Input::linkedGraphicsContext = nullptr; 
+Context* Input::linkedGraphicsContext = nullptr;
+
+void Input::pollEvents()
+{
+    linkedGraphicsContext->pollEvents();
+}
 
 // This function is linked to the GLFW key callback
 void Input::onInput(const int& pInputKey)
@@ -15,6 +20,7 @@ void Input::onInput(const int& pInputKey)
     switch (pInputKey)
     {
     case ZEPHYR_KEY_ESCAPE:
+        LOG_INFO("INPUT - Escape key pressed");
         linkedGraphicsContext->close();
         break;
     case ZEPHYR_KEY_ENTER:
@@ -25,4 +31,9 @@ void Input::onInput(const int& pInputKey)
         LOG_WARN("Unknown key press of value {}", pInputKey);
         break;
     }
+}
+
+bool Input::closeRequested()
+{
+    return linkedGraphicsContext->isClosing();
 }

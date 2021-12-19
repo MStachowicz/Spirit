@@ -16,13 +16,14 @@ bool Renderer::initialise()
 
 void Renderer::prepareFrame()
 {
-	mGraphicsContext->pollEvents();
 	mGraphicsContext->clearWindow();
 	mGraphicsContext->newImGuiFrame();
 }
 
-void Renderer::drawFrame()
+void Renderer::draw()
 {
+	prepareFrame();
+
 	mGraphicsContext->renderImGuiFrame();
 
 	{
@@ -45,6 +46,7 @@ void Renderer::drawFrame()
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
 		drawCall.mPosition 			= glm::vec3(0.75f, 0.75f, 0.0f);
+		//drawCall.mRotation 			= glm::vec3(0.0f, 0.0f, glfwGetTime());
 		drawCall.mMesh 				= mGraphicsContext->getMeshID("Square");
 		drawCall.mTexture 	= mGraphicsContext->getTextureID("woodenContainer.png");
 		mGraphicsContext->pushDrawCall(drawCall);
@@ -74,21 +76,5 @@ void Renderer::drawFrame()
 
 	mGraphicsContext->draw();
 	mGraphicsContext->swapBuffers();
-}
-
-void Renderer::drawLoop()
-{
-	if(!mGraphicsContext)
-	{
-		LOG_ERROR("Calling draw with no context set. Initialise the graphics API/Window first");
-		return;
-	}
-
-	while (!mGraphicsContext->isClosing())
-	{
-		prepareFrame();
-		drawFrame();
-	}
-
-	LOG_INFO("Graphics context has requested closure exiting render loop.");
+	drawCount++;
 }

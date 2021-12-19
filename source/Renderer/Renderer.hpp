@@ -8,11 +8,13 @@ class Renderer
 {
 public:
 	bool initialise();
-	void prepareFrame();
-	void drawFrame();
-	void drawLoop();
+	void draw();
 
-	private:
-		Context *mGraphicsContext;
-		//ECS::ComponentManager<Mesh> mMeshComponents;
+	int drawCount = 0;
+
+private:
+	void prepareFrame();
+
+	Context *mGraphicsContext = nullptr;
+	//ECS::ComponentManager<Mesh> mMeshComponents;
 };
