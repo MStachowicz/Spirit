@@ -130,7 +130,13 @@ int getUniformLocation(const unsigned int pShaderID, const std::string& pUniform
 
 void setBool(const unsigned int pShaderID, const std::string& pUniformName, const bool& pValue)
 {
+	// Setting a boolean is treated as integer for gl shaders
 	glUniform1i(getUniformLocation(pShaderID, pUniformName), (int)pValue);
+}
+
+void setInt(const unsigned int pShaderID, const std::string& pUniformName, const int& pValue)
+{
+	glUniform1i(getUniformLocation(pShaderID, pUniformName), (GLint)pValue);
 }
 
 void setMat4(const unsigned int pShaderID, const std::string& pUniformName, const glm::mat4& pValue)
@@ -331,10 +337,10 @@ void OpenGLContext::initialiseTextures()
 
 	{ // Setup the available texture units. These map the uniform sampler2D slots found in the shader to texture units
 		glUseProgram(mTextureShader);
-		for (size_t i = 0; i < cMaxTextureUnits; ++i)
+		for (int i = 0; i < cMaxTextureUnits; ++i)
 		{
 			std::string textureUniformName = "texture" + std::to_string(i);
-			glUniform1i(glGetUniformLocation(mTextureShader, textureUniformName.c_str()), i);
+			setInt(mTextureShader, textureUniformName, i);
 		}
 	}
 }
