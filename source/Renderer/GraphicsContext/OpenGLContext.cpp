@@ -153,6 +153,12 @@ void OpenGLContext::draw()
 		trans = glm::scale(trans, mDrawCalls[i].mScale);
 		setMat4(drawInfo.mShaderID, "model", trans);
 
+		// note that we're translating the scene in the reverse direction of where we want to move
+		glm::mat4 view 			= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+		glm::mat4 projection 	= glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+		setMat4(drawInfo.mShaderID, "view", view);
+		setMat4(drawInfo.mShaderID, "projection", projection);
+
 		glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(mDrawCalls[i].mDrawMode));
 
 		glBindVertexArray(drawInfo.mVAO);
