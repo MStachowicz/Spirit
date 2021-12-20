@@ -44,11 +44,11 @@ void Renderer::draw()
 	}
 	{
 		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(0.25f);
+		drawCall.mScale 			= glm::vec3(0.25f, 1.5f, 1.0f);
 		drawCall.mPosition 			= glm::vec3(0.75f, 0.75f, 0.0f);
-		//drawCall.mRotation 			= glm::vec3(0.0f, 0.0f, glfwGetTime());
+		drawCall.mRotation 			= glm::vec3(-55.0f, 0.0f, 0.0f);
 		drawCall.mMesh 				= mGraphicsContext->getMeshID("Square");
-		drawCall.mTexture 	= mGraphicsContext->getTextureID("woodenContainer.png");
+		drawCall.mTexture 			= mGraphicsContext->getTextureID("woodenContainer.png");
 		mGraphicsContext->pushDrawCall(drawCall);
 	}
 	{
