@@ -21,10 +21,10 @@ private:
 #define LOG_WARN(...)       Logger::GetLogger()->warn(__VA_ARGS__)
 #define LOG_ERROR(...)      Logger::GetLogger()->error(__VA_ARGS__)
 #define LOG_CRITICAL(...)   Logger::GetLogger()->critical(__VA_ARGS__)
-#define ZEPHYR_ASSERT(x, msg) if ((x)) {} else { LOG_CRITICAL("ASSERT - {} {} in file: {} on line: {}", #x, msg, __FILE__, __LINE__); }
+#define ZEPHYR_ASSERT(x, msg, ...) if ((x)) {} else { LOG_CRITICAL("ASSERT - {} {} in file: {} on line: {}", #x, msg, __FILE__, __LINE__); }
 #else
 // Disable logging for release builds
-#define LOG_TRACE(...)          (void)0   
+#define LOG_TRACE(...)          (void)0
 #define LOG_INFO(...)           (void)0
 #define LOG_WARN(...)           (void)0
 #define LOG_ERROR(...)          (void)0
