@@ -3,10 +3,8 @@
 
 int main(int argc, char *argv[])
 {
-    Logger::init(); // Logger is fully static and requires initialisation before any access.
-
-    Application app(argc, argv);
-    if(app.initialise())
+    Application app;
+    if(app.initialise(argc, argv))
         app.simulationLoop();
     else
         return EXIT_FAILURE;

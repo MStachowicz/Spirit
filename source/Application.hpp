@@ -1,53 +1,110 @@
 #pragma once
 
 #include "Chrono"
+#include "Logger.hpp"
 #include "Renderer.hpp"
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
 {
 public:
-    Application(int argc, char *argv[]);
-
-    bool initialise();
+    bool initialise(int argc, char *argv[]);
     void simulationLoop();
 
 private:
     Renderer mRenderer;
 
+    bool    mPhysicsTimeStepChanged     = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
+    int     mPhysicsTicksPerSecond      = 60; // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
+    int     mTargetFramesPerSecond      = 60; // Independently of physics, the number of frames the renderer will aim to draw per second.
+    std::chrono::duration<double>   mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mTargetFramesPerSecond;
+    std::chrono::milliseconds       maxFrameDelta   = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
 
-    // Runs a simulation loop using std:ratio as phsycics timestep, this avoids and truncation or rounding errors in the regular
-    // double based duration for timestep by using integral based time units.
-    void simulationLoopIntegral();
-    // Regular simulation loop using double based duration, prone to rounding and truncation errors but allows a variable physics timestep.
-    void simulationLoopVariable();
-
-
-    const std::chrono::milliseconds maxFrameDelta = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
-    bool timestepChangeRequested = false;                                           // True when the physics timestep is changed, causes an exit from the loop and re-run
-    double totalTimeSeconds = 0.0;
-    double renderFPS = 0.0;
-    double physicsFPS = 0.0;
-    int mPhysicsUpdatesCount = 0;
+    int     mPhysicsUpdatesCount        = 0; // TODO: move to physics system when added
 
     typedef std::chrono::steady_clock Clock;
 
+    // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
+    // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
+    // pPhysicsTicksPerSecond: The number of physics ticks per second. This template parameter is always equivalent to mPhysicsTicksPerSecond.
+    template <int pPhysicsTicksPerSecond>
+    void simulationLoop()
+    {
+        auto physicsTimestep = std::chrono::duration<Clock::rep, std::ratio<1, pPhysicsTicksPerSecond>>{1};
 
-    // The following definitions and members are used when usingVariablePhysicsTimestep is true.
-    // -----------------------------------------------------------------------------------------------------
-    bool usingVariablePhysicsTimestep = true;
-    const double physicsUpdatesPerSecond = 60;
-    typedef std::chrono::duration<double> VariableDuration;
-    typedef std::chrono::time_point<Clock, VariableDuration> VariableTimePoint;
-    VariableDuration mVariablePhysicsTimestep = std::chrono::seconds(1) / physicsUpdatesPerSecond;
+        LOG_INFO("Physics ticks per second: {}" , pPhysicsTicksPerSecond);
+        LOG_INFO("Physics fixed timestep: {}ms" , std::chrono::round<std::chrono::microseconds>(physicsTimestep).count() / 1000.);
+        LOG_INFO("Renderer FPS: {}"             , mTargetFramesPerSecond);
+        LOG_INFO("Render timestep: {}ms"        , std::chrono::round<std::chrono::microseconds>(mRenderTimestep).count() / 1000.);
 
-    // The following definitionsare used when usingVariablePhysicsTimestep is false.
-    // -----------------------------------------------------------------------------------------------------
-    // physicsTimestep has the value 1, represented by a long long, and has units of 1/60 of a second. This is set at compile time so cannot change
-    const std::chrono::duration<long long, std::ratio<1, 60>> mIntegerPhysicsTimestep = std::chrono::duration<long long, std::ratio<1, 60>>{1};
-    // The resultant sum of a Clock::duration and mIntegerPhysicsTimestep. This will be the coarsest precision that can exactly represent both
-    // a Clock::duration and 1/60 of a second. Time-based arithmetic will have no truncation error, or any round-off error
-    // if Clock::duration is integral-based (std::chrono::nanoseconds for steady_clock is integral based).
-    typedef decltype(Clock::duration{} + mIntegerPhysicsTimestep)    IntegralDuration;
-    typedef std::chrono::time_point<Clock, IntegralDuration>         IntegralTimePoint;
+        // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both
+        // a Clock::duration and 1/60 of a second. Time-based arithmetic will have no truncation error, or any round-off error
+        // if Clock::duration is integral-based (std::chrono::nanoseconds for steady_clock is integral based).
+        typedef decltype(Clock::duration{} + physicsTimestep)   Duration;
+        typedef std::chrono::time_point<Clock, Duration>        TimePoint;
+
+        Duration durationSinceLastPhysicsTick   = Duration::zero(); // Accumulated time since the last physics update.
+        Duration durationSinceLastRenderTick    = Duration::zero();  // Accumulated time since the last physics update.
+        Duration durationSinceLastFrame         = Duration::zero();       // Time between this frame and last frame.
+        Duration durationTotalSimulation        = Duration::zero();      // Total time simulation has been running.
+
+        TimePoint physicsTime{};      // The time point the physics is advanced to currently.
+        TimePoint timeFrameStarted{}; // The time point at the start of a new frame.
+        TimePoint timeLastFrameStarted = Clock::now();
+
+        // Continuous loop until the main window is marked for closing or Input requests close.
+        // While looping the physics updates by fixed timestep physicsTimestep
+        // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
+        while (true)
+        {
+            Input::pollEvents();
+            if (Input::closeRequested() || mPhysicsTimeStepChanged)
+                break;
+
+            timeFrameStarted = Clock::now();
+            durationSinceLastFrame = timeFrameStarted - timeLastFrameStarted;
+            if (durationSinceLastFrame > maxFrameDelta)
+                durationSinceLastFrame = maxFrameDelta;
+
+            timeLastFrameStarted            = timeFrameStarted;
+            durationTotalSimulation         += durationSinceLastFrame;
+            durationSinceLastPhysicsTick    += durationSinceLastFrame;
+            durationSinceLastRenderTick     += durationSinceLastFrame;
+
+            // Apply physics updates until accumulated time is below physicsTimestep step
+            while (durationSinceLastPhysicsTick >= mRenderTimestep)
+            {
+                durationSinceLastPhysicsTick -= physicsTimestep;
+                physicsTime                  += physicsTimestep;
+                mPhysicsUpdatesCount++;
+
+                //previousState = currentState;
+                //integrate(currentState, physicsTime, physicsTimestep);
+            }
+
+            if (durationSinceLastRenderTick >= mRenderTimestep)
+            {
+                // Any remainder in the durationSinceLastPhysicsTick is a measure of how much more time is required before another physics step can be taken
+                // Next interpolate between the previous and current physics state based on how much time is left in the durationSinceLastPhysicsTick
+                // preventing a subtle but visually unpleasant stuttering of the physics simulation on the screen
+
+                durationSinceLastRenderTick = Duration::zero();
+                const double alpha = std::chrono::duration<double>{durationSinceLastPhysicsTick} / physicsTimestep; // Blending factor between 0-1 used to interpolate current state
+                //renderState = currentState * alpha + previousState * (1 - alpha);
+                //mRenderer.draw(renderState);
+                mRenderer.draw();
+            }
+        }
+
+        const double totalTimeSeconds = std::chrono::round<std::chrono::milliseconds>(durationTotalSimulation).count() / 1000.;
+        const double renderFPS = (double)mRenderer.drawCount / totalTimeSeconds;
+        const double physicsFPS = (double)mPhysicsUpdatesCount / totalTimeSeconds;
+
+        LOG_INFO("------------------------------------------------------------------------");
+        LOG_INFO("Total simulation time: {}s", totalTimeSeconds);
+        LOG_INFO("Total physics updates: {}", mPhysicsUpdatesCount);
+        LOG_INFO("Averaged physics updates per second: {}/s", physicsFPS);
+        LOG_INFO("Total rendered frames: {}", mRenderer.drawCount);
+        LOG_INFO("Averaged render frames per second: {}/s", renderFPS);
+    }
 };
