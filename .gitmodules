@@ -1,8 +1,8 @@
 [submodule "source/External/GLFW"]
 	path = source/External/GLFW
 	url = https://github.com/glfw/glfw.git
-[submodule "source\\External\\spdlog"]
-	path = source\\External\\spdlog
+[submodule "source/External/spdlog"]
+	path = source/External/spdlog
 	url = https://github.com/gabime/spdlog.git
 [submodule "source/External/GLAD2"]
 	path = source/External/GLAD2
