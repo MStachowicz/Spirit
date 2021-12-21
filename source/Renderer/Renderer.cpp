@@ -14,17 +14,11 @@ bool Renderer::initialise()
 	return true;
 }
 
-void Renderer::prepareFrame()
+void Renderer::draw()
 {
 	mGraphicsContext->clearWindow();
 	mGraphicsContext->newImGuiFrame();
-}
 
-void Renderer::draw()
-{
-	prepareFrame();
-
-	mGraphicsContext->renderImGuiFrame();
 
 	{
 		DrawCall drawCall;
@@ -75,6 +69,8 @@ void Renderer::draw()
 	}
 
 	mGraphicsContext->draw();
+	// Render ImGui after drawing geometry to overlay UI on screen.
+	mGraphicsContext->renderImGuiFrame();
 	mGraphicsContext->swapBuffers();
 	drawCount++;
 }

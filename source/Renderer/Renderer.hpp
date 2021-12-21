@@ -12,7 +12,6 @@ public:
 	int drawCount = 0;
 
 private:
-	void prepareFrame();
 	Context *mGraphicsContext = nullptr;
 	//ECS::ComponentManager<Mesh> mMeshComponents;
 };
