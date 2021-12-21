@@ -51,16 +51,19 @@ message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
 source/renderer/Renderer.hpp
 source/renderer/Renderer.cpp
+source/Renderer/ImGuiConfig.hpp
 )
 target_include_directories(Renderer
 PRIVATE source/Renderer/GraphicsContext
 PRIVATE source/External/GLM
 PRIVATE source/ECS
+PRIVATE source/External/imgui
 )
 target_link_libraries(Renderer
 Logger
 GraphicsContext
 ECS
+ImGui
 )
 # ------------------------ RENDERER ----------------------------
 
