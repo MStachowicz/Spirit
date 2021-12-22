@@ -285,6 +285,24 @@ void OpenGLContext::newImGuiFrame()
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+
+	{ // At the start of an ImGui frame, push a window the size of viewport to allow docking other ImGui windows to.
+		ImGui::SetNextWindowSize(ImVec2(1920, 1080));
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		ImGui::Begin("Dockspace window", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground
+		| ImGuiWindowFlags_NoBringToFrontOnFocus); // ImGuiWindowFlags_MenuBar
+		ImGui::DockSpace(ImGui::GetID("Dockspace window"), ImVec2(0.f, 0.f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_PassthruCentralNode| ImGuiDockNodeFlags_NoDockingInCentralNode);
+		ImGui::End();
+
+		ImGui::PopStyleVar(3);
+	}
 }
 
 void OpenGLContext::renderImGuiFrame()
@@ -299,6 +317,9 @@ bool OpenGLContext::initialiseImGui()
 	ImGui::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();
 	(void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
+	io.ConfigDockingWithShift = false;
+	io.DisplaySize = ImVec2(1920, 1080);
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
 	ImGui_ImplOpenGL3_Init(cGLSLVersion.c_str());
