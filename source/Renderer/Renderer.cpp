@@ -21,7 +21,6 @@ void Renderer::draw()
 	mGraphicsContext->clearWindow();
 	mGraphicsContext->newImGuiFrame();
 
-
 	{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
@@ -48,8 +47,8 @@ void Renderer::draw()
 			ImGui::SliderFloat3("Position", position, -1, 1);
 			ImGui::SliderFloat3("Rotation", rotation, -90, 90);
 			ImGui::ColorEdit3("color", color);
-			ImGui::End();
 		}
+		ImGui::End();
 
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f, 1.5f, 1.0f);
