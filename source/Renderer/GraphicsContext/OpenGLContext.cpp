@@ -74,7 +74,7 @@ bool OpenGLContext::initialise()
 
 			return false;
 		}
-
+		glEnable(GL_DEPTH_TEST);
 		LOG_INFO("Loaded OpenGL {}.{} using GLAD", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 		// TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
 	}
@@ -109,7 +109,7 @@ void OpenGLContext::close()
 void OpenGLContext::clearWindow()
 {
 	glfwMakeContextCurrent(mWindow);
-	mGLADContext->Clear(GL_COLOR_BUFFER_BIT);
+	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void OpenGLContext::swapBuffers()
