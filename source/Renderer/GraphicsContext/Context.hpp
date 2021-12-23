@@ -104,9 +104,9 @@ protected:
 				1.0f, 0.0f, 0.0f
 				};
 			mesh.mTextureCoordinates = {
-			0.0f, 0.0f,
-			1.0f, 0.0f,
-			0.5f, 1.0f
+				0.0f, 0.0f,
+				1.0f, 0.0f,
+				0.5f, 1.0f
 			};
 
 			initialiseMesh(mesh);
@@ -137,6 +137,153 @@ protected:
 				0, 1, 3, // first triangle
 				1, 2, 3	 // second triangle
 				};
+			initialiseMesh(mesh);
+			mMeshes.insert({mesh.mName, mesh});
+		}
+		{ // 3D CUBE
+			Mesh mesh;
+			mesh.mName = "Cube";
+			mesh.mVertices = {
+					-0.5f, -0.5f, -0.5f,
+        			 0.5f, -0.5f, -0.5f,
+        			 0.5f,  0.5f, -0.5f,
+        			 0.5f,  0.5f, -0.5f,
+        			-0.5f,  0.5f, -0.5f,
+        			-0.5f, -0.5f, -0.5f,
+
+        			-0.5f, -0.5f,  0.5f,
+        			 0.5f, -0.5f,  0.5f,
+        			 0.5f,  0.5f,  0.5f,
+        			 0.5f,  0.5f,  0.5f,
+        			-0.5f,  0.5f,  0.5f,
+        			-0.5f, -0.5f,  0.5f,
+
+        			-0.5f,  0.5f,  0.5f,
+        			-0.5f,  0.5f, -0.5f,
+        			-0.5f, -0.5f, -0.5f,
+        			-0.5f, -0.5f, -0.5f,
+        			-0.5f, -0.5f,  0.5f,
+        			-0.5f,  0.5f,  0.5f,
+
+        			 0.5f,  0.5f,  0.5f,
+        			 0.5f,  0.5f, -0.5f,
+        			 0.5f, -0.5f, -0.5f,
+        			 0.5f, -0.5f, -0.5f,
+        			 0.5f, -0.5f,  0.5f,
+        			 0.5f,  0.5f,  0.5f,
+
+        			-0.5f, -0.5f, -0.5f,
+        			 0.5f, -0.5f, -0.5f,
+        			 0.5f, -0.5f,  0.5f,
+        			 0.5f, -0.5f,  0.5f,
+        			-0.5f, -0.5f,  0.5f,
+        			-0.5f, -0.5f, -0.5f,
+
+        			-0.5f,  0.5f, -0.5f,
+        			 0.5f,  0.5f, -0.5f,
+        			 0.5f,  0.5f,  0.5f,
+        			 0.5f,  0.5f,  0.5f,
+        			-0.5f,  0.5f,  0.5f,
+        			-0.5f,  0.5f, -0.5f
+				};
+			mesh.mTextureCoordinates = {
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					0.0f, 1.0f,
+					1.0f, 1.0f,
+					1.0f, 0.0f,
+					1.0f, 0.0f,
+					0.0f, 0.0f,
+					0.0f, 1.0f,
+					0.0f, 1.0f,
+					1.0f, 1.0f,
+					1.0f, 0.0f,
+					1.0f, 0.0f,
+					0.0f, 0.0f,
+					0.0f, 1.0f
+				};
+			initialiseMesh(mesh);
+			mMeshes.insert({mesh.mName, mesh});
+		}
+		{ // 3D CUBE indices
+			//	   0----------1
+			//	  /|         /|
+			//	 / |        / |
+			//	2----------3  |
+			//	|  |       |  |
+			//	|  4-------|--5
+			//	| /        | /
+			//	|/         |/
+			//	6----------7
+			Mesh mesh;
+			mesh.mName = "CubeIndices";
+			mesh.mIndices = {
+				0, 1, 2, // Top 1
+				1, 2, 3, // Top 2
+				2, 3, 6, // Front 1
+				3, 6, 7, // Front 2
+				3, 1, 7, // Right 1
+				7, 5, 1, // Right 2
+				0, 1, 4, // Back 1
+				4, 5, 1, // Back 2
+				2, 0, 6, // Left 1
+				6, 4, 0, // Left 2
+				4, 6, 7, // Bottom 1
+				7, 5, 4  // Bottom 2
+				};
+			mesh.mVertices = {
+				-1.0f,  1.0f, -1.0f, // 0
+				 1.0f,  1.0f, -1.0f, // 1
+				-1.0f,  1.0f,  1.0f, // 2
+				 1.0f,  1.0f,  1.0f, // 3
+				-1.0f, -1.0f, -1.0f, // 4
+				 1.0f, -1.0f, -1.0f, // 5
+				-1.0f, -1.0f,  1.0f, // 6
+				 1.0f, -1.0f,  1.0f  // 7
+				};
+			mesh.mColours = {
+				0.0f, 0.0f, 1.0f, // 0
+				0.0f, 1.0f, 0.0f, // 1
+				1.0f, 0.0f, 0.0f, // 2
+				1.0f, 1.0f, 0.0f, // 3
+				1.0f, 1.0f, 0.0f, // 4
+				1.0f, 1.0f, 0.0f, // 5
+				1.0f, 1.0f, 0.0f, // 6
+				1.0f, 1.0f, 0.0f  // 7
+				};
+			//mesh.mTextureCoordinates =
+			//{ - Requires support for 3D textures - one for each face
+			//	x,x,x,// 0
+			//	x,x,x,// 1
+			//	x,x,x,// 2
+			//	x,x,x,// 3
+			//	x,x,x,// 4
+			//	x,x,x,// 5
+			//	x,x,x,// 6
+			//	x,x,x// 7
+			//	};
 			initialiseMesh(mesh);
 			mMeshes.insert({mesh.mName, mesh});
 		}
