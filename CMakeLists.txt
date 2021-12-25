@@ -51,6 +51,8 @@ message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
 source/renderer/Renderer.hpp
 source/renderer/Renderer.cpp
+source/renderer/Camera.hpp
+source/renderer/Camera.cpp
 source/Renderer/ImGuiConfig.hpp
 )
 target_include_directories(Renderer
