@@ -1,11 +1,13 @@
 #include "OpenGLContext.hpp"
-// The imgui headers must be included before the graphics context
+
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 #include "imgui_draw.cpp"
+// The imgui headers must be included before GLFW
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+
 #include "Input.hpp"
 #include "FileSystem.hpp"
 
@@ -81,10 +83,7 @@ bool OpenGLContext::initialise()
 
 	{ // Setup GLFW callbacks for input and window changes
 		mGLADContext->Viewport(0, 0, 1920, 1080);
-		Input::linkedGraphicsContext = this;
 		glfwSetWindowSizeCallback(mWindow, windowSizeCallback);
-		glfwSetKeyCallback(mWindow, keyCallback);
-		glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 
 	initialiseShaders();
@@ -459,17 +458,6 @@ bool OpenGLContext::hasCompileErrors(const unsigned int pProgramID, const Progra
 	}
 
 	return false;
-}
-
-void OpenGLContext::pollEvents()
-{
-	glfwPollEvents();
-}
-
-void OpenGLContext::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
-{
-	if (action == GLFW_PRESS)
-		Input::onInput(key);
 }
 
 void OpenGLContext::windowSizeCallback(GLFWwindow *window, int width, int height)

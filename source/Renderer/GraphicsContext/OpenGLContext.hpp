@@ -20,7 +20,6 @@ public:
 	void close() 																	override;
 	void clearWindow() 																override;
 	void swapBuffers() 																override;
-	void pollEvents() 																override;
 	void newImGuiFrame() 															override;
 	void renderImGuiFrame() 														override;
 	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) override;
@@ -71,8 +70,8 @@ private:
 	int getPolygonMode(const DrawCall::DrawMode& pDrawMode);
 
 	bool createWindow(const char *pName, int pWidth, int pHeight, bool pResizable = true);
-	// Callbacks required by GLFW to be static/global
-	static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode);
+
+	// Callback required by GLFW to be static/global
 	static void windowSizeCallback(GLFWwindow *window, int width, int height);
 
 

@@ -134,8 +134,10 @@ source/Input/Input.cpp
 )
 target_include_directories(Input
 PRIVATE source/Renderer/GraphicsContext
+PRIVATE source/External/GLFW/include
 )
 target_link_libraries(Input
+glfw
 Logger
 GraphicsContext
 )
