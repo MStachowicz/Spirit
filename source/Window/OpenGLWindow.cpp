@@ -76,7 +76,7 @@ GLFWwindow *const OpenGLWindow::getActiveWindowHandle()
     ZEPHYR_ASSERT(currentWindow != nullptr, "No active window set for application to use.");
     ZEPHYR_ASSERT(currentWindow->mHandle  != nullptr, "Active window has no active GLFW window handle.");
     return currentWindow->mHandle;
-};
+}
 
 void OpenGLWindow::startImGuiFrame()
 {
@@ -101,7 +101,6 @@ void OpenGLWindow::startImGuiFrame()
     }
 }
 
-
 void OpenGLWindow::renderImGui()
 {
     ImGui::Render();
@@ -113,12 +112,9 @@ void OpenGLWindow::renderImGui()
      glfwSwapBuffers(mHandle);
  }
 
-
 void OpenGLWindow::onResize(const int& pNewWidth, const int& pNewHeight)
 {
     mWidth = pNewWidth;
     mHeight = pNewHeight;
-
     ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
-	//glViewport(0, 0, mWidth, mHeight);
 }
