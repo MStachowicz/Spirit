@@ -28,24 +28,6 @@ Input
 )
 # ------------------------ ZEPHYR ----------------------------
 
-# ------------------------ LOGGER ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Git spdlog module")
-add_subdirectory(source/External/spdlog External/spdlog)
-
-message(STATUS "\n[ZEPHYR] -- Adding Logger static library")
-add_library(Logger
-source/Logger/Logger.hpp
-source/Logger/Logger.cpp
-)
-target_include_directories(Logger
-PRIVATE source/External/spdlog/include
-PUBLIC source/Logger # Linking Logger exposes its include directory
-)
-target_link_libraries(Logger
-spdlog
-)
-# ------------------------ LOGGER ----------------------------
-
 # ------------------------ RENDERER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
@@ -68,76 +50,6 @@ ECS
 ImGui
 )
 # ------------------------ RENDERER ----------------------------
-
-# ------------------------ IMGUI ----------------------------
-# imgui has no cMakeLists.txt file so need to generate a library for it
-message(STATUS "\n[ZEPHYR] -- Generating imgui static library")
-add_library(ImGui
-source/External/imgui/imgui_demo.cpp
-source/External/imgui/imgui_draw.cpp
-source/External/imgui/imgui_tables.cpp
-source/External/imgui/imgui_widgets.cpp
-source/External/imgui/imgui.cpp
-source/External/imgui/backends/imgui_impl_opengl3.cpp
-source/External/imgui/backends/imgui_impl_glfw.cpp
-)
-target_include_directories(ImGui
-PRIVATE source/External/imgui
-PRIVATE source/External/GLFW/include
-)
-# ------------------------ IMGUI ----------------------------
-
-# ------------------------ GLFW ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Git GLFW module")
-add_subdirectory(source/External/GLFW External/GLFW)
-# ------------------------ GLFW ----------------------------
-
-# ------------------------ GLAD ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
-add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
-glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
-# ------------------------ GLAD ----------------------------
-
-# ------------------------ GLM ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding GLM module")
-add_subdirectory(source/External/GLM)
-# ------------------------ GLM ----------------------------
-
-# ------------------------ OPENGL CONTEXT ----------------------------
-add_library(GraphicsContext
-source/Renderer/GraphicsContext/Context.hpp
-source/Renderer/GraphicsContext/OpenGLContext.hpp
-source/Renderer/GraphicsContext/OpenGLContext.cpp
-)
-target_include_directories(GraphicsContext
-PUBLIC source/External/GLM   #GLM is an interface as it's included in Context.hpp API
-PRIVATE source/FileSystem
-)
-target_link_libraries(GraphicsContext
-glad_GL
-Window
-FileSystem
-Logger
-)
-# ------------------------ OPENGL CONTEXT ----------------------------
-
-# ------------------------ WINDOW ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Window static library")
-add_library(Window
-source/Window/OpenGLWindow.hpp
-source/Window/OpenGLWindow.cpp
-)
-target_include_directories(Window
-PUBLIC source/Window
-PUBLIC source/External/imgui
-PRIVATE source/External/GLFW/include
-)
-target_link_libraries(Window
-glfw
-ImGui
-Logger
-)
-# ------------------------ WINDOW END ----------------------------
 
 # ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")
@@ -198,3 +110,98 @@ target_link_libraries(ECS
 INTERFACE Logger
 )
 # ------------------------ Entity Component System ----------------------------
+
+# ------------------------ LOGGER ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Git spdlog module")
+add_subdirectory(source/External/spdlog External/spdlog)
+
+message(STATUS "\n[ZEPHYR] -- Adding Logger static library")
+add_library(Logger
+source/Logger/Logger.hpp
+source/Logger/Logger.cpp
+)
+target_include_directories(Logger
+PRIVATE source/External/spdlog/include
+PUBLIC source/Logger # Linking Logger exposes its include directory
+)
+target_link_libraries(Logger
+spdlog
+)
+# ------------------------ LOGGER ----------------------------
+
+
+
+# ------------------------ OPENGL CONTEXT ----------------------------
+add_library(GraphicsContext
+source/Renderer/GraphicsContext/Context.hpp
+source/Renderer/GraphicsContext/OpenGLContext.hpp
+source/Renderer/GraphicsContext/OpenGLContext.cpp
+)
+target_include_directories(GraphicsContext
+PUBLIC source/External/GLM   #GLM is an interface as it's included in Context.hpp API
+PRIVATE source/FileSystem
+)
+target_link_libraries(GraphicsContext
+glad_GL
+Window
+FileSystem
+Logger
+)
+# ------------------------ OPENGL CONTEXT ----------------------------
+
+# ------------------------ WINDOW ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Window static library")
+add_library(Window
+source/Window/OpenGLWindow.hpp
+source/Window/OpenGLWindow.cpp
+)
+target_include_directories(Window
+PUBLIC source/Window
+PUBLIC source/External/imgui
+PRIVATE source/External/GLFW/include
+)
+target_link_libraries(Window
+glfw
+ImGui
+Logger
+)
+# ------------------------ WINDOW END ----------------------------
+
+
+
+# Remaining are external git submodules
+#-----------------------------------------------------------------------------------
+
+# ------------------------ IMGUI ----------------------------
+# imgui has no cMakeLists.txt file so need to generate a library for it
+message(STATUS "\n[ZEPHYR] -- Generating imgui static library")
+add_library(ImGui
+source/External/imgui/imgui_demo.cpp
+source/External/imgui/imgui_draw.cpp
+source/External/imgui/imgui_tables.cpp
+source/External/imgui/imgui_widgets.cpp
+source/External/imgui/imgui.cpp
+source/External/imgui/backends/imgui_impl_opengl3.cpp
+source/External/imgui/backends/imgui_impl_glfw.cpp
+)
+target_include_directories(ImGui
+PRIVATE source/External/imgui
+PRIVATE source/External/GLFW/include
+)
+# ------------------------ IMGUI ----------------------------
+
+# ------------------------ GLFW ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Git GLFW module")
+add_subdirectory(source/External/GLFW External/GLFW)
+# ------------------------ GLFW ----------------------------
+
+# ------------------------ GLAD ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
+add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
+glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
+# ------------------------ GLAD ----------------------------
+
+# ------------------------ GLM ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding GLM module")
+add_subdirectory(source/External/GLM)
+# ------------------------ GLM ----------------------------
