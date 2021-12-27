@@ -2,35 +2,24 @@
 
 #include "Context.hpp"
 #include "unordered_map"
+#include "OpenGLWindow.hpp"
 
-typedef struct GLFWwindow GLFWwindow;
 struct GladGLContext;
 
 // Implements OpenGL API via GLAD2 and binds it to mWindow provided by GLFW.
-// GLFW also provides input functionality which is set to callback to static functions keyCallback() and windowSizeCallback()
+// Implements the Context API used by Renderer taking DrawCalls and executing draw().
 class OpenGLContext : public Context
 {
 public:
 	OpenGLContext();
 	~OpenGLContext();
 
-	// Inherited from Context.hpp
-	bool initialise() 																override;
-	bool isClosing() 																override;
-	void close() 																	override;
-	void clearWindow() 																override;
-	void swapBuffers() 																override;
-	void newImGuiFrame() 															override;
-	void renderImGuiFrame() 														override;
-	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) override;
-
-	void draw() 								override;
-	void initialiseMesh(const Mesh &pMesh) 		override;
-
-protected:
-	bool initialiseImGui() 															override;
-	void shutdownImGui() 															override;
-
+	// Initialising OpenGLContext requires an OpenGLWindow to be created beforehand as GLAD requires a context to be set for its initialisation.
+	bool initialise() 																	override;
+	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) 	override;
+	void draw() 																		override;
+	void initialiseMesh(const Mesh &pMesh) 												override;
+	void onFrameStart() 																override;
 private:
 	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
 	struct DrawInfo
@@ -55,9 +44,11 @@ private:
 	const DrawInfo& getDrawInfo(const MeshID& pMeshID);
 	std::unordered_map<MeshID, DrawInfo> mMeshManager; 		// Mapping of a Mesh to how it should be drawn.
 
+	void clearBuffers();
+
 	void initialiseTextures();
-	unsigned int loadTexture(const std::string &pFileName);
 	void initialiseShaders();
+	unsigned int loadTexture(const std::string &pFileName);
 	unsigned int loadShader(const std::string &pVertexShader, const std::string &pFragmentShader);
 	enum class ProgramType
 	{
@@ -66,21 +57,14 @@ private:
 		ShaderProgram
 	};
 	bool hasCompileErrors(const unsigned int pProgramID, const ProgramType &pType);
-
 	int getPolygonMode(const DrawCall::DrawMode& pDrawMode);
 
-	bool createWindow(const char *pName, int pWidth, int pHeight, bool pResizable = true);
-
-	// Callback required by GLFW to be static/global
-	static void windowSizeCallback(GLFWwindow *window, int width, int height);
-
-
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
-	const std::string cGLSLVersion;
 	const size_t cMaxTextureUnits; // The limit on the number of texture units available in the shaders using sampler2D
-
 	unsigned int mRegularShader;
 	unsigned int mTextureShader;
-	GLFWwindow 		*mWindow;
-	GladGLContext 	*mGLADContext;
+	GladGLContext *mGLADContext;
+	OpenGLWindow mWindow;
+
+	static void windowSizeCallback(GLFWwindow *pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 };

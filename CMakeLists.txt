@@ -103,28 +103,41 @@ message(STATUS "\n[ZEPHYR] -- Adding GLM module")
 add_subdirectory(source/External/GLM)
 # ------------------------ GLM ----------------------------
 
-# ------------------------ GRAPHICS CONTEXT ----------------------------
+# ------------------------ OPENGL CONTEXT ----------------------------
 add_library(GraphicsContext
 source/Renderer/GraphicsContext/Context.hpp
 source/Renderer/GraphicsContext/OpenGLContext.hpp
 source/Renderer/GraphicsContext/OpenGLContext.cpp
 )
 target_include_directories(GraphicsContext
-PRIVATE source/External/GLFW/include
-PRIVATE source/External/imgui
-INTERFACE source/External/GLM   #GLM is an interface as it's included in Context.hpp header
-PRIVATE source/Input
+PUBLIC source/External/GLM   #GLM is an interface as it's included in Context.hpp API
 PRIVATE source/FileSystem
 )
 target_link_libraries(GraphicsContext
 glad_GL
-glfw
-ImGui
-Input
+Window
 FileSystem
 Logger
 )
-# ------------------------ GRAPHICS CONTEXT ----------------------------
+# ------------------------ OPENGL CONTEXT ----------------------------
+
+# ------------------------ WINDOW ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Window static library")
+add_library(Window
+source/Window/OpenGLWindow.hpp
+source/Window/OpenGLWindow.cpp
+)
+target_include_directories(Window
+PUBLIC source/Window
+PUBLIC source/External/imgui
+PRIVATE source/External/GLFW/include
+)
+target_link_libraries(Window
+glfw
+ImGui
+Logger
+)
+# ------------------------ WINDOW END ----------------------------
 
 # ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")
@@ -133,13 +146,12 @@ source/Input/Input.hpp
 source/Input/Input.cpp
 )
 target_include_directories(Input
-PRIVATE source/Renderer/GraphicsContext
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(Input
 glfw
 Logger
-GraphicsContext
+Window
 )
 # ------------------------ INPUT ----------------------------
 

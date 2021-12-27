@@ -22,13 +22,15 @@ bool Application::initialise(int argc, char *argv[])
     if (!mRenderer.initialise())
         return false;
 
+    mInput.initialise();
+
     LOG_INFO("Zephyr initialisation took {}ms", std::chrono::round<std::chrono::milliseconds>(Clock::now() - initStartTime).count());
     return true;
 }
 
 void Application::simulationLoop()
 {
-    while (!Input::closeRequested())
+    while (!mInput.closeRequested())
     {
         switch (mPhysicsTicksPerSecond)
         {

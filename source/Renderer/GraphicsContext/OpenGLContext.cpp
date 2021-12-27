@@ -1,15 +1,9 @@
 #include "OpenGLContext.hpp"
 
-#include "glad/gl.h"
-#include "GLFW/glfw3.h"
-#include "imgui.h"
-#include "imgui_draw.cpp"
-// The imgui headers must be included before GLFW
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
-
-#include "Input.hpp"
 #include "FileSystem.hpp"
+
+#include "glad/gl.h"
+#include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 
 #include "glm/mat4x4.hpp" // mat4, dmat4
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
@@ -18,102 +12,52 @@
 OpenGLContext::OpenGLContext()
 	: cOpenGLVersionMajor(3)
 	, cOpenGLVersionMinor(3)
-	, cGLSLVersion("#version 330")
 	, cMaxTextureUnits(2)
 	, mRegularShader(0)
 	, mTextureShader(0)
-	, mWindow(nullptr)
 	, mGLADContext(nullptr)
+	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 {}
 
 OpenGLContext::~OpenGLContext()
 {
-	LOG_INFO("Shutting down OpenGLContext. Terminating GLFW and freeing GLAD memory.");
-	glfwTerminate();
 	if (mGLADContext)
+	{
 		free(mGLADContext);
-
-	shutdownImGui();
+		LOG_INFO("OpenGLContext destructor called. Freeing GLAD memory.");
+	}
 }
 
 bool OpenGLContext::initialise()
 {
-	{ // Setup GLFW
-		if (!glfwInit())
-		{
-			LOG_CRITICAL("GLFW initialisation failed");
-			return false;
-		}
-
-		LOG_INFO("Initialised GLFW successfully");
+	// Setup GLAD, requires a GLFW window to be set as current context, done in OpenGLWindow constructor
+	mGLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
+	int version = gladLoadGLContext(mGLADContext, glfwGetProcAddress);
+	if (!mGLADContext || version == 0)
+	{
+		LOG_CRITICAL("Failed to initialise GLAD GL context");
+		return false;
 	}
+	else
+		LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+	// TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
 
-	{ // Create a GLFW window for GLAD setup
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, cOpenGLVersionMajor);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, cOpenGLVersionMinor);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
+	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
 
-		if (!createWindow("Zephyr", 1920, 1080))
-		{
-			LOG_CRITICAL("Base GLFW window creation failed. Terminating early");
-			return false;
-		}
-
-		LOG_INFO("Main GLFW window created successfully");
-	}
-
-	{ // Setup GLAD
-		glfwMakeContextCurrent(mWindow);
-		mGLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
-		int version = gladLoadGLContext(mGLADContext, glfwGetProcAddress);
-		if (!mGLADContext || version == 0)
-		{
-			LOG_CRITICAL("Failed to initialise GLAD GL context");
-
-			if (!glfwGetCurrentContext())
-				LOG_ERROR("No window was set as current context. Call glfwMakeContextCurrent before gladLoadGLContext");
-
-			return false;
-		}
-		glEnable(GL_DEPTH_TEST);
-		LOG_INFO("Loaded OpenGL {}.{} using GLAD", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-		// TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
-	}
-
-	{ // Setup GLFW callbacks for input and window changes
-		mGLADContext->Viewport(0, 0, 1920, 1080);
-		glfwSetWindowSizeCallback(mWindow, windowSizeCallback);
-	}
+	glEnable(GL_DEPTH_TEST);
 
 	initialiseShaders();
 	initialiseTextures();
 	buildMeshes();
-	initialiseImGui();
 
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
 	return true;
 }
 
-bool OpenGLContext::isClosing()
+void OpenGLContext::clearBuffers()
 {
-	return glfwWindowShouldClose(mWindow);
-}
-
-void OpenGLContext::close()
-{
-	glfwSetWindowShouldClose(mWindow, GL_TRUE);
-}
-
-void OpenGLContext::clearWindow()
-{
-	glfwMakeContextCurrent(mWindow);
 	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void OpenGLContext::swapBuffers()
-{
-	glfwSwapBuffers(mWindow);
 }
 
 int getUniformLocation(const unsigned int pShaderID, const std::string& pUniformName)
@@ -141,6 +85,12 @@ void setInt(const unsigned int pShaderID, const std::string& pUniformName, const
 void setMat4(const unsigned int pShaderID, const std::string& pUniformName, const glm::mat4& pValue)
 {
 	glUniformMatrix4fv(getUniformLocation(pShaderID, pUniformName), 1, GL_FALSE, glm::value_ptr(pValue));
+}
+
+void OpenGLContext::onFrameStart()
+{
+	clearBuffers();
+	mWindow.startImGuiFrame();
 }
 
 void OpenGLContext::draw()
@@ -186,8 +136,10 @@ void OpenGLContext::draw()
 		else if (drawInfo.mDrawMethod == DrawInfo::DrawMethod::Array)
 			glDrawArrays(drawInfo.mDrawMode, 0, static_cast<GLsizei>(drawInfo.mDrawSize));
 	}
-
 	mDrawCalls.clear();
+
+	mWindow.renderImGui();
+	mWindow.swapBuffers();
 }
 
 const OpenGLContext::DrawInfo& OpenGLContext::getDrawInfo(const MeshID& pMeshID)
@@ -275,75 +227,7 @@ int OpenGLContext::getPolygonMode(const DrawCall::DrawMode& pDrawMode)
 
 void OpenGLContext::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
 {
-	glfwMakeContextCurrent(mWindow);
 	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
-}
-
-void OpenGLContext::newImGuiFrame()
-{
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-
-	{ // At the start of an ImGui frame, push a window the size of viewport to allow docking other ImGui windows to.
-		ImGui::SetNextWindowSize(ImVec2(1920, 1080));
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-		ImGui::Begin("Dockspace window", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground
-		| ImGuiWindowFlags_NoBringToFrontOnFocus); // ImGuiWindowFlags_MenuBar
-		ImGui::DockSpace(ImGui::GetID("Dockspace window"), ImVec2(0.f, 0.f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_PassthruCentralNode| ImGuiDockNodeFlags_NoDockingInCentralNode);
-		ImGui::End();
-
-		ImGui::PopStyleVar(3);
-	}
-}
-
-void OpenGLContext::renderImGuiFrame()
-{
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-bool OpenGLContext::initialiseImGui()
-{
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO &io = ImGui::GetIO();
-	(void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
-	io.ConfigDockingWithShift = false;
-	io.DisplaySize = ImVec2(1920, 1080);
-	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
-	ImGui_ImplOpenGL3_Init(cGLSLVersion.c_str());
-	return true;
-}
-
-void OpenGLContext::shutdownImGui()
-{
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
-}
-
-bool OpenGLContext::createWindow(const char *pName, int pWidth, int pHeight, bool pResizable)
-{
-	glfwWindowHint(GLFW_RESIZABLE, pResizable ? GL_TRUE : GL_FALSE);
-	mWindow = glfwCreateWindow(pWidth, pHeight, pName, NULL, NULL);
-
-	if (!mWindow)
-	{
-		LOG_WARN("Failed to create GLFW window");
-		return false;
-	}
-	else
-		return true;
 }
 
 void OpenGLContext::initialiseTextures()
@@ -460,8 +344,9 @@ bool OpenGLContext::hasCompileErrors(const unsigned int pProgramID, const Progra
 	return false;
 }
 
-void OpenGLContext::windowSizeCallback(GLFWwindow *window, int width, int height)
+void OpenGLContext::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 {
-	LOG_INFO("Window size changed to {}, {}", width, height);
-	glViewport(0, 0, width, height);
+	LOG_INFO("Window resolution changed to {}x{}", pWidth, pHeight);
+	glViewport(0, 0, pWidth, pHeight);
+	OpenGLWindow::currentWindow->onResize(pWidth, pHeight);
 }

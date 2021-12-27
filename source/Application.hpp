@@ -3,6 +3,7 @@
 #include "Chrono"
 #include "Logger.hpp"
 #include "Renderer.hpp"
+#include "Input.hpp"
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
@@ -13,6 +14,7 @@ public:
 
 private:
     Renderer mRenderer;
+    Input mInput;
 
     bool    mPhysicsTimeStepChanged     = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
     int     mPhysicsTicksPerSecond      = 60; // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
@@ -57,8 +59,8 @@ private:
         // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
         while (true)
         {
-            Input::pollEvents();
-            if (Input::closeRequested() || mPhysicsTimeStepChanged)
+            mInput.pollEvents();
+            if (mInput.closeRequested() || mPhysicsTimeStepChanged)
                 break;
 
             timeFrameStarted = Clock::now();
@@ -84,6 +86,7 @@ private:
 
             if (durationSinceLastRenderTick >= mRenderTimestep)
             {
+                mRenderer.onFrameStart();
                 // Any remainder in the durationSinceLastPhysicsTick is a measure of how much more time is required before another physics step can be taken
                 // Next interpolate between the previous and current physics state based on how much time is left in the durationSinceLastPhysicsTick
                 // preventing a subtle but visually unpleasant stuttering of the physics simulation on the screen

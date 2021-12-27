@@ -1,15 +1,14 @@
 #include "Input.hpp"
 #include "Logger.hpp"
-#include "Context.hpp"
+#include "OpenGLWindow.hpp"
 #include "GLFW/glfw3.h"
 
-Context* Input::linkedGraphicsContext = nullptr;
-
-void Input::initialise(GLFWwindow *pWindow, Context* pLinkGraphicsContext)
+void Input::initialise()
 {
-    glfwSetKeyCallback(pWindow, keyCallback);
-    glfwSetInputMode(pWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    linkedGraphicsContext = pLinkGraphicsContext;
+    glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetKeyCallback(OpenGLWindow::getActiveWindowHandle(), keyCallback);
+    glfwSetWindowCloseCallback(OpenGLWindow::getActiveWindowHandle(), windowCloseRequestCallback);
+    currentInputHandler = this;
 }
 
 void Input::pollEvents()
@@ -19,7 +18,7 @@ void Input::pollEvents()
 
 bool Input::closeRequested()
 {
-    return mClosing || linkedGraphicsContext ? linkedGraphicsContext->isClosing() : false;
+    return mClosing;
 }
 
 // This function is linked to the GLFW key callback
@@ -41,10 +40,8 @@ void Input::onInput(const Key& pInput)
         break;
     case Key::KEY_ESCAPE:
         mClosing = true;
-        linkedGraphicsContext->close();
         break;
     case Key::KEY_ENTER:
-        linkedGraphicsContext->setClearColour(255, 255, 255);
         break;
     case Key::KEY_UNKNOWN:
     default:
@@ -53,10 +50,15 @@ void Input::onInput(const Key& pInput)
     }
 }
 
-void Input::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
+void Input::windowCloseRequestCallback(GLFWwindow* pWindow)
 {
-	if (action == GLFW_PRESS)
-		onInput(convert(key));
+    currentInputHandler->mClosing = true;
+}
+
+void Input::keyCallback(GLFWwindow* pWindow, int pKey, int pScancode, int pAction, int pMode)
+{
+	if (pAction == GLFW_PRESS)
+        currentInputHandler->onInput(convert(pKey));
 }
 
 Input::Key Input::convert(const int& pInput)

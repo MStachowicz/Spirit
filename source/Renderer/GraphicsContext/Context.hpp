@@ -31,22 +31,15 @@ struct DrawCall
 class Context
 {
 public:
-	virtual bool initialise()		= 0;
-	virtual bool isClosing() 		= 0;
-	virtual void close() 			= 0;
-	virtual void clearWindow() 		= 0;
-	virtual void swapBuffers() 		= 0;
-	virtual void newImGuiFrame() 	= 0;
-	virtual void renderImGuiFrame() = 0;
-	virtual void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) = 0;
+	virtual ~Context() {}; // Context is used polymorphically in Renderer.
 
+	virtual void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) = 0;
+	virtual bool initialise() 	= 0;
+	virtual void onFrameStart() = 0; // Called before any frame updates occur.
+	virtual void draw() 		= 0; // Executes the draw queue.
 
 	// Add the draw call to the draw queue, the call is subsequently executed using Draw()
 	void pushDrawCall(const DrawCall &pDrawCall) { mDrawCalls.push_back(pDrawCall); }
-	// Executes the draw queue
-	virtual void draw() = 0;
-
-
 	MeshID getMeshID(const std::string& pMeshName)
 	{
 		const auto it = mMeshes.find(pMeshName);
@@ -60,9 +53,6 @@ public:
 		return it->second;
 	}
 protected:
-	virtual bool initialiseImGui() 	= 0; // Because ImGui backend depends on the API used - we need to initialise it as part of the GraphicsContext
-	virtual void shutdownImGui() 	= 0;
-
 	// Mesh stores all the vertex (and optionally index) data that a derived graphics API will use contextualise for draw calls supplied.
 	struct Mesh
 	{
@@ -83,11 +73,8 @@ protected:
 	std::unordered_map<std::string, Mesh> mMeshes;
 	std::unordered_map<std::string, TextureID> mTextures;
 
-	// Sets up the mesh for draw calls based on the specific API.
-	virtual void initialiseMesh(const Mesh& pMesh) = 0;
-
-	// Populates Meshes with some commonly used shapes
-	void buildMeshes()
+	virtual void initialiseMesh(const Mesh& pMesh) = 0; // Sets up the mesh for processing DrawCalls from the mDrawCalls queue.
+	void buildMeshes() // Populates Meshes with some commonly used shapes
 	{
 		{ // 2D TRIANGLE
 			Mesh mesh;

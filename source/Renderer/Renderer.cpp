@@ -1,8 +1,14 @@
+#define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
+#include "imgui.h"
+
 #include "Renderer.hpp"
 #include "Logger.hpp"
 #include "OpenGLContext.hpp"
-#define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
-#include "imgui.h"
+
+Renderer::~Renderer()
+{
+	delete mGraphicsContext;
+}
 
 bool Renderer::initialise()
 {
@@ -16,11 +22,13 @@ bool Renderer::initialise()
 	return true;
 }
 
+void Renderer::onFrameStart()
+{
+	mGraphicsContext->onFrameStart();
+}
+
 void Renderer::draw()
 {
-	mGraphicsContext->clearWindow();
-	mGraphicsContext->newImGuiFrame();
-
 	{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
@@ -38,9 +46,9 @@ void Renderer::draw()
 		mGraphicsContext->pushDrawCall(drawCall);
 	}
 	{
-		static float position[] = {0.0, 0.0, 0.0};
+		static float position[] = {1.0, 0.0, 0.0};
 		static float rotation[] = {0.0, 0.0, 0.0};
-		static float scale[] 	= {0.5, 0.5, 0.5};
+		static float scale[] 	= {1.0, 0.5, 0.5};
 		static float color[4] 	= {1.0f, 1.0f, 1.0f, 1.0f};
 
 		if(ImGui::Begin("Container options"))
@@ -84,8 +92,5 @@ void Renderer::draw()
 	}
 
 	mGraphicsContext->draw();
-	// Render ImGui after drawing geometry to overlay UI on screen.
-	mGraphicsContext->renderImGuiFrame();
-	mGraphicsContext->swapBuffers();
 	drawCount++;
 }
