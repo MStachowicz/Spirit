@@ -5,7 +5,6 @@
 #include "glad/gl.h"
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 
-#include "glm/mat4x4.hpp" // mat4, dmat4
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 
@@ -62,6 +61,11 @@ void OpenGLAPI::clearBuffers()
 {
 	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
+
+void OpenGLAPI::setView(const glm::mat4 &pViewMatrix)
+{
+	mViewMatrix = pViewMatrix;
+};
 
 int getUniformLocation(const unsigned int pShaderID, const std::string& pUniformName)
 {

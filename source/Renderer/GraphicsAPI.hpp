@@ -3,6 +3,7 @@
 #include "Logger.hpp"
 
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
+#include <glm/fwd.hpp>
 
 #include "vector"
 #include "string"
@@ -36,6 +37,7 @@ public:
 	virtual bool initialise() 	= 0;
 	virtual void draw() 		= 0; // Executes the draw queue.
 	virtual void onFrameStart() = 0; // Call this before any engine updates occur.
+	virtual void setView(const glm::mat4& pViewMatrix) = 0;
 protected:
 	struct Mesh;
 	virtual void initialiseMesh(const Mesh& pMesh) = 0; // Sets up the mesh for processing DrawCalls from the mDrawQueue queue.

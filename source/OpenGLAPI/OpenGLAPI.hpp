@@ -4,6 +4,7 @@
 #include "GraphicsAPI.hpp"
 
 #include "unordered_map"
+#include "glm/mat4x4.hpp" // mat4, dmat4
 
 struct GladGLContext;
 
@@ -15,11 +16,12 @@ public:
 	~OpenGLAPI();
 
 	// Initialising OpenGLAPI requires an OpenGLWindow to be created beforehand as GLAD requires a context to be set for its initialisation.
-	bool initialise() 																	override;
-	void draw() 																		override;
-	void onFrameStart() 																override;
+	bool initialise() 							override;
+	void draw() 								override;
+	void onFrameStart() 						override;
+	void setView(const glm::mat4& pViewMatrix)	override;
 private:
-	void initialiseMesh(const Mesh &pMesh) 												override;
+	void initialiseMesh(const Mesh &pMesh) 		override;
 
 
 	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
@@ -68,6 +70,7 @@ private:
 	GladGLContext *mGLADContext;
 	OpenGLWindow mWindow;
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
+	glm::mat4 mViewMatrix;
 
 	static void windowSizeCallback(GLFWwindow *pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 };
