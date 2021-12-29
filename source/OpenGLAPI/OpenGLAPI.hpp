@@ -67,6 +67,7 @@ private:
 	unsigned int mTextureShader;
 	GladGLContext *mGLADContext;
 	OpenGLWindow mWindow;
+	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
 
 	static void windowSizeCallback(GLFWwindow *pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 };

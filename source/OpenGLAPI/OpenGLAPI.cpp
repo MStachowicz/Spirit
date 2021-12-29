@@ -9,6 +9,7 @@
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 
+#include "imgui.h"
 
 OpenGLAPI::OpenGLAPI()
 	: cOpenGLVersionMajor(3)
@@ -18,6 +19,7 @@ OpenGLAPI::OpenGLAPI()
 	, mTextureShader(0)
 	, mGLADContext(nullptr)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
+	, mWindowClearColour{0.0f, 0.0f, 0.0f}
 {}
 
 OpenGLAPI::~OpenGLAPI()
@@ -92,6 +94,13 @@ void OpenGLAPI::onFrameStart()
 {
 	clearBuffers();
 	mWindow.startImGuiFrame();
+
+	if (ImGui::Begin("OpenGL options"))
+	{
+		if(ImGui::ColorEdit3("Window clear colour", mWindowClearColour))
+			setClearColour(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2]);
+	}
+	ImGui::End();
 }
 
 void OpenGLAPI::draw()
@@ -228,7 +237,7 @@ int OpenGLAPI::getPolygonMode(const DrawCall::DrawMode& pDrawMode)
 
 void OpenGLAPI::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
 {
-	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
+	mGLADContext->ClearColor(pRed, pGreen, pBlue, 1.0f);
 }
 
 void OpenGLAPI::initialiseTextures()
