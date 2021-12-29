@@ -13,9 +13,6 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
-#include "glm/vec4.hpp"	// vec4, bvec4, dvec4, ivec4 and uvec4
-#include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
-#include "glm/vec2.hpp"	// vec2, bvec2, dvec2, ivec2 and uvec2
 
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
@@ -77,6 +74,10 @@
 // The only purpose of this define is if you want force compilation of the stb_truetype backend ALONG with the FreeType backend.
 //#define IMGUI_ENABLE_STB_TRUETYPE
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
+
+#include "glm/vec4.hpp"	// vec4, bvec4, dvec4, ivec4 and uvec4
+#include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
+#include "glm/vec2.hpp"	// vec2, bvec2, dvec2, ivec2 and uvec2
 
 //---- Don't define obsolete functions/enums/behaviors. Consider enabling from time to time after updating to avoid using soon-to-be obsolete function/names.
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS

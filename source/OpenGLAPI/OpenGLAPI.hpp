@@ -1,26 +1,27 @@
 #pragma once
 
-#include "Context.hpp"
-#include "unordered_map"
 #include "OpenGLWindow.hpp"
+#include "GraphicsAPI.hpp"
+
+#include "unordered_map"
 
 struct GladGLContext;
 
-// Implements OpenGL API via GLAD2 and binds it to mWindow provided by GLFW.
-// Implements the Context API used by Renderer taking DrawCalls and executing draw().
-class OpenGLContext : public Context
+// Implements GraphicsAPI. Takes DrawCalls and clears them in draw() using an OpenGL rendering pipeline.
+class OpenGLAPI : public GraphicsAPI
 {
 public:
-	OpenGLContext();
-	~OpenGLContext();
+	OpenGLAPI();
+	~OpenGLAPI();
 
-	// Initialising OpenGLContext requires an OpenGLWindow to be created beforehand as GLAD requires a context to be set for its initialisation.
+	// Initialising OpenGLAPI requires an OpenGLWindow to be created beforehand as GLAD requires a context to be set for its initialisation.
 	bool initialise() 																	override;
-	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) 	override;
 	void draw() 																		override;
-	void initialiseMesh(const Mesh &pMesh) 												override;
 	void onFrameStart() 																override;
 private:
+	void initialiseMesh(const Mesh &pMesh) 												override;
+
+
 	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
 	struct DrawInfo
 	{
@@ -44,6 +45,7 @@ private:
 	const DrawInfo& getDrawInfo(const MeshID& pMeshID);
 	std::unordered_map<MeshID, DrawInfo> mMeshManager; 		// Mapping of a Mesh to how it should be drawn.
 
+	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue);
 	void clearBuffers();
 
 	void initialiseTextures();

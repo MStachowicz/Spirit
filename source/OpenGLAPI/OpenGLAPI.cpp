@@ -1,4 +1,4 @@
-#include "OpenGLContext.hpp"
+#include "OpenGLAPI.hpp"
 
 #include "FileSystem.hpp"
 
@@ -9,7 +9,8 @@
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 
-OpenGLContext::OpenGLContext()
+
+OpenGLAPI::OpenGLAPI()
 	: cOpenGLVersionMajor(3)
 	, cOpenGLVersionMinor(3)
 	, cMaxTextureUnits(2)
@@ -19,16 +20,16 @@ OpenGLContext::OpenGLContext()
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 {}
 
-OpenGLContext::~OpenGLContext()
+OpenGLAPI::~OpenGLAPI()
 {
 	if (mGLADContext)
 	{
 		free(mGLADContext);
-		LOG_INFO("OpenGLContext destructor called. Freeing GLAD memory.");
+		LOG_INFO("OpenGLAPI destructor called. Freeing GLAD memory.");
 	}
 }
 
-bool OpenGLContext::initialise()
+bool OpenGLAPI::initialise()
 {
 	// Setup GLAD, requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	mGLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
@@ -55,7 +56,7 @@ bool OpenGLContext::initialise()
 	return true;
 }
 
-void OpenGLContext::clearBuffers()
+void OpenGLAPI::clearBuffers()
 {
 	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
@@ -87,25 +88,25 @@ void setMat4(const unsigned int pShaderID, const std::string& pUniformName, cons
 	glUniformMatrix4fv(getUniformLocation(pShaderID, pUniformName), 1, GL_FALSE, glm::value_ptr(pValue));
 }
 
-void OpenGLContext::onFrameStart()
+void OpenGLAPI::onFrameStart()
 {
 	clearBuffers();
 	mWindow.startImGuiFrame();
 }
 
-void OpenGLContext::draw()
+void OpenGLAPI::draw()
 {
-	for (size_t i = 0; i < mDrawCalls.size(); i++)
+	for (size_t i = 0; i < mDrawQueue.size(); i++)
 	{
 		// Grab the DrawInfo for the Mesh requested.
-		const DrawInfo& drawInfo = getDrawInfo(mDrawCalls[i].mMesh);
+		const DrawInfo& drawInfo = getDrawInfo(mDrawQueue[i].mMesh);
 		glUseProgram(drawInfo.mShaderID);
 
-		glm::mat4 trans = glm::translate(glm::mat4(1.0f), mDrawCalls[i].mPosition);
-		trans = glm::rotate(trans, glm::radians(mDrawCalls[i].mRotation.x), glm::vec3(1.0, 0.0, 0.0));
-		trans = glm::rotate(trans, glm::radians(mDrawCalls[i].mRotation.y), glm::vec3(0.0, 1.0, 0.0));
-		trans = glm::rotate(trans, glm::radians(mDrawCalls[i].mRotation.z), glm::vec3(0.0, 0.0, 1.0));
-		trans = glm::scale(trans, mDrawCalls[i].mScale);
+		glm::mat4 trans = glm::translate(glm::mat4(1.0f), mDrawQueue[i].mPosition);
+		trans = glm::rotate(trans, glm::radians(mDrawQueue[i].mRotation.x), glm::vec3(1.0, 0.0, 0.0));
+		trans = glm::rotate(trans, glm::radians(mDrawQueue[i].mRotation.y), glm::vec3(0.0, 1.0, 0.0));
+		trans = glm::rotate(trans, glm::radians(mDrawQueue[i].mRotation.z), glm::vec3(0.0, 0.0, 1.0));
+		trans = glm::scale(trans, mDrawQueue[i].mScale);
 		setMat4(drawInfo.mShaderID, "model", trans);
 
 		// note that we're translating the scene in the reverse direction of where we want to move
@@ -114,16 +115,16 @@ void OpenGLContext::draw()
 		setMat4(drawInfo.mShaderID, "view", view);
 		setMat4(drawInfo.mShaderID, "projection", projection);
 
-		glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(mDrawCalls[i].mDrawMode));
+		glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(mDrawQueue[i].mDrawMode));
 
 		glBindVertexArray(drawInfo.mVAO);
 
-		if (mDrawCalls[i].mTexture.has_value())
+		if (mDrawQueue[i].mTexture.has_value())
 		{
 			setBool(drawInfo.mShaderID, "useTextures", true);
 
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, mDrawCalls[i].mTexture.value());
+			glBindTexture(GL_TEXTURE_2D, mDrawQueue[i].mTexture.value());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
@@ -136,20 +137,20 @@ void OpenGLContext::draw()
 		else if (drawInfo.mDrawMethod == DrawInfo::DrawMethod::Array)
 			glDrawArrays(drawInfo.mDrawMode, 0, static_cast<GLsizei>(drawInfo.mDrawSize));
 	}
-	mDrawCalls.clear();
+	mDrawQueue.clear();
 
 	mWindow.renderImGui();
 	mWindow.swapBuffers();
 }
 
-const OpenGLContext::DrawInfo& OpenGLContext::getDrawInfo(const MeshID& pMeshID)
+const OpenGLAPI::DrawInfo& OpenGLAPI::getDrawInfo(const MeshID& pMeshID)
 {
 	const auto it = mMeshManager.find(pMeshID);
 	ZEPHYR_ASSERT(it != mMeshManager.end(), "Mesh ID does not exist in the mesh manager. Cannot return the draw info.");
 	return it->second;
 }
 
-void OpenGLContext::initialiseMesh(const Mesh &pMesh)
+void OpenGLAPI::initialiseMesh(const Mesh &pMesh)
 {
 	ZEPHYR_ASSERT(!pMesh.mVertices.empty(), "Cannot set a mesh handle for a mesh with no position data.")
 
@@ -157,7 +158,7 @@ void OpenGLContext::initialiseMesh(const Mesh &pMesh)
 	ZEPHYR_ASSERT(it == mMeshManager.end(), "Calling initialiseMesh on a mesh already present in the mesh manager. This mesh is already initialised.")
 
 	DrawInfo drawInfo;
-	drawInfo.mDrawMode 		= GL_TRIANGLES; //OpenGLContext only supports GL_TRIANGLES at this revision
+	drawInfo.mDrawMode 		= GL_TRIANGLES; //OpenGLAPI only supports GL_TRIANGLES at this revision
 	drawInfo.mDrawMethod 	= pMesh.mIndices.empty() ? DrawInfo::DrawMethod::Array : DrawInfo::DrawMethod::Indices;
 	drawInfo.mDrawSize 		= pMesh.mIndices.empty() ? pMesh.mVertices.size() : pMesh.mIndices.size();
 	drawInfo.mShaderID 		= mTextureShader;
@@ -215,7 +216,7 @@ void OpenGLContext::initialiseMesh(const Mesh &pMesh)
 	mMeshManager.insert({pMesh.mID, drawInfo});
 }
 
-int OpenGLContext::getPolygonMode(const DrawCall::DrawMode& pDrawMode)
+int OpenGLAPI::getPolygonMode(const DrawCall::DrawMode& pDrawMode)
 {
 	switch (pDrawMode)
 	{
@@ -225,12 +226,12 @@ int OpenGLContext::getPolygonMode(const DrawCall::DrawMode& pDrawMode)
 	}
 }
 
-void OpenGLContext::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
+void OpenGLAPI::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
 {
 	mGLADContext->ClearColor(pRed / 255.0f, pGreen / 255.0f, pBlue / 255.0f, 1.0f);
 }
 
-void OpenGLContext::initialiseTextures()
+void OpenGLAPI::initialiseTextures()
 {
 	{ // Load all the textures in the textures directory
 		std::vector<std::string> textureFileNames = File::getAllFileNames(File::textureDirectory);
@@ -249,7 +250,7 @@ void OpenGLContext::initialiseTextures()
 	}
 }
 
-unsigned int OpenGLContext::loadTexture(const std::string &pFileName)
+unsigned int OpenGLAPI::loadTexture(const std::string &pFileName)
 {
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
@@ -272,12 +273,12 @@ unsigned int OpenGLContext::loadTexture(const std::string &pFileName)
 	return textureID;
 }
 
-void OpenGLContext::initialiseShaders()
+void OpenGLAPI::initialiseShaders()
 {
-	mTextureShader = loadShader(File::shaderDirectory + "texture.vert", File::shaderDirectory + "texture.frag");
+	mTextureShader = loadShader(File::GLSLShaderDirectory + "texture.vert", File::GLSLShaderDirectory + "texture.frag");
 }
 
-unsigned int OpenGLContext::loadShader(const std::string &pVertexShader, const std::string &pFragmentShader)
+unsigned int OpenGLAPI::loadShader(const std::string &pVertexShader, const std::string &pFragmentShader)
 {
 	unsigned int vertexShader;
 	{
@@ -315,7 +316,7 @@ unsigned int OpenGLContext::loadShader(const std::string &pVertexShader, const s
 	return shaderProgram;
 }
 
-bool OpenGLContext::hasCompileErrors(const unsigned int pProgramID, const ProgramType &pType)
+bool OpenGLAPI::hasCompileErrors(const unsigned int pProgramID, const ProgramType &pType)
 {
 	int success;
 	if (pType == ProgramType::ShaderProgram)
@@ -344,7 +345,7 @@ bool OpenGLContext::hasCompileErrors(const unsigned int pProgramID, const Progra
 	return false;
 }
 
-void OpenGLContext::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
+void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 {
 	LOG_INFO("Window resolution changed to {}x{}", pWidth, pHeight);
 	glViewport(0, 0, pWidth, pHeight);

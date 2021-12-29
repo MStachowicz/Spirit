@@ -1,15 +1,17 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <optional>
 #include "Logger.hpp"
+
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
+
+#include "vector"
+#include "string"
+#include "optional"
 
 typedef unsigned int MeshID; // The unique ID the mesh uses to identify its draw information in a specific draw context.
 typedef unsigned int TextureID;
 
-// DrawCall sends a draw request to the context.
+// A request to execute a specific draw using a GraphicsAPI.
 struct DrawCall
 {
 	enum class DrawMode
@@ -26,20 +28,24 @@ struct DrawCall
 	std::optional<TextureID> mTexture;
 };
 
-// Context is an interface for specific graphics API's to implement.
-// The context is supplied DrawCall's via pushDrawCall() which are then executed and cleared using draw().
-class Context
+// GraphicsAPI is an interface for Zephyr::Renderer to communicate with a derived Graphics pipeline.
+// A derived API must empty it's mDrawQueue in it's draw function.
+class GraphicsAPI
 {
 public:
-	virtual ~Context() {}; // Context is used polymorphically in Renderer.
-
-	virtual void setClearColour(const float& pRed, const float& pGreen, const float& pBlue) = 0;
 	virtual bool initialise() 	= 0;
-	virtual void onFrameStart() = 0; // Called before any frame updates occur.
 	virtual void draw() 		= 0; // Executes the draw queue.
+	virtual void onFrameStart() = 0; // Call this before any engine updates occur.
+protected:
+	struct Mesh;
+	virtual void initialiseMesh(const Mesh& pMesh) = 0; // Sets up the mesh for processing DrawCalls from the mDrawQueue queue.
+
+
+public:
+	virtual ~GraphicsAPI() {}; // Context is an pure virtual interface used polymorphically.
+	void pushDrawCall(const DrawCall& pDrawCall) { mDrawQueue.push_back(pDrawCall); }
 
 	// Add the draw call to the draw queue, the call is subsequently executed using Draw()
-	void pushDrawCall(const DrawCall &pDrawCall) { mDrawCalls.push_back(pDrawCall); }
 	MeshID getMeshID(const std::string& pMeshName)
 	{
 		const auto it = mMeshes.find(pMeshName);
@@ -69,11 +75,10 @@ protected:
 		static inline MeshID nextMesh = 0;
 	};
 
-	std::vector<DrawCall> mDrawCalls;
+	std::vector<DrawCall> mDrawQueue;
 	std::unordered_map<std::string, Mesh> mMeshes;
 	std::unordered_map<std::string, TextureID> mTextures;
 
-	virtual void initialiseMesh(const Mesh& pMesh) = 0; // Sets up the mesh for processing DrawCalls from the mDrawCalls queue.
 	void buildMeshes() // Populates Meshes with some commonly used shapes
 	{
 		{ // 2D TRIANGLE

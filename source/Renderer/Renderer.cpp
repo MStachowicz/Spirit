@@ -3,17 +3,17 @@
 
 #include "Renderer.hpp"
 #include "Logger.hpp"
-#include "OpenGLContext.hpp"
+#include "OpenGLAPI.hpp"
 
 Renderer::~Renderer()
 {
-	delete mGraphicsContext;
+	delete mOpenGLAPI;
 }
 
 bool Renderer::initialise()
 {
-	mGraphicsContext = new OpenGLContext();
-	if (!mGraphicsContext->initialise())
+	mOpenGLAPI = new OpenGLAPI();
+	if (!mOpenGLAPI->initialise())
 	{
 		LOG_CRITICAL("Failed to initalise the graphics context for Renderer to use.");
 		return false;
@@ -24,7 +24,7 @@ bool Renderer::initialise()
 
 void Renderer::onFrameStart()
 {
-	mGraphicsContext->onFrameStart();
+	mOpenGLAPI->onFrameStart();
 }
 
 void Renderer::draw()
@@ -33,17 +33,17 @@ void Renderer::draw()
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
 		drawCall.mPosition 			= glm::vec3(-0.75f, 0.75f, 0.0f);
-		drawCall.mMesh 				= mGraphicsContext->getMeshID("Square");
-		drawCall.mTexture			= mGraphicsContext->getTextureID("tiles.png");
-		mGraphicsContext->pushDrawCall(drawCall);
+		drawCall.mMesh 				= mOpenGLAPI->getMeshID("Square");
+		drawCall.mTexture			= mOpenGLAPI->getTextureID("tiles.png");
+		mOpenGLAPI->pushDrawCall(drawCall);
 	}
 		{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
 		drawCall.mPosition 			= glm::vec3(0.0f, 0.75f, 0.0f);
-		drawCall.mMesh 				= mGraphicsContext->getMeshID("Square");
+		drawCall.mMesh 				= mOpenGLAPI->getMeshID("Square");
 		drawCall.mDrawMode			= DrawCall::DrawMode::Wireframe;
-		mGraphicsContext->pushDrawCall(drawCall);
+		mOpenGLAPI->pushDrawCall(drawCall);
 	}
 	{
 		static float position[] = {1.0, 0.0, 0.0};
@@ -64,33 +64,33 @@ void Renderer::draw()
 		drawCall.mScale 			= glm::vec3(scale[0], scale[1], scale[2]);
 		drawCall.mPosition 			= glm::vec3(position[0], position[1], position[2]);
 		drawCall.mRotation 			= glm::vec3(rotation[0], rotation[1], rotation[2]);
-		drawCall.mMesh 				= mGraphicsContext->getMeshID("Cube");
-		drawCall.mTexture 			= mGraphicsContext->getTextureID("woodenContainer.png");
-		mGraphicsContext->pushDrawCall(drawCall);
+		drawCall.mMesh 				= mOpenGLAPI->getMeshID("Cube");
+		drawCall.mTexture 			= mOpenGLAPI->getTextureID("woodenContainer.png");
+		mOpenGLAPI->pushDrawCall(drawCall);
 	}
 	{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
 		drawCall.mPosition 			= glm::vec3(-0.75f, -0.75f, 0.0f);
-		drawCall.mMesh 				= mGraphicsContext->getMeshID("Triangle");
-		drawCall.mTexture			= mGraphicsContext->getTextureID("tiles.png");
-		mGraphicsContext->pushDrawCall(drawCall);
+		drawCall.mMesh 				= mOpenGLAPI->getMeshID("Triangle");
+		drawCall.mTexture			= mOpenGLAPI->getTextureID("tiles.png");
+		mOpenGLAPI->pushDrawCall(drawCall);
 	}
 	{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f, 0.5f, 0.25f);
 		drawCall.mPosition 			= glm::vec3(0.0f, -0.75f, 0.0f);
-		drawCall.mMesh 				= mGraphicsContext->getMeshID("Triangle");
-		mGraphicsContext->pushDrawCall(drawCall);
+		drawCall.mMesh 				= mOpenGLAPI->getMeshID("Triangle");
+		mOpenGLAPI->pushDrawCall(drawCall);
 	}
 	{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
 		drawCall.mPosition 			= glm::vec3(0.75f, -0.75f, 0.0f);
-		drawCall.mMesh 				= mGraphicsContext->getMeshID("Triangle");
-		mGraphicsContext->pushDrawCall(drawCall);
+		drawCall.mMesh 				= mOpenGLAPI->getMeshID("Triangle");
+		mOpenGLAPI->pushDrawCall(drawCall);
 	}
 
-	mGraphicsContext->draw();
+	mOpenGLAPI->draw();
 	drawCount++;
 }

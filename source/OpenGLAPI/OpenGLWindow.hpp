@@ -5,10 +5,9 @@ typedef struct GLFWwindow GLFWwindow;
 // Provides an OS window provided by GLFW. Wraps its construction and destruction.
 // Handles Dear ImGui initialisation and rendering.
 // Handles GLFW initialisation and termination.
-
 class OpenGLWindow
 {
-	friend class OpenGLContext; // Allows OpenGLContext
+	friend class OpenGLAPI;
 public:
 	OpenGLWindow(const OpenGLWindow &) = delete;
     OpenGLWindow(const int& pMajorVersion, const int& pMinorVersion, const int& pWidth = 1920, const int& pHeight = 1080, const bool& pResizable = true);

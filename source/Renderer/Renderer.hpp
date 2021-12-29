@@ -1,7 +1,8 @@
 #pragma once
 
-class Context;
+class GraphicsAPI;
 
+// Submits DrawCalls to it's GraphicsAPI which itself implements the rendering pipeline being used.
 class Renderer
 {
 public:
@@ -13,5 +14,5 @@ public:
 
 	void onFrameStart();
 private:
-	Context *mGraphicsContext = nullptr;
+	GraphicsAPI *mOpenGLAPI = nullptr;
 };

@@ -22,8 +22,8 @@ PRIVATE source/Input
 target_link_libraries(Zephyr
 Logger
 JobSystem
-Renderer
 FileSystem
+Renderer
 Input
 )
 # ------------------------ ZEPHYR ----------------------------
@@ -31,23 +31,23 @@ Input
 # ------------------------ RENDERER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
-source/renderer/Renderer.hpp
-source/renderer/Renderer.cpp
-source/renderer/Camera.hpp
-source/renderer/Camera.cpp
+source/Renderer/Renderer.hpp
+source/Renderer/Renderer.cpp
+source/Renderer/Camera.hpp
+source/Renderer/Camera.cpp
+source/Renderer/GraphicsAPI.hpp
 source/Renderer/ImGuiConfig.hpp
 )
 target_include_directories(Renderer
-PRIVATE source/Renderer/GraphicsContext
-PRIVATE source/External/GLM
 PRIVATE source/ECS
+PRIVATE source/External/GLM
 PRIVATE source/External/imgui
 )
 target_link_libraries(Renderer
-Logger
-GraphicsContext
-ECS
 ImGui
+OpenGLAPI
+Logger
+ECS
 )
 # ------------------------ RENDERER ----------------------------
 
@@ -56,14 +56,11 @@ message(STATUS "\n[ZEPHYR] -- Adding Input static library")
 add_library(Input
 source/Input/Input.hpp
 source/Input/Input.cpp
-)
-target_include_directories(Input
-PRIVATE source/External/GLFW/include
+source/Input/InputAPI.hpp
 )
 target_link_libraries(Input
-glfw
+OpenGLAPI # OpenGLAPI also includes a GLFWInput satisfying the InputAPI interface
 Logger
-Window
 )
 # ------------------------ INPUT ----------------------------
 
@@ -131,46 +128,35 @@ spdlog
 
 
 
-# ------------------------ OPENGL CONTEXT ----------------------------
-add_library(GraphicsContext
-source/Renderer/GraphicsContext/Context.hpp
-source/Renderer/GraphicsContext/OpenGLContext.hpp
-source/Renderer/GraphicsContext/OpenGLContext.cpp
+# ------------------------ OPENGL API ---------------------------
+# This library implements a Zephyr renderer using GLAD OpenGL as well as an Input handler using GLFW
+add_library(OpenGLAPI
+source/Renderer/GraphicsAPI.hpp # implements the Zephyr::Renderer GraphicsAPI interface
+source/OpenGLAPI/OpenGLAPI.hpp
+source/OpenGLAPI/OpenGLAPI.cpp
+source/OpenGLAPI/OpenGLWindow.hpp
+source/OpenGLAPI/OpenGLWindow.cpp
+source/Input/InputAPI.hpp # implements the Zephyr::Input InputAPI interface
+source/OpenGLAPI/GLFWInput.hpp
+source/OpenGLAPI/GLFWInput.cpp
 )
-target_include_directories(GraphicsContext
-PUBLIC source/External/GLM   #GLM is an interface as it's included in Context.hpp API
+target_include_directories(OpenGLAPI
+PUBLIC source/External/GLM
+PUBLIC source/External/imgui
+PUBLIC source/OpenGLAPI
+PRIVATE source/External/GLFW/include
+PRIVATE source/Renderer
+PRIVATE source/Input
 PRIVATE source/FileSystem
 )
-target_link_libraries(GraphicsContext
+target_link_libraries(OpenGLAPI
 glad_GL
-Window
+glfw
+ImGui
 FileSystem
 Logger
 )
-# ------------------------ OPENGL CONTEXT ----------------------------
-
-# ------------------------ WINDOW ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Window static library")
-add_library(Window
-source/Window/OpenGLWindow.hpp
-source/Window/OpenGLWindow.cpp
-)
-target_include_directories(Window
-PUBLIC source/Window
-PUBLIC source/External/imgui
-PRIVATE source/External/GLFW/include
-)
-target_link_libraries(Window
-glfw
-ImGui
-Logger
-)
-# ------------------------ WINDOW END ----------------------------
-
-
-
-# Remaining are external git submodules
-#-----------------------------------------------------------------------------------
+# ------------------------ OPENGL API END ----------------------------
 
 # ------------------------ IMGUI ----------------------------
 # imgui has no cMakeLists.txt file so need to generate a library for it
@@ -205,3 +191,5 @@ glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
 message(STATUS "\n[ZEPHYR] -- Adding GLM module")
 add_subdirectory(source/External/GLM)
 # ------------------------ GLM ----------------------------
+
+message(STATUS "\n[ZEPHYR] -- Make finished:")

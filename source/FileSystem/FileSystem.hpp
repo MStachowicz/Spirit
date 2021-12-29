@@ -18,7 +18,7 @@ public:
 
     static std::string executablePath;
     static std::string rootDirectory;
-    static std::string shaderDirectory;
+    static std::string GLSLShaderDirectory;
     static std::string textureDirectory;
 
     static std::string readFromFile(const std::string& pPath);

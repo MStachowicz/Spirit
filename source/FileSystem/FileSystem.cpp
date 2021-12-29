@@ -11,7 +11,7 @@
 
 std::string File::executablePath;
 std::string File::rootDirectory;
-std::string File::shaderDirectory;
+std::string File::GLSLShaderDirectory;
 std::string File::textureDirectory;
 
 File::Texture::~Texture()
@@ -99,10 +99,10 @@ void File::setupDirectories(const std::string &pExecutePath)
     rootDirectory = executablePath.substr(0, found + 6); // offset substr by length of "Zephyr"
     LOG_INFO("Root directory initialised to \"{}\"", rootDirectory);
 
-    shaderDirectory = rootDirectory + "/source/Renderer/GraphicsContext/Shaders/";
-    LOG_INFO("Shader directory initialised to \"{}\"", shaderDirectory);
+    GLSLShaderDirectory = rootDirectory + "/source/OpenGLAPI/GLSL/";
+    LOG_INFO("Shader directory initialised to \"{}\"", GLSLShaderDirectory);
 
-    textureDirectory = rootDirectory + "/source/Renderer/Textures/";
+    textureDirectory = rootDirectory + "/source/Resources/Textures/";
     LOG_INFO("Texture directory initialised to \"{}\"", textureDirectory);
 
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
