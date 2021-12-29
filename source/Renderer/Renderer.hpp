@@ -8,7 +8,7 @@ class Renderer
 public:
 	~Renderer();
 
-	bool initialise();
+	void initialise();
 	void draw();
 	int drawCount = 0;
 

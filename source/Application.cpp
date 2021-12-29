@@ -10,7 +10,7 @@ bool Application::initialise(int argc, char *argv[])
 {
     Clock::time_point initStartTime = Clock::now();
 
-    Logger::init(); // Logger is fully static and requires initialisation before any access.
+    Logger::initialise(); // Logger must be initialised first as everything depends on it for logging and error checks.
     ZEPHYR_ASSERT(argc > 0, "No arguments supplied to executable, directories cannot be initialised")
 
     LOG_INFO("Number of arguments passed on launch: {}", argc);
@@ -19,9 +19,8 @@ bool Application::initialise(int argc, char *argv[])
 
     File::setupDirectories(argv[0]);
     JobSystem::initialise();
-    if (!mRenderer.initialise())
-        return false;
 
+    mRenderer.initialise();
     mInput.initialise();
 
     LOG_INFO("Zephyr initialisation took {}ms", std::chrono::round<std::chrono::milliseconds>(Clock::now() - initStartTime).count());

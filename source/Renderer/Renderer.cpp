@@ -10,16 +10,10 @@ Renderer::~Renderer()
 	delete mOpenGLAPI;
 }
 
-bool Renderer::initialise()
+void Renderer::initialise()
 {
 	mOpenGLAPI = new OpenGLAPI();
-	if (!mOpenGLAPI->initialise())
-	{
-		LOG_CRITICAL("Failed to initalise the graphics context for Renderer to use.");
-		return false;
-	}
-
-	return true;
+	ZEPHYR_ASSERT(mOpenGLAPI->initialise(), "Failed to initialise OpenGL graphics API.");
 }
 
 void Renderer::onFrameStart()
