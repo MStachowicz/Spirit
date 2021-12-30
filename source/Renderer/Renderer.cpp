@@ -6,20 +6,13 @@
 #include "OpenGLAPI.hpp"
 
 Renderer::Renderer()
-: mOpenGLAPI(nullptr)
-, mCamera()
+: mOpenGLAPI(new OpenGLAPI())
+, mCamera(glm::vec3(0.0f, 0.0f, 0.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1))
 {}
 
 Renderer::~Renderer()
 {
 	delete mOpenGLAPI;
-}
-
-void Renderer::initialise()
-{
-	mOpenGLAPI = new OpenGLAPI();
-	ZEPHYR_ASSERT(mOpenGLAPI->initialise(), "Failed to initialise OpenGL graphics API.");
-	mCamera.initialise(glm::vec3(0.0f,0.0f,0.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1));
 }
 
 void Renderer::onFrameStart()

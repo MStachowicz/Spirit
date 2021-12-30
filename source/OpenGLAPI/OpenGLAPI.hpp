@@ -16,7 +16,6 @@ public:
 	~OpenGLAPI();
 
 	// Initialising OpenGLAPI requires an OpenGLWindow to be created beforehand as GLAD requires a context to be set for its initialisation.
-	bool initialise() 							override;
 	void draw() 								override;
 	void onFrameStart() 						override;
 	void setView(const glm::mat4& pViewMatrix)	override;

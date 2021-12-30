@@ -45,9 +45,7 @@ public:
     float Zoom;
 
     Camera(const Camera&) = delete;
-    Camera() {}
-
-    void initialise(glm::vec3 position, std::function<void(const glm::mat4&)> pOnViewChangeCallback, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH)
+    Camera(glm::vec3 position, std::function<void(const glm::mat4&)> pOnViewChangeCallback, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH)
     {
         Front = glm::vec3(0.0f, 0.0f, -1.0f);
         MovementSpeed = SPEED;

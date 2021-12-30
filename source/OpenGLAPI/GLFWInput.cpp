@@ -3,7 +3,7 @@
 #include "OpenGLWindow.hpp"
 #include "Logger.hpp"
 
-void GLFWInput::initialise()
+GLFWInput::GLFWInput()
 {
     glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetKeyCallback(OpenGLWindow::getActiveWindowHandle(), keyCallback);

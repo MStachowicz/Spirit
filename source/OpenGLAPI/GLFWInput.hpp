@@ -9,7 +9,8 @@ typedef struct GLFWwindow GLFWwindow;
 class GLFWInput : public InputAPI
 {
 public:
-    void initialise() override; // Registers the static GLFW callback functions. Sets this instance as currentActiveInputHandler.
+    GLFWInput();
+
     void pollEvents() override;
     bool closeRequested() override;
 

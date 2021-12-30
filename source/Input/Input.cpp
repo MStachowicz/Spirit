@@ -2,10 +2,9 @@
 #include "Logger.hpp"
 #include "GLFWInput.hpp"
 
-void Input::initialise()
+Input::Input()
 {
     mInputHandler = new GLFWInput();
-    mInputHandler->initialise();
     mInputHandler->subscribeKeyCallback(std::bind(&Input::onInput, this, std::placeholders::_1));
 }
 

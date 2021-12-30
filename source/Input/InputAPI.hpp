@@ -3,7 +3,7 @@
 #include "functional"
 
 // Interface used to communicate with Zephyr::Input.
-// Initialise and all subscribe functions must be called before pollEvents
+// All subscribe functions must be called before pollEvents
 // Input subscribes functions for derived types to callback such as onKeyPress
 class InputAPI
 {
@@ -26,7 +26,6 @@ public:
         onKeyPress = pOnKeyPressCallback;
     }
 
-    virtual void initialise()       = 0;
     virtual void pollEvents()       = 0;
     virtual bool closeRequested()   = 0;
 

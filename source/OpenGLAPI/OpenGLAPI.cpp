@@ -19,30 +19,13 @@ OpenGLAPI::OpenGLAPI()
 	, mGLADContext(nullptr)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 	, mWindowClearColour{0.0f, 0.0f, 0.0f}
-{}
-
-OpenGLAPI::~OpenGLAPI()
 {
-	if (mGLADContext)
-	{
-		free(mGLADContext);
-		LOG_INFO("OpenGLAPI destructor called. Freeing GLAD memory.");
-	}
-}
-
-bool OpenGLAPI::initialise()
-{
-	// Setup GLAD, requires a GLFW window to be set as current context, done in OpenGLWindow constructor
+		// Setup GLAD, requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	mGLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
 	int version = gladLoadGLContext(mGLADContext, glfwGetProcAddress);
-	if (!mGLADContext || version == 0)
-	{
-		LOG_CRITICAL("Failed to initialise GLAD GL context");
-		return false;
-	}
-	else
-		LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+	ZEPHYR_ASSERT(mGLADContext && version != 0, "Failed to initialise GLAD GL context")
 	// TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
+	LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
@@ -54,7 +37,15 @@ bool OpenGLAPI::initialise()
 	buildMeshes();
 
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
-	return true;
+}
+
+OpenGLAPI::~OpenGLAPI()
+{
+	if (mGLADContext)
+	{
+		free(mGLADContext);
+		LOG_INFO("OpenGLAPI destructor called. Freeing GLAD memory.");
+	}
 }
 
 void OpenGLAPI::clearBuffers()

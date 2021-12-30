@@ -1,31 +1,13 @@
 #include "Application.hpp"
 
-#include "JobSystem.hpp"
 #include "Renderer.hpp"
-#include "FileSystem.hpp"
 #include "Input.hpp"
 #include "Application.hpp"
 
-bool Application::initialise(int argc, char *argv[])
-{
-    Clock::time_point initStartTime = Clock::now();
-
-    Logger::initialise(); // Logger must be initialised first as everything depends on it for logging and error checks.
-    ZEPHYR_ASSERT(argc > 0, "No arguments supplied to executable, directories cannot be initialised")
-
-    LOG_INFO("Number of arguments passed on launch: {}", argc);
-    for (int index{}; index != argc; ++index)
-        LOG_INFO("Argument {}: {}", index + 1, argv[index]);
-
-    File::setupDirectories(argv[0]);
-    JobSystem::initialise();
-
-    mRenderer.initialise();
-    mInput.initialise();
-
-    LOG_INFO("Zephyr initialisation took {}ms", std::chrono::round<std::chrono::milliseconds>(Clock::now() - initStartTime).count());
-    return true;
-}
+Application::Application()
+    : mRenderer()
+    , mInput()
+{}
 
 void Application::simulationLoop()
 {

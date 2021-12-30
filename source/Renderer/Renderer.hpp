@@ -11,11 +11,10 @@ public:
 	Renderer();
 	~Renderer();
 
-	void initialise();
+	void onFrameStart();
 	void draw();
 	int drawCount = 0;
 
-	void onFrameStart();
 private:
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;

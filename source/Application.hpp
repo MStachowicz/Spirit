@@ -9,7 +9,8 @@
 class Application
 {
 public:
-    bool initialise(int argc, char *argv[]);
+    typedef std::chrono::steady_clock Clock;
+    Application();
     void simulationLoop();
 
 private:
@@ -24,7 +25,6 @@ private:
 
     int     mPhysicsUpdatesCount        = 0; // TODO: move to physics system when added
 
-    typedef std::chrono::steady_clock Clock;
 
     // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
     // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.

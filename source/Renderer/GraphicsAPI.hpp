@@ -34,7 +34,6 @@ struct DrawCall
 class GraphicsAPI
 {
 public:
-	virtual bool initialise() 	= 0;
 	virtual void draw() 		= 0; // Executes the draw queue.
 	virtual void onFrameStart() = 0; // Call this before any engine updates occur.
 	virtual void setView(const glm::mat4& pViewMatrix) = 0;

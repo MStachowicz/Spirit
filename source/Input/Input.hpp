@@ -6,7 +6,7 @@
 class Input
 {
 public:
-    void initialise();
+    Input();
     void pollEvents();
     bool closeRequested();
 private:
