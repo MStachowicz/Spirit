@@ -66,10 +66,11 @@ private:
 	const size_t cMaxTextureUnits; // The limit on the number of texture units available in the shaders using sampler2D
 	unsigned int mRegularShader;
 	unsigned int mTextureShader;
-	GladGLContext *mGLADContext;
-	OpenGLWindow mWindow;
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
 	glm::mat4 mViewMatrix;
 
+	OpenGLWindow mWindow;
+	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
+	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	static void windowSizeCallback(GLFWwindow *pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 };

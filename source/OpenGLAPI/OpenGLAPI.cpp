@@ -16,17 +16,10 @@ OpenGLAPI::OpenGLAPI()
 	, cMaxTextureUnits(2)
 	, mRegularShader(0)
 	, mTextureShader(0)
-	, mGLADContext(nullptr)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
+	, mGLADContext(initialiseGLAD())
 	, mWindowClearColour{0.0f, 0.0f, 0.0f}
 {
-		// Setup GLAD, requires a GLFW window to be set as current context, done in OpenGLWindow constructor
-	mGLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
-	int version = gladLoadGLContext(mGLADContext, glfwGetProcAddress);
-	ZEPHYR_ASSERT(mGLADContext && version != 0, "Failed to initialise GLAD GL context")
-	// TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
-	LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
 
@@ -347,6 +340,16 @@ bool OpenGLAPI::hasCompileErrors(const unsigned int pProgramID, const ProgramTyp
 	}
 
 	return false;
+}
+
+GladGLContext* OpenGLAPI::initialiseGLAD()
+{
+	GladGLContext* GLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
+	int version = gladLoadGLContext(GLADContext, glfwGetProcAddress);
+	ZEPHYR_ASSERT(GLADContext && version != 0, "Failed to initialise GLAD GL context")
+	// TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
+	LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+	return GLADContext;
 }
 
 void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
