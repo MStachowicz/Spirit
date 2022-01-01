@@ -7,7 +7,7 @@
 
 Renderer::Renderer()
 : mOpenGLAPI(new OpenGLAPI())
-, mCamera(glm::vec3(0.0f, 0.0f, 0.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1))
+, mCamera(glm::vec3(0.0f, 0.0f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1))
 {}
 
 Renderer::~Renderer()
