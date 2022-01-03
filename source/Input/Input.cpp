@@ -20,16 +20,16 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
     switch (pKeyPressed)
     {
     case InputAPI::Key::KEY_W:
-        mCurrentCamera.ProcessKeyboard(FORWARD);
+        mCurrentCamera.move(Camera::Forward);
         break;
     case InputAPI::Key::KEY_S:
-         mCurrentCamera.ProcessKeyboard(BACKWARD);
+         mCurrentCamera.move(Camera::Backward);
         break;
     case InputAPI::Key::KEY_A:
-         mCurrentCamera.ProcessKeyboard(LEFT);
+         mCurrentCamera.move(Camera::Left);
         break;
     case InputAPI::Key::KEY_D:
-         mCurrentCamera.ProcessKeyboard(RIGHT);
+         mCurrentCamera.move(Camera::Right);
         break;
     case InputAPI::Key::KEY_ESCAPE:
         mCloseRequested = true;

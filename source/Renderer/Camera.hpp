@@ -1,127 +1,40 @@
 #pragma once
 
-#include "glm/vec3.hpp"	// vec3
-#include "glm/mat4x4.hpp" // mat4
-#include <glm/gtc/matrix_transform.hpp>
+#include "glm/mat4x4.hpp"
+#include "glm/vec3.hpp"
 
-#include <vector>
 #include "functional"
 
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum Camera_Movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
-};
-
-// Default camera values
-const float YAW         = -90.0f;
-const float PITCH       =  0.0f;
-const float SENSITIVITY =  0.1f;
-const float ZOOM        =  45.0f;
-
-
-// An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
+// Camera operating using Euler angles to calculate the corresponding Vectors and Matrices to define a view in 3D space.
+// Constructor allows subscribing to view change events, passing the new glm::mat4 view matrix on change.
 class Camera
 {
 public:
-    // camera Attributes
-    glm::vec3 Position;
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    glm::mat4 mView = glm::mat4(1.0f);
-    std::function<void(const glm::mat4&)> onViewChange; // Called when the view changes.
-
-    // euler Angles
-    float Yaw;
-    float Pitch;
-    // camera options
-    float MovementSpeed;
-    float MouseSensitivity;
-    float Zoom;
-
     Camera(const Camera&) = delete;
-    Camera(glm::vec3 position, std::function<void(const glm::mat4 &)> pOnViewChangeCallback, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH)
-        : Position(position)
-        , Front(glm::vec3(0.0f, 0.0f, -1.0f))
-        , MovementSpeed(2.5f)
-        , MouseSensitivity(SENSITIVITY)
-        , Zoom(ZOOM)
-        , WorldUp(up)
-        , Yaw(yaw)
-        , Pitch(pitch)
-        , onViewChange(pOnViewChangeCallback)
-    {
-        updateCameraVectors();
-    }
+    Camera(const glm::vec3& pPosition, const std::function<void(const glm::mat4&)>& pOnViewChangeCallback, const float& pYaw = -90.0f, const float& pPitch = 0.0f);
 
-    // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction)
-    {
-        const float velocity = MovementSpeed;
-        if (direction == FORWARD)
-            Position += Front * velocity;
-        if (direction == BACKWARD)
-            Position -= Front * velocity;
-        if (direction == LEFT)
-            Position -= Right * velocity;
-        if (direction == RIGHT)
-            Position += Right * velocity;
-
-        mView = glm::lookAt(Position, Position + Front, Up);
-        onViewChange(mView);
-    }
-
-    // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
-    {
-        xoffset *= MouseSensitivity;
-        yoffset *= MouseSensitivity;
-
-        Yaw   += xoffset;
-        Pitch += yoffset;
-
-        // make sure that when pitch is out of bounds, screen doesn't get flipped
-        if (constrainPitch)
-        {
-            if (Pitch > 89.0f)
-                Pitch = 89.0f;
-            if (Pitch < -89.0f)
-                Pitch = -89.0f;
-        }
-
-        // update Front, Right and Up Vectors using the updated Euler angles
-        updateCameraVectors();
-    }
-
-    // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(float yoffset)
-    {
-        Zoom -= (float)yoffset;
-        if (Zoom < 1.0f)
-            Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
-    }
+    enum MoveDirection{ Forward, Backward, Left, Right };
+    void move(const MoveDirection& pDirection); // Process key evenets to move the Camera mPosition.
+    void ProcessMouseMove(const float& pXOffset, const float& pYOffset, const bool& pConstrainPitch = true); // Processes mouse movement to allow moving camera in it's current mPosition.
+    void processScroll(const float& pOffset); // Process mouse scrollwheel events. Applies a zoom on the camera.
 
 private:
-    // calculates the front vector from the Camera's (updated) Euler Angles
-    void updateCameraVectors()
-    {
-        // calculate the new Front vector
-        glm::vec3 front;
-        front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-        front.y = sin(glm::radians(Pitch));
-        front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-        Front = glm::normalize(front);
-        // also re-calculate the Right and Up vector
-        Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        Up    = glm::normalize(glm::cross(Right, Front));
+    // Calculates mFront, mRight, mUp and mView members from the Camera's Euler angles mYaw and mPitch.
+    void updateCameraVectors();
 
-        mView = glm::lookAt(Position, Position + Front, Up);
-        onViewChange(mView);
-    }
+    glm::vec3 mPosition; // Position of the camera.
+    float mYaw;
+    float mPitch;
+
+    glm::vec3 mFront;   // Normalised direction the camera is facing.
+    glm::vec3 mUp;      // Normalised camera local up direction.
+    glm::vec3 mRight;   // Normalised camera local right direction.
+    glm::mat4 mView;    // View transformation matrix.
+    std::function<void(const glm::mat4&)> mOnViewChange; // Called when mView changes.
+
+    float mMovementSpeed;
+    float mMouseSensitivity;
+    float mZoom;
+
+    static inline const glm::vec3 WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
 };
