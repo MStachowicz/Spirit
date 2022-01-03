@@ -58,6 +58,9 @@ source/Input/Input.hpp
 source/Input/Input.cpp
 source/Input/InputAPI.hpp
 )
+target_include_directories(Input
+PRIVATE source/Renderer
+)
 target_link_libraries(Input
 OpenGLAPI # OpenGLAPI also includes a GLFWInput satisfying the InputAPI interface
 Logger

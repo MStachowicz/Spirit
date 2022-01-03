@@ -18,7 +18,6 @@ enum Camera_Movement {
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float SPEED       =  2.5f;
 const float SENSITIVITY =  0.1f;
 const float ZOOM        =  45.0f;
 
@@ -45,18 +44,17 @@ public:
     float Zoom;
 
     Camera(const Camera&) = delete;
-    Camera(glm::vec3 position, std::function<void(const glm::mat4&)> pOnViewChangeCallback, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH)
+    Camera(glm::vec3 position, std::function<void(const glm::mat4 &)> pOnViewChangeCallback, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH)
+        : Position(position)
+        , Front(glm::vec3(0.0f, 0.0f, -1.0f))
+        , MovementSpeed(2.5f)
+        , MouseSensitivity(SENSITIVITY)
+        , Zoom(ZOOM)
+        , WorldUp(up)
+        , Yaw(yaw)
+        , Pitch(pitch)
+        , onViewChange(pOnViewChangeCallback)
     {
-        Front = glm::vec3(0.0f, 0.0f, -1.0f);
-        MovementSpeed = SPEED;
-        MouseSensitivity = SENSITIVITY;
-        Zoom = ZOOM;
-        Position = position;
-        WorldUp = up;
-        Yaw = yaw;
-        Pitch = pitch;
-
-        onViewChange = pOnViewChangeCallback;
         updateCameraVectors();
     }
 

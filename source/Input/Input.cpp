@@ -1,8 +1,10 @@
 #include "Input.hpp"
 #include "Logger.hpp"
 #include "GLFWInput.hpp"
+#include "Camera.hpp"
 
-Input::Input()
+Input::Input(Camera& pCamera)
+: mCurrentCamera(pCamera)
 {
     mInputHandler = new GLFWInput();
     mInputHandler->subscribeKeyCallback(std::bind(&Input::onInput, this, std::placeholders::_1));
@@ -18,16 +20,16 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
     switch (pKeyPressed)
     {
     case InputAPI::Key::KEY_W:
-        //linkedActiveCamera->ProcessKeyboard(FORWARD);
+        mCurrentCamera.ProcessKeyboard(FORWARD);
         break;
     case InputAPI::Key::KEY_S:
-        //linkedActiveCamera->ProcessKeyboard(BACKWARD);
+         mCurrentCamera.ProcessKeyboard(BACKWARD);
         break;
     case InputAPI::Key::KEY_A:
-        //linkedActiveCamera->ProcessKeyboard(LEFT);
+         mCurrentCamera.ProcessKeyboard(LEFT);
         break;
     case InputAPI::Key::KEY_D:
-        //linkedActiveCamera->ProcessKeyboard(RIGHT);
+         mCurrentCamera.ProcessKeyboard(RIGHT);
         break;
     case InputAPI::Key::KEY_ESCAPE:
         mCloseRequested = true;

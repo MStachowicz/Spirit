@@ -6,7 +6,7 @@
 
 Application::Application()
     : mRenderer()
-    , mInput()
+    , mInput(mRenderer.getCamera())
 {}
 
 void Application::simulationLoop()

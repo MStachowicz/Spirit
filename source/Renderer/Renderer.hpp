@@ -15,6 +15,8 @@ public:
 	void draw();
 	int drawCount = 0;
 
+	Camera& getCamera() { return mCamera; }
+
 private:
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;

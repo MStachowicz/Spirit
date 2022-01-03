@@ -67,7 +67,7 @@ private:
 	unsigned int mRegularShader;
 	unsigned int mTextureShader;
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
-	glm::mat4 mViewMatrix;
+	glm::mat4 mViewMatrix; // Cached view matrix the active camera has been set to. Updated via callback using setView()
 
 	OpenGLWindow mWindow;
 	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
