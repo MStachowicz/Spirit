@@ -91,7 +91,7 @@ InputAPI::Key GLFWInput::convert(const int& pKeyInput)
 
 	   case GLFW_KEY_UNKNOWN:
 	   default:
-       ZEPHYR_ASSERT(false, "Could not convert the GLFW key to a InputAPI::Key");
+       LOG_ERROR("Could not convert GLFW key ({}) to InputAPI::Key", pKeyInput);
 	   return InputAPI::Key::KEY_UNKNOWN;
 	}
 }
