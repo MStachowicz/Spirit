@@ -5,14 +5,17 @@
 
 Input::Input(Camera& pCamera)
 : mCurrentCamera(pCamera)
-{
-    mInputHandler = new GLFWInput();
-    mInputHandler->subscribeKeyCallback(std::bind(&Input::onInput, this, std::placeholders::_1));
-}
+, mInputHandler(new GLFWInput(std::bind(&Input::onInput, this, std::placeholders::_1), std::bind(&Input::onMouseMove, this, std::placeholders::_1, std::placeholders::_2)))
+{}
 
 void Input::pollEvents()
 {
     mInputHandler->pollEvents();
+}
+
+void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
+{
+    mCurrentCamera.ProcessMouseMove(pXOffset, pYOffset);
 }
 
 void Input::onInput(const InputAPI::Key& pKeyPressed)

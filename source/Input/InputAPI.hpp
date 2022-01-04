@@ -20,15 +20,16 @@ public:
         KEY_SPACE, KEY_ESCAPE, KEY_ENTER, KEY_TAB,
         KEY_UNKNOWN
     };
-    // Provides a callback function for the derived InputAPI to call when a keypress is encountered.
-    void subscribeKeyCallback(std::function<void(const Key&)> pOnKeyPressCallback)
-    {
-        onKeyPress = pOnKeyPressCallback;
-    }
+
+    InputAPI(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback)
+    : onKeyPress(pOnKeyPressCallback)
+    , onMouseMove(pOnMouseMoveCallback)
+    {}
 
     virtual void pollEvents()       = 0;
     virtual bool closeRequested()   = 0;
 
 protected:
     std::function<void(const Key &)> onKeyPress; // The function a derived InputAPI calls
+    std::function<void(const float&, const float&)> onMouseMove; // Called when mouse is moved, supplies the X and Y offset from the last recorded mouse position.
 };

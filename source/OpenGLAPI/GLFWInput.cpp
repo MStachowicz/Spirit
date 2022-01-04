@@ -3,11 +3,14 @@
 #include "OpenGLWindow.hpp"
 #include "Logger.hpp"
 
-GLFWInput::GLFWInput()
+GLFWInput::GLFWInput(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback)
+: InputAPI(pOnKeyPressCallback, pOnMouseMoveCallback)
+, mCloseRequested(false)
 {
     glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetKeyCallback(OpenGLWindow::getActiveWindowHandle(), keyCallback);
     glfwSetWindowCloseCallback(OpenGLWindow::getActiveWindowHandle(), windowCloseRequestCallback);
+    glfwSetCursorPosCallback(OpenGLWindow::getActiveWindowHandle(), mouseMoveCallback);
     currentActiveInputHandler = this;
 };
 
@@ -30,6 +33,23 @@ void GLFWInput::keyCallback(GLFWwindow* pWindow, int pKey, int pScancode, int pA
 {
 	if (pAction == GLFW_PRESS)
         currentActiveInputHandler->onKeyPress(convert(pKey));
+}
+
+void GLFWInput::mouseMoveCallback(GLFWwindow* pWindow, double pNewXPosition, double pNewYPosition)
+{
+    if (mLastXPosition == -1.0 || mLastYPosition == -1.0) // First mouse input
+    {
+        mLastXPosition = pNewXPosition;
+        mLastYPosition = pNewYPosition;
+    }
+
+    const float xOffset = static_cast<float>(pNewXPosition - mLastXPosition);
+    const float yOffset = static_cast<float>(mLastYPosition - pNewYPosition); // reversed since y-coordinates go from bottom to top
+
+    mLastXPosition = pNewXPosition;
+    mLastYPosition = pNewYPosition;
+
+    currentActiveInputHandler->onMouseMove(xOffset, yOffset);
 }
 
 InputAPI::Key GLFWInput::convert(const int& pKeyInput)
