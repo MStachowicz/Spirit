@@ -247,6 +247,7 @@ OpenGLAPI::Shader::Shader(const std::string &pName)
 void OpenGLAPI::Shader::use()
 {
 	glUseProgram(mHandle);
+	shaderInUse = this;
 }
 
 int OpenGLAPI::Shader::getAttributeLocation(const std::string &pName)
@@ -267,18 +268,37 @@ int OpenGLAPI::Shader::getUniformLocation(const std::string &pName)
 	return location;
 }
 
+bool OpenGLAPI::Shader::checkForUseErrors(const Shader& pCalledFrom)
+{
+	if (!shaderInUse)
+	{
+		LOG_ERROR("No shader has been set to current in OpenGL state, call Shader::Use() before trying to set a uniform.");
+		return false;
+	}
+	if (shaderInUse != &pCalledFrom)
+	{
+		LOG_ERROR("Trying to set a uniform on a shader not current in OpenGL state, call Shader::Use() before trying to set a uniform.");
+		return false;
+	}
+	else
+		return true;
+}
+
 void OpenGLAPI::Shader::setUniform(const std::string &pName, const bool &pValue)
 {
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
 	glUniform1i(getUniformLocation(pName), (int)pValue); // Setting a boolean is treated as integer for gl shaders
 }
 
 void OpenGLAPI::Shader::setUniform(const std::string &pName, const int &pValue)
 {
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
 	glUniform1i(getUniformLocation(pName), (GLint)pValue);
 }
 
 void OpenGLAPI::Shader::setUniform(const std::string &pName, const glm::mat4 &pValue)
 {
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
 	glUniformMatrix4fv(getUniformLocation(pName), 1, GL_FALSE, glm::value_ptr(pValue));
 }
 

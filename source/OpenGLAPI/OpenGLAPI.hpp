@@ -54,6 +54,9 @@ private:
 		unsigned int mHandle;
 
 		enum class Type { Vertex, Fragment, Program };
+
+		static inline Shader* shaderInUse = nullptr; // Keeps track of current Shader object set to use by OpenGL state. Used for error checking in checkForUseErrors().
+		static bool checkForUseErrors(const Shader& pCalledFrom);
 		static bool hasCompileErrors(const Type& pType, const unsigned int pID);
 	};
 	Shader mTextureShader;
