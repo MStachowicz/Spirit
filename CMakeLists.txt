@@ -142,6 +142,8 @@ source/OpenGLAPI/OpenGLWindow.cpp
 source/Input/InputAPI.hpp # implements the Zephyr::Input InputAPI interface
 source/OpenGLAPI/GLFWInput.hpp
 source/OpenGLAPI/GLFWInput.cpp
+source/OpenGLAPI/Shader.hpp
+source/OpenGLAPI/Shader.cpp
 )
 target_include_directories(OpenGLAPI
 PUBLIC source/External/GLM
