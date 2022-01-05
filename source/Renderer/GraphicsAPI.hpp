@@ -367,5 +367,18 @@ protected:
 			initialiseMesh(mesh);
 			mMeshes.insert({mesh.mName, mesh});
 		}
+
+		for (const auto& mesh : mMeshes)
+		{
+			ZEPHYR_ASSERT(!mesh.second.mVertices.empty(), "A mesh must have position data.");
+			ZEPHYR_ASSERT(!mesh.second.mName.empty(), "A mesh must have a name.");
+
+			//if (!mesh.second.mNormals.empty()) // Colour data must have size parity with position
+			//	ZEPHYR_ASSERT(mesh.second.mNormals.size() == mesh.second.mVertices.size(), ("Size of colour data ({}) does not match size of position data ({}), cannot buffer the colour data", mesh.second.mColours.size(), mesh.second.mVertices.size()));
+			if (!mesh.second.mColours.empty()) // Colour data must have size parity with position
+				ZEPHYR_ASSERT(mesh.second.mColours.size() == mesh.second.mVertices.size(), ("Size of colour data ({}) does not match size of position data ({}), cannot buffer the colour data", mesh.second.mColours.size(), mesh.second.mVertices.size()));
+
+
+		}
 	}
 };
