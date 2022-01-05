@@ -69,6 +69,25 @@ int Shader::getAttributeLocation(const Attribute& pAttribute) const
 	return static_cast<int>(location);
 }
 
+
+int Shader::getAttributeComponentCount(const Attribute& pAttribute) const
+{
+	switch (pAttribute)
+	{
+	case Attribute::Position3D:
+		return 3; // X, Y and Z position components
+	case Attribute::Normal3D:
+		return 3; // X, Y and Z direction components
+	case Attribute::ColourRGB:
+		return 3; // Red, Green and Blue components
+	case Attribute::TextureCoordinate2D:
+		return 2; // X and Y components
+	default:
+		ZEPHYR_ASSERT(false, "Could not determine the size of the attribute pAttribute");
+		break;
+	}
+}
+
 int Shader::getUniformLocation(const std::string &pName)
 {
 	int location = glGetUniformLocation(mHandle, pName.c_str());
