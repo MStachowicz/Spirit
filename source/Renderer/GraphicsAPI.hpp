@@ -69,6 +69,7 @@ protected:
 		std::string mName;
 
 		std::vector<float> mVertices;			// Per-vertex position attributes.
+		std::vector<glm::vec3> mNormals;		// Per-vertex normal attributes.
 		std::vector<float> mColours;			// Per-vertex colour attributes.
 		std::vector<float> mTextureCoordinates; // Per-vertex texture mapping.
 		std::vector<int> mIndices;				// Allows indexing into the mVertices and mColours data to specify an indexed draw order.
@@ -132,7 +133,7 @@ protected:
 			initialiseMesh(mesh);
 			mMeshes.insert({mesh.mName, mesh});
 		}
-		{ // 3D CUBE
+		{ // 3D CUBE (supported attributes: VertexPosition, VertexTexCoord (2D))
 			Mesh mesh;
 			mesh.mName = "Cube";
 			mesh.mVertices = {
@@ -219,7 +220,7 @@ protected:
 			initialiseMesh(mesh);
 			mMeshes.insert({mesh.mName, mesh});
 		}
-		{ // 3D CUBE indices
+		{ // 3D CUBE (supported attributes: VertexPosition, VertexColour) + Indexed drawing (EBO)
 			//	   0----------1
 			//	  /|         /|
 			//	 / |        / |
@@ -276,6 +277,93 @@ protected:
 			//	x,x,x,// 6
 			//	x,x,x// 7
 			//	};
+			initialiseMesh(mesh);
+			mMeshes.insert({mesh.mName, mesh});
+		}
+		{ // 3D CUBE (supported attributes: VertexPosition, VertexNormal)
+		Mesh mesh;
+			mesh.mName = "CubeLighting";
+			mesh.mVertices = {
+				-0.5f, -0.5f, -0.5f,
+        		 0.5f, -0.5f, -0.5f,
+        		 0.5f,  0.5f, -0.5f,
+        		 0.5f,  0.5f, -0.5f,
+        		-0.5f,  0.5f, -0.5f,
+        		-0.5f, -0.5f, -0.5f,
+
+        		-0.5f, -0.5f,  0.5f,
+        		 0.5f, -0.5f,  0.5f,
+        		 0.5f,  0.5f,  0.5f,
+        		 0.5f,  0.5f,  0.5f,
+        		-0.5f,  0.5f,  0.5f,
+        		-0.5f, -0.5f,  0.5f,
+
+        		-0.5f,  0.5f,  0.5f,
+        		-0.5f,  0.5f, -0.5f,
+        		-0.5f, -0.5f, -0.5f,
+        		-0.5f, -0.5f, -0.5f,
+        		-0.5f, -0.5f,  0.5f,
+        		-0.5f,  0.5f,  0.5f,
+
+        		 0.5f,  0.5f,  0.5f,
+        		 0.5f,  0.5f, -0.5f,
+        		 0.5f, -0.5f, -0.5f,
+        		 0.5f, -0.5f, -0.5f,
+        		 0.5f, -0.5f,  0.5f,
+        		 0.5f,  0.5f,  0.5f,
+
+        		-0.5f, -0.5f, -0.5f,
+        		 0.5f, -0.5f, -0.5f,
+        		 0.5f, -0.5f,  0.5f,
+        		 0.5f, -0.5f,  0.5f,
+        		-0.5f, -0.5f,  0.5f,
+        		-0.5f, -0.5f, -0.5f,
+
+        		-0.5f,  0.5f, -0.5f,
+        		 0.5f,  0.5f, -0.5f,
+        		 0.5f,  0.5f,  0.5f,
+        		 0.5f,  0.5f,  0.5f,
+        		-0.5f,  0.5f,  0.5f,
+        		-0.5f,  0.5f, -0.5f
+			};
+			mesh.mNormals = {
+				glm::vec3( 0.0f,  0.0f, -1.0f),
+ 				glm::vec3( 0.0f,  0.0f, -1.0f),
+ 				glm::vec3( 0.0f,  0.0f, -1.0f),
+ 				glm::vec3( 0.0f,  0.0f, -1.0f),
+ 				glm::vec3( 0.0f,  0.0f, -1.0f),
+ 				glm::vec3( 0.0f,  0.0f, -1.0f),
+ 				glm::vec3( 0.0f,  0.0f,  1.0f),
+ 				glm::vec3( 0.0f,  0.0f,  1.0f),
+ 				glm::vec3( 0.0f,  0.0f,  1.0f),
+ 				glm::vec3( 0.0f,  0.0f,  1.0f),
+ 				glm::vec3( 0.0f,  0.0f,  1.0f),
+ 				glm::vec3( 0.0f,  0.0f,  1.0f),
+				glm::vec3(-1.0f,  0.0f,  0.0f),
+				glm::vec3(-1.0f,  0.0f,  0.0f),
+				glm::vec3(-1.0f,  0.0f,  0.0f),
+				glm::vec3(-1.0f,  0.0f,  0.0f),
+				glm::vec3(-1.0f,  0.0f,  0.0f),
+				glm::vec3(-1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 1.0f,  0.0f,  0.0f),
+ 				glm::vec3( 0.0f, -1.0f,  0.0f),
+ 				glm::vec3( 0.0f, -1.0f,  0.0f),
+ 				glm::vec3( 0.0f, -1.0f,  0.0f),
+ 				glm::vec3( 0.0f, -1.0f,  0.0f),
+ 				glm::vec3( 0.0f, -1.0f,  0.0f),
+ 				glm::vec3( 0.0f, -1.0f,  0.0f),
+ 				glm::vec3( 0.0f,  1.0f,  0.0f),
+ 				glm::vec3( 0.0f,  1.0f,  0.0f),
+ 				glm::vec3( 0.0f,  1.0f,  0.0f),
+ 				glm::vec3( 0.0f,  1.0f,  0.0f),
+ 				glm::vec3( 0.0f,  1.0f,  0.0f),
+ 				glm::vec3( 0.0f,  1.0f,  0.0f)
+			};
 			initialiseMesh(mesh);
 			mMeshes.insert({mesh.mName, mesh});
 		}
