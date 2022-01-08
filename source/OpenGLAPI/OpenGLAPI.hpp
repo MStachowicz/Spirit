@@ -73,12 +73,6 @@ private:
 		void loadMesh(const Mesh& pMesh, const Shader& pShader);
 
 	private:
-		template <typename T>
-		static constexpr auto toIndex(T pEnum) noexcept // Returns the underlying type. Used to convert Shader::Attributes to indexes into arrays in mMeshGPUDataManager
-		{
-			return static_cast<std::underlying_type_t<T>>(pEnum);
-		}
-
 		// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO handle.
 		template <class T>
 		unsigned int bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute, const Shader& pShader);
@@ -122,7 +116,7 @@ private:
 		};
 
 		std::unordered_map<MeshID, std::unique_ptr<VAO>> mVAOs;
-		std::unordered_map<MeshID, std::array<std::unique_ptr<VBO>, toIndex(Shader::Attribute::Count)>> mVBOs;
+		std::unordered_map<MeshID, std::array<std::unique_ptr<VBO>, Shader::toIndex(Shader::Attribute::Count)>> mVBOs;
 		// Draw info is fetched every draw call. We store DrawInfo on the stack for faster access.
 		std::unordered_map<MeshID, DrawInfo> mDrawInfos;
 	};

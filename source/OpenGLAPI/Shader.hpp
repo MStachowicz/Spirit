@@ -1,6 +1,7 @@
 #pragma once
 
 #include "string"
+#include "array"
 #include "glm/fwd.hpp"
 
 // Handles the loading of GLSL shaders from file.
@@ -11,6 +12,11 @@ class Shader
 public:
     Shader(const std::string &pName);
 
+    template <typename T>
+	static constexpr auto toIndex(T pEnum) noexcept // Returns the underlying type. Used to convert Shader::Attributes to indexes into arrays in mMeshGPUDataManager
+	{
+		return static_cast<std::underlying_type_t<T>>(pEnum);
+	}
     enum class Attribute : unsigned int { Position3D, Normal3D, ColourRGB, TextureCoordinate2D, Count }; // The possible vertex attributes supported by OpenGLAPI GLSL shaders.
 
     int getAttributeLocation(const Attribute& pAttribute) const;       // Returns the location value of a specified attribute. This is specified as layout (location = 0) in GLSL shaders.

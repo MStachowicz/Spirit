@@ -127,19 +127,19 @@ void OpenGLAPI::GPUDataManager::assignVBOs(const Mesh& pMesh, const Shader& pSha
 	if (it != mVBOs.end())
 	{
 		// If this VBO was previously created it wll be replaced and the old VBO is freed from GPU memory.
-		it->second[toIndex(Shader::Attribute::Position3D)] 			= positionsVBO != 0 ? std::make_unique<VBO>(positionsVBO) : nullptr;
-		it->second[toIndex(Shader::Attribute::Normal3D)] 			= normalsVBO != 0 ? std::make_unique<VBO>(normalsVBO) : nullptr;
-		it->second[toIndex(Shader::Attribute::ColourRGB)] 			= coloursVBO != 0 ? std::make_unique<VBO>(coloursVBO) : nullptr;
-		it->second[toIndex(Shader::Attribute::TextureCoordinate2D)] = textureCoordinatesVBO != 0 ? std::make_unique<VBO>(textureCoordinatesVBO) : nullptr;
+		it->second[Shader::toIndex(Shader::Attribute::Position3D)] 			= positionsVBO != 0 ? std::make_unique<VBO>(positionsVBO) : nullptr;
+		it->second[Shader::toIndex(Shader::Attribute::Normal3D)] 			= normalsVBO != 0 ? std::make_unique<VBO>(normalsVBO) : nullptr;
+		it->second[Shader::toIndex(Shader::Attribute::ColourRGB)] 			= coloursVBO != 0 ? std::make_unique<VBO>(coloursVBO) : nullptr;
+		it->second[Shader::toIndex(Shader::Attribute::TextureCoordinate2D)] = textureCoordinatesVBO != 0 ? std::make_unique<VBO>(textureCoordinatesVBO) : nullptr;
 	}
 	else
 	{
 		// Creating a temporary array to be able to index by pAttribute into the storage.
-		std::array<std::unique_ptr<VBO>, toIndex(Shader::Attribute::Count)> toMove;
-		toMove[toIndex(Shader::Attribute::Position3D)] 			= positionsVBO != 0 ? std::make_unique<VBO>(positionsVBO) : nullptr;
-		toMove[toIndex(Shader::Attribute::Normal3D)] 			= normalsVBO != 0 ? std::make_unique<VBO>(normalsVBO) : nullptr;
-		toMove[toIndex(Shader::Attribute::ColourRGB)] 			= coloursVBO != 0 ? std::make_unique<VBO>(coloursVBO) : nullptr;
-		toMove[toIndex(Shader::Attribute::TextureCoordinate2D)] = textureCoordinatesVBO != 0 ? std::make_unique<VBO>(textureCoordinatesVBO) : nullptr;
+		std::array<std::unique_ptr<VBO>, Shader::toIndex(Shader::Attribute::Count)> toMove;
+		toMove[Shader::toIndex(Shader::Attribute::Position3D)] 			= positionsVBO != 0 ? std::make_unique<VBO>(positionsVBO) : nullptr;
+		toMove[Shader::toIndex(Shader::Attribute::Normal3D)] 			= normalsVBO != 0 ? std::make_unique<VBO>(normalsVBO) : nullptr;
+		toMove[Shader::toIndex(Shader::Attribute::ColourRGB)] 			= coloursVBO != 0 ? std::make_unique<VBO>(coloursVBO) : nullptr;
+		toMove[Shader::toIndex(Shader::Attribute::TextureCoordinate2D)] = textureCoordinatesVBO != 0 ? std::make_unique<VBO>(textureCoordinatesVBO) : nullptr;
 
 		mVBOs.emplace(std::make_pair(pMesh.mID, std::move(toMove)));
 	}
