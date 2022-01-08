@@ -56,7 +56,7 @@ void Shader::load()
 	LOG_INFO("Shader '{}' loaded given ID: {}", mName, mHandle);
 }
 
-void Shader::use()
+void Shader::use() const
 {
 	glUseProgram(mHandle);
 	shaderInUse = this;
@@ -65,7 +65,7 @@ void Shader::use()
 int Shader::getAttributeLocation(const Attribute& pAttribute) const
 {
 	const GLint location = glGetAttribLocation(mHandle, getAttributeName(pAttribute).c_str());
-	ZEPHYR_ASSERT(location != -1, "Failed to find the location of {} in shader {}.", pName, mName);
+	ZEPHYR_ASSERT(location != -1, "Failed to find the location of {} in shader {}.", getAttributeName(pAttribute).c_str(), mName);
 	return static_cast<int>(location);
 }
 
