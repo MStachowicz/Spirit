@@ -1,10 +1,13 @@
 #pragma once
 
-#include "OpenGLWindow.hpp"
 #include "GraphicsAPI.hpp"
 
-#include "unordered_map"
+#include "OpenGLWindow.hpp"
+#include "Shader.hpp"
+
 #include "glm/mat4x4.hpp" // mat4, dmat4
+#include "unordered_map"
+#include <array>
 
 struct GladGLContext;
 
@@ -33,54 +36,97 @@ private:
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
 	glm::mat4 mViewMatrix; // Cached view matrix the active camera has been set to. Updated via callback using setView()
 
-	OpenGLWindow mWindow;
+	// The window and GLAD context must be first declared to enforce the correct initialisation order:
+	// ***************************************************************************************************
+	OpenGLWindow mWindow;		 // GLFW window which both GLFWInput and OpenGLAPI depend on for their construction.
 	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
 
-	struct Shader
-	{
-		Shader(const std::string& pName);
-		void use(); // Sets this as the active shader for the OpenGL state
-		int getAttributeLocation(const std::string &pName);
-
-		void setUniform(const std::string &pName, const bool& pValue);
-		void setUniform(const std::string &pName, const int& pValue);
-		void setUniform(const std::string &pName, const glm::mat4& pValue);
-	private:
-		int getUniformLocation(const std::string &pName);
-		void load();
-
-		std::string mName;
-		std::string mSourcePath;
-		unsigned int mHandle;
-
-		enum class Type { Vertex, Fragment, Program };
-
-		static inline Shader* shaderInUse = nullptr; // Keeps track of current Shader object set to use by OpenGL state. Used for error checking in checkForUseErrors().
-		static bool checkForUseErrors(const Shader& pCalledFrom);
-		static bool hasCompileErrors(const Type& pType, const unsigned int pID);
-	};
 	Shader mTextureShader;
+	Shader mMaterialShader;
 
 	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
 	struct DrawInfo
 	{
-		DrawInfo(Shader& pShader);
+		enum class DrawMethod{ Indices, Array, Null };
+		DrawInfo(const Shader& pShader);//, VAO&& mVAO);
 
-		Shader& mShaderID; // Shader used to make this draw call.
-		unsigned int mVAO;
-		unsigned int mVBO;
+		const Shader& mShaderID; // Shader used to make this draw call.
 		unsigned int mEBO;
 		unsigned int mDrawMode;
 		int mDrawSize; // Cached size of data used in draw, either size of Mesh positions or indices
-
-		enum class DrawMethod{ Indices, Array, Null };
 		DrawMethod mDrawMethod 		= DrawMethod::Null;
 
-	private:
 		static const unsigned int invalidHandle = 0;
 	};
-	const DrawInfo& getDrawInfo(const MeshID& pMeshID);
-	std::unordered_map<MeshID, DrawInfo> mMeshManager; 		// Mapping of a Mesh to how it should be drawn.
+
+	// Responsible for all the data this instance of OpenGLAPI has pushed to the GPU.
+	// Also stores information relevant to how a mesh should be drawn by default.
+	// All data is stored on a per Mesh basis.
+	class GPUDataManager
+	{
+	public:
+		// Bind this Mesh's VAO as the current in use.
+		void bindVAO(const MeshID& pMeshID);
+		// Get all the data required to draw this mesh in its default configuration.
+		const DrawInfo& getDrawInfo(const MeshID& pMeshID);
+		// Load the mesh into OpenGL by pushing all its available data to the GPU and assigning it a VAO to draw from.
+		void loadMesh(const Mesh& pMesh, const Shader& pShader);
+
+	private:
+		template <typename T>
+		static constexpr auto toIndex(T pEnum) noexcept // Returns the underlying type. Used to convert Shader::Attributes to indexes into arrays in mMeshGPUDataManager
+		{
+			return static_cast<std::underlying_type_t<T>>(pEnum);
+		}
+
+		// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO handle.
+		template <class T>
+		unsigned int bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute, const Shader& pShader);
+		void assignVAO(const MeshID& pMeshID);
+		void assignVBOs(const Mesh& pMesh, const Shader& pShader);
+		void assignDrawInfo(const MeshID& pMeshID, const DrawInfo& pDrawInfo);
+
+		// VBO represents some data pushed to the GPU.
+		// On destruction of VBO the data on the GPU is freed.
+		// Because of the above, VBO lifetime should be handled with dynamic memory and be wrapped as in
+		struct VBO
+		{
+			VBO(unsigned int pHandle) : mHandle(pHandle)
+			{}
+			~VBO();
+
+			// VBO is a move only type, we don't want to de-allocate the VBO handle on copy. Delete all copy operators.
+			VBO(VBO &&other) 		 			= default; 	// move constructor
+			VBO &operator=(VBO &&) 				= default;	// move assignment
+			VBO(const VBO &) 					= delete; 	// copy constructor
+			VBO &operator=(const VBO &) 		= delete; 	// copy assignment
+
+		private:
+			unsigned int mHandle;	// A mesh can push multiple attributes onto the GPU.
+		};
+		struct VAO
+		{
+			VAO();
+			~VAO();
+
+			void bind() const;
+
+			// VBO is a move only type, we don't want to de-allocate the VBO handle on copy. Delete all copy operators.
+			VAO(VAO &&other) 		 			= default; 	// move constructor
+			VAO &operator=(VAO &&) 				= default;	// move assignment
+			VAO(const VAO &) 					= delete; 	// copy constructor
+			VAO &operator=(const VAO &) 		= delete; 	// copy assignment
+
+		private:
+			unsigned int mHandle;	// A mesh can push multiple attributes onto the GPU.
+		};
+
+		std::unordered_map<MeshID, std::unique_ptr<VAO>> mVAOs;
+		std::unordered_map<MeshID, std::array<std::unique_ptr<VBO>, toIndex(Shader::Attribute::Count)>> mVBOs;
+		// Draw info is fetched every draw call. We store DrawInfo on the stack for faster access.
+		std::unordered_map<MeshID, DrawInfo> mDrawInfos;
+	};
+	GPUDataManager mDataManager;
 
 	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	static void windowSizeCallback(GLFWwindow *pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.

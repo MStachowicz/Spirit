@@ -18,6 +18,7 @@ OpenGLAPI::OpenGLAPI()
 	, mGLADContext(initialiseGLAD())
 	, mWindowClearColour{0.0f, 0.0f, 0.0f}
 	, mTextureShader("texture")
+	, mMaterialShader("material")
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
@@ -67,7 +68,7 @@ void OpenGLAPI::draw()
 	for (size_t i = 0; i < mDrawQueue.size(); i++)
 	{
 		// Grab the DrawInfo for the Mesh requested.
-		const DrawInfo& drawInfo = getDrawInfo(mDrawQueue[i].mMesh);
+		const DrawInfo& drawInfo = mDataManager.getDrawInfo(mDrawQueue[i].mMesh);
 		mTextureShader.use();
 
 		glm::mat4 trans = glm::translate(glm::mat4(1.0f), mDrawQueue[i].mPosition);
@@ -83,8 +84,7 @@ void OpenGLAPI::draw()
 		mTextureShader.setUniform("projection", projection);
 
 		glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(mDrawQueue[i].mDrawMode));
-
-		glBindVertexArray(drawInfo.mVAO);
+		mDataManager.bindVAO(mDrawQueue[i].mMesh);
 
 		if (mDrawQueue[i].mTexture.has_value())
 		{
@@ -110,40 +110,57 @@ void OpenGLAPI::draw()
 	mWindow.swapBuffers();
 }
 
-const OpenGLAPI::DrawInfo& OpenGLAPI::getDrawInfo(const MeshID& pMeshID)
+
+void OpenGLAPI::GPUDataManager::assignVBOs(const Mesh& pMesh, const Shader& pShader)
 {
-	const auto it = mMeshManager.find(pMeshID);
-	ZEPHYR_ASSERT(it != mMeshManager.end(), "Mesh ID does not exist in the mesh manager. Cannot return the draw info.");
-	return it->second;
-}
-
-void OpenGLAPI::initialiseMesh(const Mesh &pMesh)
-{
-	ZEPHYR_ASSERT(!pMesh.mVertices.empty(), "Cannot set a mesh handle for a mesh with no position data.")
-
-	const auto &it = mMeshManager.find(pMesh.mID);
-	ZEPHYR_ASSERT(it == mMeshManager.end(), "Calling initialiseMesh on a mesh already present in the mesh manager. This mesh is already initialised.")
-
-	DrawInfo drawInfo 		= DrawInfo(mTextureShader);
-	drawInfo.mDrawMode 		= GL_TRIANGLES; //OpenGLAPI only supports GL_TRIANGLES at this revision
-	drawInfo.mDrawMethod 	= pMesh.mIndices.empty() ? DrawInfo::DrawMethod::Array : DrawInfo::DrawMethod::Indices;
-	drawInfo.mDrawSize 		= pMesh.mIndices.empty() ? static_cast<int>(pMesh.mVertices.size()) : static_cast<int>(pMesh.mIndices.size());
-
-	drawInfo.mShaderID.use();
-	glGenVertexArrays(1, &drawInfo.mVAO);
-	glBindVertexArray(drawInfo.mVAO);
+	bindVAO(pMesh.mID); // Bind VAO first as following VBOs will be assigned to this VAO.
+	getDrawInfo(pMesh.mID).mShaderID.use();
 
 	// Per vertex attributes
-	{ // POSITIONS
-		unsigned int VBO;
-		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, pMesh.mVertices.size() * sizeof(float), &pMesh.mVertices.front(), GL_STATIC_DRAW);
+	unsigned int positionsVBO = bufferAttributeData<float>(pMesh.mVertices, Shader::Attribute::Position3D, pShader);
+	// Remaining data is optional:
+	unsigned int normalsVBO = bufferAttributeData<glm::vec3>(pMesh.mNormals, Shader::Attribute::Normal3D, pShader);
+	unsigned int coloursVBO = bufferAttributeData<float>(pMesh.mColours, Shader::Attribute::ColourRGB, pShader);
+	unsigned int textureCoordinatesVBO = bufferAttributeData<float>(pMesh.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D, pShader);
 
-		const GLint attributeIndex = static_cast<GLint>(drawInfo.mShaderID.getAttributeLocation("VertexPosition"));
-		glVertexAttribPointer(attributeIndex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-		glEnableVertexAttribArray(attributeIndex);
-	} // Remaining data is optional:
+	const auto it = mVBOs.find(pMesh.mID);
+	if (it != mVBOs.end())
+	{
+		// If this VBO was previously created it wll be replaced and the old VBO is freed from GPU memory.
+		it->second[toIndex(Shader::Attribute::Position3D)] 			= positionsVBO != 0 ? std::make_unique<VBO>(positionsVBO) : nullptr;
+		it->second[toIndex(Shader::Attribute::Normal3D)] 			= normalsVBO != 0 ? std::make_unique<VBO>(normalsVBO) : nullptr;
+		it->second[toIndex(Shader::Attribute::ColourRGB)] 			= coloursVBO != 0 ? std::make_unique<VBO>(coloursVBO) : nullptr;
+		it->second[toIndex(Shader::Attribute::TextureCoordinate2D)] = textureCoordinatesVBO != 0 ? std::make_unique<VBO>(textureCoordinatesVBO) : nullptr;
+	}
+	else
+	{
+		// Creating a temporary array to be able to index by pAttribute into the storage.
+		std::array<std::unique_ptr<VBO>, toIndex(Shader::Attribute::Count)> toMove;
+		toMove[toIndex(Shader::Attribute::Position3D)] 			= positionsVBO != 0 ? std::make_unique<VBO>(positionsVBO) : nullptr;
+		toMove[toIndex(Shader::Attribute::Normal3D)] 			= normalsVBO != 0 ? std::make_unique<VBO>(normalsVBO) : nullptr;
+		toMove[toIndex(Shader::Attribute::ColourRGB)] 			= coloursVBO != 0 ? std::make_unique<VBO>(coloursVBO) : nullptr;
+		toMove[toIndex(Shader::Attribute::TextureCoordinate2D)] = textureCoordinatesVBO != 0 ? std::make_unique<VBO>(textureCoordinatesVBO) : nullptr;
+
+		mVBOs.emplace(std::make_pair(pMesh.mID, std::move(toMove)));
+	}
+}
+
+void OpenGLAPI::GPUDataManager::loadMesh(const Mesh& pMesh, const Shader& pShader)
+{
+	ZEPHYR_ASSERT(!pMesh.mVertices.empty(), "Cannot set a mesh handle for a mesh with no position data.")
+	if (!pMesh.mColours.empty())
+		ZEPHYR_ASSERT(pMesh.mColours.size() == pMesh.mVertices.size(), ("Size of colour data ({}) does not match size of position data ({}), cannot buffer the colour data", pMesh.mColours.size(), pMesh.mVertices.size()));
+
+	assignVAO(pMesh.mID);
+	bindVAO(pMesh.mID);
+
+	DrawInfo drawInfo 		= DrawInfo(pShader);
+	drawInfo.mDrawMode 		= GL_TRIANGLES;	// OpenGLAPI only supports GL_TRIANGLES at this revision
+	drawInfo.mDrawMethod 	= pMesh.mIndices.empty() ? DrawInfo::DrawMethod::Array : DrawInfo::DrawMethod::Indices;
+	drawInfo.mDrawSize 		= pMesh.mIndices.empty() ? static_cast<int>(pMesh.mVertices.size()) : static_cast<int>(pMesh.mIndices.size());
+	drawInfo.mShaderID.use();
+
+	assignDrawInfo(pMesh.mID, drawInfo);
 
 	if (!pMesh.mIndices.empty())
 	{ // INDICES (Element buffer - re-using data)
@@ -153,31 +170,103 @@ void OpenGLAPI::initialiseMesh(const Mesh &pMesh)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, pMesh.mIndices.size() * sizeof(int), &pMesh.mIndices.front(), GL_STATIC_DRAW);
 	}
 
-	if (!pMesh.mColours.empty())
-	{ // COLOURS
-		ZEPHYR_ASSERT(pMesh.mColours.size() == pMesh.mVertices.size(), ("Size of colour data ({}) does not match size of position data ({}), cannot buffer the colour data", pMesh.mColours.size(), pMesh.mVertices.size()));
+	assignVBOs(pMesh, drawInfo.mShaderID);
+}
 
-		unsigned int VBO;
-		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, pMesh.mColours.size() * sizeof(float), &pMesh.mColours.front(), GL_STATIC_DRAW);
-		const GLint attributeIndex = static_cast<GLint>(drawInfo.mShaderID.getAttributeLocation("VertexColour"));
-		glVertexAttribPointer(attributeIndex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-		glEnableVertexAttribArray(attributeIndex);
-	}
-	if (!pMesh.mTextureCoordinates.empty())
-	{ // TEXTURE COORDINATES
-		unsigned int VBO;
-		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, pMesh.mTextureCoordinates.size() * sizeof(float), &pMesh.mTextureCoordinates.front(), GL_STATIC_DRAW);
-		const GLint attributeIndex = static_cast<GLint>(drawInfo.mShaderID.getAttributeLocation("VertexTexCoord"));
-		glVertexAttribPointer(attributeIndex, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
-		glEnableVertexAttribArray(attributeIndex);
-	}
-
+void OpenGLAPI::initialiseMesh(const Mesh &pMesh)
+{
+	mDataManager.loadMesh(pMesh, !pMesh.mNormals.empty() ? mMaterialShader : mTextureShader);
 	LOG_INFO("Mesh '{}' loaded given ID: {}", pMesh.mName, pMesh.mID);
-	mMeshManager.insert({pMesh.mID, drawInfo});
+}
+
+const OpenGLAPI::DrawInfo& OpenGLAPI::GPUDataManager::getDrawInfo(const MeshID& pMeshID)
+{
+	const auto it = mDrawInfos.find(pMeshID);
+	ZEPHYR_ASSERT(it != mDrawInfos.end(), "No draw info found for this Mesh ID. Was the mesh correctly initialised?");
+	return it->second;
+}
+
+OpenGLAPI::DrawInfo::DrawInfo(const Shader& pShader)
+	: mShaderID(pShader)
+	, mEBO(invalidHandle)
+	, mDrawMode(invalidHandle)
+	, mDrawSize(invalidHandle)
+	, mDrawMethod(DrawMethod::Null)
+{}
+
+void OpenGLAPI::GPUDataManager::assignVAO(const MeshID& pMeshID)
+{
+	mVAOs.emplace(std::make_pair(pMeshID, std::move(std::make_unique<VAO>())));
+}
+
+void OpenGLAPI::GPUDataManager::bindVAO(const MeshID& pMeshID)
+{
+	const auto it = mVAOs.find(pMeshID);
+	ZEPHYR_ASSERT(it != mVAOs.end(), "Trying to bind a VAO that doesnt exist. Iniitalise this mesh before calling bindVAO.", pMeshID)
+	it->second->bind();
+}
+
+void OpenGLAPI::GPUDataManager::assignDrawInfo(const MeshID& pMeshID, const DrawInfo& pDrawInfo)
+{
+	mDrawInfos.emplace(std::make_pair(pMeshID, pDrawInfo));
+}
+
+void OpenGLAPI::GPUDataManager::VAO::bind() const
+{
+	glBindVertexArray(mHandle);
+}
+
+OpenGLAPI::GPUDataManager::VAO::VAO()
+: mHandle(0)
+{
+	glGenVertexArrays(1, &mHandle);
+}
+
+OpenGLAPI::GPUDataManager::VAO::~VAO()
+{
+	//throw std::logic_error( "Not allowed to delete yet" );
+	glDeleteVertexArrays(1, &mHandle);
+}
+OpenGLAPI::GPUDataManager::VBO::~VBO()
+{
+	//throw std::logic_error( "Not allowed to delete yet" );
+	glDeleteBuffers(1, &mHandle);
+}
+
+
+template<class T>
+int getGLFWType()
+{
+	if (constexpr(std::is_same_v<T, int>))
+		return GL_INT;
+	else if (constexpr(std::is_same_v<T, float>))
+		return GL_FLOAT;
+	else if (constexpr(std::is_same_v<T, glm::vec3>))
+		return GL_FLOAT;
+	else
+	{
+		ZEPHYR_ASSERT(false, "Could not convert the template type to a GLFW type.")
+		return -1;
+	}
+};
+
+template <class T>
+unsigned int OpenGLAPI::GPUDataManager::bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute, const Shader& pShader)
+{
+	unsigned int VBOHandle = 0;
+
+	if (!pData.empty())
+	{
+		glGenBuffers(1, &VBOHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, VBOHandle);
+		glBufferData(GL_ARRAY_BUFFER, pData.size() * sizeof(T), &pData.front(), GL_STATIC_DRAW);
+		const GLint attributeIndex = static_cast<GLint>(pShader.getAttributeLocation(pAttribute));
+		const GLint attributeComponentCount = static_cast<GLint>(pShader.getAttributeComponentCount(pAttribute));
+		glVertexAttribPointer(attributeIndex, attributeComponentCount, getGLFWType<T>(), GL_FALSE, attributeComponentCount * sizeof(T), (void *)0);
+		glEnableVertexAttribArray(attributeIndex);
+	}
+
+	return VBOHandle;
 }
 
 int OpenGLAPI::getPolygonMode(const DrawCall::DrawMode& pDrawMode)
@@ -236,151 +325,6 @@ unsigned int OpenGLAPI::loadTexture(const std::string &pFileName)
 
 	return textureID;
 }
-
-OpenGLAPI::Shader::Shader(const std::string &pName)
-	: mName(pName)
-	, mSourcePath(File::GLSLShaderDirectory)
-{
-	load();
-}
-
-void OpenGLAPI::Shader::use()
-{
-	glUseProgram(mHandle);
-	shaderInUse = this;
-}
-
-int OpenGLAPI::Shader::getAttributeLocation(const std::string &pName)
-{
-	const GLint location = glGetAttribLocation(mHandle, pName.c_str());
-	ZEPHYR_ASSERT(location != -1, "Failed to find the location of {} in shader {}.", pName, mName);
-	return static_cast<int>(location);
-}
-
-int OpenGLAPI::Shader::getUniformLocation(const std::string &pName)
-{
-	int location = glGetUniformLocation(mHandle, pName.c_str());
-	// TODO: assert iterate over the loaded shaders to see if the shader ID exists
-	ZEPHYR_ASSERT(location != GL_INVALID_VALUE, "ShaderID is not a value generated by OpenGL");
-	ZEPHYR_ASSERT(location != GL_INVALID_OPERATION, "ShaderID is not a program object or has not been successfully linked");
-	ZEPHYR_ASSERT(location != -1, "UniformName does not correspond to an active uniform variable in ShaderID or UniformName starts with the reserved prefix 'gl_'");
-
-	return location;
-}
-
-bool OpenGLAPI::Shader::checkForUseErrors(const Shader& pCalledFrom)
-{
-	if (!shaderInUse)
-	{
-		LOG_ERROR("No shader has been set to current in OpenGL state, call Shader::Use() before trying to set a uniform.");
-		return false;
-	}
-	if (shaderInUse != &pCalledFrom)
-	{
-		LOG_ERROR("Trying to set a uniform on a shader not current in OpenGL state, call Shader::Use() before trying to set a uniform.");
-		return false;
-	}
-	else
-		return true;
-}
-
-void OpenGLAPI::Shader::setUniform(const std::string &pName, const bool &pValue)
-{
-	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
-	glUniform1i(getUniformLocation(pName), (int)pValue); // Setting a boolean is treated as integer for gl shaders
-}
-
-void OpenGLAPI::Shader::setUniform(const std::string &pName, const int &pValue)
-{
-	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
-	glUniform1i(getUniformLocation(pName), (GLint)pValue);
-}
-
-void OpenGLAPI::Shader::setUniform(const std::string &pName, const glm::mat4 &pValue)
-{
-	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
-	glUniformMatrix4fv(getUniformLocation(pName), 1, GL_FALSE, glm::value_ptr(pValue));
-}
-
-bool OpenGLAPI::Shader::hasCompileErrors(const Type& pType, const unsigned int pID)
-{
-	int success;
-	if (pType == Type::Program)
-	{
-		glGetProgramiv(pID, GL_LINK_STATUS, &success);
-		if (!success)
-		{
-			char infoLog[1024];
-			glGetProgramInfoLog(pID, 1024, NULL, infoLog);
-			LOG_ERROR("Program linking failed with info: {}", infoLog);
-			return true;
-		}
-	}
-	else
-	{
-		glGetShaderiv(pID, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			char infoLog[1024];
-			glGetShaderInfoLog(pID, 1024, NULL, infoLog);
-			LOG_ERROR("Shader compilation failed with info: {}", infoLog);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void OpenGLAPI::Shader::load()
-{
-	const std::string vertexShaderPath 		= mSourcePath + mName + ".vert";
-	const std::string fragmentShaderPath 	= mSourcePath + mName + ".frag";
-	ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
-	ZEPHYR_ASSERT(File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath);
-
-	unsigned int vertexShader;
-	{
-		vertexShader = glCreateShader(GL_VERTEX_SHADER);
-		std::string source = File::readFromFile(vertexShaderPath);
-		const char *vertexShaderSource = source.c_str();
-		glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-		glCompileShader(vertexShader);
-		ZEPHYR_ASSERT(!hasCompileErrors(Type::Vertex, vertexShader), "Failed to compile vertex shader {}", mName + ".vert")
-	}
-
-	unsigned int fragmentShader;
-	{
-		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-		std::string source = File::readFromFile(fragmentShaderPath);
-		const char *fragmentShaderSource = source.c_str();
-		glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-		glCompileShader(fragmentShader);
-		ZEPHYR_ASSERT(!hasCompileErrors(Type::Fragment, fragmentShader), "Failed to compile fragment shader {}", mName + ".frag")
-	}
-
-	{
-		mHandle = glCreateProgram();
-		glAttachShader(mHandle, vertexShader);
-		glAttachShader(mHandle, fragmentShader);
-		glLinkProgram(mHandle);
-		ZEPHYR_ASSERT(!hasCompileErrors(Type::Program, mHandle), "Failed to link shader {}", mName)
-	}
-
-	// Delete the shaders after linking as they're no longer needed
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-	LOG_INFO("Shader '{}' loaded given ID: {}", mName, mHandle);
-}
-
-OpenGLAPI::DrawInfo::DrawInfo(Shader &pShader)
-	: mShaderID(pShader)
-	, mVAO(invalidHandle)
-	, mVBO(invalidHandle)
-	, mEBO(invalidHandle)
-	, mDrawMode(invalidHandle)
-	, mDrawSize(invalidHandle)
-	, mDrawMethod(DrawMethod::Null)
-{}
 
 GladGLContext* OpenGLAPI::initialiseGLAD()
 {
