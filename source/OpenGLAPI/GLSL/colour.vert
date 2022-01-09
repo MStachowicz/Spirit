@@ -1,16 +1,16 @@
 #version 330 core
 
 layout (location = 0) in vec3 VertexPosition;
-layout (location = 3) in vec2 VertexTexCoord;
+layout (location = 2) in vec3 VertexColour;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec2 TexCoord;
+out vec4 FragmentColour;
 
 void main()
 {
     gl_Position = projection * view * model * vec4(VertexPosition, 1.0);
-	TexCoord = vec2(VertexTexCoord.x, VertexTexCoord.y);
+	FragmentColour = vec4(VertexColour, 1.0);
 }
