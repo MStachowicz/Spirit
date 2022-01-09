@@ -39,7 +39,8 @@ public:
 	virtual void setView(const glm::mat4& pViewMatrix) = 0;
 protected:
 	struct Mesh;
-	virtual void initialiseMesh(const Mesh& pMesh) = 0; // Sets up the mesh for processing DrawCalls from the mDrawQueue queue.
+	// Sets up the mesh for processing DrawCalls from the mDrawQueue queue.
+	virtual void initialiseMesh(const Mesh& pMesh) = 0;
 
 
 public:
@@ -49,9 +50,9 @@ public:
 	// Add the draw call to the draw queue, the call is subsequently executed using Draw()
 	MeshID getMeshID(const std::string& pMeshName)
 	{
-		const auto it = mMeshes.find(pMeshName);
-		ZEPHYR_ASSERT(it != mMeshes.end(), "Searching for a mesh that does not exist in Mesh store.");
-		return it->second.mID;
+		const auto it = mMeshNames.find(pMeshName);
+		ZEPHYR_ASSERT(it != mMeshNames.end(), "Searching for a mesh that does not exist in Mesh store.");
+		return it->second;
 	}
 	TextureID getTextureID(const std::string& pTextureName)
 	{
@@ -67,6 +68,7 @@ protected:
 
 		const MeshID mID; // Unique ID to map this mesh to DrawInfo within the graphics context being used.
 		std::string mName;
+		std::vector<std::string> mAttributes;
 
 		std::vector<float> mVertices;			// Per-vertex position attributes.
 		std::vector<glm::vec3> mNormals;		// Per-vertex normal attributes.
@@ -78,14 +80,23 @@ protected:
 	};
 
 	std::vector<DrawCall> mDrawQueue;
-	std::unordered_map<std::string, Mesh> mMeshes;
+	std::unordered_map<MeshID, Mesh> mMeshes;
+	std::unordered_map<std::string, MeshID> mMeshNames;
 	std::unordered_map<std::string, TextureID> mTextures;
+
+	void addMesh(const Mesh& pMesh)
+	{
+		mMeshes.emplace(std::make_pair(pMesh.mID, pMesh));
+		mMeshNames.emplace(std::make_pair(pMesh.mName, pMesh.mID));
+		initialiseMesh(pMesh);
+	}
 
 	void buildMeshes() // Populates Meshes with some commonly used shapes
 	{
 		{ // 2D TRIANGLE
 			Mesh mesh;
-			mesh.mName = "Triangle";
+			mesh.mName = "2DTriangle";
+			mesh.mAttributes = {"Position", "Colour", "Texture Coordinates"};
 			mesh.mVertices = {
 				-1.0f, -1.0f, 0.0f, // Left
 				 1.0f, -1.0f, 0.0f, // Right
@@ -101,13 +112,12 @@ protected:
 				1.0f, 0.0f,
 				0.5f, 1.0f
 			};
-
-			initialiseMesh(mesh);
-			mMeshes.insert({mesh.mName, mesh});
+			addMesh(mesh);
 		}
 		{ // 2D SQUARE
 			Mesh mesh;
-			mesh.mName = "Square";
+			mesh.mName = "2DSquare";
+			mesh.mAttributes = {"Position", "Colour", "Texture Coordinates"};
 			mesh.mVertices = {
 				-1.0f,  1.0f,  0.0f, // Top left
 				-1.0f, -1.0f,  0.0f, // Bottom left
@@ -130,95 +140,7 @@ protected:
 				0, 1, 3, // first triangle
 				1, 2, 3	 // second triangle
 				};
-			initialiseMesh(mesh);
-			mMeshes.insert({mesh.mName, mesh});
-		}
-		{ // 3D CUBE (supported attributes: VertexPosition, VertexTexCoord (2D))
-			Mesh mesh;
-			mesh.mName = "Cube";
-			mesh.mVertices = {
-					-0.5f, -0.5f, -0.5f,
-        			 0.5f, -0.5f, -0.5f,
-        			 0.5f,  0.5f, -0.5f,
-        			 0.5f,  0.5f, -0.5f,
-        			-0.5f,  0.5f, -0.5f,
-        			-0.5f, -0.5f, -0.5f,
-
-        			-0.5f, -0.5f,  0.5f,
-        			 0.5f, -0.5f,  0.5f,
-        			 0.5f,  0.5f,  0.5f,
-        			 0.5f,  0.5f,  0.5f,
-        			-0.5f,  0.5f,  0.5f,
-        			-0.5f, -0.5f,  0.5f,
-
-        			-0.5f,  0.5f,  0.5f,
-        			-0.5f,  0.5f, -0.5f,
-        			-0.5f, -0.5f, -0.5f,
-        			-0.5f, -0.5f, -0.5f,
-        			-0.5f, -0.5f,  0.5f,
-        			-0.5f,  0.5f,  0.5f,
-
-        			 0.5f,  0.5f,  0.5f,
-        			 0.5f,  0.5f, -0.5f,
-        			 0.5f, -0.5f, -0.5f,
-        			 0.5f, -0.5f, -0.5f,
-        			 0.5f, -0.5f,  0.5f,
-        			 0.5f,  0.5f,  0.5f,
-
-        			-0.5f, -0.5f, -0.5f,
-        			 0.5f, -0.5f, -0.5f,
-        			 0.5f, -0.5f,  0.5f,
-        			 0.5f, -0.5f,  0.5f,
-        			-0.5f, -0.5f,  0.5f,
-        			-0.5f, -0.5f, -0.5f,
-
-        			-0.5f,  0.5f, -0.5f,
-        			 0.5f,  0.5f, -0.5f,
-        			 0.5f,  0.5f,  0.5f,
-        			 0.5f,  0.5f,  0.5f,
-        			-0.5f,  0.5f,  0.5f,
-        			-0.5f,  0.5f, -0.5f
-				};
-			mesh.mTextureCoordinates = {
-					0.0f, 0.0f,
-					1.0f, 0.0f,
-					1.0f, 1.0f,
-					1.0f, 1.0f,
-					0.0f, 1.0f,
-					0.0f, 0.0f,
-					0.0f, 0.0f,
-					1.0f, 0.0f,
-					1.0f, 1.0f,
-					1.0f, 1.0f,
-					0.0f, 1.0f,
-					0.0f, 0.0f,
-					1.0f, 0.0f,
-					1.0f, 1.0f,
-					0.0f, 1.0f,
-					0.0f, 1.0f,
-					0.0f, 0.0f,
-					1.0f, 0.0f,
-					1.0f, 0.0f,
-					1.0f, 1.0f,
-					0.0f, 1.0f,
-					0.0f, 1.0f,
-					0.0f, 0.0f,
-					1.0f, 0.0f,
-					0.0f, 1.0f,
-					1.0f, 1.0f,
-					1.0f, 0.0f,
-					1.0f, 0.0f,
-					0.0f, 0.0f,
-					0.0f, 1.0f,
-					0.0f, 1.0f,
-					1.0f, 1.0f,
-					1.0f, 0.0f,
-					1.0f, 0.0f,
-					0.0f, 0.0f,
-					0.0f, 1.0f
-				};
-			initialiseMesh(mesh);
-			mMeshes.insert({mesh.mName, mesh});
+			addMesh(mesh);
 		}
 		{ // 3D CUBE (supported attributes: VertexPosition, VertexColour) + Indexed drawing (EBO)
 			//	   0----------1
@@ -231,7 +153,8 @@ protected:
 			//	|/         |/
 			//	6----------7
 			Mesh mesh;
-			mesh.mName = "CubeIndices";
+			mesh.mName = "3DCubeIndex";
+			mesh.mAttributes = {"Position", "Colour"};
 			mesh.mIndices = {
 				0, 1, 2, // Top 1
 				1, 2, 3, // Top 2
@@ -277,12 +200,12 @@ protected:
 			//	x,x,x,// 6
 			//	x,x,x// 7
 			//	};
-			initialiseMesh(mesh);
-			mMeshes.insert({mesh.mName, mesh});
+			addMesh(mesh);
 		}
-		{ // 3D CUBE (supported attributes: VertexPosition, VertexNormal)
+		{ // 3D CUBE (supported vertex attributes: Position, Texture coordinates(2D), Normal, Colour)
 		Mesh mesh;
-			mesh.mName = "CubeLighting";
+			mesh.mName = "3DCube";
+			mesh.mAttributes = {"Position", "Texture Coordinate", "Normal", "Colour"};
 			mesh.mVertices = {
 				-0.5f, -0.5f, -0.5f,
         		 0.5f, -0.5f, -0.5f,
@@ -364,8 +287,84 @@ protected:
  				glm::vec3( 0.0f,  1.0f,  0.0f),
  				glm::vec3( 0.0f,  1.0f,  0.0f)
 			};
-			initialiseMesh(mesh);
-			mMeshes.insert({mesh.mName, mesh});
+			mesh.mTextureCoordinates = {
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 0.0f,
+					1.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 1.0f,
+					0.0f, 0.0f,
+					1.0f, 0.0f,
+					0.0f, 1.0f,
+					1.0f, 1.0f,
+					1.0f, 0.0f,
+					1.0f, 0.0f,
+					0.0f, 0.0f,
+					0.0f, 1.0f,
+					0.0f, 1.0f,
+					1.0f, 1.0f,
+					1.0f, 0.0f,
+					1.0f, 0.0f,
+					0.0f, 0.0f,
+					0.0f, 1.0f
+				};
+			const glm::vec3 colour = glm::vec3(0.0f, 0.0f, 1.0f);
+			mesh.mColours = {
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b,
+				colour.r, colour.g, colour.b
+				};
+			addMesh(mesh);
 		}
 
 		for (const auto& mesh : mMeshes)
