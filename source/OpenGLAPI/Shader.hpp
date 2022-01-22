@@ -34,6 +34,12 @@ public:
     void use() const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
     void setUniform(const std::string& pName, const bool& pValue) const;
     void setUniform(const std::string& pName, const int& pValue) const;
+    void setUniform(const std::string& pName, const float& pValue) const;
+    void setUniform(const std::string& pName, const glm::vec2& pValue) const;
+    void setUniform(const std::string& pName, const glm::vec3& pValue) const;
+    void setUniform(const std::string& pName, const glm::vec4& pValue) const;
+    void setUniform(const std::string& pName, const glm::mat2& pValue) const;
+    void setUniform(const std::string& pName, const glm::mat3& pValue) const;
     void setUniform(const std::string& pName, const glm::mat4& pValue) const;
 
     // Returns the number of components the specified attribute consists of.

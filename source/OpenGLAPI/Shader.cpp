@@ -157,6 +157,43 @@ void Shader::setUniform(const std::string& pName, const int& pValue) const
 	glUniform1i(getUniformLocation(pName), (GLint)pValue);
 }
 
+void Shader::setUniform(const std::string& pName, const float& pValue) const
+{
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
+	glUniform1f(getUniformLocation(pName), pValue);
+}
+
+void Shader::setUniform(const std::string& pName, const glm::vec2& pValue) const
+{
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
+	glUniform2fv(getUniformLocation(pName), 1, &pValue[0]);
+}
+
+void Shader::setUniform(const std::string &pName, const glm::vec3 &pValue) const
+{
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
+	glUniform3fv(getUniformLocation(pName), 1, &pValue[0]);
+}
+
+void Shader::setUniform(const std::string &pName, const glm::vec4 &pValue) const
+{
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
+	glUniform4fv(getUniformLocation(pName), 1, &pValue[0]);
+}
+
+
+void Shader::setUniform(const std::string& pName, const glm::mat2& pValue) const
+{
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
+	glUniformMatrix2fv(getUniformLocation(pName), 1, GL_FALSE, &pValue[0][0]);
+}
+
+void Shader::setUniform(const std::string& pName, const glm::mat3& pValue) const
+{
+	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
+	glUniformMatrix3fv(getUniformLocation(pName), 1, GL_FALSE, &pValue[0][0]);
+}
+
 void Shader::setUniform(const std::string& pName, const glm::mat4& pValue) const
 {
 	ZEPHYR_ASSERT(checkForUseErrors(*this), "Trying to set uniforms on a shader ({}) without calling use() before.", mName);
