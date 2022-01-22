@@ -32,7 +32,6 @@ private:
 	int getPolygonMode(const DrawCall::DrawMode& pDrawMode);
 
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
-	const size_t cMaxTextureUnits; // The limit on the number of texture units available in the shaders using sampler2D
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
 	glm::mat4 mViewMatrix; // Cached view matrix the active camera has been set to. Updated via callback using setView()
 
@@ -41,20 +40,18 @@ private:
 	OpenGLWindow mWindow;		 // GLFW window which both GLFWInput and OpenGLAPI depend on for their construction.
 	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
 
-	Shader mTextureShader;
-	Shader mMaterialShader;
-
 	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
 	struct DrawInfo
 	{
 		enum class DrawMethod{ Indices, Array, Null };
-		DrawInfo(const Shader& pShader);//, VAO&& mVAO);
+		DrawInfo();
 
-		const Shader& mShaderID; // Shader used to make this draw call.
+		const Shader* activeShader; // Shader used to draw
+		std::vector<const Shader*> mShadersAvailable; // All the available shaders that can be drawn with.
 		unsigned int mEBO;
 		unsigned int mDrawMode;
 		int mDrawSize; // Cached size of data used in draw, either size of Mesh positions or indices
-		DrawMethod mDrawMethod 		= DrawMethod::Null;
+		DrawMethod mDrawMethod = DrawMethod::Null;
 
 		static const unsigned int invalidHandle = 0;
 	};
@@ -70,15 +67,20 @@ private:
 		// Get all the data required to draw this mesh in its default configuration.
 		const DrawInfo& getDrawInfo(const MeshID& pMeshID);
 		// Load the mesh into OpenGL by pushing all its available data to the GPU and assigning it a VAO to draw from.
-		void loadMesh(const Mesh& pMesh, const Shader& pShader);
+		void loadMesh(const Mesh& pMesh);
 
+		std::vector<Shader> mShaders;
+		// Draw info is fetched every draw call.
+		// @PERFORMANCE We should store DrawInfo on the stack for faster access.
+		std::unordered_map<MeshID, DrawInfo> mDrawInfos;
 	private:
 		// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO handle.
 		template <class T>
-		unsigned int bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute, const Shader& pShader);
+		unsigned int bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute);
 		void assignVAO(const MeshID& pMeshID);
-		void assignVBOs(const Mesh& pMesh, const Shader& pShader);
 		void assignDrawInfo(const MeshID& pMeshID, const DrawInfo& pDrawInfo);
+
+		static bool isMeshValidForShader(const Mesh& pMesh, const Shader& pShader);
 
 		// VBO represents some data pushed to the GPU.
 		// On destruction of VBO the data on the GPU is freed.
@@ -117,8 +119,7 @@ private:
 
 		std::unordered_map<MeshID, std::unique_ptr<VAO>> mVAOs;
 		std::unordered_map<MeshID, std::array<std::unique_ptr<VBO>, Shader::toIndex(Shader::Attribute::Count)>> mVBOs;
-		// Draw info is fetched every draw call. We store DrawInfo on the stack for faster access.
-		std::unordered_map<MeshID, DrawInfo> mDrawInfos;
+
 	};
 	GPUDataManager mDataManager;
 
