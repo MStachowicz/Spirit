@@ -44,11 +44,6 @@ void OpenGLAPI::clearBuffers()
 	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLAPI::setView(const glm::mat4 &pViewMatrix)
-{
-	mViewMatrix = pViewMatrix;
-};
-
 void OpenGLAPI::onFrameStart()
 {
 	clearBuffers();
@@ -107,6 +102,27 @@ void OpenGLAPI::draw()
 
 		glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(mDrawQueue[i].mDrawMode));
 		mDataManager.bindVAO(mDrawQueue[i].mMesh);
+
+		if (shader->getName() == "material")
+		{
+			shader->setUniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+			shader->setUniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+			shader->setUniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+			shader->setUniform("material.shininess", 32.0f);
+
+			mLightManager.getPointLights().ForEach([&shader](const PointLight& pointLight)
+			{
+				glm::vec3 diffuseColour = pointLight.mColour * pointLight.mDiffuse;
+				glm::vec3 ambientColour = diffuseColour * pointLight.mAmbient;
+
+				shader->setUniform("light.ambient", ambientColour);
+				shader->setUniform("light.diffuse", diffuseColour);
+				shader->setUniform("light.specular", pointLight.mSpecular);
+				shader->setUniform("light.position", pointLight.mPosition);
+			});
+
+			shader->setUniform("viewPosition", mViewPosition);
+		}
 
 		if (mDrawQueue[i].mTexture.has_value() && shader->getTexturesUnitsCount() > 0)
 		{
@@ -193,7 +209,7 @@ void OpenGLAPI::GPUDataManager::loadMesh(const Mesh& pMesh)
 	// Per vertex attributes
 	unsigned int positionsVBO		 		= bufferAttributeData<float>(pMesh.mVertices, Shader::Attribute::Position3D);
 	// Remaining data is optional:
-	unsigned int normalsVBO 				= bufferAttributeData<glm::vec3>(pMesh.mNormals, Shader::Attribute::Normal3D);
+	unsigned int normalsVBO 				= bufferAttributeData<float>(pMesh.mNormals, Shader::Attribute::Normal3D);
 	unsigned int coloursVBO 				= bufferAttributeData<float>(pMesh.mColours, Shader::Attribute::ColourRGB);
 	unsigned int textureCoordinatesVBO		= bufferAttributeData<float>(pMesh.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
 

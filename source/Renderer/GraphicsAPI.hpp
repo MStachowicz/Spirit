@@ -2,8 +2,10 @@
 
 #include "Logger.hpp"
 
+#include "LightManager.hpp"
+
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
-#include <glm/fwd.hpp>
+#include "glm/mat4x4.hpp" // mat4, dmat4
 
 #include "vector"
 #include "string"
@@ -36,12 +38,18 @@ class GraphicsAPI
 public:
 	virtual void draw() 		= 0; // Executes the draw queue.
 	virtual void onFrameStart() = 0; // Call this before any engine updates occur.
-	virtual void setView(const glm::mat4& pViewMatrix) = 0;
+
+	void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
+	void setViewPosition(const glm::vec3& pViewPosition)
+	{
+		mViewPosition = pViewPosition;
+	}
+
 protected:
 	struct Mesh;
 	// Sets up the mesh for processing DrawCalls from the mDrawQueue queue.
 	virtual void initialiseMesh(const Mesh& pMesh) = 0;
-
+	LightManager mLightManager;
 
 public:
 	virtual ~GraphicsAPI() {}; // Context is an pure virtual interface used polymorphically.
@@ -61,6 +69,9 @@ public:
 		return it->second;
 	}
 protected:
+	glm::mat4 mViewMatrix; // The view matrix used in draw(), set in setView
+	glm::vec3 mViewPosition; // The view position used in draw(), set in setViewPosition
+
 	// Mesh stores all the vertex (and optionally index) data that a derived graphics API will use contextualise for draw calls supplied.
 	struct Mesh
 	{
@@ -71,7 +82,7 @@ protected:
 		std::vector<std::string> mAttributes;
 
 		std::vector<float> mVertices;			// Per-vertex position attributes.
-		std::vector<glm::vec3> mNormals;		// Per-vertex normal attributes.
+		std::vector<float> mNormals;			// Per-vertex normal attributes.
 		std::vector<float> mColours;			// Per-vertex colour attributes.
 		std::vector<float> mTextureCoordinates; // Per-vertex texture mapping.
 		std::vector<int> mIndices;				// Allows indexing into the mVertices and mColours data to specify an indexed draw order.
@@ -250,42 +261,42 @@ protected:
         		-0.5f,  0.5f, -0.5f
 			};
 			mesh.mNormals = {
-				glm::vec3( 0.0f,  0.0f, -1.0f),
- 				glm::vec3( 0.0f,  0.0f, -1.0f),
- 				glm::vec3( 0.0f,  0.0f, -1.0f),
- 				glm::vec3( 0.0f,  0.0f, -1.0f),
- 				glm::vec3( 0.0f,  0.0f, -1.0f),
- 				glm::vec3( 0.0f,  0.0f, -1.0f),
- 				glm::vec3( 0.0f,  0.0f,  1.0f),
- 				glm::vec3( 0.0f,  0.0f,  1.0f),
- 				glm::vec3( 0.0f,  0.0f,  1.0f),
- 				glm::vec3( 0.0f,  0.0f,  1.0f),
- 				glm::vec3( 0.0f,  0.0f,  1.0f),
- 				glm::vec3( 0.0f,  0.0f,  1.0f),
-				glm::vec3(-1.0f,  0.0f,  0.0f),
-				glm::vec3(-1.0f,  0.0f,  0.0f),
-				glm::vec3(-1.0f,  0.0f,  0.0f),
-				glm::vec3(-1.0f,  0.0f,  0.0f),
-				glm::vec3(-1.0f,  0.0f,  0.0f),
-				glm::vec3(-1.0f,  0.0f,  0.0f),
- 				glm::vec3( 1.0f,  0.0f,  0.0f),
- 				glm::vec3( 1.0f,  0.0f,  0.0f),
- 				glm::vec3( 1.0f,  0.0f,  0.0f),
- 				glm::vec3( 1.0f,  0.0f,  0.0f),
- 				glm::vec3( 1.0f,  0.0f,  0.0f),
- 				glm::vec3( 1.0f,  0.0f,  0.0f),
- 				glm::vec3( 0.0f, -1.0f,  0.0f),
- 				glm::vec3( 0.0f, -1.0f,  0.0f),
- 				glm::vec3( 0.0f, -1.0f,  0.0f),
- 				glm::vec3( 0.0f, -1.0f,  0.0f),
- 				glm::vec3( 0.0f, -1.0f,  0.0f),
- 				glm::vec3( 0.0f, -1.0f,  0.0f),
- 				glm::vec3( 0.0f,  1.0f,  0.0f),
- 				glm::vec3( 0.0f,  1.0f,  0.0f),
- 				glm::vec3( 0.0f,  1.0f,  0.0f),
- 				glm::vec3( 0.0f,  1.0f,  0.0f),
- 				glm::vec3( 0.0f,  1.0f,  0.0f),
- 				glm::vec3( 0.0f,  1.0f,  0.0f)
+				 0.0f,  0.0f, -1.0f,
+ 				 0.0f,  0.0f, -1.0f,
+ 				 0.0f,  0.0f, -1.0f,
+ 				 0.0f,  0.0f, -1.0f,
+ 				 0.0f,  0.0f, -1.0f,
+ 				 0.0f,  0.0f, -1.0f,
+ 				 0.0f,  0.0f,  1.0f,
+ 				 0.0f,  0.0f,  1.0f,
+ 				 0.0f,  0.0f,  1.0f,
+ 				 0.0f,  0.0f,  1.0f,
+ 				 0.0f,  0.0f,  1.0f,
+ 				 0.0f,  0.0f,  1.0f,
+				-1.0f,  0.0f,  0.0f,
+				-1.0f,  0.0f,  0.0f,
+				-1.0f,  0.0f,  0.0f,
+				-1.0f,  0.0f,  0.0f,
+				-1.0f,  0.0f,  0.0f,
+				-1.0f,  0.0f,  0.0f,
+ 				 1.0f,  0.0f,  0.0f,
+ 				 1.0f,  0.0f,  0.0f,
+ 				 1.0f,  0.0f,  0.0f,
+ 				 1.0f,  0.0f,  0.0f,
+ 				 1.0f,  0.0f,  0.0f,
+ 				 1.0f,  0.0f,  0.0f,
+ 				 0.0f, -1.0f,  0.0f,
+ 				 0.0f, -1.0f,  0.0f,
+ 				 0.0f, -1.0f,  0.0f,
+ 				 0.0f, -1.0f,  0.0f,
+ 				 0.0f, -1.0f,  0.0f,
+ 				 0.0f, -1.0f,  0.0f,
+ 				 0.0f,  1.0f,  0.0f,
+ 				 0.0f,  1.0f,  0.0f,
+ 				 0.0f,  1.0f,  0.0f,
+ 				 0.0f,  1.0f,  0.0f,
+ 				 0.0f,  1.0f,  0.0f,
+ 				 0.0f,  1.0f,  0.0f
 			};
 			mesh.mTextureCoordinates = {
 					0.0f, 0.0f,

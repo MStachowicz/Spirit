@@ -5,7 +5,6 @@
 #include "OpenGLWindow.hpp"
 #include "Shader.hpp"
 
-#include "glm/mat4x4.hpp" // mat4, dmat4
 #include "unordered_map"
 #include <array>
 
@@ -21,7 +20,7 @@ public:
 	// Initialising OpenGLAPI requires an OpenGLWindow to be created beforehand as GLAD requires a context to be set for its initialisation.
 	void draw() 								override;
 	void onFrameStart() 						override;
-	void setView(const glm::mat4& pViewMatrix)	override;
+
 private:
 	void initialiseMesh(const Mesh &pMesh) 		override;
 	void initialiseTextures();
@@ -33,7 +32,6 @@ private:
 
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
-	glm::mat4 mViewMatrix; // Cached view matrix the active camera has been set to. Updated via callback using setView()
 
 	// The window and GLAD context must be first declared to enforce the correct initialisation order:
 	// ***************************************************************************************************

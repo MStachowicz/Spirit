@@ -7,7 +7,10 @@
 
 Renderer::Renderer()
 : mOpenGLAPI(new OpenGLAPI())
-, mCamera(glm::vec3(0.0f, 0.0f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1))
+, mCamera(glm::vec3(0.0f, 0.0f, 7.0f)
+, std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1)
+, std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1)
+)
 {}
 
 Renderer::~Renderer()
@@ -30,7 +33,7 @@ void Renderer::draw()
 		drawCall.mTexture			= mOpenGLAPI->getTextureID("tiles.png");
 		mOpenGLAPI->pushDrawCall(drawCall);
 	}
-		{
+	{
 		DrawCall drawCall;
 		drawCall.mScale 			= glm::vec3(0.25f);
 		drawCall.mPosition 			= glm::vec3(0.0f, 0.75f, 0.0f);

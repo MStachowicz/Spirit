@@ -16,7 +16,7 @@ namespace ECS
             return lookup.find(entity) != lookup.end();
         }
 
-        inline size_t GetCount() const
+        inline size_t size() const
         {
             return components.size();
         }
@@ -26,9 +26,17 @@ namespace ECS
             return components[index];
         }
 
-        inline Entity GetEntity(const size_t& index) const 
-        { 
+        inline Entity GetEntity(const size_t& index) const
+        {
             return entities[index];
+        }
+
+        inline void ForEach(const std::function<void(const Component& pComponent)>& pFunction) const
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                pFunction(components[i]);
+            }
         }
 
         inline const Component *GetComponent(const Entity &entity)
@@ -42,7 +50,7 @@ namespace ECS
                 return nullptr;
         }
 
-        Component &Create(const Entity &entity)
+        Component& Create(const Entity &entity)
         {
             ZEPHYR_ASSERT(entity != INVALID_ENTITY, "Invalid entity not allowed to create components");
             ZEPHYR_ASSERT(lookup.find(entity) == lookup.end(), "Only one of this component type is allowed per entity");

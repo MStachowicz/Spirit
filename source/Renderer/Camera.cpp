@@ -2,7 +2,11 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-Camera::Camera(const glm::vec3& pPosition, const std::function<void(const glm::mat4&)>& pOnViewChangeCallback, const float& pYaw, const float& pPitch)
+Camera::Camera(const glm::vec3& pPosition
+, const std::function<void(const glm::mat4&)>& pOnViewChangeCallback
+, const std::function<void(const glm::vec3&)>& pOnViewPositionChangeCallback
+, const float& pYaw
+, const float& pPitch)
     : mPosition(pPosition)
     , mYaw(pYaw)
     , mPitch(pPitch)
@@ -11,6 +15,7 @@ Camera::Camera(const glm::vec3& pPosition, const std::function<void(const glm::m
     , mRight()  //     |
     , mView()   // ----|
     , mOnViewChange(pOnViewChangeCallback)
+    , mOnViewPositionChange(pOnViewPositionChangeCallback)
     , mMovementSpeed(2.5f)
     , mMouseSensitivity(0.1f)
     , mZoom(45.0f)
@@ -31,6 +36,7 @@ void Camera::move(const MoveDirection& pDirection)
         mPosition += mRight * velocity;
 
     mView = glm::lookAt(mPosition, mPosition + mFront, mUp);
+    mOnViewPositionChange(mPosition);
     mOnViewChange(mView);
 }
 

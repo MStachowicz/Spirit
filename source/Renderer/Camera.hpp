@@ -11,7 +11,11 @@ class Camera
 {
 public:
     Camera(const Camera&) = delete;
-    Camera(const glm::vec3& pPosition, const std::function<void(const glm::mat4&)>& pOnViewChangeCallback, const float& pYaw = -90.0f, const float& pPitch = 0.0f);
+    Camera(const glm::vec3& pPosition
+    , const std::function<void(const glm::mat4&)>& pOnViewChangeCallback
+    , const std::function<void(const glm::vec3&)>& pOnViewPositionChangeCallback
+    , const float& pYaw = -90.0f
+    , const float& pPitch = 0.0f);
 
     enum MoveDirection{ Forward, Backward, Left, Right };
     void move(const MoveDirection& pDirection); // Process key evenets to move the Camera mPosition.
@@ -30,7 +34,9 @@ private:
     glm::vec3 mUp;      // Normalised camera local up direction.
     glm::vec3 mRight;   // Normalised camera local right direction.
     glm::mat4 mView;    // View transformation matrix.
+
     std::function<void(const glm::mat4&)> mOnViewChange; // Called when mView changes.
+    std::function<void(const glm::vec3&)> mOnViewPositionChange; // Called when mView changes.
 
     float mMovementSpeed;
     float mMouseSensitivity;
