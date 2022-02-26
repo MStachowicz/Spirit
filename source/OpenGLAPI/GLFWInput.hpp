@@ -9,7 +9,10 @@ typedef struct GLFWwindow GLFWwindow;
 class GLFWInput : public InputAPI
 {
 public:
-    GLFWInput(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback);
+    GLFWInput(
+        std::function<void(const Key&)> pOnKeyPressCallback
+        , std::function<void(const MouseButton&, const Action& pAction)> pOnMousePressCallback
+        , std::function<void(const float&, const float&)> pOnMouseMoveCallback);
 
     void pollEvents() override;
     bool closeRequested() override;
@@ -27,5 +30,9 @@ private:
     static inline double mLastXPosition = -1.0;
     static inline double mLastYPosition = -1.0;
     static void mouseMoveCallback(GLFWwindow* pWindow, double pNewXPosition, double pNewYPosition);
+    static void mouseButtonCallback(GLFWwindow* pWindow, int pButton, int pAction, int pModifiers);
+
     static InputAPI::Key convert(const int& pKeyInput);
+    static InputAPI::MouseButton convertMouseButton(const int& pMouseButton);
+    static InputAPI::Action convertAction(const int& pAction);
 };

@@ -21,8 +21,22 @@ public:
         KEY_UNKNOWN
     };
 
-    InputAPI(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback)
+    enum class MouseButton
+    {
+        MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT,
+        MOUSE_BUTTON_1, MOUSE_BUTTON_2, MOUSE_BUTTON_3, MOUSE_BUTTON_4, MOUSE_BUTTON_5,
+        MOUSE_UNKNOWN
+    };
+
+    enum class Action
+    {
+        PRESS, RELEASE, REPEAT,
+        UNKNOWN
+    };
+
+    InputAPI(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const MouseButton&, const Action&)> pOnMousePressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback)
     : onKeyPress(pOnKeyPressCallback)
+    , onMousePress(pOnMousePressCallback)
     , onMouseMove(pOnMouseMoveCallback)
     {}
 
@@ -31,5 +45,6 @@ public:
 
 protected:
     std::function<void(const Key &)> onKeyPress; // The function a derived InputAPI calls
+    std::function<void(const MouseButton&, const Action& pAction)> onMousePress;
     std::function<void(const float&, const float&)> onMouseMove; // Called when mouse is moved, supplies the X and Y offset from the last recorded mouse position.
 };

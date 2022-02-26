@@ -3,14 +3,18 @@
 #include "OpenGLWindow.hpp"
 #include "Logger.hpp"
 
-GLFWInput::GLFWInput(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback)
-: InputAPI(pOnKeyPressCallback, pOnMouseMoveCallback)
+GLFWInput::GLFWInput(
+    std::function<void(const Key&)> pOnKeyPressCallback
+    , std::function<void(const MouseButton&, const Action& pAction)> pOnMousePressCallback
+    , std::function<void(const float&, const float&)> pOnMouseMoveCallback)
+: InputAPI(pOnKeyPressCallback, pOnMousePressCallback, pOnMouseMoveCallback)
 , mCloseRequested(false)
 {
     glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetKeyCallback(OpenGLWindow::getActiveWindowHandle(), keyCallback);
     glfwSetWindowCloseCallback(OpenGLWindow::getActiveWindowHandle(), windowCloseRequestCallback);
     glfwSetCursorPosCallback(OpenGLWindow::getActiveWindowHandle(), mouseMoveCallback);
+    glfwSetMouseButtonCallback(OpenGLWindow::getActiveWindowHandle(), mouseButtonCallback);
     currentActiveInputHandler = this;
 };
 
@@ -50,6 +54,11 @@ void GLFWInput::mouseMoveCallback(GLFWwindow* pWindow, double pNewXPosition, dou
     mLastYPosition = pNewYPosition;
 
     currentActiveInputHandler->onMouseMove(xOffset, yOffset);
+}
+
+void GLFWInput::mouseButtonCallback(GLFWwindow* pWindow, int pButton, int pAction, int pModifiers)
+{
+    currentActiveInputHandler->onMousePress(convertMouseButton(pButton), convertAction(pAction));
 }
 
 InputAPI::Key GLFWInput::convert(const int& pKeyInput)
@@ -114,4 +123,35 @@ InputAPI::Key GLFWInput::convert(const int& pKeyInput)
        LOG_ERROR("Could not convert GLFW key ({}) to InputAPI::Key", pKeyInput);
 	   return InputAPI::Key::KEY_UNKNOWN;
 	}
+}
+
+InputAPI::MouseButton GLFWInput::convertMouseButton(const int& pMouseButton)
+{
+    switch (pMouseButton)
+    {
+      case GLFW_MOUSE_BUTTON_LEFT: 	    return InputAPI::MouseButton::MOUSE_LEFT;
+      case GLFW_MOUSE_BUTTON_MIDDLE: 	return InputAPI::MouseButton::MOUSE_MIDDLE;
+      case GLFW_MOUSE_BUTTON_RIGHT: 	return InputAPI::MouseButton::MOUSE_RIGHT;
+      case GLFW_MOUSE_BUTTON_4: 	    return InputAPI::MouseButton::MOUSE_BUTTON_1;
+      case GLFW_MOUSE_BUTTON_5: 	    return InputAPI::MouseButton::MOUSE_BUTTON_2;
+      case GLFW_MOUSE_BUTTON_6: 	    return InputAPI::MouseButton::MOUSE_BUTTON_3;
+      case GLFW_MOUSE_BUTTON_7: 	    return InputAPI::MouseButton::MOUSE_BUTTON_4;
+      case GLFW_MOUSE_BUTTON_8: 	    return InputAPI::MouseButton::MOUSE_BUTTON_5;
+      default:
+          LOG_ERROR("Could not convert GLFW mouse button ({}) to InputAPI::MouseButton", pMouseButton);
+          return InputAPI::MouseButton::MOUSE_UNKNOWN;
+    }
+}
+
+InputAPI::Action GLFWInput::convertAction(const int& pAction)
+{
+    switch (pAction)
+    {
+      case GLFW_PRESS: 	        return InputAPI::Action::PRESS;
+      case GLFW_RELEASE: 	    return InputAPI::Action::RELEASE;
+      case GLFW_REPEAT: 	    return InputAPI::Action::REPEAT;
+      default:
+          LOG_ERROR("Could not convert GLFW action ({}) to InputAPI::Action", pAction);
+          return InputAPI::Action::UNKNOWN;
+    }
 }
