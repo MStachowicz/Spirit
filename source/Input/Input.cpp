@@ -19,12 +19,27 @@ void Input::pollEvents()
 
 void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
 {
-    mCurrentCamera.ProcessMouseMove(pXOffset, pYOffset);
+    if (mCapturingMouse)
+        mCurrentCamera.ProcessMouseMove(pXOffset, pYOffset);
 }
 
 void Input::onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction)
 {
-
+    switch (pMouseButton)
+    {
+    case InputAPI::MouseButton::MOUSE_LEFT:
+        mInputHandler->setCursorMode(InputAPI::CursorMode::CAPTURED);
+        mCapturingMouse = true;
+    case InputAPI::MouseButton::MOUSE_MIDDLE:
+        break;
+    case InputAPI::MouseButton::MOUSE_RIGHT:
+        mInputHandler->setCursorMode(InputAPI::CursorMode::NORMAL);
+        mCapturingMouse = false;
+        break;
+    default:
+        LOG_WARN("Unknown mouse press {}", pMouseButton);
+        break;
+    }
 }
 
 void Input::onInput(const InputAPI::Key& pKeyPressed)

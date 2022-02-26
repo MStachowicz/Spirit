@@ -21,12 +21,37 @@ GLFWInput::GLFWInput(
 void GLFWInput::pollEvents()
 {
     glfwPollEvents();
-};
+}
 
 bool GLFWInput::closeRequested()
 {
     return mCloseRequested;
-};
+}
+
+void GLFWInput::setCursorMode(const InputAPI::CursorMode& pCursorMode)
+{
+    // GLFW_CURSOR_NORMAL: Regular arrow cursor, motion is not limited.
+    // GLFW_CURSOR_HIDDEN: Cursor hidden when it's over the window, motion is not limited.
+    // GLFW_CURSOR_DISABLED: Hides the cursor and locks it to window, motion is unlimited.
+    // By default, the cursor mode is GLFW_CURSOR_NORMAL
+
+    switch (pCursorMode)
+    {
+    case InputAPI::CursorMode::NORMAL:
+        glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        break;
+    case InputAPI::CursorMode::HIDDEN:
+        glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        break;
+    case InputAPI::CursorMode::CAPTURED:
+        glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        break;
+    case InputAPI::CursorMode::UNKNOWN:
+    default:
+        LOG_ERROR("Could not convert cursor mode requested ({}) to GLFW cursor mode", pCursorMode);
+        break;
+    }
+}
 
 void GLFWInput::windowCloseRequestCallback(GLFWwindow* pWindow)
 {

@@ -16,6 +16,7 @@ private:
     void onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction);
     void onMouseMove(const float& pXOffset, const float& pYOffset);
     bool mCloseRequested = false;
+    bool mCapturingMouse = false;
 
     Camera& mCurrentCamera;
     InputAPI* mInputHandler = nullptr;

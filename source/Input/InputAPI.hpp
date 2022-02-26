@@ -34,6 +34,14 @@ public:
         UNKNOWN
     };
 
+    enum class CursorMode
+    {
+        NORMAL, // Cursor is visible and not being captured by the window.
+        HIDDEN, // Cursor is hidden when hovering over the window and not being captured by it.
+        CAPTURED, // Cursor is hidden and captured by the window.
+        UNKNOWN
+    };
+
     InputAPI(std::function<void(const Key&)> pOnKeyPressCallback, std::function<void(const MouseButton&, const Action&)> pOnMousePressCallback, std::function<void(const float&, const float&)> pOnMouseMoveCallback)
     : onKeyPress(pOnKeyPressCallback)
     , onMousePress(pOnMousePressCallback)
@@ -43,6 +51,7 @@ public:
     virtual void pollEvents()       = 0;
     virtual bool closeRequested()   = 0;
 
+    virtual void setCursorMode(const CursorMode& pCursorMode) = 0;
 protected:
     std::function<void(const Key &)> onKeyPress; // The function a derived InputAPI calls
     std::function<void(const MouseButton&, const Action& pAction)> onMousePress;

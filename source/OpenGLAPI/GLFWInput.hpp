@@ -16,6 +16,7 @@ public:
 
     void pollEvents() override;
     bool closeRequested() override;
+    void setCursorMode(const CursorMode& pCursorMode) override;
 
 private:
     bool mCloseRequested;
