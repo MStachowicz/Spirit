@@ -17,7 +17,7 @@ public:
     , const float& pYaw = -90.0f
     , const float& pPitch = 0.0f);
 
-    enum MoveDirection{ Forward, Backward, Left, Right };
+    enum MoveDirection{ Forward, Backward, Left, Right, Up, Down };
     void move(const MoveDirection& pDirection); // Process key evenets to move the Camera mPosition.
     void ProcessMouseMove(const float& pXOffset, const float& pYOffset, const bool& pConstrainPitch = true); // Processes mouse movement to allow moving camera in it's current mPosition.
     void processScroll(const float& pOffset); // Process mouse scrollwheel events. Applies a zoom on the camera.

@@ -58,6 +58,12 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
     case InputAPI::Key::KEY_D:
          mCurrentCamera.move(Camera::Right);
         break;
+    case InputAPI::Key::KEY_E:
+         mCurrentCamera.move(Camera::Up);
+        break;
+    case InputAPI::Key::KEY_Q:
+         mCurrentCamera.move(Camera::Down);
+        break;
     case InputAPI::Key::KEY_ESCAPE:
         mCloseRequested = true;
         break;

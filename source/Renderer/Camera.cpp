@@ -26,14 +26,30 @@ Camera::Camera(const glm::vec3& pPosition
 void Camera::move(const MoveDirection& pDirection)
 {
     const float velocity = mMovementSpeed;
-    if (pDirection == Forward)
+
+    switch (pDirection)
+    {
+    case MoveDirection::Forward:
         mPosition += mFront * velocity;
-    if (pDirection == Backward)
+        break;
+    case MoveDirection::Backward:
         mPosition -= mFront * velocity;
-    if (pDirection == Left)
+        break;
+    case MoveDirection::Left:
         mPosition -= mRight * velocity;
-    if (pDirection == Right)
+        break;
+    case MoveDirection::Right:
         mPosition += mRight * velocity;
+        break;
+    case MoveDirection::Up:
+        mPosition += mUp * velocity;
+        break;
+    case MoveDirection::Down:
+        mPosition -= mUp * velocity;
+        break;
+    default:
+        break;
+    }
 
     mView = glm::lookAt(mPosition, mPosition + mFront, mUp);
     mOnViewPositionChange(mPosition);
