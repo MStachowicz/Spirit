@@ -2,6 +2,7 @@
 
 #include "Logger.hpp"
 
+#include "Mesh.hpp"
 #include "LightManager.hpp"
 
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
@@ -11,7 +12,6 @@
 #include "string"
 #include "optional"
 
-typedef unsigned int MeshID; // The unique ID the mesh uses to identify its draw information in a specific draw context.
 typedef unsigned int TextureID;
 
 // A request to execute a specific draw using a GraphicsAPI.
@@ -46,7 +46,6 @@ public:
 	}
 
 protected:
-	struct Mesh;
 	// Sets up the mesh for processing DrawCalls from the mDrawQueue queue.
 	virtual void initialiseMesh(const Mesh& pMesh) = 0;
 	LightManager mLightManager;
@@ -68,27 +67,10 @@ public:
 		ZEPHYR_ASSERT(it != mTextures.end(), "Searching for a texture that does not exist in Texture store.");
 		return it->second;
 	}
+
 protected:
 	glm::mat4 mViewMatrix; // The view matrix used in draw(), set in setView
 	glm::vec3 mViewPosition; // The view position used in draw(), set in setViewPosition
-
-	// Mesh stores all the vertex (and optionally index) data that a derived graphics API will use contextualise for draw calls supplied.
-	struct Mesh
-	{
-		Mesh() : mID(++nextMesh) {}
-
-		const MeshID mID; // Unique ID to map this mesh to DrawInfo within the graphics context being used.
-		std::string mName;
-		std::vector<std::string> mAttributes;
-
-		std::vector<float> mVertices;			// Per-vertex position attributes.
-		std::vector<float> mNormals;			// Per-vertex normal attributes.
-		std::vector<float> mColours;			// Per-vertex colour attributes.
-		std::vector<float> mTextureCoordinates; // Per-vertex texture mapping.
-		std::vector<int> mIndices;				// Allows indexing into the mVertices and mColours data to specify an indexed draw order.
-	private:
-		static inline MeshID nextMesh = 0;
-	};
 
 	std::vector<DrawCall> mDrawQueue;
 	std::unordered_map<MeshID, Mesh> mMeshes;

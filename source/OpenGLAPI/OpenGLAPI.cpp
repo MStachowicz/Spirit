@@ -1,4 +1,5 @@
 #include "OpenGLAPI.hpp"
+#include "Mesh.hpp"
 
 #include "FileSystem.hpp"
 
