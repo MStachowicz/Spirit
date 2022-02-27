@@ -3,6 +3,8 @@
 #include "GLFWInput.hpp"
 #include "Camera.hpp"
 
+#include "imgui.h"
+
 Input::Input(Camera& pCamera)
 : mCurrentCamera(pCamera)
 , mInputHandler(
@@ -25,20 +27,34 @@ void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
 
 void Input::onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction)
 {
-    switch (pMouseButton)
+    if (!ImGui::GetIO().WantCaptureMouse)
     {
-    case InputAPI::MouseButton::MOUSE_LEFT:
-        mInputHandler->setCursorMode(InputAPI::CursorMode::CAPTURED);
-        mCapturingMouse = true;
-    case InputAPI::MouseButton::MOUSE_MIDDLE:
-        break;
-    case InputAPI::MouseButton::MOUSE_RIGHT:
-        mInputHandler->setCursorMode(InputAPI::CursorMode::NORMAL);
-        mCapturingMouse = false;
-        break;
-    default:
-        LOG_WARN("Unknown mouse press {}", pMouseButton);
-        break;
+        switch (pMouseButton)
+        {
+        case InputAPI::MouseButton::MOUSE_LEFT:
+        case InputAPI::MouseButton::MOUSE_MIDDLE:
+            break;
+        case InputAPI::MouseButton::MOUSE_RIGHT:
+            if (pAction == InputAPI::Action::PRESS)
+            {
+                if (!mCapturingMouse)
+                {
+                    LOG_INFO("Captured mouse");
+                    mInputHandler->setCursorMode(InputAPI::CursorMode::CAPTURED);
+                    mCapturingMouse = true;
+                }
+                else
+                {
+                    LOG_INFO("Mouse free");
+                    mInputHandler->setCursorMode(InputAPI::CursorMode::NORMAL);
+                    mCapturingMouse = false;
+                }
+            }
+            break;
+        default:
+            LOG_WARN("Unknown mouse press {}", pMouseButton);
+            break;
+        }
     }
 }
 
