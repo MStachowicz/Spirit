@@ -18,6 +18,10 @@ public:
 	{
 		return static_cast<std::underlying_type_t<T>>(pEnum);
 	}
+
+    // These are per-vertex attributes found in GLSL shaders.
+    // Each attribute must be named the same in the GLSL files. getAttributeName() returns the expected string in the shader.
+    // Each attribute must be in the same location in all shaders, specified as "layout (location = X)"". getAttributeLocation() returns the location X.
     enum class Attribute : unsigned int
     {
         Position3D              = 0,

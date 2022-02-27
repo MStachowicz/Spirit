@@ -22,7 +22,7 @@ OpenGLAPI::OpenGLAPI()
 
 	glEnable(GL_DEPTH_TEST);
 
-	mDataManager.mShaders = {Shader("texture"), Shader("material"), Shader("colour")};
+	mDataManager.mShaders = {Shader("texture"), Shader("material"), Shader("colour"), Shader("uniformColour")};
 
 	initialiseTextures();
 	buildMeshes();
@@ -138,6 +138,30 @@ void OpenGLAPI::draw()
 			glDrawArrays(drawInfo.mDrawMode, 0, static_cast<GLsizei>(drawInfo.mDrawSize));
 	}
 	mDrawQueue.clear();
+
+	if (mLightManager.mRenderLightPositions)
+	{
+		mDataManager.mShaders.back().use();
+		mDataManager.mShaders.back().setUniform("view", mViewMatrix);
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+		mDataManager.mShaders.back().setUniform("projection", projection);
+
+		mLightManager.getPointLights().ForEach([this](const PointLight &pointLight)
+		{
+			glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), pointLight.mPosition);
+			modelMat = glm::scale(modelMat, glm::vec3(0.1f));
+
+			mDataManager.mShaders.back().setUniform("model", modelMat);
+			const DrawInfo& drawInfo = mDataManager.getDrawInfo(getMeshID("3DCube"));
+
+			mDataManager.bindVAO(getMeshID("3DCube"));
+
+			if (drawInfo.mDrawMethod == DrawInfo::DrawMethod::Indices)
+				glDrawElements(drawInfo.mDrawMode, static_cast<GLsizei>(drawInfo.mDrawSize), GL_UNSIGNED_INT, 0);
+			else if (drawInfo.mDrawMethod == DrawInfo::DrawMethod::Array)
+				glDrawArrays(drawInfo.mDrawMode, 0, static_cast<GLsizei>(drawInfo.mDrawSize));
+		});
+	}
 
 	mWindow.renderImGui();
 	mWindow.swapBuffers();

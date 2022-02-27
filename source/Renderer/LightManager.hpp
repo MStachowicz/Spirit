@@ -30,6 +30,8 @@ class LightManager
         const ECS::ComponentManager<PointLight>& getPointLights() const
         { return mPointLights; };
 
+        bool mRenderLightPositions = true;
+
     private:
         ECS::ComponentManager<PointLight> mPointLights;
 };
