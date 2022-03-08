@@ -76,6 +76,20 @@ void Shader::load()
 		ZEPHYR_ASSERT(!hasCompileErrors(Type::Program, mHandle), "Failed to link shader {}", mName)
 	}
 
+	{ // Setup the available texture units.
+		// We have to tell OpenGL which texture unit each shader 'uniform sampler2D' belongs to by setting each sampler using glUniform1i.
+		// We only have to set this once. This relies on initialiseRequiredAttributes() being called before to set mTextureUnits.
+		if (mTextureUnits > 0)
+		{
+			use();
+			for (int j = 0; j < mTextureUnits; j++)
+			{
+				const std::string textureUniformName = "texture" + std::to_string(j);
+				setUniform(textureUniformName, j);
+			}
+		}
+	}
+
 	// Delete the shaders after linking as they're no longer needed
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);

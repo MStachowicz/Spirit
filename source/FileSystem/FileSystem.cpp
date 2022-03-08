@@ -1,8 +1,6 @@
 #include "FileSystem.hpp"
 
 #include "Logger.hpp"
-#define STB_IMAGE_IMPLEMENTATION // This modifies the header such that it only contains the relevant definition source code
-#include "stb_image.h"
 
 #include <fstream>
 #include <sstream>
@@ -13,11 +11,6 @@ std::string File::executablePath;
 std::string File::rootDirectory;
 std::string File::GLSLShaderDirectory;
 std::string File::textureDirectory;
-
-File::Texture::~Texture()
-{
-    stbi_image_free(mData);
-}
 
 std::string File::readFromFile(const std::string &pPath)
 {
@@ -46,17 +39,6 @@ std::string File::readFromFile(const std::string &pPath)
     }
 
     return "";
-}
-
-File::Texture File::getTexture(const std::string &pFileName)
-{
-    const std::string path = File::textureDirectory + pFileName;
-    ZEPHYR_ASSERT(File::exists(path), "The texture file with path {} could not be found.", path)
-    int width, height, numberOfChannels;
-    unsigned char *data = stbi_load(path.c_str(), &width, &height, &numberOfChannels, 0);
-    ZEPHYR_ASSERT(data != nullptr, "Failed to load texture")
-    // Construct in return statement to avoid Texture::mData being garbage after copying stack copy
-    return {width, height, numberOfChannels, data};
 }
 
 std::vector<std::string> File::getAllFileNames(const std::string &pDirectory)
@@ -104,6 +86,4 @@ void File::setupDirectories(const std::string &pExecutePath)
 
     textureDirectory = rootDirectory + "/source/Resources/Textures/";
     LOG_INFO("Texture directory initialised to \"{}\"", textureDirectory);
-
-    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
 };

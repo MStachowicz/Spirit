@@ -33,6 +33,10 @@ message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
 source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
+source/Renderer/Mesh.hpp
+source/Renderer/Texture.hpp
+source/Renderer/Texture.cpp
+source/Renderer/DrawCall.hpp
 source/Renderer/Camera.hpp
 source/Renderer/Camera.cpp
 source/Renderer/GraphicsAPI.hpp
@@ -40,11 +44,14 @@ source/Renderer/ImGuiConfig.hpp
 source/Renderer/LightManager.hpp
 )
 target_include_directories(Renderer
+PRIVATE source/FileSystem
 PRIVATE source/ECS
+PRIVATE source/External/stb
 PRIVATE source/External/GLM
 PRIVATE source/External/imgui
 )
 target_link_libraries(Renderer
+FileSystem
 ImGui
 OpenGLAPI
 Logger
@@ -91,7 +98,6 @@ source/FileSystem/FileSystem.cpp
 )
 target_include_directories(FileSystem
 PRIVATE source/FileSystem
-PRIVATE source/External/stb
 )
 target_link_libraries(FileSystem
 Logger

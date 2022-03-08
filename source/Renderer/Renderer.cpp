@@ -6,12 +6,53 @@
 #include "OpenGLAPI.hpp"
 
 Renderer::Renderer()
-: mOpenGLAPI(new OpenGLAPI())
+: mMeshManager()
+, mOpenGLAPI(new OpenGLAPI(mMeshManager, mTextureManager))
 , mCamera(glm::vec3(0.0f, 0.0f, 7.0f)
 , std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1)
 , std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1)
 )
-{}
+{
+	{
+		DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mScale 		= glm::vec3(0.25f);
+		drawCall.mPosition 		= glm::vec3(-0.75f, 0.75f, 0.0f);
+		drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
+		//drawCall.mTexture		= mOpenGLAPI->getTextureID("tiles.png");
+	}
+	{
+		DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mScale 		= glm::vec3(0.25f);
+		drawCall.mPosition 		= glm::vec3(0.0f, 0.75f, 0.0f);
+		drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
+		drawCall.mDrawMode 		= DrawCall::DrawMode::Wireframe;
+	}
+	{
+		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mPosition 		= glm::vec3(1.f, 0.f, 0.f);
+		drawCall.mMesh 			= mMeshManager.getMeshID("3DCube");
+		// drawCall.mTexture 			= mOpenGLAPI->getTextureID("woodenContainer.png");
+	}
+	{
+		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mScale 		= glm::vec3(0.25f);
+		drawCall.mPosition 		= glm::vec3(-0.75f, -0.75f, 0.0f);
+		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
+		// drawCall.mTexture			= mOpenGLAPI->getTextureID("tiles.png");
+	}
+	{
+		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mScale 		= glm::vec3(0.25f, 0.5f, 0.25f);
+		drawCall.mPosition 		= glm::vec3(0.0f, -0.75f, 0.0f);
+		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
+	}
+	{
+		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mScale 		= glm::vec3(0.25f);
+		drawCall.mPosition 		= glm::vec3(0.75f, -0.75f, 0.0f);
+		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
+	}
+}
 
 Renderer::~Renderer()
 {
@@ -21,72 +62,44 @@ Renderer::~Renderer()
 void Renderer::onFrameStart()
 {
 	mOpenGLAPI->onFrameStart();
+
+	size_t count = 0;
+
+	if (ImGui::Begin("Entity draw options"))
+	{
+		mDrawCalls.ModifyForEach([&](DrawCall& pDrawCall)
+		{
+			count++;
+			const std::string title = "Draw call option " + std::to_string(count);
+
+			if(ImGui::TreeNode(title.c_str()))
+			{
+				ImGui::SliderFloat3("Position", &pDrawCall.mPosition.x, -1.f, 1.f);
+				ImGui::SliderFloat3("Rotation", &pDrawCall.mRotation.x, -90.f, 90.f);
+				ImGui::SliderFloat3("Scale",  &pDrawCall.mScale.x, 0.1f, 1.5f);
+				//ImGui::ColorEdit3("color",  &pDrawCall.mColor.x);
+				ImGui::TreePop();
+			}
+		});
+	}
+	ImGui::End();
 }
 
 void Renderer::draw()
 {
-	{
-		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(0.25f);
-		drawCall.mPosition 			= glm::vec3(-0.75f, 0.75f, 0.0f);
-		drawCall.mMesh 				= mOpenGLAPI->getMeshID("2DSquare");
-		drawCall.mTexture			= mOpenGLAPI->getTextureID("tiles.png");
-		mOpenGLAPI->pushDrawCall(drawCall);
-	}
-	{
-		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(0.25f);
-		drawCall.mPosition 			= glm::vec3(0.0f, 0.75f, 0.0f);
-		drawCall.mMesh 				= mOpenGLAPI->getMeshID("2DSquare");
-		drawCall.mDrawMode			= DrawCall::DrawMode::Wireframe;
-		mOpenGLAPI->pushDrawCall(drawCall);
-	}
-	{
-		static float position[] = {1.0, 0.0, 0.0};
-		static float rotation[] = {0.0, 0.0, 0.0};
-		static float scale[] 	= {1.0, 0.5, 0.5};
-		static float color[4] 	= {1.0f, 1.0f, 1.0f, 1.0f};
+	static float position[] = {1.0, 0.0, 0.0};
+	static float rotation[] = {0.0, 0.0, 0.0};
+	static float scale[] = {1.0, 0.5, 0.5};
+	static float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-		if(ImGui::Begin("Container options"))
-		{
-			ImGui::SliderFloat3("Position"	, position, -1.f, 1.f);
-			ImGui::SliderFloat3("Rotation"	, rotation, -90.f, 90.f);
-			ImGui::SliderFloat3("Scale"		, scale, 0.1f, 1.5f);
-			ImGui::ColorEdit3("color"		, color);
-		}
-		ImGui::End();
+	mDrawCalls.ForEach([&](const DrawCall &pDrawCall)
+	{
+		mOpenGLAPI->draw(pDrawCall); });
 
-		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(scale[0], scale[1], scale[2]);
-		drawCall.mPosition 			= glm::vec3(position[0], position[1], position[2]);
-		drawCall.mRotation 			= glm::vec3(rotation[0], rotation[1], rotation[2]);
-		drawCall.mMesh 				= mOpenGLAPI->getMeshID("3DCube");
-		drawCall.mTexture 			= mOpenGLAPI->getTextureID("woodenContainer.png");
-		mOpenGLAPI->pushDrawCall(drawCall);
-	}
-	{
-		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(0.25f);
-		drawCall.mPosition 			= glm::vec3(-0.75f, -0.75f, 0.0f);
-		drawCall.mMesh 				= mOpenGLAPI->getMeshID("2DTriangle");
-		drawCall.mTexture			= mOpenGLAPI->getTextureID("tiles.png");
-		mOpenGLAPI->pushDrawCall(drawCall);
-	}
-	{
-		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(0.25f, 0.5f, 0.25f);
-		drawCall.mPosition 			= glm::vec3(0.0f, -0.75f, 0.0f);
-		drawCall.mMesh 				= mOpenGLAPI->getMeshID("2DTriangle");
-		mOpenGLAPI->pushDrawCall(drawCall);
-	}
-	{
-		DrawCall drawCall;
-		drawCall.mScale 			= glm::vec3(0.25f);
-		drawCall.mPosition 			= glm::vec3(0.75f, -0.75f, 0.0f);
-		drawCall.mMesh 				= mOpenGLAPI->getMeshID("2DTriangle");
-		mOpenGLAPI->pushDrawCall(drawCall);
-	}
-
-	mOpenGLAPI->draw();
 	drawCount++;
+}
+
+void Renderer::postDraw()
+{
+	mOpenGLAPI->postDraw();
 }

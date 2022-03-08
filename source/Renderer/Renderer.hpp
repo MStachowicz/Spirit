@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Camera.hpp"
+#include "Mesh.hpp"
+#include "Texture.hpp"
+#include "DrawCall.hpp"
+#include "ComponentManager.hpp"
 
 class GraphicsAPI;
 
@@ -13,11 +17,20 @@ public:
 
 	void onFrameStart();
 	void draw();
+	void postDraw();
+
 	int drawCount = 0;
 
 	Camera& getCamera() { return mCamera; }
 
 private:
+	// Order of initialisation is important here:
+
+	// Stores all the meshes derived graphics APIs can draw.
+	MeshManager mMeshManager;
+	TextureManager mTextureManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
+
+	ECS::ComponentManager<DrawCall> mDrawCalls;
 };

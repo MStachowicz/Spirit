@@ -38,6 +38,13 @@ namespace ECS
                 pFunction(components[i]);
             }
         }
+        inline void ModifyForEach(const std::function<void(Component& pComponent)>& pFunction)
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                pFunction(components[i]);
+            }
+        }
 
         inline const Component *GetComponent(const Entity &entity)
         {

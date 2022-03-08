@@ -96,6 +96,7 @@ private:
                 //renderState = currentState * alpha + previousState * (1 - alpha);
                 //mRenderer.draw(renderState);
                 mRenderer.draw();
+                mRenderer.postDraw();
             }
         }
 

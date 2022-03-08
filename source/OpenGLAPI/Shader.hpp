@@ -63,7 +63,7 @@ private:
     std::string mSourcePath;
     unsigned int mHandle;
     std::set<Shader::Attribute> mRequiredAttributes; // The required Attributes a mesh must have to be rendered using this Shader.
-    int mTextureUnits;
+    int mTextureUnits; // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
 
     static inline const Shader* shaderInUse = nullptr; // Keeps track of current Shader object set with use(). Used for error checking in checkForUseErrors().
 	static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders using sampler2D
