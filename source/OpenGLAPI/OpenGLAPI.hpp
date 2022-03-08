@@ -41,15 +41,13 @@ private:
 	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
 	struct DrawInfo
 	{
+		std::vector<const Shader*> 	mShadersAvailable; 		// All the available shaders that can be drawn with.
+		size_t activeShaderIndex 		= 0; 				// Shader used to draw from mShadersAvailable
+		unsigned int mEBO 				= invalidHandle;
+		unsigned int mDrawMode 			= invalidHandle;
+		int mDrawSize 					= invalidHandle; 	// Cached size of data used in draw, either size of Mesh positions or indices
 		enum class DrawMethod{ Indices, Array, Null };
-		DrawInfo();
-
-		const Shader* activeShader; // Shader used to draw
-		std::vector<const Shader*> mShadersAvailable; // All the available shaders that can be drawn with.
-		unsigned int mEBO;
-		unsigned int mDrawMode;
-		int mDrawSize; // Cached size of data used in draw, either size of Mesh positions or indices
-		DrawMethod mDrawMethod = DrawMethod::Null;
+		DrawMethod mDrawMethod 			= DrawMethod::Null;
 
 		static const unsigned int invalidHandle = 0;
 	};

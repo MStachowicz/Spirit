@@ -77,7 +77,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 
 	// Grab the DrawInfo for the Mesh requested.
 	const DrawInfo& drawInfo = getDrawInfo(pDrawCall.mMesh);
-	const Shader* shader = drawInfo.activeShader;
+	const Shader* shader = drawInfo.mShadersAvailable[drawInfo.activeShaderIndex];
 
 	glm::mat4 trans = glm::translate(glm::mat4(1.0f), pDrawCall.mPosition);
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.x), glm::vec3(1.0, 0.0, 0.0));
@@ -207,13 +207,6 @@ const OpenGLAPI::VAO& OpenGLAPI::getVAO(const MeshID& pMeshID)
 	return it->second;
 }
 
-OpenGLAPI::DrawInfo::DrawInfo()
-	: mEBO(invalidHandle)
-	, mDrawMode(invalidHandle)
-	, mDrawSize(invalidHandle)
-	, mDrawMethod(DrawMethod::Null)
-{}
-
 OpenGLAPI::VAO::VAO()
 : mHandle(0)
 {
@@ -294,7 +287,7 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 
 
 	ZEPHYR_ASSERT(!drawInfo.mShadersAvailable.empty(), "Shaders available cannot be empty. Mesh needs at least one shader to draw with.")
-	drawInfo.activeShader 	= drawInfo.mShadersAvailable.front();
+	drawInfo.activeShaderIndex 	= 0;
 	drawInfo.mDrawMode 		= GL_TRIANGLES;	// OpenGLAPI only supports GL_TRIANGLES at this revision
 	drawInfo.mDrawMethod 	= pMesh.mIndices.empty() ? DrawInfo::DrawMethod::Array : DrawInfo::DrawMethod::Indices;
 	drawInfo.mDrawSize 		= pMesh.mIndices.empty() ? static_cast<int>(pMesh.mVertices.size()) : static_cast<int>(pMesh.mIndices.size());
