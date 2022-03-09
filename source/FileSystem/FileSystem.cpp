@@ -12,6 +12,18 @@ std::string File::rootDirectory;
 std::string File::GLSLShaderDirectory;
 std::string File::textureDirectory;
 
+std::string File::removeFileExtension(const std::string &pFileName)
+{
+    if (pFileName == "." || pFileName == "..")
+        return pFileName;
+
+    size_t pos = pFileName.find_last_of("\\/.");
+    if (pos != std::string::npos && pFileName[pos] == '.')
+        return pFileName.substr(0, pos);
+
+    return pFileName;
+}
+
 std::string File::readFromFile(const std::string &pPath)
 {
     if (!exists(pPath))
