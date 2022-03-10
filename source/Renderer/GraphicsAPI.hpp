@@ -18,7 +18,6 @@
 class MeshManager;
 
 // GraphicsAPI is an interface for Zephyr::Renderer to communicate with a derived Graphics pipeline.
-// A derived API must empty it's mDrawQueue in it's draw function.
 class GraphicsAPI
 {
 public:
@@ -27,7 +26,7 @@ public:
 	, mTextureManager(pTextureManager)
 	{};
 
-	virtual ~GraphicsAPI() {}; // Context is an pure virtual interface used polymorphically.
+	virtual ~GraphicsAPI() {}; // GraphicsAPI is a pure virtual interface used polymorphically.
 
 	virtual void onFrameStart() 					= 0;
 	virtual void draw(const DrawCall& pDrawCall) 	= 0; // Executes the draw call.
