@@ -33,7 +33,8 @@ class TextureManager
 {
 public:
     TextureManager();
-    TextureID getTextureID(const std::string& pTextureName);
+    TextureID getTextureID(const std::string& pTextureName) const;
+    std::string getTextureName(const TextureID& pTextureID) const;
 
     inline void ForEach(const std::function<void(const Texture&)>& pFunction) const
     {
@@ -44,7 +45,7 @@ private:
     std::unordered_map<TextureID, Texture> mTextures;
     std::unordered_map<std::string, TextureID> mNameLookup;
 
-    // Returns the texture data given a file name. Searches the File::textureDirectory for the texture.
-    // Uses stb_image to load the texture from file.
+    // Searches File::textureDirectory for texture matching pFileName.
+    // Uses stb_image to load the pixel data from file.
     void loadTexture(const std::string& pFileName);
 };

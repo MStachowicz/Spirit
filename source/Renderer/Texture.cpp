@@ -24,11 +24,18 @@ void Texture::release()
     stbi_image_free(mData);
 }
 
-TextureID TextureManager::getTextureID(const std::string &pTextureName)
+TextureID TextureManager::getTextureID(const std::string &pTextureName) const
 {
     const auto it = mNameLookup.find(pTextureName);
     ZEPHYR_ASSERT(it != mNameLookup.end(), "Searching for a texture that does not exist in Texture store.");
     return it->second;
+}
+
+std::string TextureManager::getTextureName(const TextureID& pTextureID) const
+{
+    const auto it = mTextures.find(pTextureID);
+    ZEPHYR_ASSERT(it != mTextures.end(), "Searching for a texture that does not exist in Texture store.");
+    return it->second.mName;
 }
 
 TextureManager::TextureManager()
@@ -53,6 +60,7 @@ void TextureManager::loadTexture(const std::string& pFileName)
     unsigned char *data = stbi_load(path.c_str(), &width, &height, &numberOfChannels, 0);
     ZEPHYR_ASSERT(data != nullptr, "Failed to load texture")
 
-    Texture texture = Texture(pFileName, width, height, numberOfChannels, data);
+    Texture texture = Texture(File::removeFileExtension(pFileName), width, height, numberOfChannels, data);
     mTextures.insert(std::make_pair(texture.mID, texture));
+    mNameLookup.insert(std::make_pair(texture.mName, texture.mID));
 }
