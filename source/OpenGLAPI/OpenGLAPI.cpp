@@ -295,7 +295,7 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 	ZEPHYR_ASSERT(mVBOs.find(pMesh.mID) == mVBOs.end(), "VBO data for this mesh already exists. Release the data before re-initialising");
 
 	mVBOs.emplace(std::make_pair(pMesh.mID,
-	std::array<std::optional<VBO>, Shader::toIndex(Shader::Attribute::Count)>
+	std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)>
 	{
 		bufferAttributeData<float>(pMesh.mVertices, Shader::Attribute::Position3D)
 		, bufferAttributeData<float>(pMesh.mNormals, Shader::Attribute::Normal3D)

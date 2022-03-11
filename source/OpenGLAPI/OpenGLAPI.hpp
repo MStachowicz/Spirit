@@ -7,6 +7,7 @@
 
 #include "Mesh.hpp"
 #include "Texture.hpp"
+#include "Utility.hpp"
 
 #include "unordered_map"
 #include "optional"
@@ -91,7 +92,7 @@ private:
 	// @PERFORMANCE We should store DrawInfo on the stack for faster access.
 	std::unordered_map<MeshID, DrawInfo> mDrawInfos;
 	std::unordered_map<MeshID, VAO> mVAOs;
-	std::unordered_map<MeshID, std::array<std::optional<VBO>, Shader::toIndex(Shader::Attribute::Count)>> mVBOs;
+	std::unordered_map<MeshID, std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)>> mVBOs;
 	std::unordered_map<TextureID, TextureHandle> mTextures; // Mapping of Zephyr::TextureID to OpenGL data handle.
 
 	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.

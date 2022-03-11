@@ -13,12 +13,6 @@ class Shader
 public:
     Shader(const std::string &pName);
 
-    template <typename T>
-	static constexpr auto toIndex(T pEnum) noexcept // Returns the underlying type. Used to convert Shader::Attributes to indexes into arrays in mMeshGPUDataManager
-	{
-		return static_cast<std::underlying_type_t<T>>(pEnum);
-	}
-
     // These are per-vertex attributes found in GLSL shaders.
     // Each attribute must be named the same in the GLSL files. getAttributeName() returns the expected string in the shader.
     // Each attribute must be in the same location in all shaders, specified as "layout (location = X)"". getAttributeLocation() returns the location X.

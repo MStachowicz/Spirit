@@ -95,6 +95,7 @@ message(STATUS "\n[ZEPHYR] -- Adding File System static library")
 add_library(FileSystem
 source/FileSystem/FileSystem.hpp
 source/FileSystem/FileSystem.cpp
+source/FileSystem/Utility.hpp
 )
 target_include_directories(FileSystem
 PRIVATE source/FileSystem

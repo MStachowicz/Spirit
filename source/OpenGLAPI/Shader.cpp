@@ -1,6 +1,7 @@
 #include "Shader.hpp"
 
 #include "FileSystem.hpp"
+#include "Utility.hpp"
 #include "Logger.hpp"
 
 #include "glad/gl.h"
@@ -36,7 +37,7 @@ void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
 
 	mTextureUnits += findOccurrences(pSourceCode, "uniform sampler2D");
 
-	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
+	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
 }
 
 void Shader::load()
@@ -105,7 +106,7 @@ void Shader::use() const
 
 int Shader::getAttributeLocation(const Attribute& pAttribute)
 {
-	int location = static_cast<int>(toIndex(pAttribute));
+	int location = static_cast<int>(util::toIndex(pAttribute));
 	return location;
 
 	// Non static version of getAttributeLocation, not necessary as attribute locations are
