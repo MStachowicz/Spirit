@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Camera.hpp"
 #include "Mesh.hpp"
 #include "Texture.hpp"
+#include "LightManager.hpp"
+#include "Camera.hpp"
 #include "DrawCall.hpp"
 #include "ComponentManager.hpp"
 
@@ -29,6 +30,7 @@ private:
 	// Stores all the meshes derived graphics APIs can draw.
 	MeshManager mMeshManager;
 	TextureManager mTextureManager;
+	LightManager mLightManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
 

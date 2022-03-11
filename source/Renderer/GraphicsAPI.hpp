@@ -1,29 +1,23 @@
 #pragma once
 
-#include "Logger.hpp"
-
-#include "Mesh.hpp"
-#include "Texture.hpp"
-
-#include "DrawCall.hpp"
-#include "LightManager.hpp"
-
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
 #include "glm/mat4x4.hpp" // mat4, dmat4
 
-#include "vector"
-#include "string"
-#include "optional"
-
 class MeshManager;
+class TextureManager;
+class LightManager;
+struct Mesh;
+struct Texture;
+struct DrawCall;
 
 // GraphicsAPI is an interface for Zephyr::Renderer to communicate with a derived Graphics pipeline.
 class GraphicsAPI
 {
 public:
-	GraphicsAPI(const MeshManager& pMeshManager, const TextureManager& pTextureManager)
+	GraphicsAPI(const MeshManager& pMeshManager, const TextureManager& pTextureManager, const LightManager& pLightManager)
 	: mMeshManager(pMeshManager)
 	, mTextureManager(pTextureManager)
+	, mLightManager(pLightManager)
 	{};
 
 	virtual ~GraphicsAPI() {}; // GraphicsAPI is a pure virtual interface used polymorphically.
@@ -44,5 +38,5 @@ protected:
 
 	const MeshManager& mMeshManager; // Owned by Zephyr::Renderer.
 	const TextureManager& mTextureManager; // Owned by Zephyr::Renderer.
-	LightManager mLightManager;
+	const LightManager& mLightManager;
 };
