@@ -102,13 +102,22 @@ void Renderer::onFrameStart()
 				{ // Draw style selection
 					if (ImGui::BeginCombo("Draw Style", convert(pDrawCall.mDrawStyle).c_str(), ImGuiComboFlags()))
 					{
-						//for (const auto& drawStyle : drawStyles)
 						for (size_t i = 0; i < drawStyles.size(); i++)
 						{
 							if (ImGui::Selectable(drawStyles[i].c_str()))
-							{
 								pDrawCall.mDrawStyle = static_cast<DrawStyle>(i);
-							}
+						}
+						ImGui::EndCombo();
+					}
+				}
+
+				{ // Draw mode selection
+					if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))
+					{
+						for (size_t i = 0; i < drawModes.size(); i++)
+						{
+							if (ImGui::Selectable(drawModes[i].c_str()))
+								pDrawCall.mDrawMode = static_cast<DrawMode>(i);
 						}
 						ImGui::EndCombo();
 					}

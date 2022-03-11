@@ -13,9 +13,16 @@
 enum class DrawMode
 {
 	Fill,
-	Wireframe
-};
+	Wireframe,
 
+	Count
+};
+// Allows iterating over enum class DrawMode
+static const std::array<std::string, util::toIndex(DrawMode::Count)> drawModes { "Fill", "Wireframe" };
+static std::string convert(const DrawMode& pDrawMode)
+{
+	return drawModes[util::toIndex(pDrawMode)];
+}
 
 enum class DrawStyle : size_t
 {
