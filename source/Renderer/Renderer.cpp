@@ -15,6 +15,10 @@ Renderer::Renderer()
 , std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1)
 )
 {
+	lightPosition.mScale 		= glm::vec3(0.1f);
+	lightPosition.mMesh 		= mMeshManager.getMeshID("3DCube");
+	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
+
 	{
 		DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
 		drawCall.mScale 		= glm::vec3(0.25f);
@@ -64,6 +68,12 @@ Renderer::~Renderer()
 void Renderer::onFrameStart()
 {
 	mOpenGLAPI->onFrameStart();
+
+	if (ImGui::Begin("Render options"))
+	{
+		ImGui::Checkbox("Render light positions", &mLightManager.mRenderLightPositions);
+	}
+	ImGui::End();
 
 	if (ImGui::Begin("Entity draw options"))
 	{
@@ -132,10 +142,19 @@ void Renderer::onFrameStart()
 
 void Renderer::draw()
 {
-	mDrawCalls.ForEach([&](const DrawCall &pDrawCall)
+	mDrawCalls.ForEach([&](const DrawCall& pDrawCall)
 	{
 		mOpenGLAPI->draw(pDrawCall);
 	});
+
+	if (mLightManager.mRenderLightPositions)
+	{
+		mLightManager.getPointLights().ForEach([&](const PointLight &pPointLight)
+		{
+			lightPosition.mPosition = pPointLight.mPosition;
+			mOpenGLAPI->draw(lightPosition);
+		});
+	}
 
 	drawCount++;
 }

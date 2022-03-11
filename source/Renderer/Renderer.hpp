@@ -34,5 +34,6 @@ private:
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
 
+	DrawCall lightPosition;
 	ECS::ComponentManager<DrawCall> mDrawCalls;
 };
