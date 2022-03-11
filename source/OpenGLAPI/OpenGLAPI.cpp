@@ -104,11 +104,14 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 		}
 		//glActiveTexture(GL_TEXTURE1);
 		//glBindTexture(GL_TEXTURE_2D, 0);
-
+		break;
+	case DrawStyle::UniformColour:
+		shader = &mShaders[mUniformShaderIndex];
 		break;
 	default:
 		break;
 	}
+	shader->use();
 
 	glm::mat4 trans = glm::translate(glm::mat4(1.0f), pDrawCall.mPosition);
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.x), glm::vec3(1.0, 0.0, 0.0));
@@ -118,7 +121,6 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-	shader->use();
 	shader->setUniform("model", trans);
 	shader->setUniform("view", mViewMatrix);
 	shader->setUniform("projection", projection);

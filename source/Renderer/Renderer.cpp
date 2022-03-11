@@ -81,7 +81,7 @@ void Renderer::onFrameStart()
 				ImGui::SliderFloat3("Scale",  &pDrawCall.mScale.x, 0.1f, 1.5f);
 				//ImGui::ColorEdit3("color",  &pDrawCall.mColor.x);
 
-				{
+				{ // Texture selection
 					const std::string currentTexture = pDrawCall.mTexture.has_value() ?
 					mTextureManager.getTextureName(pDrawCall.mTexture.value()) : "No texture set";
 
@@ -95,6 +95,21 @@ void Renderer::onFrameStart()
 								pDrawCall.mDrawStyle = DrawStyle::Textured;
 							}
 						});
+						ImGui::EndCombo();
+					}
+				}
+
+				{ // Draw style selection
+					if (ImGui::BeginCombo("Draw Style", convert(pDrawCall.mDrawStyle).c_str(), ImGuiComboFlags()))
+					{
+						//for (const auto& drawStyle : drawStyles)
+						for (size_t i = 0; i < drawStyles.size(); i++)
+						{
+							if (ImGui::Selectable(drawStyles[i].c_str()))
+							{
+								pDrawCall.mDrawStyle = static_cast<DrawStyle>(i);
+							}
+						}
 						ImGui::EndCombo();
 					}
 				}
