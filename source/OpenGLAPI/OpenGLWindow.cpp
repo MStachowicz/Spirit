@@ -13,7 +13,7 @@ OpenGLWindow::OpenGLWindow(const int& pMajorVersion, const int& pMinorVersion, c
 : mHandle(nullptr)
 , mWidth(pWidth)
 , mHeight(pHeight)
-, mAspectRatio(mWidth / mHeight)
+, mAspectRatio(static_cast<float>(mWidth) / static_cast<float>(mHeight))
 , mOpenGLMajorVersion(pMajorVersion)
 , mOpenGLMinorVersion(pMinorVersion)
 {
