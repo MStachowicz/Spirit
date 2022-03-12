@@ -15,11 +15,15 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	: GraphicsAPI(pMeshManager, pTextureManager, pLightManager)
 	, cOpenGLVersionMajor(3)
 	, cOpenGLVersionMinor(3)
+	, mWindowClearColour{0.0f, 0.0f, 0.0f}
+	, mDepthTest(true)
+	, mZNearPlane(0.1f)
+	, mZFarPlane (100.0f)
+	, mFOV(45.f)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 	, mGLADContext(initialiseGLAD())
-	, mWindowClearColour{0.0f, 0.0f, 0.0f}
+	, mShaders{Shader("texture"), Shader("material"), Shader("colour"), Shader("uniformColour")}
 {
-	mShaders = {Shader("texture"), Shader("material"), Shader("colour"), Shader("uniformColour")};
 	mTextureShaderIndex = 0;
 	mMaterialShaderIndex = 1;
 	mUniformShaderIndex = 3;
@@ -29,7 +33,8 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
-	glEnable(GL_DEPTH_TEST);
+
+	setDepthTest(mDepthTest);
 
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
 }
@@ -43,6 +48,14 @@ OpenGLAPI::~OpenGLAPI()
 	}
 }
 
+void OpenGLAPI::setDepthTest(const bool& pDepthTest)
+{
+	if (pDepthTest)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
+}
+
 void OpenGLAPI::clearBuffers()
 {
 	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -53,12 +66,21 @@ void OpenGLAPI::onFrameStart()
 	clearBuffers();
 	mWindow.startImGuiFrame();
 
-	if (ImGui::Begin("OpenGL options"))
+	if (ImGui::Begin("OpenGL options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		ImGui::Text("OpenGL version: {}.{}", cOpenGLVersionMajor, cOpenGLVersionMinor);
 		if (ImGui::ColorEdit3("Window clear colour", mWindowClearColour))
 			setClearColour(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2]);
+		if (ImGui::Checkbox("Depth test", &mDepthTest))
+			setDepthTest(mDepthTest);
+
+		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
+		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
+		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
 	}
 	ImGui::End();
+
+	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
 
 	{ // Set all the light uniforms ready for draw() calls
 		mShaders[mMaterialShaderIndex].use();
@@ -76,7 +98,6 @@ void OpenGLAPI::onFrameStart()
 		});
 	}
 }
-
 
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
 {
@@ -119,15 +140,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.z), glm::vec3(0.0, 0.0, 1.0));
 	trans = glm::scale(trans, pDrawCall.mScale);
 
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-
 	shader->setUniform("model", trans);
 	shader->setUniform("view", mViewMatrix);
-	shader->setUniform("projection", projection);
+	shader->setUniform("projection", mProjection);
 
 	glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(pDrawCall.mDrawMode));
-	getVAO(pDrawCall.mMesh).bind();
 
+	getVAO(pDrawCall.mMesh).bind();
 	if (drawInfo.mDrawMethod == DrawInfo::DrawMethod::Indices)
 		glDrawElements(drawInfo.mDrawMode, static_cast<GLsizei>(drawInfo.mDrawSize), GL_UNSIGNED_INT, 0);
 	else if (drawInfo.mDrawMethod == DrawInfo::DrawMethod::Array)
@@ -345,5 +364,15 @@ void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 {
 	LOG_INFO("Window resolution changed to {}x{}", pWidth, pHeight);
 	glViewport(0, 0, pWidth, pHeight);
-	OpenGLWindow::currentWindow->onResize(pWidth, pHeight);
+
+	const float width = static_cast<float>(pWidth);
+	const float height = static_cast<float>(pHeight);
+
+	ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(width, height);
+	io.FontGlobalScale = ((width * height) / 1.4f ) / (1920.f * 1080.f);;
+
+	OpenGLWindow::currentWindow->mWidth = pWidth;
+	OpenGLWindow::currentWindow->mHeight = pHeight;
+	OpenGLWindow::currentWindow->mAspectRatio = width / height;
 }

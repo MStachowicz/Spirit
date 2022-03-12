@@ -35,6 +35,7 @@ protected:
 
 	glm::mat4 mViewMatrix; // The view matrix used in draw(), set in setView
 	glm::vec3 mViewPosition; // The view position used in draw(), set in setViewPosition
+	glm::mat4 mProjection;
 
 	const MeshManager& mMeshManager; // Owned by Zephyr::Renderer.
 	const TextureManager& mTextureManager; // Owned by Zephyr::Renderer.

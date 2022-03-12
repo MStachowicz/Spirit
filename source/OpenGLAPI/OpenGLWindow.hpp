@@ -22,11 +22,9 @@ private:
     GLFWwindow* mHandle;
     int mWidth;
     int mHeight;
+    float mAspectRatio;
     int mOpenGLMinorVersion;
     int mOpenGLMajorVersion;
-
-    void onResize(const int& pNewWidth, const int& pNewHeight);
-
 
 	static inline OpenGLWindow* currentWindow = nullptr; // Allows the static GLFW callback to call into this window and getActiveWindowHandle to function.
     static inline int activeGLFWWindows = 0; // Allows GLFW initialisation/termination to only happen on the first and last instances of a GLFWwindow.

@@ -13,6 +13,7 @@ OpenGLWindow::OpenGLWindow(const int& pMajorVersion, const int& pMinorVersion, c
 : mHandle(nullptr)
 , mWidth(pWidth)
 , mHeight(pHeight)
+, mAspectRatio(mWidth / mHeight)
 , mOpenGLMajorVersion(pMajorVersion)
 , mOpenGLMinorVersion(pMinorVersion)
 {
@@ -44,10 +45,10 @@ OpenGLWindow::OpenGLWindow(const int& pMajorVersion, const int& pMinorVersion, c
         ImGuiIO &io = ImGui::GetIO();
         (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
-        io.ConfigDockingWithShift = false;
         io.DisplaySize = ImVec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(mHandle, true);
+
         ZEPHYR_ASSERT(mOpenGLMajorVersion == 3 && mOpenGLMinorVersion == 3, "Initialising ImGui with wrong OpenGL version string.");
         ImGui_ImplOpenGL3_Init("#version 330");
     }
@@ -107,14 +108,7 @@ void OpenGLWindow::renderImGui()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
- void OpenGLWindow::swapBuffers()
- {
-     glfwSwapBuffers(mHandle);
- }
-
-void OpenGLWindow::onResize(const int& pNewWidth, const int& pNewHeight)
+void OpenGLWindow::swapBuffers()
 {
-    mWidth = pNewWidth;
-    mHeight = pNewHeight;
-    ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
+    glfwSwapBuffers(mHandle);
 }

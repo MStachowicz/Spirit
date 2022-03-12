@@ -33,11 +33,16 @@ private:
 	void initialiseTexture(const Texture& pTexture) override;
 
 	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue);
+	void setDepthTest(const bool& pDepthTest);
 	void clearBuffers();
 	int getPolygonMode(const DrawMode& pDrawMode);
 
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
+	bool mDepthTest;
+	float mZNearPlane;
+	float mZFarPlane;
+	float mFOV;
 
 	// The window and GLAD context must be first declared to enforce the correct initialisation order:
 	// ***************************************************************************************************
