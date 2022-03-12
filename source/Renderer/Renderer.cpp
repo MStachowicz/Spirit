@@ -75,6 +75,17 @@ void Renderer::onFrameStart()
 	}
 	ImGui::End();
 
+	if (ImGui::Begin("ImGui options"))
+	{
+		ImGuiIO &io = ImGui::GetIO();
+		ImGui::SliderFloat("FontGlobalScale", 		&io.FontGlobalScale, 0.1f, 5.f);
+		ImGui::SliderFloat2("FontAllowUserScaling", 		&io.DisplaySize.x, 1.f, 3840.f);
+		ImGui::Checkbox("FontAllowUserScaling", 			&io.FontAllowUserScaling);
+		ImGui::Checkbox("ConfigDockingWithShift", 	&io.ConfigDockingWithShift);
+		ImGui::SliderFloat("Mainviewport DpiScale", 	&ImGui::GetMainViewport()->DpiScale, 1.f, 300.f);
+	}
+	ImGui::End();
+
 	if (ImGui::Begin("Entity draw options"))
 	{
 		size_t count = 0;
