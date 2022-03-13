@@ -17,6 +17,7 @@ Renderer::Renderer()
 {
 	lightPosition.mScale 		= glm::vec3(0.1f);
 	lightPosition.mMesh 		= mMeshManager.getMeshID("3DCube");
+	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
 	{
@@ -168,22 +169,15 @@ void Renderer::onFrameStart()
 				ImGui::SliderFloat3("Position", &pDrawCall.mPosition.x, -1.f, 1.f);
 				ImGui::SliderFloat3("Rotation", &pDrawCall.mRotation.x, -90.f, 90.f);
 				ImGui::SliderFloat3("Scale",  &pDrawCall.mScale.x, 0.1f, 1.5f);
-				//ImGui::ColorEdit3("color",  &pDrawCall.mColor.x);
 
-				{ // Texture selection
-					const std::string currentTexture = pDrawCall.mTexture.has_value() ?
-					mTextureManager.getTextureName(pDrawCall.mTexture.value()) : "No texture set";
-
-					if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
+				{ // Draw mode selection
+					if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))
 					{
-						mTextureManager.ForEach([&](const Texture& texture)
+						for (size_t i = 0; i < drawModes.size(); i++)
 						{
-							if (ImGui::Selectable(texture.mName.c_str()))
-							{
-								pDrawCall.mTexture = texture.mID;
-								pDrawCall.mDrawStyle = DrawStyle::Textured;
-							}
-						});
+							if (ImGui::Selectable(drawModes[i].c_str()))
+								pDrawCall.mDrawMode = static_cast<DrawMode>(i);
+						}
 						ImGui::EndCombo();
 					}
 				}
@@ -200,17 +194,36 @@ void Renderer::onFrameStart()
 					}
 				}
 
-				{ // Draw mode selection
-					if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))
+				switch (pDrawCall.mDrawStyle)
+				{
+				case DrawStyle::Textured:
+				{
+					const std::string currentTexture = pDrawCall.mTexture.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture.value()) : "No texture set";
+					if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
 					{
-						for (size_t i = 0; i < drawModes.size(); i++)
-						{
-							if (ImGui::Selectable(drawModes[i].c_str()))
-								pDrawCall.mDrawMode = static_cast<DrawMode>(i);
-						}
+						mTextureManager.ForEach([&](const Texture &texture)
+							{
+								if (ImGui::Selectable(texture.mName.c_str()))
+								{
+									pDrawCall.mTexture = texture.mID;
+									pDrawCall.mDrawStyle = DrawStyle::Textured;
+								}
+							});
 						ImGui::EndCombo();
 					}
 				}
+				break;
+				case DrawStyle::UniformColour:
+				{
+					if (!pDrawCall.mColour.has_value())
+						pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
+
+					ImGui::ColorEdit3("color",  &pDrawCall.mColour.value().x);
+				}
+				default:
+					break;
+				}
+
 
 				ImGui::TreePop();
 			}
@@ -233,6 +246,7 @@ void Renderer::draw()
 		mLightManager.getPointLights().ForEach([&](const PointLight &pPointLight)
 		{
 			lightPosition.mPosition = pPointLight.mPosition;
+			lightPosition.mColour	= pPointLight.mColour;
 			mOpenGLAPI->draw(lightPosition);
 		});
 	}

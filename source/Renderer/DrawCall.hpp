@@ -54,6 +54,7 @@ struct DrawCall
 	MeshID 					 mMesh;
 	std::optional<TextureID> mTexture;
 	std::optional<Material>  mMaterial;
+	std::optional<glm::vec3> mColour;
 
 	DrawMode 	mDrawMode  	= DrawMode::Fill;
 	DrawStyle	mDrawStyle  = DrawStyle::Default;

@@ -129,6 +129,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	case DrawStyle::UniformColour:
 		shader = &mShaders[mUniformShaderIndex];
 		shader->use();
+		shader->setUniform("colour", pDrawCall.mColour.value());
 		break;
 	case DrawStyle::Material:
 		shader = &mShaders[mMaterialShaderIndex];
