@@ -106,7 +106,6 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 
 	switch (pDrawCall.mDrawStyle)
 	{
-	case DrawStyle::Default: // Default renders objects with texture
 	case DrawStyle::Textured:
 		shader = &mShaders[mTextureShaderIndex];
 		shader->use();
@@ -134,11 +133,10 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	case DrawStyle::Material:
 		shader = &mShaders[mMaterialShaderIndex];
 		shader->use();
-
-		shader->setUniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-       	shader->setUniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
-        shader->setUniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f)); // specular lighting doesn't have full effect on this object's material
-        shader->setUniform("material.shininess", 32.0f);
+		shader->setUniform("material.ambient", pDrawCall.mMaterial.value().ambient);
+       	shader->setUniform("material.diffuse", pDrawCall.mMaterial.value().diffuse);
+        shader->setUniform("material.specular", pDrawCall.mMaterial.value().specular);
+        shader->setUniform("material.shininess", pDrawCall.mMaterial.value().shininess);
 		break;
 	default:
 		break;

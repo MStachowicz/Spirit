@@ -26,15 +26,14 @@ static std::string convert(const DrawMode& pDrawMode)
 
 enum class DrawStyle : size_t
 {
-	Default 		= 0,
-	Textured 		= 1,
-	Material 		= 2,
-	UniformColour 	= 3,
+	Textured 		= 0,
+	Material 		= 1,
+	UniformColour 	= 2,
 
 	Count
 };
 // Allows iterating over enum class DrawStyle
-static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles { "Default", "Textured", "Material", "Uniform Colour" };
+static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles { "Textured", "Material", "Uniform Colour" };
 static std::string convert(const DrawStyle& pDrawStyle)
 {
 	return drawStyles[util::toIndex(pDrawStyle)];
@@ -42,22 +41,22 @@ static std::string convert(const DrawStyle& pDrawStyle)
 
 struct Material
 {
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-    float shininess;
+    glm::vec3 ambient = glm::vec3(1.0f, 0.5f, 0.31f);
+    glm::vec3 diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+    glm::vec3 specular = glm::vec3(0.5f, 0.5f, 0.5f);
+    float shininess = 32.0f;
 };
 
 // A request to execute a specific draw using a GraphicsAPI.
 struct DrawCall
 {
 	MeshID 					 mMesh;
-	std::optional<TextureID> mTexture;
-	std::optional<Material>  mMaterial;
-	std::optional<glm::vec3> mColour;
+	std::optional<TextureID> mTexture	= std::nullopt;
+	std::optional<Material>  mMaterial	= std::nullopt;
+	std::optional<glm::vec3> mColour	= std::nullopt;
 
 	DrawMode 	mDrawMode  	= DrawMode::Fill;
-	DrawStyle	mDrawStyle  = DrawStyle::Default;
+	DrawStyle	mDrawStyle  = DrawStyle::Textured;
 
 	glm::vec3 	mPosition 	= glm::vec3(0.0f);
 	glm::vec3 	mRotation	= glm::vec3(0.0f);

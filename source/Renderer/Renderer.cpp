@@ -25,7 +25,6 @@ Renderer::Renderer()
 		drawCall.mScale 		= glm::vec3(0.25f);
 		drawCall.mPosition 		= glm::vec3(-0.75f, 0.75f, 0.0f);
 		drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
-		//drawCall.mTexture		= mOpenGLAPI->getTextureID("tiles");
 	}
 	{
 		DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
@@ -37,15 +36,15 @@ Renderer::Renderer()
 	{
 		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
 		drawCall.mPosition 		= glm::vec3(1.f, 0.f, 0.f);
+		drawCall.mDrawStyle 	= DrawStyle::Material;
+		drawCall.mMaterial		= Material();
 		drawCall.mMesh 			= mMeshManager.getMeshID("3DCube");
-		drawCall.mTexture 		= mTextureManager.getTextureID("marcy");
 	}
 	{
 		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
 		drawCall.mScale 		= glm::vec3(0.25f);
 		drawCall.mPosition 		= glm::vec3(-0.75f, -0.75f, 0.0f);
 		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-		//drawCall.mTexture	= mOpenGLAPI->getTextureID("tiles");
 	}
 	{
 		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
@@ -220,6 +219,15 @@ void Renderer::onFrameStart()
 
 					ImGui::ColorEdit3("color",  &pDrawCall.mColour.value().x);
 				}
+				break;
+				case DrawStyle::Material:
+				{
+					if (!pDrawCall.mMaterial.has_value())
+						pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
+
+					ImGui::ColorEdit3("color", &pDrawCall.mColour.value().x);
+				}
+				break;
 				default:
 					break;
 				}
