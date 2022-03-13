@@ -77,6 +77,7 @@ void OpenGLAPI::onFrameStart()
 		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
 		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
+		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
 	}
 	ImGui::End();
 
@@ -88,12 +89,11 @@ void OpenGLAPI::onFrameStart()
 
 		mLightManager.getPointLights().ForEach([&](const PointLight &pointLight)
 		{
-			glm::vec3 diffuseColour = pointLight.mColour * pointLight.mDiffuse;
-			glm::vec3 ambientColour = diffuseColour * pointLight.mAmbient;
-
-			mShaders[mMaterialShaderIndex].setUniform("light.ambient", ambientColour);
-			mShaders[mMaterialShaderIndex].setUniform("light.diffuse", diffuseColour);
-			mShaders[mMaterialShaderIndex].setUniform("light.specular", pointLight.mSpecular);
+			const glm::vec3 diffuseColour = pointLight.mColour  * pointLight.mDiffuseIntensity;
+        	const glm::vec3 ambientColour = diffuseColour * pointLight.mAmbientIntensity;
+        	mShaders[mMaterialShaderIndex].setUniform("light.ambient", ambientColour);
+        	mShaders[mMaterialShaderIndex].setUniform("light.diffuse", diffuseColour);
+        	mShaders[mMaterialShaderIndex].setUniform("light.specular", glm::vec3(pointLight.mSpecularIntensity));
 			mShaders[mMaterialShaderIndex].setUniform("light.position", pointLight.mPosition);
 		});
 	}
@@ -128,11 +128,22 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 		break;
 	case DrawStyle::UniformColour:
 		shader = &mShaders[mUniformShaderIndex];
+		shader->use();
+		break;
+	case DrawStyle::Material:
+		shader = &mShaders[mMaterialShaderIndex];
+		shader->use();
+
+		shader->setUniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+       	shader->setUniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+        shader->setUniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f)); // specular lighting doesn't have full effect on this object's material
+        shader->setUniform("material.shininess", 32.0f);
 		break;
 	default:
 		break;
 	}
-	shader->use();
+
+	ZEPHYR_ASSERT(shader != nullptr, "Shader to draw with has not been set.")
 
 	glm::mat4 trans = glm::translate(glm::mat4(1.0f), pDrawCall.mPosition);
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.x), glm::vec3(1.0, 0.0, 0.0));

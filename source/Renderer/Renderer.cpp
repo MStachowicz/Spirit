@@ -217,6 +217,8 @@ void Renderer::onFrameStart()
 		});
 	}
 	ImGui::End();
+
+	mLightManager.outputImGui();
 }
 
 void Renderer::draw()

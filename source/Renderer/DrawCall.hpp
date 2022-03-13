@@ -26,24 +26,34 @@ static std::string convert(const DrawMode& pDrawMode)
 
 enum class DrawStyle : size_t
 {
-	Default = 0,
-	Textured = 1,
-	UniformColour = 2,
+	Default 		= 0,
+	Textured 		= 1,
+	Material 		= 2,
+	UniformColour 	= 3,
 
 	Count
 };
 // Allows iterating over enum class DrawStyle
-static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles { "Default", "Textured", "Uniform Colour" };
+static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles { "Default", "Textured", "Material", "Uniform Colour" };
 static std::string convert(const DrawStyle& pDrawStyle)
 {
 	return drawStyles[util::toIndex(pDrawStyle)];
 }
+
+struct Material
+{
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    float shininess;
+};
 
 // A request to execute a specific draw using a GraphicsAPI.
 struct DrawCall
 {
 	MeshID 					 mMesh;
 	std::optional<TextureID> mTexture;
+	std::optional<Material>  mMaterial;
 
 	DrawMode 	mDrawMode  	= DrawMode::Fill;
 	DrawStyle	mDrawStyle  = DrawStyle::Default;

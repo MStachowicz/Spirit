@@ -42,6 +42,7 @@ source/Renderer/Camera.cpp
 source/Renderer/GraphicsAPI.hpp
 source/Renderer/ImGuiConfig.hpp
 source/Renderer/LightManager.hpp
+source/Renderer/LightManager.cpp
 )
 target_include_directories(Renderer
 PRIVATE source/FileSystem
@@ -143,7 +144,6 @@ spdlog
 # This library implements a Zephyr renderer using GLAD OpenGL as well as an Input handler using GLFW
 add_library(OpenGLAPI
 source/Renderer/GraphicsAPI.hpp # implements the Zephyr::Renderer GraphicsAPI interface
-source/Renderer/LightManager.hpp # implements the Zephyr::Renderer GraphicsAPI interface
 source/OpenGLAPI/OpenGLAPI.hpp
 source/OpenGLAPI/OpenGLAPI.cpp
 source/OpenGLAPI/OpenGLWindow.hpp
