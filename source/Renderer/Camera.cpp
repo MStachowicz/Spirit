@@ -16,7 +16,7 @@ Camera::Camera(const glm::vec3& pPosition
     , mView()   // ----|
     , mOnViewChange(pOnViewChangeCallback)
     , mOnViewPositionChange(pOnViewPositionChangeCallback)
-    , mMovementSpeed(2.5f)
+    , mMovementSpeed(1.f)
     , mMouseSensitivity(0.1f)
     , mZoom(45.0f)
 {
