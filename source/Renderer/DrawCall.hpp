@@ -2,7 +2,6 @@
 
 #include "Mesh.hpp"
 #include "Texture.hpp"
-
 #include "Utility.hpp"
 
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
@@ -45,6 +44,16 @@ struct Material
     glm::vec3 diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
     glm::vec3 specular = glm::vec3(0.5f, 0.5f, 0.5f);
     float shininess = 32.0f;
+
+	enum class Preset : size_t
+	{
+		Emerald = 0, Jade, Obsidian, Pearl, Ruby, Turquoise, Brass, Bronze, Chrome, Copper, Gold, Silver,
+		BlackPlastic, CyanPlastic, GreenPlastic, RedPlastic, WhitePlastic, YellowPlastic,
+		BlackRubber, CyanRubber, GreenRubber, RedRubber, WhiteRubber, YellowRubber,
+		Count
+	};
+	static const std::array<std::pair<std::string, Material>, util::toIndex(Material::Preset::Count)> presets;
+	static std::pair<std::string, Material> get(const Material::Preset &pPreset);
 };
 
 // A request to execute a specific draw using a GraphicsAPI.

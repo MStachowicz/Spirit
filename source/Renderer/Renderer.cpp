@@ -20,44 +20,55 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
+	for (size_t i = 0; i < 4; i++)
 	{
-		DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mScale 		= glm::vec3(0.25f);
-		drawCall.mPosition 		= glm::vec3(-0.75f, 0.75f, 0.0f);
-		drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
+		DrawCall &drawCall 	= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mPosition 	= glm::vec3(-3.f + (i * 2), 2.f, -4.f);
+		drawCall.mDrawStyle = DrawStyle::Material;
+		drawCall.mMaterial 	= Material::presets[i].second;
+		drawCall.mMesh 		= mMeshManager.getMeshID("3DCube");
 	}
+
+	for (size_t i = 4; i < 8; i++)
 	{
-		DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mScale 		= glm::vec3(0.25f);
-		drawCall.mPosition 		= glm::vec3(0.0f, 0.75f, 0.0f);
-		drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
-		drawCall.mDrawMode 		= DrawMode::Wireframe;
+		DrawCall &drawCall 	= mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mPosition 	= glm::vec3(-11.f + (i * 2), 0.f, -4.f);
+		drawCall.mDrawStyle = DrawStyle::Material;
+		drawCall.mMaterial 	= Material::presets[i].second;
+		drawCall.mMesh 		= mMeshManager.getMeshID("3DCube");
 	}
-	{
-		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition 		= glm::vec3(1.f, 0.f, 0.f);
-		drawCall.mDrawStyle 	= DrawStyle::Material;
-		drawCall.mMaterial		= Material();
-		drawCall.mMesh 			= mMeshManager.getMeshID("3DCube");
-	}
-	{
-		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mScale 		= glm::vec3(0.25f);
-		drawCall.mPosition 		= glm::vec3(-0.75f, -0.75f, 0.0f);
-		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-	}
-	{
-		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mScale 		= glm::vec3(0.25f, 0.5f, 0.25f);
-		drawCall.mPosition 		= glm::vec3(0.0f, -0.75f, 0.0f);
-		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-	}
-	{
-		DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mScale 		= glm::vec3(0.25f);
-		drawCall.mPosition 		= glm::vec3(0.75f, -0.75f, 0.0f);
-		drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-	}
+
+	//{
+	//	DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
+	//	drawCall.mScale 		= glm::vec3(0.25f);
+	//	drawCall.mPosition 		= glm::vec3(-0.75f, 0.75f, 0.0f);
+	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
+	//}
+	//{
+	//	DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
+	//	drawCall.mScale 		= glm::vec3(0.25f);
+	//	drawCall.mPosition 		= glm::vec3(0.0f, 0.75f, 0.0f);
+	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
+	//	drawCall.mDrawMode 		= DrawMode::Wireframe;
+	//}
+	//{
+	//	DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+	//	drawCall.mScale 		= glm::vec3(0.25f);
+	//	drawCall.mPosition 		= glm::vec3(-0.75f, -0.75f, 0.0f);
+	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
+	//}
+	//{
+	//	DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+	//	drawCall.mScale 		= glm::vec3(0.25f, 0.5f, 0.25f);
+	//	drawCall.mPosition 		= glm::vec3(0.0f, -0.75f, 0.0f);
+	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
+	//}
+	//{
+	//	DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
+	//	drawCall.mScale 		= glm::vec3(0.25f);
+	//	drawCall.mPosition 		= glm::vec3(0.75f, -0.75f, 0.0f);
+	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
+	//}
 }
 
 Renderer::~Renderer()
@@ -193,6 +204,8 @@ void Renderer::onFrameStart()
 					}
 				}
 
+				ImGui::Separator();
+
 				switch (pDrawCall.mDrawStyle)
 				{
 				case DrawStyle::Textured:
@@ -217,7 +230,7 @@ void Renderer::onFrameStart()
 					if (!pDrawCall.mColour.has_value())
 						pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
 
-					ImGui::ColorEdit3("color",  &pDrawCall.mColour.value().x);
+					ImGui::ColorEdit3("Colour",  &pDrawCall.mColour.value().x);
 				}
 				break;
 				case DrawStyle::Material:
@@ -225,7 +238,21 @@ void Renderer::onFrameStart()
 					if (!pDrawCall.mMaterial.has_value())
 						pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
 
-					ImGui::ColorEdit3("color", &pDrawCall.mColour.value().x);
+					ImGui::Text("Material properties");
+					if (ImGui::BeginCombo("Preset", "", ImGuiComboFlags()))
+					{
+						for (size_t i = 0; i < Material::presets.size(); i++)
+						{
+							if (ImGui::Selectable(Material::presets[i].first.c_str()))
+								pDrawCall.mMaterial = Material::presets[i].second;
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::Separator();
+					ImGui::SliderFloat3("Ambient", &pDrawCall.mMaterial.value().ambient.x, 0.f, 1.f);
+					ImGui::SliderFloat3("Diffuse", &pDrawCall.mMaterial.value().diffuse.x, 0.f, 1.f);
+					ImGui::SliderFloat3("Specular", &pDrawCall.mMaterial.value().specular.x, 0.f, 1.f);
+					ImGui::SliderFloat("Shininess", &pDrawCall.mMaterial.value().shininess, 0.1f, 300.f);
 				}
 				break;
 				default:
