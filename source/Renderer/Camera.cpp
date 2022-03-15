@@ -42,10 +42,10 @@ void Camera::move(const MoveDirection& pDirection)
         mPosition += mRight * velocity;
         break;
     case MoveDirection::Up:
-        mPosition += mUp * velocity;
+        mPosition.y += velocity;
         break;
     case MoveDirection::Down:
-        mPosition -= mUp * velocity;
+        mPosition.y -= velocity;
         break;
     default:
         break;
