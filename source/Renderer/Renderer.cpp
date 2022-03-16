@@ -210,18 +210,45 @@ void Renderer::onFrameStart()
 				{
 				case DrawStyle::Textured:
 				{
-					const std::string currentTexture = pDrawCall.mTexture.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture.value()) : "No texture set";
-					if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
-					{
-						mTextureManager.ForEach([&](const Texture &texture)
+					{// Texture 1
+						const std::string currentTexture = pDrawCall.mTexture1.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture1.value()) : "Empty";
+						if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
+						{
+							mTextureManager.ForEach([&](const Texture &texture)
 							{
 								if (ImGui::Selectable(texture.mName.c_str()))
 								{
-									pDrawCall.mTexture = texture.mID;
-									pDrawCall.mDrawStyle = DrawStyle::Textured;
+									pDrawCall.mTexture1 = texture.mID;
 								}
 							});
-						ImGui::EndCombo();
+							ImGui::EndCombo();
+						}
+					}
+					if (pDrawCall.mTexture1.has_value())
+					{ // Texture 2
+						const std::string currentTexture = pDrawCall.mTexture2.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture2.value()) : "Empty";
+						if (ImGui::BeginCombo("Texture 2", currentTexture.c_str(), ImGuiComboFlags()))
+						{
+							if	(pDrawCall.mTexture2.has_value())
+								if (ImGui::Selectable("Empty"))
+									pDrawCall.mTexture2 = std::nullopt;
+
+							mTextureManager.ForEach([&](const Texture &texture)
+							{
+								if (ImGui::Selectable(texture.mName.c_str()))
+								{
+									pDrawCall.mTexture2 = texture.mID;
+								}
+							});
+							ImGui::EndCombo();
+						}
+					}
+					if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
+					{ // Only displayed if we have two texture slots set
+						if (!pDrawCall.mMixFactor.has_value())
+							pDrawCall.mMixFactor = 0.5f;
+
+						ImGui::SliderFloat("Texture mix factor", &pDrawCall.mMixFactor.value(), 0.f, 1.f);
 					}
 				}
 				break;

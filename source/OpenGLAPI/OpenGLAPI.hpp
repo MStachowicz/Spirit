@@ -49,7 +49,8 @@ private:
 	OpenGLWindow mWindow;		 // GLFW window which both GLFWInput and OpenGLAPI depend on for their construction.
 	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
 
-	size_t mTextureShaderIndex;
+	size_t mTexture1ShaderIndex;
+	size_t mTexture2ShaderIndex;
 	size_t mUniformShaderIndex;
 	size_t mMaterialShaderIndex;
 	size_t mLightMapIndex;

@@ -22,11 +22,12 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	, mFOV(45.f)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 	, mGLADContext(initialiseGLAD())
-	, mTextureShaderIndex(0)
-	, mMaterialShaderIndex(1)
-	, mUniformShaderIndex(3)
-	, mLightMapIndex(4)
-	, mShaders{ Shader("texture"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap") }
+	, mTexture1ShaderIndex(0)
+	, mTexture2ShaderIndex(1)
+	, mMaterialShaderIndex(2)
+	, mUniformShaderIndex(4)
+	, mLightMapIndex(5)
+	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap") }
 {
 	mMeshManager.ForEach([this](const auto &mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
 	mTextureManager.ForEach([this](const auto &texture) { initialiseTexture(texture); });
@@ -119,23 +120,39 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	switch (pDrawCall.mDrawStyle)
 	{
 	case DrawStyle::Textured:
-		shader = &mShaders[mTextureShaderIndex];
-		shader->use();
-
+		if(pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
+		{
+			shader = &mShaders[mTexture2ShaderIndex];
+			shader->use();
+			shader->setUniform("mixFactor", pDrawCall.mMixFactor.value());
+		}
+		else
+		{
+			shader = &mShaders[mTexture1ShaderIndex];
+			shader->use();
+		}
 		ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
 
-		if (pDrawCall.mTexture.has_value())
+		if (pDrawCall.mTexture1.has_value())
 		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture.value()));
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture1.value()));
 		}
 		else
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
 		}
-		//glActiveTexture(GL_TEXTURE1);
-		//glBindTexture(GL_TEXTURE_2D, 0);
+		if (pDrawCall.mTexture2.has_value())
+		{
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture2.value()));
+		}
+		else
+		{
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+		}
 		break;
 	case DrawStyle::UniformColour:
 		shader = &mShaders[mUniformShaderIndex];

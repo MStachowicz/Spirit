@@ -68,7 +68,9 @@ struct DrawCall
 	glm::vec3 	mScale		= glm::vec3(1.0f);
 
 	//DrawStyle::Textured
-	std::optional<TextureID> mTexture	= std::nullopt;
+	std::optional<TextureID> mTexture1	= std::nullopt;
+	std::optional<TextureID> mTexture2	= std::nullopt;
+	std::optional<float> 	 mMixFactor = std::nullopt; // If mTexture1 and mTexture2 are set, allows setting the balance between the two textures.
 	//DrawStyle::Material
 	std::optional<Material>  mMaterial	= std::nullopt;
 	//DrawStyle::UniformColour
