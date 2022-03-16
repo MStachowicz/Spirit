@@ -52,6 +52,7 @@ private:
 	size_t mTextureShaderIndex;
 	size_t mUniformShaderIndex;
 	size_t mMaterialShaderIndex;
+	size_t mLightMapIndex;
 
 	std::vector<Shader> mShaders;
 

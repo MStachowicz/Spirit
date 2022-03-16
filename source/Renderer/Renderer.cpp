@@ -255,6 +255,37 @@ void Renderer::onFrameStart()
 					ImGui::SliderFloat("Shininess", &pDrawCall.mMaterial.value().shininess, 0.1f, 300.f);
 				}
 				break;
+				case DrawStyle::LightMap:
+				{
+					ImGui::Text("Available texture slots");
+					{
+						const std::string currentTexture = pDrawCall.mDiffuseTextureID.has_value() ? mTextureManager.getTextureName(pDrawCall.mDiffuseTextureID.value()) : "No texture set";
+						if (ImGui::BeginCombo("Diffuse", currentTexture.c_str(), ImGuiComboFlags()))
+						{
+							mTextureManager.ForEach([&](const Texture &texture)
+							{
+								if (ImGui::Selectable(texture.mName.c_str()))
+									pDrawCall.mDiffuseTextureID = texture.mID;
+							});
+							ImGui::EndCombo();
+						}
+					}
+					{
+						const std::string currentTexture = pDrawCall.mSpecularTextureID.has_value() ? mTextureManager.getTextureName(pDrawCall.mSpecularTextureID.value()) : "No texture set";
+						if (ImGui::BeginCombo("Specular", currentTexture.c_str(), ImGuiComboFlags()))
+						{
+							mTextureManager.ForEach([&](const Texture &texture)
+							{
+								if (ImGui::Selectable(texture.mName.c_str()))
+									pDrawCall.mSpecularTextureID = texture.mID;
+							});
+							ImGui::EndCombo();
+						}
+					}
+					if (!pDrawCall.mShininess.has_value())
+						pDrawCall.mShininess = 64.f;
+					ImGui::SliderFloat("Shininess", &pDrawCall.mShininess.value(), 0.f, 128.f);
+				}
 				default:
 					break;
 				}

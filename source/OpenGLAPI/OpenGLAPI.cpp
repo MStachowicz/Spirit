@@ -22,12 +22,12 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	, mFOV(45.f)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 	, mGLADContext(initialiseGLAD())
-	, mShaders{Shader("texture"), Shader("material"), Shader("colour"), Shader("uniformColour")}
+	, mTextureShaderIndex(0)
+	, mMaterialShaderIndex(1)
+	, mUniformShaderIndex(3)
+	, mLightMapIndex(4)
+	, mShaders{ Shader("texture"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap") }
 {
-	mTextureShaderIndex = 0;
-	mMaterialShaderIndex = 1;
-	mUniformShaderIndex = 3;
-
 	mMeshManager.ForEach([this](const auto &mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
 	mTextureManager.ForEach([this](const auto &texture) { initialiseTexture(texture); });
 
@@ -83,10 +83,9 @@ void OpenGLAPI::onFrameStart()
 
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
 
-	{ // Set all the light uniforms ready for draw() calls
+	{ // Set all light uniforms for material shader
 		mShaders[mMaterialShaderIndex].use();
 		mShaders[mMaterialShaderIndex].setUniform("viewPosition", mViewPosition);
-
 		mLightManager.getPointLights().ForEach([&](const PointLight &pointLight)
 		{
 			const glm::vec3 diffuseColour = pointLight.mColour  * pointLight.mDiffuseIntensity;
@@ -95,6 +94,19 @@ void OpenGLAPI::onFrameStart()
         	mShaders[mMaterialShaderIndex].setUniform("light.diffuse", diffuseColour);
         	mShaders[mMaterialShaderIndex].setUniform("light.specular", glm::vec3(pointLight.mSpecularIntensity));
 			mShaders[mMaterialShaderIndex].setUniform("light.position", pointLight.mPosition);
+		});
+	}
+	{// Set all light uniforms for light map shader
+		mShaders[mLightMapIndex].use();
+		mShaders[mLightMapIndex].setUniform("viewPosition", mViewPosition);
+		mLightManager.getPointLights().ForEach([&](const PointLight &pointLight)
+		{
+			const glm::vec3 diffuseColour = pointLight.mColour  * pointLight.mDiffuseIntensity;
+        	const glm::vec3 ambientColour = diffuseColour * pointLight.mAmbientIntensity;
+        	mShaders[mLightMapIndex].setUniform("light.ambient", ambientColour);
+        	mShaders[mLightMapIndex].setUniform("light.diffuse", diffuseColour);
+        	mShaders[mLightMapIndex].setUniform("light.specular", glm::vec3(pointLight.mSpecularIntensity));
+			mShaders[mLightMapIndex].setUniform("light.position", pointLight.mPosition);
 		});
 	}
 }
@@ -138,10 +150,26 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
         shader->setUniform("material.specular", pDrawCall.mMaterial.value().specular);
         shader->setUniform("material.shininess", pDrawCall.mMaterial.value().shininess);
 		break;
+	case DrawStyle::LightMap:
+		shader = &mShaders[mLightMapIndex];
+		shader->use();
+
+		glActiveTexture(GL_TEXTURE0);
+		if (pDrawCall.mDiffuseTextureID.has_value())
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mDiffuseTextureID.value()));
+		else
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+
+		glActiveTexture(GL_TEXTURE1);
+		if (pDrawCall.mSpecularTextureID.has_value())
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mSpecularTextureID.value()));
+		else
+			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+			shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
+		break;
 	default:
 		break;
 	}
-
 	ZEPHYR_ASSERT(shader != nullptr, "Shader to draw with has not been set.")
 
 	glm::mat4 trans = glm::translate(glm::mat4(1.0f), pDrawCall.mPosition);
@@ -150,9 +178,11 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.z), glm::vec3(0.0, 0.0, 1.0));
 	trans = glm::scale(trans, pDrawCall.mScale);
 
-	shader->setUniform("model", trans);
-	shader->setUniform("view", mViewMatrix);
-	shader->setUniform("projection", mProjection);
+	{// Optimisation: Only set these once per shader in onFrameStart
+		shader->setUniform("model", trans);
+		shader->setUniform("view", mViewMatrix);
+		shader->setUniform("projection", mProjection);
+	}
 
 	glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(pDrawCall.mDrawMode));
 

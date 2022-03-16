@@ -28,11 +28,12 @@ enum class DrawStyle : size_t
 	Textured 		= 0,
 	Material 		= 1,
 	UniformColour 	= 2,
+	LightMap		= 3,
 
 	Count
 };
 // Allows iterating over enum class DrawStyle
-static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles { "Textured", "Material", "Uniform Colour" };
+static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles { "Textured", "Material", "Uniform Colour", "Light Map" };
 static std::string convert(const DrawStyle& pDrawStyle)
 {
 	return drawStyles[util::toIndex(pDrawStyle)];
@@ -60,14 +61,21 @@ struct Material
 struct DrawCall
 {
 	MeshID 					 mMesh;
-	std::optional<TextureID> mTexture	= std::nullopt;
-	std::optional<Material>  mMaterial	= std::nullopt;
-	std::optional<glm::vec3> mColour	= std::nullopt;
-
 	DrawMode 	mDrawMode  	= DrawMode::Fill;
 	DrawStyle	mDrawStyle  = DrawStyle::Textured;
-
 	glm::vec3 	mPosition 	= glm::vec3(0.0f);
 	glm::vec3 	mRotation	= glm::vec3(0.0f);
 	glm::vec3 	mScale		= glm::vec3(1.0f);
+
+	//DrawStyle::Textured
+	std::optional<TextureID> mTexture	= std::nullopt;
+	//DrawStyle::Material
+	std::optional<Material>  mMaterial	= std::nullopt;
+	//DrawStyle::UniformColour
+	std::optional<glm::vec3> mColour	= std::nullopt;
+	//DrawStyle::LightMap
+	std::optional<TextureID> mDiffuseTextureID	= std::nullopt;
+	std::optional<TextureID> mSpecularTextureID	= std::nullopt;
+	std::optional<float> 	 mShininess			= std::nullopt;
+
 };
