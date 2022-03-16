@@ -311,7 +311,7 @@ void Renderer::onFrameStart()
 					}
 					if (!pDrawCall.mShininess.has_value())
 						pDrawCall.mShininess = 64.f;
-					ImGui::SliderFloat("Shininess", &pDrawCall.mShininess.value(), 0.f, 128.f);
+					ImGui::SliderFloat("Shininess", &pDrawCall.mShininess.value(), 0.1f, 128.f);
 				}
 				default:
 					break;
