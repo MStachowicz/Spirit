@@ -20,55 +20,29 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
-	for (size_t i = 0; i < 4; i++)
+	std::array<glm::vec3, 10> cubePositions = {
+    glm::vec3( 0.0f,  0.0f,  0.0f),
+    glm::vec3( 2.0f,  5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3( 2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f,  3.0f, -7.5f),
+    glm::vec3( 1.3f, -2.0f, -2.5f),
+    glm::vec3( 1.5f,  2.0f, -2.5f),
+    glm::vec3( 1.5f,  0.2f, -1.5f),
+    glm::vec3(-1.3f,  1.0f, -1.5f)};
+
+	for (size_t i = 0; i < cubePositions.size(); i++)
 	{
 		DrawCall &drawCall 	= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition 	= glm::vec3(-3.f + (i * 2), 2.f, -4.f);
-		drawCall.mDrawStyle = DrawStyle::Material;
-		drawCall.mMaterial 	= Material::presets[i].second;
+		drawCall.mPosition 	= cubePositions[i];
 		drawCall.mMesh 		= mMeshManager.getMeshID("3DCube");
-	}
 
-	for (size_t i = 4; i < 8; i++)
-	{
-		DrawCall &drawCall 	= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition 	= glm::vec3(-11.f + (i * 2), 0.f, -4.f);
-		drawCall.mDrawStyle = DrawStyle::Material;
-		drawCall.mMaterial 	= Material::presets[i].second;
-		drawCall.mMesh 		= mMeshManager.getMeshID("3DCube");
+		drawCall.mDrawStyle 	   	= DrawStyle::LightMap;
+		drawCall.mDiffuseTextureID 	= mTextureManager.getTextureID("metalContainerDiffuse");
+		drawCall.mSpecularTextureID = mTextureManager.getTextureID("metalContainerSpecular");
+		drawCall.mShininess 		= 64.f;
 	}
-
-	//{
-	//	DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
-	//	drawCall.mScale 		= glm::vec3(0.25f);
-	//	drawCall.mPosition 		= glm::vec3(-0.75f, 0.75f, 0.0f);
-	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
-	//}
-	//{
-	//	DrawCall& drawCall		= mDrawCalls.Create(ECS::CreateEntity());
-	//	drawCall.mScale 		= glm::vec3(0.25f);
-	//	drawCall.mPosition 		= glm::vec3(0.0f, 0.75f, 0.0f);
-	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DSquare");
-	//	drawCall.mDrawMode 		= DrawMode::Wireframe;
-	//}
-	//{
-	//	DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-	//	drawCall.mScale 		= glm::vec3(0.25f);
-	//	drawCall.mPosition 		= glm::vec3(-0.75f, -0.75f, 0.0f);
-	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-	//}
-	//{
-	//	DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-	//	drawCall.mScale 		= glm::vec3(0.25f, 0.5f, 0.25f);
-	//	drawCall.mPosition 		= glm::vec3(0.0f, -0.75f, 0.0f);
-	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-	//}
-	//{
-	//	DrawCall& drawCall 		= mDrawCalls.Create(ECS::CreateEntity());
-	//	drawCall.mScale 		= glm::vec3(0.25f);
-	//	drawCall.mPosition 		= glm::vec3(0.75f, -0.75f, 0.0f);
-	//	drawCall.mMesh 			= mMeshManager.getMeshID("2DTriangle");
-	//}
 }
 
 Renderer::~Renderer()
