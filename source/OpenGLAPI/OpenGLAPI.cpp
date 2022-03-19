@@ -79,6 +79,7 @@ void OpenGLAPI::onFrameStart()
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
 		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
 		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
+		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
 	}
 	ImGui::End();
 
@@ -100,14 +101,55 @@ void OpenGLAPI::onFrameStart()
 	{// Set all light uniforms for light map shader
 		mShaders[mLightMapIndex].use();
 		mShaders[mLightMapIndex].setUniform("viewPosition", mViewPosition);
-		mLightManager.getPointLights().ForEach([&](const PointLight &pointLight)
+
+		size_t count = 0;
+		ZEPHYR_ASSERT(mLightManager.getPointLights().size() == 4, "Only an exact number of 4 pointlights is supported.")
+		mLightManager.getPointLights().ForEach([&](const PointLight& pointLight)
 		{
+			const std::string uniform = "pointLights[" + std::to_string(count) + "]";
 			const glm::vec3 diffuseColour = pointLight.mColour  * pointLight.mDiffuseIntensity;
         	const glm::vec3 ambientColour = diffuseColour * pointLight.mAmbientIntensity;
-        	mShaders[mLightMapIndex].setUniform("light.ambient", ambientColour);
-        	mShaders[mLightMapIndex].setUniform("light.diffuse", diffuseColour);
-        	mShaders[mLightMapIndex].setUniform("light.specular", glm::vec3(pointLight.mSpecularIntensity));
-			mShaders[mLightMapIndex].setUniform("light.position", pointLight.mPosition);
+
+			mShaders[mLightMapIndex].setUniform((uniform + ".position").c_str(), pointLight.mPosition);
+			mShaders[mLightMapIndex].setUniform((uniform + ".ambient").c_str(), ambientColour);
+			mShaders[mLightMapIndex].setUniform((uniform + ".diffuse").c_str(), diffuseColour);
+			mShaders[mLightMapIndex].setUniform((uniform + ".specular").c_str(), glm::vec3(pointLight.mSpecularIntensity));
+			mShaders[mLightMapIndex].setUniform((uniform + ".constant").c_str(), pointLight.mConstant);
+			mShaders[mLightMapIndex].setUniform((uniform + ".linear").c_str(), pointLight.mLinear);
+			mShaders[mLightMapIndex].setUniform((uniform + ".quadratic").c_str(), pointLight.mQuadratic);
+			count++;
+		});
+
+		ZEPHYR_ASSERT(mLightManager.getDirectionalLights().size() <= 1, "Only one directional light is supported by OpenGLAPI")
+		count = 0;
+		mLightManager.getDirectionalLights().ForEach([&](const DirectionalLight& directionalLight)
+		{
+			const glm::vec3 diffuseColour = directionalLight.mColour  * directionalLight.mDiffuseIntensity;
+        	const glm::vec3 ambientColour = diffuseColour * directionalLight.mAmbientIntensity;
+			mShaders[mLightMapIndex].setUniform("dirLight.direction", directionalLight.mDirection);
+			mShaders[mLightMapIndex].setUniform("dirLight.ambient", ambientColour);
+			mShaders[mLightMapIndex].setUniform("dirLight.diffuse", diffuseColour);
+			mShaders[mLightMapIndex].setUniform("dirLight.specular", glm::vec3(directionalLight.mSpecularIntensity));
+			count++;
+		});
+
+		ZEPHYR_ASSERT(mLightManager.getSpotlightsLights().size() <= 1, "Only one spotlight light is supported by OpenGLAPI")
+		count = 0;
+		mLightManager.getSpotlightsLights().ForEach([&](const SpotLight& light)
+		{
+			const glm::vec3 diffuseColour = light.mColour  * light.mDiffuseIntensity;
+        	const glm::vec3 ambientColour = diffuseColour * light.mAmbientIntensity;
+        	mShaders[mLightMapIndex].setUniform("spotLight.position", light.mPosition);
+        	mShaders[mLightMapIndex].setUniform("spotLight.direction", light.mDirection);
+        	mShaders[mLightMapIndex].setUniform("spotLight.diffuse", diffuseColour);
+        	mShaders[mLightMapIndex].setUniform("spotLight.ambient", ambientColour);
+        	mShaders[mLightMapIndex].setUniform("spotLight.specular", glm::vec3(light.mSpecularIntensity));
+        	mShaders[mLightMapIndex].setUniform("spotLight.constant", light.mConstant);
+        	mShaders[mLightMapIndex].setUniform("spotLight.linear", light.mLinear);
+        	mShaders[mLightMapIndex].setUniform("spotLight.quadratic", light.mQuadratic);
+        	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", light.mCutOff);
+        	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", light.mOuterCutOff);
+			count++;
 		});
 	}
 }
