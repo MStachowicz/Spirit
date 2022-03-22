@@ -5,7 +5,6 @@
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -34,7 +33,7 @@
 # VS code
 *.vscode
 
-# CMake 
+# CMake
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
