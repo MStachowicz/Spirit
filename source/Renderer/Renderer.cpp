@@ -192,7 +192,7 @@ void Renderer::onFrameStart()
 							{
 								if (ImGui::Selectable(texture.mName.c_str()))
 								{
-									pDrawCall.mTexture1 = texture.mID;
+									pDrawCall.mTexture1 = texture.getID();
 								}
 							});
 							ImGui::EndCombo();
@@ -211,7 +211,7 @@ void Renderer::onFrameStart()
 							{
 								if (ImGui::Selectable(texture.mName.c_str()))
 								{
-									pDrawCall.mTexture2 = texture.mID;
+									pDrawCall.mTexture2 = texture.getID();
 								}
 							});
 							ImGui::EndCombo();
@@ -266,7 +266,7 @@ void Renderer::onFrameStart()
 							mTextureManager.ForEach([&](const Texture &texture)
 							{
 								if (ImGui::Selectable(texture.mName.c_str()))
-									pDrawCall.mDiffuseTextureID = texture.mID;
+									pDrawCall.mDiffuseTextureID = texture.getID();
 							});
 							ImGui::EndCombo();
 						}
@@ -278,7 +278,7 @@ void Renderer::onFrameStart()
 							mTextureManager.ForEach([&](const Texture &texture)
 							{
 								if (ImGui::Selectable(texture.mName.c_str()))
-									pDrawCall.mSpecularTextureID = texture.mID;
+									pDrawCall.mSpecularTextureID = texture.getID();
 							});
 							ImGui::EndCombo();
 						}

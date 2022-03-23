@@ -1,41 +1,22 @@
-#include "Texture.hpp"
+#include "TextureManager.hpp"
+#include "Logger.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION // This modifies the header such that it only contains the relevant definition source code
 #include "stb_image.h"
-
 #include "FileSystem.hpp"
-#include "Logger.hpp"
-
-Texture::Texture(const std::string& pName, const int& pWidth, const int& pHeight, const int& pNumberOfChannels, unsigned char* pData)
-    : mID(++nextTexture)
-    , mName(pName)
-    , mWidth(pWidth)
-    , mHeight(pHeight)
-    , mNumberOfChannels(pNumberOfChannels)
-    , mData(pData)
-{
-}
-
-Texture::~Texture()
-{}
-
-void Texture::release()
-{
-    stbi_image_free(mData);
-}
 
 TextureID TextureManager::getTextureID(const std::string &pTextureName) const
 {
     const auto it = mNameLookup.find(pTextureName);
     ZEPHYR_ASSERT(it != mNameLookup.end(), "Searching for a texture that does not exist in Texture store.");
-    return it->second;
+
+    return mTextures[it->second].getID();
 }
 
 std::string TextureManager::getTextureName(const TextureID& pTextureID) const
 {
-    const auto it = mTextures.find(pTextureID);
-    ZEPHYR_ASSERT(it != mTextures.end(), "Searching for a texture that does not exist in Texture store.");
-    return it->second.mName;
+    ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Searching for a texture off the end of Texture container.");
+    return mTextures[pTextureID].mName;
 }
 
 TextureManager::TextureManager()
@@ -56,11 +37,12 @@ void TextureManager::loadTexture(const std::string& pFileName)
     const std::string path = File::textureDirectory + pFileName;
     ZEPHYR_ASSERT(File::exists(path), "The texture file with path {} could not be found.", path)
 
-    int width, height, numberOfChannels;
-    unsigned char *data = stbi_load(path.c_str(), &width, &height, &numberOfChannels, 0);
-    ZEPHYR_ASSERT(data != nullptr, "Failed to load texture")
+    Texture& newTexture =  mTextures[activeTextures];
+    newTexture.mData = stbi_load(path.c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
+    ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
+    newTexture.mName = File::removeFileExtension(pFileName);
+    newTexture.mID = activeTextures;
 
-    Texture texture = Texture(File::removeFileExtension(pFileName), width, height, numberOfChannels, data);
-    mTextures.insert(std::make_pair(texture.mID, texture));
-    mNameLookup.insert(std::make_pair(texture.mName, texture.mID));
+    mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID));
+    activeTextures++;
 }

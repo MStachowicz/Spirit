@@ -34,8 +34,9 @@ add_library(Renderer
 source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
 source/Renderer/Mesh.hpp
+source/Renderer/TextureManager.hpp
+source/Renderer/TextureManager.cpp
 source/Renderer/Texture.hpp
-source/Renderer/Texture.cpp
 source/Renderer/DrawCall.hpp
 source/Renderer/DrawCall.cpp
 source/Renderer/Camera.hpp
@@ -59,7 +60,7 @@ OpenGLAPI
 Logger
 ECS
 )
-# ------------------------ RENDERER ----------------------------
+# ------------------------ RENDERER END ----------------------------
 
 # ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")

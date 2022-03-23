@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Mesh.hpp"
-#include "Texture.hpp"
 #include "LightManager.hpp"
+#include "TextureManager.hpp"
+
 #include "Camera.hpp"
 #include "DrawCall.hpp"
 #include "ComponentManager.hpp"

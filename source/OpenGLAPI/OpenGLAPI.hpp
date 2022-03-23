@@ -6,7 +6,7 @@
 #include "Shader.hpp"
 
 #include "Mesh.hpp"
-#include "Texture.hpp"
+#include "TextureManager.hpp"
 #include "Utility.hpp"
 
 #include "unordered_map"
@@ -88,19 +88,20 @@ private:
 	private:
 		unsigned int mHandle; // A mesh can push multiple attributes onto the GPU.
 	};
-	typedef unsigned int TextureHandle;
 
 	// Get all the data required to draw this mesh in its default configuration.
 	const DrawInfo& getDrawInfo(const MeshID& pMeshID);
 	const VAO& getVAO(const MeshID& pMeshID);
-	const TextureHandle& getTextureHandle(const TextureID& pTextureID);
 
 	// Draw info is fetched every draw call.
 	// @PERFORMANCE We should store DrawInfo on the stack for faster access.
 	std::unordered_map<MeshID, DrawInfo> mDrawInfos;
 	std::unordered_map<MeshID, VAO> mVAOs;
 	std::unordered_map<MeshID, std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)>> mVBOs;
-	std::unordered_map<TextureID, TextureHandle> mTextures; // Mapping of Zephyr::TextureID to OpenGL data handle.
+
+	typedef unsigned int TextureHandle;
+	TextureHandle getTextureHandle(const TextureID& pTextureID) const;
+	std::array<TextureHandle, TextureManager::MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
 
 	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
 	template <class T>

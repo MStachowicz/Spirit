@@ -305,11 +305,10 @@ const OpenGLAPI::VAO& OpenGLAPI::getVAO(const MeshID& pMeshID)
 	return it->second;
 }
 
-const OpenGLAPI::TextureHandle& OpenGLAPI::getTextureHandle(const TextureID& pTextureID)
+OpenGLAPI::TextureHandle OpenGLAPI::getTextureHandle(const TextureID& pTextureID) const
 {
-	const auto it = mTextures.find(pTextureID);
-	ZEPHYR_ASSERT(it != mTextures.end(), "No Texture handle found for this Mesh ID. Was the mesh correctly initialised?", pMeshID)
-	return it->second;
+	ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Trying to access a texture off the end of OpenGL texture store.", pTextureID)
+	return mTextures[pTextureID];
 }
 
 OpenGLAPI::VAO::VAO()
@@ -427,8 +426,6 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 
 void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 {
-	ZEPHYR_ASSERT(mTextures.find(pTexture.mID) == mTextures.end(), "Data for this texture already exists. Release the data before re-initialising");
-
 	unsigned int textureHandle;
 	glGenTextures(1, &textureHandle);
 	glBindTexture(GL_TEXTURE_2D, textureHandle);
@@ -444,7 +441,7 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 	glGenerateMipmap(GL_TEXTURE_2D);
 	ZEPHYR_ASSERT(textureHandle != -1, "Texture {} failed to load", pTexture.mName);
 
-	mTextures.emplace(std::make_pair(pTexture.mID, textureHandle));
+	mTextures[pTexture.getID()] = { textureHandle };
 
 	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, textureHandle);
 }
