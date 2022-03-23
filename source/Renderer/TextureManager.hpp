@@ -6,6 +6,14 @@
 #include "unordered_map"
 #include "functional"
 
+namespace std
+{
+    namespace filesystem
+    {
+        class path;
+    }
+}
+
 class TextureManager
 {
 public:
@@ -26,7 +34,6 @@ private:
     std::array<Texture, MAX_TEXTURES> mTextures;
     std::unordered_map<std::string, TextureID> mNameLookup;
 
-    // Searches File::textureDirectory for texture matching pFileName.
-    // Uses stb_image to load the pixel data from file.
-    void loadTexture(const std::string& pFileName);
+    // Loads a texture from pFilePath using stb_image.
+    void loadTexture(const std::filesystem::path& pFilePath);
 };

@@ -24,23 +24,20 @@ TextureManager::TextureManager()
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
 
     // Load all the textures in the textures directory
-    const std::vector<std::string> textureFileNames = File::getAllFileNames(File::textureDirectory);
+    const auto files = File::getFiles(File::textureDirectory);
 
-    for (const auto& fileName : textureFileNames)
-        loadTexture(fileName);
+    for (const auto& file : files)
+        loadTexture(file.path());
 }
 
-// Returns the texture data given a file name. Searches the File::textureDirectory for the texture.
-// Uses stb_image to load the texture from file.
-void TextureManager::loadTexture(const std::string& pFileName)
+void TextureManager::loadTexture(const std::filesystem::path& pFilePath)
 {
-    const std::string path = File::textureDirectory + pFileName;
-    ZEPHYR_ASSERT(File::exists(path), "The texture file with path {} could not be found.", path)
+    ZEPHYR_ASSERT(File::exists(pFilePath.string()), "The texture file with path {} could not be found.", pFilePath)
 
     Texture& newTexture =  mTextures[activeTextures];
-    newTexture.mData = stbi_load(path.c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
+    newTexture.mData = stbi_load(pFilePath.string().c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
     ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
-    newTexture.mName = File::removeFileExtension(pFileName);
+    newTexture.mName = pFilePath.stem().string();
     newTexture.mID = activeTextures;
 
     mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID));
