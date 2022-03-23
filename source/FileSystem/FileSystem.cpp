@@ -4,7 +4,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <filesystem>
 #include <algorithm>
 
 std::string File::executablePath;
@@ -70,10 +69,22 @@ std::vector<std::string> File::getAllFilePaths(const std::string &pDirectory)
     for (const auto &file : std::filesystem::directory_iterator(pDirectory))
     {
         paths.push_back(file.path().string());
-        LOG_INFO(file.path().string());
     }
 
     return paths;
+}
+
+
+std::vector<std::filesystem::directory_entry> File::getFiles(const std::string& pDirectory)
+{
+    std::vector<std::filesystem::directory_entry> files;
+
+    for (const auto &file : std::filesystem::directory_iterator(pDirectory))
+    {
+        files.push_back(file);
+    }
+
+    return files;
 }
 
 bool File::exists(const std::string &pPath)
