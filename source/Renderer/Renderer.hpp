@@ -29,8 +29,8 @@ private:
 	// Order of initialisation is important here:
 
 	// Stores all the meshes derived graphics APIs can draw.
-	MeshManager mMeshManager;
 	TextureManager mTextureManager;
+	MeshManager mMeshManager;
 	LightManager mLightManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;

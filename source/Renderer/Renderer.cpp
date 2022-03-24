@@ -6,8 +6,8 @@
 #include "OpenGLAPI.hpp"
 
 Renderer::Renderer()
-: mMeshManager()
-, mTextureManager()
+: mTextureManager()
+, mMeshManager(mTextureManager)
 , mLightManager()
 , mOpenGLAPI(new OpenGLAPI(mMeshManager, mTextureManager, mLightManager))
 , mCamera(glm::vec3(0.0f, 0.0f, 7.0f)

@@ -34,6 +34,7 @@ add_library(Renderer
 source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
 source/Renderer/MeshManager.hpp
+source/Renderer/MeshManager.cpp
 source/Renderer/Mesh.hpp
 source/Renderer/TextureManager.hpp
 source/Renderer/TextureManager.cpp
@@ -53,6 +54,7 @@ PRIVATE source/ECS
 PRIVATE source/External/stb
 PRIVATE source/External/GLM
 PRIVATE source/External/imgui
+PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Renderer
 FileSystem
@@ -60,6 +62,7 @@ ImGui
 OpenGLAPI
 Logger
 ECS
+assimp
 )
 # ------------------------ RENDERER END ----------------------------
 
@@ -210,5 +213,10 @@ glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
 message(STATUS "\n[ZEPHYR] -- Adding GLM module")
 add_subdirectory(source/External/GLM)
 # ------------------------ GLM ----------------------------
+
+# ------------------------ ASSIMP ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Git ASSIMP module")
+add_subdirectory(source/External/ASSIMP External/ASSIMP)
+# ------------------------ ASSIMP ----------------------------
 
 message(STATUS "\n[ZEPHYR] -- Make finished:")
