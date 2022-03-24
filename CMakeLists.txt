@@ -33,6 +33,7 @@ message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
 source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
+source/Renderer/MeshManager.hpp
 source/Renderer/Mesh.hpp
 source/Renderer/TextureManager.hpp
 source/Renderer/TextureManager.cpp

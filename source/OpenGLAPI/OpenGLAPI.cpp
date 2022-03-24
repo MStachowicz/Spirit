@@ -5,6 +5,7 @@
 
 #include "DrawCall.hpp"
 #include "LightManager.hpp"
+#include "MeshManager.hpp"
 
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Mesh.hpp"
 #include "LightManager.hpp"
 #include "TextureManager.hpp"
+#include "MeshManager.hpp"
 
 #include "Camera.hpp"
 #include "DrawCall.hpp"
