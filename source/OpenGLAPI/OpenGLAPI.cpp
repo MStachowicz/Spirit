@@ -18,6 +18,8 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	, cOpenGLVersionMinor(3)
 	, mWindowClearColour{0.0f, 0.0f, 0.0f}
 	, mDepthTest(true)
+	, mDepthTestType(DepthTestType::Less)
+	, mBufferClearBitField(GL_COLOR_BUFFER_BIT)
 	, mZNearPlane(0.1f)
 	, mZFarPlane (100.0f)
 	, mFOV(45.f)
@@ -37,6 +39,8 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
 
 	setDepthTest(mDepthTest);
+	if (mDepthTest)
+		setDepthTestType(mDepthTestType);
 
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
 }
@@ -50,19 +54,6 @@ OpenGLAPI::~OpenGLAPI()
 	}
 }
 
-void OpenGLAPI::setDepthTest(const bool& pDepthTest)
-{
-	if (pDepthTest)
-		glEnable(GL_DEPTH_TEST);
-	else
-		glDisable(GL_DEPTH_TEST);
-}
-
-void OpenGLAPI::clearBuffers()
-{
-	mGLADContext->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
 void OpenGLAPI::onFrameStart()
 {
 	clearBuffers();
@@ -70,17 +61,30 @@ void OpenGLAPI::onFrameStart()
 
 	if (ImGui::Begin("OpenGL options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::Text("OpenGL version: {}.{}", cOpenGLVersionMajor, cOpenGLVersionMinor);
+		ImGui::Text(("OpenGL version: " + std::to_string(cOpenGLVersionMajor) + "." + std::to_string(cOpenGLVersionMinor)).c_str());
+		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
+		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
+
 		if (ImGui::ColorEdit3("Window clear colour", mWindowClearColour))
 			setClearColour(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2]);
 		if (ImGui::Checkbox("Depth test", &mDepthTest))
 			setDepthTest(mDepthTest);
+		if(mDepthTest)
+		{
+			if (ImGui::BeginCombo("Depth test type", convert(mDepthTestType).c_str(), ImGuiComboFlags()))
+			{
+				for (size_t i = 0; i < depthTestTypes.size(); i++)
+				{
+					if (ImGui::Selectable(depthTestTypes[i].c_str()))
+						setDepthTestType(static_cast<DepthTestType>(i));
+				}
+				ImGui::EndCombo();
+			}
+		}
 
 		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
 		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
-		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
-		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
 	}
 	ImGui::End();
 
@@ -282,56 +286,6 @@ OpenGLAPI::TextureHandle OpenGLAPI::getTextureHandle(const TextureID& pTextureID
 	return mTextures[pTextureID];
 }
 
-
-void OpenGLAPI::VAO::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO")
-	glGenVertexArrays(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::VAO::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "VAO has not been generated before bind, call glGenVertexArrays before bind");
-	glBindVertexArray(mHandle);
-}
-void OpenGLAPI::VAO::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VAO");
-	glDeleteVertexArrays(1, &mHandle);
-}
-void OpenGLAPI::VBO::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VBO")
-	glGenBuffers(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::VBO::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "VBO has not been generated before bind, call glGenBuffers before bind");
-	glBindBuffer(GL_ARRAY_BUFFER, mHandle);
-}
-void OpenGLAPI::VBO::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VBO");
-	glDeleteBuffers(1, &mHandle);
-}
-void OpenGLAPI::EBO::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated EBO")
-	glGenBuffers(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::EBO::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before bind, call glGenVertexArrays before bind");
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
-}
-void OpenGLAPI::EBO::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
-	glDeleteBuffers(1, &mHandle);
-}
-
 template<class T>
 int getGLFWType()
 {
@@ -365,23 +319,6 @@ std::optional<OpenGLAPI::VBO> OpenGLAPI::bufferAttributeData(const std::vector<T
 	}
 	else
 		return std::nullopt;
-}
-
-int OpenGLAPI::getPolygonMode(const DrawMode& pDrawMode)
-{
-	switch (pDrawMode)
-	{
-	case DrawMode::Fill: 		return GL_FILL;
-	case DrawMode::Wireframe: 	return GL_LINE;
-	default:
-   		ZEPHYR_ASSERT(false, "DrawMode does not have a conversion to GLFW type.");
-		return -1;
-	}
-}
-
-void OpenGLAPI::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
-{
-	mGLADContext->ClearColor(pRed, pGreen, pBlue, 1.0f);
 }
 
 void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
@@ -450,6 +387,18 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, textureHandle);
 }
 
+int OpenGLAPI::getPolygonMode(const DrawMode& pDrawMode)
+{
+	switch (pDrawMode)
+	{
+	case DrawMode::Fill: 		return GL_FILL;
+	case DrawMode::Wireframe: 	return GL_LINE;
+	default:
+   		ZEPHYR_ASSERT(false, "DrawMode does not have a conversion to GLFW type.");
+		return -1;
+	}
+}
+
 GladGLContext* OpenGLAPI::initialiseGLAD()
 {
 	GladGLContext* GLADContext = (GladGLContext *)malloc(sizeof(GladGLContext));
@@ -475,4 +424,100 @@ void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 	OpenGLWindow::currentWindow->mWidth = pWidth;
 	OpenGLWindow::currentWindow->mHeight = pHeight;
 	OpenGLWindow::currentWindow->mAspectRatio = width / height;
+}
+
+void OpenGLAPI::setDepthTest(const bool& pDepthTest)
+{
+	if (pDepthTest)
+	{
+		glEnable(GL_DEPTH_TEST);
+		mDepthTest = true;
+		mBufferClearBitField |= GL_DEPTH_BUFFER_BIT;
+	}
+	else
+	{
+		mDepthTest = false;
+		glDisable(GL_DEPTH_TEST);
+		mGLADContext->Clear(GL_DEPTH_BUFFER_BIT);
+		mBufferClearBitField &= ~GL_DEPTH_BUFFER_BIT;
+	}
+}
+
+
+void OpenGLAPI::setDepthTestType(const OpenGLAPI::DepthTestType& pType)
+{
+	ZEPHYR_ASSERT(mDepthTest, "Depth test has to be on to allow setting the depth testing type.");
+
+	mDepthTestType = pType;
+	switch (mDepthTestType)
+	{
+	case OpenGLAPI::DepthTestType::Always:		 glDepthFunc(GL_ALWAYS); 	return;
+	case OpenGLAPI::DepthTestType::Never:		 glDepthFunc(GL_NEVER); 	return;
+	case OpenGLAPI::DepthTestType::Less:		 glDepthFunc(GL_LESS); 		return;
+	case OpenGLAPI::DepthTestType::Equal:		 glDepthFunc(GL_EQUAL);	 	return;
+	case OpenGLAPI::DepthTestType::LessEqual:	 glDepthFunc(GL_LEQUAL	);  return;
+	case OpenGLAPI::DepthTestType::Greater:		 glDepthFunc(GL_GREATER); 	return;
+	case OpenGLAPI::DepthTestType::NotEqual:	 glDepthFunc(GL_NOTEQUAL); 	return;
+	case OpenGLAPI::DepthTestType::GreaterEqual: glDepthFunc(GL_GEQUAL); 	return;
+	default: ZEPHYR_ASSERT(false, "Unknown DepthTestType requested");		return;
+	}
+}
+
+void OpenGLAPI::clearBuffers()
+{
+	mGLADContext->Clear(mBufferClearBitField);
+}
+
+void OpenGLAPI::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
+{
+	mGLADContext->ClearColor(pRed, pGreen, pBlue, 1.0f);
+}
+
+void OpenGLAPI::VAO::generate()
+{
+	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO")
+	glGenVertexArrays(1, &mHandle);
+	mInitialised = true;
+}
+void OpenGLAPI::VAO::bind() const
+{
+	ZEPHYR_ASSERT(mInitialised, "VAO has not been generated before bind, call glGenVertexArrays before bind");
+	glBindVertexArray(mHandle);
+}
+void OpenGLAPI::VAO::release()
+{
+	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VAO");
+	glDeleteVertexArrays(1, &mHandle);
+}
+void OpenGLAPI::VBO::generate()
+{
+	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VBO")
+	glGenBuffers(1, &mHandle);
+	mInitialised = true;
+}
+void OpenGLAPI::VBO::bind() const
+{
+	ZEPHYR_ASSERT(mInitialised, "VBO has not been generated before bind, call glGenBuffers before bind");
+	glBindBuffer(GL_ARRAY_BUFFER, mHandle);
+}
+void OpenGLAPI::VBO::release()
+{
+	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VBO");
+	glDeleteBuffers(1, &mHandle);
+}
+void OpenGLAPI::EBO::generate()
+{
+	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated EBO")
+	glGenBuffers(1, &mHandle);
+	mInitialised = true;
+}
+void OpenGLAPI::EBO::bind() const
+{
+	ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before bind, call glGenVertexArrays before bind");
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
+}
+void OpenGLAPI::EBO::release()
+{
+	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
+	glDeleteBuffers(1, &mHandle);
 }

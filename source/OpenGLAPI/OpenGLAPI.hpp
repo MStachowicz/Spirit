@@ -13,6 +13,7 @@
 #include "optional"
 #include "array"
 #include "vector"
+#include "string"
 
 struct GladGLContext;
 struct DrawCall;
@@ -33,13 +34,20 @@ private:
 	void initialiseTexture(const Texture& pTexture) override;
 
 	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue);
+	enum class DepthTestType {  Always, Never, Less, Equal, NotEqual, Greater, LessEqual, GreaterEqual, Count };
 	void setDepthTest(const bool& pDepthTest);
+	void setDepthTestType(const DepthTestType& pType);
 	void clearBuffers();
 	int getPolygonMode(const DrawMode& pDrawMode);
 
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
 	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
 	bool mDepthTest;
+	DepthTestType mDepthTestType;
+	static inline const std::array<std::string, util::toIndex(DepthTestType::Count)> depthTestTypes { "Always", "Never", "Less", "Equal", "Not equal", "Greater than", "Less than or equal", "Greater than or equal" };
+	static std::string convert(const DepthTestType& pDepthTestType) { return depthTestTypes[util::toIndex(pDepthTestType)]; }
+
+	int mBufferClearBitField;
 	float mZNearPlane;
 	float mZFarPlane;
 	float mFOV;
