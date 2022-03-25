@@ -9,10 +9,14 @@ struct Texture
 {
     friend class TextureManager;
 
+    enum class Purpose { Diffuse, Normal, Specular, Height };
+
     std::string mName       = "";
+    std::string mFilePath   = "";
     int mWidth              = -1;
     int mHeight             = -1;
     int mNumberOfChannels   = -1;
+    Purpose mPurpose        = Purpose::Diffuse;
 
     const unsigned char* getData() const { return mData; }
     TextureID getID() const { return mID; }

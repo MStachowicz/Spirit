@@ -28,12 +28,13 @@ public:
         for (size_t i = 0; i < activeTextures; i++)
             pFunction(mTextures[i]);
     }
+
+    // Loads a texture from pFilePath using stb_image. Returns the TextureID for the loaded Texture.
+    TextureID loadTexture(const std::filesystem::path& pFilePath, const Texture::Purpose pPurpose = Texture::Purpose::Diffuse, const std::string& pName = "");
 private:
     size_t activeTextures = 0;
 
     std::array<Texture, MAX_TEXTURES> mTextures;
     std::unordered_map<std::string, TextureID> mNameLookup;
-
-    // Loads a texture from pFilePath using stb_image.
-    void loadTexture(const std::filesystem::path& pFilePath);
+    std::unordered_map<std::string, TextureID> mFilePathLookup;
 };

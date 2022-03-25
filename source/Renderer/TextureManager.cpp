@@ -30,16 +30,37 @@ TextureManager::TextureManager()
         loadTexture(file.path());
 }
 
-void TextureManager::loadTexture(const std::filesystem::path& pFilePath)
+TextureID TextureManager::loadTexture(const std::filesystem::path& pFilePath, const Texture::Purpose pPurpose, const std::string& pName/* = "" */)
 {
     ZEPHYR_ASSERT(File::exists(pFilePath.string()), "The texture file with path {} could not be found.", pFilePath)
 
-    Texture& newTexture =  mTextures[activeTextures];
-    newTexture.mData = stbi_load(pFilePath.string().c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
-    ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
-    newTexture.mName = pFilePath.stem().string();
-    newTexture.mID = activeTextures;
+    const auto& textureLocation = mFilePathLookup.find(pFilePath.string());
+    if (textureLocation != mFilePathLookup.end())
+    {
+        // If the texture in this location has been loaded before, skip load and return the same TextureID.
+        return textureLocation->second;
+    }
+    else
+    {
+        Texture &newTexture = mTextures[activeTextures];
+        newTexture.mData = stbi_load(pFilePath.string().c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
+        ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
 
-    mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID));
-    activeTextures++;
+        if (!pName.empty())
+            newTexture.mName = pName;
+        else
+            newTexture.mName = pFilePath.stem().string();
+        newTexture.mFilePath = pFilePath.string();
+        newTexture.mPurpose = pPurpose;
+        newTexture.mID = activeTextures;
+
+        ZEPHYR_ASSERT(mNameLookup.find(newTexture.mName) == mNameLookup.end(), "Name has to be unique");
+        mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID));
+        mFilePathLookup.insert(std::make_pair(newTexture.mFilePath, newTexture.mID));
+
+        activeTextures++;
+        ZEPHYR_ASSERT(activeTextures == mNameLookup.size(), "NameLookup should have parity with mTextures size");
+        ZEPHYR_ASSERT(activeTextures == mFilePathLookup.size(), "FilePathLookup should have parity with mTextures size");
+        return newTexture.mID;
+    }
 }
