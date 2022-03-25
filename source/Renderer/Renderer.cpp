@@ -20,8 +20,28 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
+	{
+		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mPosition = glm::vec3(-1.0f, 0.0f, 0.0f);
+		drawCall.mScale = glm::vec3(0.5f);
+		drawCall.mMesh = mMeshManager.getMeshID("backpack");
+		drawCall.mDrawStyle = DrawStyle::LightMap;
+		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("diffuse");
+		drawCall.mSpecularTextureID = mTextureManager.getTextureID("specular");
+		drawCall.mShininess = 64.f;
+	}
+	{
+		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mPosition = glm::vec3(1.0f, 0.0f, 0.0f);
+		drawCall.mScale = glm::vec3(0.5f);
+		drawCall.mMesh = mMeshManager.getMeshID("backpack");
+		drawCall.mDrawMode = DrawMode::Wireframe;
+		drawCall.mDrawStyle = DrawStyle::UniformColour;
+		drawCall.mColour = glm::vec3(0.0f, 0.75f, 0.0f);
+	}
+
 	std::array<glm::vec3, 10> cubePositions = {
-    glm::vec3( 0.0f,  0.0f,  0.0f),
+    glm::vec3( 0.0f,  0.0f,  -30.0f),
     glm::vec3( 2.0f,  5.0f, -15.0f),
     glm::vec3(-1.5f, -2.2f, -2.5f),
     glm::vec3(-3.8f, -2.0f, -12.3f),

@@ -12,12 +12,12 @@
 #include "unordered_map"
 #include "optional"
 #include "array"
+#include "vector"
 
 struct GladGLContext;
 struct DrawCall;
 enum class DrawMode;
 
-// Implements GraphicsAPI. Takes DrawCalls and clears them in draw() using an OpenGL rendering pipeline.
 class OpenGLAPI : public GraphicsAPI
 {
 public:
@@ -57,47 +57,60 @@ private:
 
 	std::vector<Shader> mShaders;
 
-	// Defines HOW a Mesh should be rendered, has a 1:1 relationship with mesh
-	struct DrawInfo
-	{
-		std::vector<const Shader*> 		mShadersAvailable; 		// All the available shaders that can be drawn with.
-		unsigned int mEBO 				= invalidHandle;
-		unsigned int mDrawMode 			= invalidHandle;
-		int mDrawSize 					= invalidHandle; 	// Cached size of data used in draw, either size of Mesh positions or indices
-		enum class DrawMethod{ Indices, Array, Null };
-		DrawMethod mDrawMethod 			= DrawMethod::Null;
-
-		static const unsigned int invalidHandle = 0;
-	};
 	// VBO represents some data pushed to the GPU.
 	// VBO::release needs to be called before destruction to free the associated memory.
 	struct VBO
 	{
-		VBO(unsigned int pHandle) : mHandle(pHandle)
-		{}
-		void release();
-
-	private:
-		unsigned int mHandle; // A mesh can push multiple attributes onto the GPU.
-	};
-	struct VAO
-	{
-		VAO();
+		void generate();
 		void bind() const;
 		void release();
 	private:
-		unsigned int mHandle; // A mesh can push multiple attributes onto the GPU.
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+	struct VAO
+	{
+		void generate();
+		void bind() const;
+		void release();
+		unsigned int getHandle() { return mHandle; };
+
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+	struct EBO
+	{
+		void generate();
+		void bind() const;
+		void release();
+		unsigned int getHandle() { return mHandle; };
+
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+	struct OpenGLMesh
+	{
+		enum class DrawMethod{ Indices, Array, Null };
+
+		unsigned int mDrawMode 			= 0;
+		int mDrawSize 					= -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
+		DrawMethod mDrawMethod 			= DrawMethod::Null;
+		std::vector<OpenGLMesh> mChildMeshes;
+
+		VAO mVAO;
+		EBO mEBO;
+		std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
 	};
 
 	// Get all the data required to draw this mesh in its default configuration.
-	const DrawInfo& getDrawInfo(const MeshID& pMeshID);
-	const VAO& getVAO(const MeshID& pMeshID);
-
+	const OpenGLMesh& getGLMesh(const MeshID& pMeshID);
+	// Recursively draw the OpenGLMesh and all its children.
+	void draw(const OpenGLMesh& pMesh);
 	// Draw info is fetched every draw call.
-	// @PERFORMANCE We should store DrawInfo on the stack for faster access.
-	std::unordered_map<MeshID, DrawInfo> mDrawInfos;
-	std::unordered_map<MeshID, VAO> mVAOs;
-	std::unordered_map<MeshID, std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)>> mVBOs;
+	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
+	std::unordered_map<MeshID, OpenGLMesh> mGLMeshes;
 
 	typedef unsigned int TextureHandle;
 	TextureHandle getTextureHandle(const TextureID& pTextureID) const;
@@ -106,7 +119,7 @@ private:
 	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
 	template <class T>
 	std::optional<VBO> bufferAttributeData(const std::vector<T> &pData, const Shader::Attribute& pAttribute);
+
 	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
-	static bool isMeshValidForShader(const Mesh& pMesh, const Shader& pShader);
 };

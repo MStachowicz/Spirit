@@ -15,6 +15,10 @@ namespace std
     }
 }
 
+struct aiNode;
+struct aiScene;
+struct aiMesh;
+struct aiMaterial;
 class TextureManager;
 
 class MeshManager
@@ -41,12 +45,19 @@ private:
     std::unordered_map<MeshID, Mesh> mMeshes;
     std::unordered_map<std::string, MeshID> mMeshNames;
     TextureManager& mTextureManager; // Owned by Renderer.
+    size_t activeMeshes = 0;
 
-    void addMesh(const Mesh& pMesh)
-    {
-        mMeshes.emplace(std::make_pair(pMesh.mID, pMesh));
-        mMeshNames.emplace(std::make_pair(pMesh.mName, pMesh.mID));
-    }
+    // Set the mID of the mesh and its children recursively.
+    void setID(Mesh& pMesh, const bool& pRootMesh);
 
-    void buildMeshes(); // Populates mMeshes with some commonly used shapes
+    void addMesh(Mesh& pMesh);
+    void buildMeshes();
+    bool isMeshValid(const Mesh& pMesh);
+
+    // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object.
+    void processNode(Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene);
+    // Load assimp mesh data into a Zephyr Mesh.
+    void processData(Mesh& pMesh, const aiMesh *pAssimpMesh, const aiScene *pAssimpScene);
+    // Returns all the textures for this material and purpose.
+    void processTextures(Mesh &pMesh, aiMaterial* pMaterial, const Texture::Purpose& pPurpose);
 };
