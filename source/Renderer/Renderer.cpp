@@ -172,7 +172,7 @@ void Renderer::onFrameStart()
 			{
 				ImGui::SliderFloat3("Position", &pDrawCall.mPosition.x, -1.f, 1.f);
 				ImGui::SliderFloat3("Rotation", &pDrawCall.mRotation.x, -90.f, 90.f);
-				ImGui::SliderFloat3("Scale",  &pDrawCall.mScale.x, 0.1f, 1.5f);
+				ImGui::SliderFloat3("Scale", &pDrawCall.mScale.x, 0.1f, 10.f);
 
 				{ // Draw mode selection
 					if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))
