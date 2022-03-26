@@ -18,6 +18,8 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	, cOpenGLVersionMinor(3)
 	, mWindowClearColour{0.0f, 0.0f, 0.0f}
 	, mDepthTest(true)
+	, mBufferDrawType(BufferDrawType::Colour)
+	, mLinearDepthView(false)
 	, mDepthTestType(DepthTestType::Less)
 	, mBufferClearBitField(GL_COLOR_BUFFER_BIT)
 	, mZNearPlane(0.1f)
@@ -30,7 +32,8 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	, mMaterialShaderIndex(2)
 	, mUniformShaderIndex(4)
 	, mLightMapIndex(5)
-	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap") }
+	, mDepthViewerIndex(6)
+	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView") }
 {
 	mMeshManager.ForEach([this](const auto &mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
 	mTextureManager.ForEach([this](const auto &texture) { initialiseTexture(texture); });
@@ -82,6 +85,22 @@ void OpenGLAPI::onFrameStart()
 			}
 		}
 
+		if (ImGui::BeginCombo("Buffer draw style", convert(mBufferDrawType).c_str(), ImGuiComboFlags()))
+		{
+			for (size_t i = 0; i < BufferDrawTypes.size(); i++)
+			{
+				if (ImGui::Selectable(BufferDrawTypes[i].c_str()))
+					mBufferDrawType = static_cast<BufferDrawType>(i);
+			}
+			ImGui::EndCombo();
+		}
+
+		if (mBufferDrawType == BufferDrawType::Depth)
+		{
+			ImGui::Checkbox("Use linear depth testing" , &mLinearDepthView);
+		}
+
+
 		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
 		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
@@ -89,6 +108,13 @@ void OpenGLAPI::onFrameStart()
 	ImGui::End();
 
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
+	if (mBufferDrawType == BufferDrawType::Depth)
+	{
+		mShaders[mDepthViewerIndex].use();
+		mShaders[mDepthViewerIndex].setUniform("near", mZNearPlane);
+		mShaders[mDepthViewerIndex].setUniform("far",  mZFarPlane);
+		mShaders[mDepthViewerIndex].setUniform("linearDepthView",  mLinearDepthView);
+	}
 
 	{ // Set all light uniforms for material shader
 		mShaders[mMaterialShaderIndex].use();
@@ -161,76 +187,86 @@ void OpenGLAPI::onFrameStart()
 
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
 {
-	const Shader* shader = nullptr;
-	switch (pDrawCall.mDrawStyle)
+	const Shader *shader = nullptr;
+
+	if (mBufferDrawType == BufferDrawType::Colour)
 	{
-	case DrawStyle::Textured:
-		if(pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
+		// #OPTIMIZATION: Future per component combination for entity
+		switch (pDrawCall.mDrawStyle)
 		{
-			shader = &mShaders[mTexture2ShaderIndex];
+		case DrawStyle::Textured:
+			if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
+			{
+				shader = &mShaders[mTexture2ShaderIndex];
+				shader->use();
+				shader->setUniform("mixFactor", pDrawCall.mMixFactor.value());
+			}
+			else
+			{
+				shader = &mShaders[mTexture1ShaderIndex];
+				shader->use();
+			}
+			ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
+
+			if (pDrawCall.mTexture1.has_value())
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture1.value()));
+			}
+			else
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+			}
+			if (pDrawCall.mTexture2.has_value())
+			{
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture2.value()));
+			}
+			else
+			{
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+			}
+			break;
+		case DrawStyle::UniformColour:
+			shader = &mShaders[mUniformShaderIndex];
 			shader->use();
-			shader->setUniform("mixFactor", pDrawCall.mMixFactor.value());
-		}
-		else
-		{
-			shader = &mShaders[mTexture1ShaderIndex];
+			shader->setUniform("colour", pDrawCall.mColour.value());
+			break;
+		case DrawStyle::Material:
+			shader = &mShaders[mMaterialShaderIndex];
 			shader->use();
-		}
-		ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
+			shader->setUniform("material.ambient", pDrawCall.mMaterial.value().ambient);
+			shader->setUniform("material.diffuse", pDrawCall.mMaterial.value().diffuse);
+			shader->setUniform("material.specular", pDrawCall.mMaterial.value().specular);
+			shader->setUniform("material.shininess", pDrawCall.mMaterial.value().shininess);
+			break;
+		case DrawStyle::LightMap:
+			shader = &mShaders[mLightMapIndex];
+			shader->use();
 
-		if (pDrawCall.mTexture1.has_value())
-		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture1.value()));
-		}
-		else
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
-		}
-		if (pDrawCall.mTexture2.has_value())
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture2.value()));
-		}
-		else
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
-		}
-		break;
-	case DrawStyle::UniformColour:
-		shader = &mShaders[mUniformShaderIndex];
-		shader->use();
-		shader->setUniform("colour", pDrawCall.mColour.value());
-		break;
-	case DrawStyle::Material:
-		shader = &mShaders[mMaterialShaderIndex];
-		shader->use();
-		shader->setUniform("material.ambient", pDrawCall.mMaterial.value().ambient);
-       	shader->setUniform("material.diffuse", pDrawCall.mMaterial.value().diffuse);
-        shader->setUniform("material.specular", pDrawCall.mMaterial.value().specular);
-        shader->setUniform("material.shininess", pDrawCall.mMaterial.value().shininess);
-		break;
-	case DrawStyle::LightMap:
-		shader = &mShaders[mLightMapIndex];
-		shader->use();
+			if (pDrawCall.mDiffuseTextureID.has_value())
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mDiffuseTextureID.value()));
+			else
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
 
-		glActiveTexture(GL_TEXTURE0);
-		if (pDrawCall.mDiffuseTextureID.has_value())
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mDiffuseTextureID.value()));
-		else
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
-
-		glActiveTexture(GL_TEXTURE1);
-		if (pDrawCall.mSpecularTextureID.has_value())
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mSpecularTextureID.value()));
-		else
-			glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
-			shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
-		break;
-	default:
-		break;
+			glActiveTexture(GL_TEXTURE1);
+			if (pDrawCall.mSpecularTextureID.has_value())
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mSpecularTextureID.value()));
+			else
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+				shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
+			break;
+		default:
+			break;
+		}
+	}
+	else if (mBufferDrawType == BufferDrawType::Depth)
+	{
+		shader = &mShaders[mDepthViewerIndex];
+		shader->use();
 	}
 	ZEPHYR_ASSERT(shader != nullptr, "Shader to draw with has not been set.")
 
@@ -240,8 +276,9 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.z), glm::vec3(0.0, 0.0, 1.0));
 	trans = glm::scale(trans, pDrawCall.mScale);
 
-	{// Optimisation: Only set these once per shader in onFrameStart
+	{
 		shader->setUniform("model", trans);
+		 // #OPTIMIZATION: view and projection only set when they change (camera + )
 		shader->setUniform("view", mViewMatrix);
 		shader->setUniform("projection", mProjection);
 	}
