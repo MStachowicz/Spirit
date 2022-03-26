@@ -414,8 +414,16 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	const int channelType = pTexture.mNumberOfChannels == 4 ? GL_RGBA : GL_RGB;
-	glTexImage2D(GL_TEXTURE_2D, 0, channelType, pTexture.mWidth, pTexture.mHeight, 0, channelType, GL_UNSIGNED_BYTE, pTexture.getData());
+	GLenum format = 0;
+	if (pTexture.mNumberOfChannels == 1)
+        format = GL_RED;
+    else if (pTexture.mNumberOfChannels == 3)
+        format = GL_RGB;
+    else if (pTexture.mNumberOfChannels == 4)
+        format = GL_RGBA;
+	ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, pTexture.mWidth, pTexture.mHeight, 0, format, GL_UNSIGNED_BYTE, pTexture.getData());
 	glGenerateMipmap(GL_TEXTURE_2D);
 	ZEPHYR_ASSERT(textureHandle != -1, "Texture {} failed to load", pTexture.mName);
 
