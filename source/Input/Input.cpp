@@ -41,12 +41,14 @@ void Input::onMousePress(const InputAPI::MouseButton& pMouseButton, const InputA
                 {
                     LOG_INFO("Captured mouse");
                     mInputHandler->setCursorMode(InputAPI::CursorMode::CAPTURED);
+                    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
                     mCapturingMouse = true;
                 }
                 else
                 {
                     LOG_INFO("Mouse free");
                     mInputHandler->setCursorMode(InputAPI::CursorMode::NORMAL);
+                    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
                     mCapturingMouse = false;
                 }
             }

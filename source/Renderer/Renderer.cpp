@@ -89,6 +89,7 @@ void Renderer::onFrameStart()
 		ImGui::SliderFloat2("DisplaySize", &io.DisplaySize.x, 1.f, 3840.f);
 		ImGui::Checkbox("FontAllowUserScaling", &io.FontAllowUserScaling);
 		ImGui::Checkbox("ConfigDockingWithShift", &io.ConfigDockingWithShift);
+		ImGui::Checkbox("WantCaptureMouse", &io.WantCaptureMouse);
 		ImGui::SliderFloat("Mainviewport DpiScale", &ImGui::GetMainViewport()->DpiScale, 1.f, 300.f);
 
 		if (ImGui::TreeNode("Window options"))
