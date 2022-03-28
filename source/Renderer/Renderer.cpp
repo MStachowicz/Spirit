@@ -34,10 +34,11 @@ Renderer::Renderer()
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
 		drawCall.mPosition = glm::vec3(1.0f, 0.0f, 0.0f);
 		drawCall.mScale = glm::vec3(0.5f);
-		drawCall.mMesh = mMeshManager.getMeshID("backpack");
-		drawCall.mDrawMode = DrawMode::Wireframe;
-		drawCall.mDrawStyle = DrawStyle::UniformColour;
-		drawCall.mColour = glm::vec3(0.0f, 0.75f, 0.0f);
+		drawCall.mMesh = mMeshManager.getMeshID("xian");
+		drawCall.mDrawStyle = DrawStyle::LightMap;
+		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("Base_Color");
+		drawCall.mSpecularTextureID = mTextureManager.getTextureID("black");
+		drawCall.mShininess = 64.f;
 	}
 
 	std::array<glm::vec3, 10> cubePositions = {

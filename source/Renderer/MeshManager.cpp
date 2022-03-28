@@ -38,7 +38,7 @@ void MeshManager::addMesh(Mesh& pMesh)
 MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
 {
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(pFilePath.string(), aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene *scene = importer.ReadFile(pFilePath.string(), aiProcess_Triangulate );
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -96,6 +96,8 @@ void MeshManager::processData(Mesh& pMesh, const aiMesh *pAssimpMesh, const aiSc
             // texture coordinates so we always take the first set (0).
 
             // Texture coords
+            ZEPHYR_ASSERT(pAssimpMesh->mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
+
             pMesh.mTextureCoordinates.push_back(pAssimpMesh->mTextureCoords[0][i].x);
             pMesh.mTextureCoordinates.push_back(pAssimpMesh->mTextureCoords[0][i].y);
             //// Tangent
@@ -176,6 +178,7 @@ bool MeshManager::isMeshValid(const Mesh& pMesh)
 
 void MeshManager::buildMeshes() // Populates mMeshes with some commonly used shapes
 {
+    loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/xian/xian.obj");
     loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/backpack/backpack.obj");
 
     { // 2D TRIANGLE
