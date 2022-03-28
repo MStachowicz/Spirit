@@ -32,8 +32,9 @@ Renderer::Renderer()
 	}
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition = glm::vec3(1.0f, 0.0f, 0.0f);
-		drawCall.mScale = glm::vec3(0.5f);
+		drawCall.mPosition = glm::vec3(8.0f, 0.0f, 0.0f);
+		drawCall.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
+		drawCall.mScale = glm::vec3(0.4f);
 		drawCall.mMesh = mMeshManager.getMeshID("xian");
 		drawCall.mDrawStyle = DrawStyle::LightMap;
 		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("Base_Color");
@@ -172,8 +173,8 @@ void Renderer::onFrameStart()
 
 			if(ImGui::TreeNode(title.c_str()))
 			{
-				ImGui::SliderFloat3("Position", &pDrawCall.mPosition.x, -1.f, 1.f);
-				ImGui::SliderFloat3("Rotation", &pDrawCall.mRotation.x, -90.f, 90.f);
+				ImGui::SliderFloat3("Position", &pDrawCall.mPosition.x, -50.f, 50.f);
+				ImGui::SliderFloat3("Rotation", &pDrawCall.mRotation.x, -360.f, 360.f);
 				ImGui::SliderFloat3("Scale", &pDrawCall.mScale.x, 0.1f, 10.f);
 
 				{ // Draw mode selection
