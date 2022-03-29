@@ -5,6 +5,8 @@
 #include "Logger.hpp"
 #include "OpenGLAPI.hpp"
 
+#include "chrono"
+
 Renderer::Renderer()
 : mTextureManager()
 , mMeshManager(mTextureManager)
@@ -20,9 +22,10 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
+	for (size_t i = 0; i < 25; i++)
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition = glm::vec3(-1.0f, 0.0f, 0.0f);
+		drawCall.mPosition = glm::vec3(-1.0f, 0.0f, 10.0f - i);
 		drawCall.mScale = glm::vec3(0.5f);
 		drawCall.mMesh = mMeshManager.getMeshID("backpack");
 		drawCall.mDrawStyle = DrawStyle::LightMap;
@@ -72,12 +75,13 @@ Renderer::~Renderer()
 	delete mOpenGLAPI;
 }
 
-void Renderer::onFrameStart()
+void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
 	mOpenGLAPI->onFrameStart();
 
 	if (ImGui::Begin("Render options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		ImGui::Text("Frame time: %.3f ms", static_cast<double>((pTimeSinceLastDraw.count()) / 1000.0));
 		ImGui::Checkbox("Render light positions", &mLightManager.mRenderLightPositions);
 	}
 	ImGui::End();
@@ -324,7 +328,7 @@ void Renderer::onFrameStart()
 	mLightManager.outputImGui();
 }
 
-void Renderer::draw()
+void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
 	mDrawCalls.ForEach([&](const DrawCall& pDrawCall)
 	{

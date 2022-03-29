@@ -45,10 +45,10 @@ private:
         typedef decltype(Clock::duration{} + physicsTimestep)   Duration;
         typedef std::chrono::time_point<Clock, Duration>        TimePoint;
 
-        Duration durationSinceLastPhysicsTick   = Duration::zero(); // Accumulated time since the last physics update.
-        Duration durationSinceLastRenderTick    = Duration::zero();  // Accumulated time since the last physics update.
-        Duration durationSinceLastFrame         = Duration::zero();       // Time between this frame and last frame.
-        Duration durationTotalSimulation        = Duration::zero();      // Total time simulation has been running.
+        Duration durationSinceLastPhysicsTick   = Duration::zero();     // Accumulated time since the last physics update.
+        Duration durationSinceLastRenderTick    = Duration::zero();     // Accumulated time since the last physics update.
+        Duration durationSinceLastFrame         = Duration::zero();     // Time between this frame and last frame.
+        Duration durationTotalSimulation        = Duration::zero();     // Total time simulation has been running.
 
         TimePoint physicsTime{};      // The time point the physics is advanced to currently.
         TimePoint timeFrameStarted{}; // The time point at the start of a new frame.
@@ -86,17 +86,17 @@ private:
 
             if (durationSinceLastRenderTick >= mRenderTimestep)
             {
-                mRenderer.onFrameStart();
                 // Any remainder in the durationSinceLastPhysicsTick is a measure of how much more time is required before another physics step can be taken
                 // Next interpolate between the previous and current physics state based on how much time is left in the durationSinceLastPhysicsTick
                 // preventing a subtle but visually unpleasant stuttering of the physics simulation on the screen
-
-                durationSinceLastRenderTick = Duration::zero();
                 const double alpha = std::chrono::duration<double>{durationSinceLastPhysicsTick} / physicsTimestep; // Blending factor between 0-1 used to interpolate current state
                 //renderState = currentState * alpha + previousState * (1 - alpha);
                 //mRenderer.draw(renderState);
-                mRenderer.draw();
+
+                mRenderer.onFrameStart(std::chrono::round<std::chrono::microseconds>(durationSinceLastRenderTick));
+                mRenderer.draw(std::chrono::round<std::chrono::microseconds>(durationSinceLastRenderTick));
                 mRenderer.postDraw();
+                durationSinceLastRenderTick = Duration::zero();
             }
         }
 

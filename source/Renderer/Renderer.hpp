@@ -17,8 +17,8 @@ public:
 	Renderer();
 	~Renderer();
 
-	void onFrameStart();
-	void draw();
+	void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
+	void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
 	void postDraw();
 
 	int drawCount = 0;
