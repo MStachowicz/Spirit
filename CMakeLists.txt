@@ -14,19 +14,14 @@ source/Zephyr.cpp
 source/Application.hpp
 source/Application.cpp
 )
-target_include_directories(Zephyr
-PRIVATE source/Renderer
-PRIVATE source/FileSystem
-PRIVATE source/Input
-)
 target_link_libraries(Zephyr
-Logger
-JobSystem
-FileSystem
-Renderer
-Input
+PRIVATE Logger
+PRIVATE JobSystem
+PRIVATE FileSystem
+PRIVATE Renderer
+PRIVATE Input
 )
-# ------------------------ ZEPHYR ----------------------------
+# ------------------------ ZEPHYR END ----------------------------
 
 # ------------------------ RENDERER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
@@ -43,46 +38,87 @@ source/Renderer/DrawCall.hpp
 source/Renderer/DrawCall.cpp
 source/Renderer/Camera.hpp
 source/Renderer/Camera.cpp
-source/Renderer/GraphicsAPI.hpp
 source/Renderer/ImGuiConfig.hpp
 source/Renderer/LightManager.hpp
 source/Renderer/LightManager.cpp
 )
 target_include_directories(Renderer
-PRIVATE source/FileSystem
-PRIVATE source/ECS
+PUBLIC source/External/GLM
+PUBLIC source/Renderer
 PRIVATE source/External/stb
-PRIVATE source/External/GLM
-PRIVATE source/External/imgui
 PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Renderer
-FileSystem
-ImGui
-OpenGLAPI
-Logger
-ECS
-assimp
+PUBLIC ECS
+PUBLIC Utility # Drawcall.hpp requires this for various std::array helpers (those only end up being used for ImGui???)
+PRIVATE FileSystem
+PRIVATE Logger
+PRIVATE OpenGLAPI
+PRIVATE ImGui
+PRIVATE assimp
 )
 # ------------------------ RENDERER END ----------------------------
+
+# ------------------------ OPENGLAPI ---------------------------
+# This library implements a Zephyr renderer using GLAD OpenGL as well as an Input handler using GLFW
+add_library(OpenGLAPI
+source/OpenGLAPI/OpenGLAPI.hpp
+source/OpenGLAPI/OpenGLAPI.cpp
+source/OpenGLAPI/OpenGLWindow.hpp
+source/OpenGLAPI/OpenGLWindow.cpp
+source/OpenGLAPI/GLFWInput.hpp
+source/OpenGLAPI/GLFWInput.cpp
+source/OpenGLAPI/Shader.hpp
+source/OpenGLAPI/Shader.cpp
+)
+target_include_directories(OpenGLAPI
+PUBLIC source/OpenGLAPI
+PUBLIC source/External/GLM
+PRIVATE source/External/GLFW/include
+)
+target_link_libraries(OpenGLAPI
+PUBLIC Interface # Implements the InputAPI and GraphicsAPI interface
+PRIVATE glad_GL
+PRIVATE glfw
+PRIVATE Renderer
+PRIVATE ImGui
+PRIVATE FileSystem
+PRIVATE Logger
+)
+# ------------------------ OPENGLAPI END ----------------------------
 
 # ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")
 add_library(Input
 source/Input/Input.hpp
 source/Input/Input.cpp
-source/Input/InputAPI.hpp
 )
-target_include_directories(Input
-PRIVATE source/Renderer
+target_include_directories(Zephyr
+PUBLIC source/Input
 )
 target_link_libraries(Input
-OpenGLAPI # OpenGLAPI also includes a GLFWInput satisfying the InputAPI interface
-Logger
+PRIVATE OpenGLAPI # Zephyr input creates an instance of GLFWInput provided by OpenGLAPI
+PRIVATE Renderer # Included to manipulate Renderer::Camera
+PRIVATE ImGui
+PRIVATE Logger
 )
-# ------------------------ INPUT ----------------------------
+# ------------------------ INPUT END ----------------------------
 
-# ------------------------ Job System ----------------------------
+# ------------------------ FILESYSTEM ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding File System static library")
+add_library(FileSystem
+source/FileSystem/FileSystem.hpp
+source/FileSystem/FileSystem.cpp
+)
+target_include_directories(FileSystem
+PUBLIC source/FileSystem
+)
+target_link_libraries(FileSystem
+PRIVATE Logger
+)
+# ------------------------ FILESYSTEM END ----------------------------
+
+# ------------------------ JOBSYSTEM ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Job System static library")
 add_library(JobSystem
 source/JobSystem/JobSystem.hpp
@@ -93,26 +129,23 @@ target_include_directories(JobSystem
 PUBLIC source/JobSystem # Linking JobSystem exposes its include directory
 )
 target_link_libraries(JobSystem
-Logger
+PRIVATE Logger
 )
-# ------------------------ Job System ----------------------------
+# ------------------------ JOBSYSTEM END ----------------------------
 
-# ------------------------ File System ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding File System static library")
-add_library(FileSystem
-source/FileSystem/FileSystem.hpp
-source/FileSystem/FileSystem.cpp
-source/FileSystem/Utility.hpp
-)
-target_include_directories(FileSystem
-PRIVATE source/FileSystem
-)
-target_link_libraries(FileSystem
-Logger
-)
-# ------------------------ File System ----------------------------
+# ------------------------ INTERFACE ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Zephyr Interfaces")
+add_library(Interface INTERFACE)
+target_include_directories(Interface INTERFACE source/Interface)
+# ------------------------ INTERFACE END ----------------------------
 
-# ------------------------ Entity Component System ----------------------------
+# ------------------------ UTILITY ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Utility interface")
+add_library(Utility INTERFACE)
+target_include_directories(Utility INTERFACE source/Utility)
+# ------------------------ UTILITY END ----------------------------
+
+# ------------------------ ECS END ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
 add_library(ECS INTERFACE
 source/ECS/Entity.hpp
@@ -122,9 +155,9 @@ target_include_directories(ECS
 INTERFACE source/ECS
 )
 target_link_libraries(ECS
-INTERFACE Logger
+INTERFACE Logger # Can this be made Private by providing CPP files and making ECS a regular library?
 )
-# ------------------------ Entity Component System ----------------------------
+# ------------------------ ECS END ----------------------------
 
 # ------------------------ LOGGER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Git spdlog module")
@@ -136,49 +169,13 @@ source/Logger/Logger.hpp
 source/Logger/Logger.cpp
 )
 target_include_directories(Logger
+PUBLIC source/Logger
 PRIVATE source/External/spdlog/include
-PUBLIC source/Logger # Linking Logger exposes its include directory
 )
 target_link_libraries(Logger
-spdlog
+PUBLIC spdlog
 )
-# ------------------------ LOGGER ----------------------------
-
-
-
-# ------------------------ OPENGL API ---------------------------
-# This library implements a Zephyr renderer using GLAD OpenGL as well as an Input handler using GLFW
-add_library(OpenGLAPI
-source/Renderer/GraphicsAPI.hpp # implements the Zephyr::Renderer GraphicsAPI interface
-source/OpenGLAPI/OpenGLAPI.hpp
-source/OpenGLAPI/OpenGLAPI.cpp
-source/OpenGLAPI/OpenGLWindow.hpp
-source/OpenGLAPI/OpenGLWindow.cpp
-source/Input/InputAPI.hpp # implements the Zephyr::Input InputAPI interface
-source/OpenGLAPI/GLFWInput.hpp
-source/OpenGLAPI/GLFWInput.cpp
-source/OpenGLAPI/Shader.hpp
-source/OpenGLAPI/Shader.cpp
-)
-target_include_directories(OpenGLAPI
-PUBLIC source/External/GLM
-PUBLIC source/External/imgui
-PUBLIC source/OpenGLAPI
-PRIVATE source/ECS
-PRIVATE source/External/GLFW/include
-PRIVATE source/Renderer
-PRIVATE source/Input
-PRIVATE source/FileSystem
-)
-target_link_libraries(OpenGLAPI
-glad_GL
-glfw
-ECS
-ImGui
-FileSystem
-Logger
-)
-# ------------------------ OPENGL API END ----------------------------
+# ------------------------ LOGGER END ----------------------------
 
 # ------------------------ IMGUI ----------------------------
 # imgui has no cMakeLists.txt file so need to generate a library for it
@@ -193,30 +190,30 @@ source/External/imgui/backends/imgui_impl_opengl3.cpp
 source/External/imgui/backends/imgui_impl_glfw.cpp
 )
 target_include_directories(ImGui
-PRIVATE source/External/imgui
+PUBLIC source/External/imgui
 PRIVATE source/External/GLFW/include
 )
-# ------------------------ IMGUI ----------------------------
+# ------------------------ IMGUI END ----------------------------
 
 # ------------------------ GLFW ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Git GLFW module")
 add_subdirectory(source/External/GLFW External/GLFW)
-# ------------------------ GLFW ----------------------------
+# ------------------------ GLFW END ----------------------------
 
 # ------------------------ GLAD ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
 add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
 glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
-# ------------------------ GLAD ----------------------------
+# ------------------------ GLAD END ----------------------------
 
 # ------------------------ GLM ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding GLM module")
 add_subdirectory(source/External/GLM)
-# ------------------------ GLM ----------------------------
+# ------------------------ GLM END ----------------------------
 
 # ------------------------ ASSIMP ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Git ASSIMP module")
 add_subdirectory(source/External/ASSIMP External/ASSIMP)
-# ------------------------ ASSIMP ----------------------------
+# ------------------------ ASSIMP END ----------------------------
 
 message(STATUS "\n[ZEPHYR] -- Make finished:")

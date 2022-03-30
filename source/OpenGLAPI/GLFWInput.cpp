@@ -4,10 +4,10 @@
 #include "Logger.hpp"
 
 GLFWInput::GLFWInput(
-    std::function<void(const Key&)> pOnKeyPressCallback
-    , std::function<void(const MouseButton&, const Action& pAction)> pOnMousePressCallback
+    std::function<void(const InputAPI::Key&)> pOnKeyPressCallback
+    , std::function<void(const InputAPI::MouseButton&, const InputAPI::Action& pAction)> pOnMousePressCallback
     , std::function<void(const float&, const float&)> pOnMouseMoveCallback)
-: InputAPI(pOnKeyPressCallback, pOnMousePressCallback, pOnMouseMoveCallback)
+: InputHandler(pOnKeyPressCallback, pOnMousePressCallback, pOnMouseMoveCallback)
 , mCloseRequested(false)
 {
     glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);

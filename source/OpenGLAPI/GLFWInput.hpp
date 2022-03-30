@@ -4,19 +4,19 @@
 
 typedef struct GLFWwindow GLFWwindow;
 
-// Implements InputAPI using GLFW.
+// Implements an InputHandler using GLFW.
 // GLFWInput requires a valid GLFW context to be initialised before and a GLFWwindow* instance to register callbacks.
-class GLFWInput : public InputAPI
+class GLFWInput : public InputHandler
 {
 public:
     GLFWInput(
-        std::function<void(const Key&)> pOnKeyPressCallback
-        , std::function<void(const MouseButton&, const Action& pAction)> pOnMousePressCallback
+        std::function<void(const InputAPI::Key&)> pOnKeyPressCallback
+        , std::function<void(const InputAPI::MouseButton&, const InputAPI::Action& pAction)> pOnMousePressCallback
         , std::function<void(const float&, const float&)> pOnMouseMoveCallback);
 
     void pollEvents() override;
     bool closeRequested() override;
-    void setCursorMode(const CursorMode& pCursorMode) override;
+    void setCursorMode(const InputAPI::CursorMode& pCursorMode) override;
 
 private:
     bool mCloseRequested;

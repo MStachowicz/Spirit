@@ -1,8 +1,15 @@
 #pragma once
 
-#include "InputAPI.hpp" // Included in header because nested enum type InputAPI::Key cannot be forward declared.
-
+class InputHandler;
 class Camera;
+
+namespace InputAPI
+{
+    enum class Key;
+    enum class MouseButton;
+    enum class Action;
+    enum class CursorMode;
+}
 
 // Processes input coming in from a registered mInputHandler using the InputAPI.
 class Input
@@ -19,5 +26,5 @@ private:
     bool mCapturingMouse = false;
 
     Camera& mCurrentCamera;
-    InputAPI* mInputHandler = nullptr;
+    InputHandler* mInputHandler = nullptr;
 };
