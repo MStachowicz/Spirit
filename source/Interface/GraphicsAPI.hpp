@@ -9,35 +9,36 @@ class LightManager;
 struct Mesh;
 struct Texture;
 struct DrawCall;
+struct PointLight;
+struct DirectionalLight;
+struct SpotLight;
 
 // GraphicsAPI is an interface for Zephyr::Renderer to communicate with a derived Graphics pipeline.
 class GraphicsAPI
 {
 public:
-	GraphicsAPI(const MeshManager& pMeshManager, const TextureManager& pTextureManager, const LightManager& pLightManager)
-	: mMeshManager(pMeshManager)
-	, mTextureManager(pTextureManager)
-	, mLightManager(pLightManager)
+	GraphicsAPI(const LightManager& pLightManager)
+	: mLightManager(pLightManager)
 	{};
-
 	virtual ~GraphicsAPI() {}; // GraphicsAPI is a pure virtual interface used polymorphically.
 
-	virtual void onFrameStart() 					= 0;
-	virtual void draw(const DrawCall& pDrawCall) 	= 0; // Executes the draw call.
-	virtual void postDraw() 						= 0;
+	virtual void onFrameStart() 									= 0;
+	virtual void draw(const DrawCall& pDrawCall) 					= 0;
+	virtual void draw(const PointLight& pPointLight) 				= 0;
+	virtual void draw(const DirectionalLight& pDirectionalLight) 	= 0;
+	virtual void draw(const SpotLight& pSpotLight) 					= 0;
+	virtual void postDraw() 										= 0;
+
+	virtual void initialiseMesh(const Mesh& pMesh) = 0;
+	virtual void initialiseTexture(const Texture& pTexture) = 0;
 
 	void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
 	void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 protected:
-	// Sets up the mesh for processing DrawCalls from the mDrawQueue queue.
-	virtual void initialiseMesh(const Mesh& pMesh) = 0;
-	virtual void initialiseTexture(const Texture& pTexture) = 0;
 
 	glm::mat4 mViewMatrix; // The view matrix used in draw(), set in setView
 	glm::vec3 mViewPosition; // The view position used in draw(), set in setViewPosition
 	glm::mat4 mProjection;
 
-	const MeshManager& mMeshManager; // Owned by Zephyr::Renderer.
-	const TextureManager& mTextureManager; // Owned by Zephyr::Renderer.
 	const LightManager& mLightManager;
 };

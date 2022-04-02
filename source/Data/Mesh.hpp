@@ -5,8 +5,6 @@
 #include "vector"
 #include "string"
 
-typedef size_t MeshID; // The unique ID used as an identifier and index location of a mesh.
-
 // Mesh stores all per-vertex data to represent a 3D object.
 struct Mesh
 {

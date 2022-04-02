@@ -11,12 +11,15 @@ Renderer::Renderer()
 : mTextureManager()
 , mMeshManager(mTextureManager)
 , mLightManager()
-, mOpenGLAPI(new OpenGLAPI(mMeshManager, mTextureManager, mLightManager))
+, mOpenGLAPI(new OpenGLAPI(mLightManager))
 , mCamera(glm::vec3(0.0f, 0.0f, 7.0f)
 , std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1)
 , std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1)
 )
 {
+	mMeshManager.ForEach([this](const auto &mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
+	mTextureManager.ForEach([this](const auto &texture) { mOpenGLAPI->initialiseTexture(texture); });
+
 	lightPosition.mScale 		= glm::vec3(0.1f);
 	lightPosition.mMesh 		= mMeshManager.getMeshID("3DCube");
 	lightPosition.mColour		= glm::vec3(1.f);
@@ -261,28 +264,6 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 					ImGui::ColorEdit3("Colour",  &pDrawCall.mColour.value().x);
 				}
 				break;
-				case DrawStyle::Material:
-				{
-					if (!pDrawCall.mMaterial.has_value())
-						pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
-
-					ImGui::Text("Material properties");
-					if (ImGui::BeginCombo("Preset", "", ImGuiComboFlags()))
-					{
-						for (size_t i = 0; i < Material::presets.size(); i++)
-						{
-							if (ImGui::Selectable(Material::presets[i].first.c_str()))
-								pDrawCall.mMaterial = Material::presets[i].second;
-						}
-						ImGui::EndCombo();
-					}
-					ImGui::Separator();
-					ImGui::SliderFloat3("Ambient", &pDrawCall.mMaterial.value().ambient.x, 0.f, 1.f);
-					ImGui::SliderFloat3("Diffuse", &pDrawCall.mMaterial.value().diffuse.x, 0.f, 1.f);
-					ImGui::SliderFloat3("Specular", &pDrawCall.mMaterial.value().specular.x, 0.f, 1.f);
-					ImGui::SliderFloat("Shininess", &pDrawCall.mMaterial.value().shininess, 0.1f, 300.f);
-				}
-				break;
 				case DrawStyle::LightMap:
 				{
 					ImGui::Text("Available texture slots");
@@ -326,6 +307,9 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 	ImGui::End();
 
 	mLightManager.outputImGui();
+	mLightManager.getPointLights().ForEach([this](const PointLight& pPointLight) { mOpenGLAPI->draw(pPointLight); });
+	mLightManager.getDirectionalLights().ForEach([this](const DirectionalLight& pDirectionalLight) { mOpenGLAPI->draw(pDirectionalLight); });
+	mLightManager.getSpotlightsLights().ForEach([this](const SpotLight& pSpotLight) { mOpenGLAPI->draw(pSpotLight); });
 }
 
 void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
@@ -337,7 +321,7 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 
 	if (mLightManager.mRenderLightPositions)
 	{
-		mLightManager.getPointLights().ForEach([&](const PointLight &pPointLight)
+		mLightManager.getPointLights().ForEach([&](const PointLight& pPointLight)
 		{
 			lightPosition.mPosition = pPointLight.mPosition;
 			lightPosition.mColour	= pPointLight.mColour;

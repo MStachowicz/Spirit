@@ -3,9 +3,10 @@
 #include "LightManager.hpp"
 #include "TextureManager.hpp"
 #include "MeshManager.hpp"
-
 #include "Camera.hpp"
+
 #include "DrawCall.hpp"
+
 #include "ComponentManager.hpp"
 
 class GraphicsAPI;

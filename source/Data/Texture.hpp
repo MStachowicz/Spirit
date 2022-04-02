@@ -1,8 +1,8 @@
 #pragma once
 
-#include "string"
+#include "Types.hpp"
 
-typedef size_t TextureID;
+#include "string"
 
 // Texture is a data only container used by TextureManager to store loaded textures.
 struct Texture

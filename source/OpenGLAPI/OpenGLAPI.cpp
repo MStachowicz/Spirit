@@ -4,16 +4,19 @@
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 
 #include "DrawCall.hpp"
-#include "LightManager.hpp"
-#include "MeshManager.hpp"
+#include "Logger.hpp"
+
+#include "Mesh.hpp"
+#include "Texture.hpp"
+#include "Light.hpp"
 
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 
 #include "imgui.h"
 
-OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTextureManager, const LightManager& pLightManager)
-	: GraphicsAPI(pMeshManager, pTextureManager, pLightManager)
+OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
+	: GraphicsAPI(pLightManager)
 	, cOpenGLVersionMajor(3)
 	, cOpenGLVersionMinor(3)
 	, mWindowClearColour{0.0f, 0.0f, 0.0f}
@@ -33,11 +36,12 @@ OpenGLAPI::OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTex
 	, mUniformShaderIndex(4)
 	, mLightMapIndex(5)
 	, mDepthViewerIndex(6)
+	, mMissingTextureID(0)
+	, pointLightDrawCount(0)
+	, spotLightDrawCount(0)
+	, directionalLightDrawCount(0)
 	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView") }
 {
-	mMeshManager.ForEach([this](const auto &mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
-	mTextureManager.ForEach([this](const auto &texture) { initialiseTexture(texture); });
-
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
 
@@ -116,73 +120,9 @@ void OpenGLAPI::onFrameStart()
 		mShaders[mDepthViewerIndex].setUniform("linearDepthView",  mLinearDepthView);
 	}
 
-	{ // Set all light uniforms for material shader
-		mShaders[mMaterialShaderIndex].use();
-		mShaders[mMaterialShaderIndex].setUniform("viewPosition", mViewPosition);
-		mLightManager.getPointLights().ForEach([&](const PointLight &pointLight)
-		{
-			const glm::vec3 diffuseColour = pointLight.mColour  * pointLight.mDiffuseIntensity;
-        	const glm::vec3 ambientColour = diffuseColour * pointLight.mAmbientIntensity;
-        	mShaders[mMaterialShaderIndex].setUniform("light.ambient", ambientColour);
-        	mShaders[mMaterialShaderIndex].setUniform("light.diffuse", diffuseColour);
-        	mShaders[mMaterialShaderIndex].setUniform("light.specular", glm::vec3(pointLight.mSpecularIntensity));
-			mShaders[mMaterialShaderIndex].setUniform("light.position", pointLight.mPosition);
-		});
-	}
-	{// Set all light uniforms for light map shader
-		mShaders[mLightMapIndex].use();
-		mShaders[mLightMapIndex].setUniform("viewPosition", mViewPosition);
-
-		size_t count = 0;
-		ZEPHYR_ASSERT(mLightManager.getPointLights().size() == 4, "Only an exact number of 4 pointlights is supported.")
-		mLightManager.getPointLights().ForEach([&](const PointLight& pointLight)
-		{
-			const std::string uniform = "pointLights[" + std::to_string(count) + "]";
-			const glm::vec3 diffuseColour = pointLight.mColour  * pointLight.mDiffuseIntensity;
-        	const glm::vec3 ambientColour = diffuseColour * pointLight.mAmbientIntensity;
-
-			mShaders[mLightMapIndex].setUniform((uniform + ".position").c_str(), pointLight.mPosition);
-			mShaders[mLightMapIndex].setUniform((uniform + ".ambient").c_str(), ambientColour);
-			mShaders[mLightMapIndex].setUniform((uniform + ".diffuse").c_str(), diffuseColour);
-			mShaders[mLightMapIndex].setUniform((uniform + ".specular").c_str(), glm::vec3(pointLight.mSpecularIntensity));
-			mShaders[mLightMapIndex].setUniform((uniform + ".constant").c_str(), pointLight.mConstant);
-			mShaders[mLightMapIndex].setUniform((uniform + ".linear").c_str(), pointLight.mLinear);
-			mShaders[mLightMapIndex].setUniform((uniform + ".quadratic").c_str(), pointLight.mQuadratic);
-			count++;
-		});
-
-		ZEPHYR_ASSERT(mLightManager.getDirectionalLights().size() <= 1, "Only one directional light is supported by OpenGLAPI")
-		count = 0;
-		mLightManager.getDirectionalLights().ForEach([&](const DirectionalLight& directionalLight)
-		{
-			const glm::vec3 diffuseColour = directionalLight.mColour  * directionalLight.mDiffuseIntensity;
-        	const glm::vec3 ambientColour = diffuseColour * directionalLight.mAmbientIntensity;
-			mShaders[mLightMapIndex].setUniform("dirLight.direction", directionalLight.mDirection);
-			mShaders[mLightMapIndex].setUniform("dirLight.ambient", ambientColour);
-			mShaders[mLightMapIndex].setUniform("dirLight.diffuse", diffuseColour);
-			mShaders[mLightMapIndex].setUniform("dirLight.specular", glm::vec3(directionalLight.mSpecularIntensity));
-			count++;
-		});
-
-		ZEPHYR_ASSERT(mLightManager.getSpotlightsLights().size() <= 1, "Only one spotlight light is supported by OpenGLAPI")
-		count = 0;
-		mLightManager.getSpotlightsLights().ForEach([&](const SpotLight& light)
-		{
-			const glm::vec3 diffuseColour = light.mColour  * light.mDiffuseIntensity;
-        	const glm::vec3 ambientColour = diffuseColour * light.mAmbientIntensity;
-        	mShaders[mLightMapIndex].setUniform("spotLight.position", light.mPosition);
-        	mShaders[mLightMapIndex].setUniform("spotLight.direction", light.mDirection);
-        	mShaders[mLightMapIndex].setUniform("spotLight.diffuse", diffuseColour);
-        	mShaders[mLightMapIndex].setUniform("spotLight.ambient", ambientColour);
-        	mShaders[mLightMapIndex].setUniform("spotLight.specular", glm::vec3(light.mSpecularIntensity));
-        	mShaders[mLightMapIndex].setUniform("spotLight.constant", light.mConstant);
-        	mShaders[mLightMapIndex].setUniform("spotLight.linear", light.mLinear);
-        	mShaders[mLightMapIndex].setUniform("spotLight.quadratic", light.mQuadratic);
-        	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", light.mCutOff);
-        	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", light.mOuterCutOff);
-			count++;
-		});
-	}
+	// TODO: Set this for all shaders that use viewPosition.
+	mShaders[mLightMapIndex].use();
+	mShaders[mLightMapIndex].setUniform("viewPosition", mViewPosition);
 }
 
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
@@ -216,7 +156,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			else
 			{
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
 			}
 			if (pDrawCall.mTexture2.has_value())
 			{
@@ -226,21 +166,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			else
 			{
 				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
 			}
 			break;
 		case DrawStyle::UniformColour:
 			shader = &mShaders[mUniformShaderIndex];
 			shader->use();
 			shader->setUniform("colour", pDrawCall.mColour.value());
-			break;
-		case DrawStyle::Material:
-			shader = &mShaders[mMaterialShaderIndex];
-			shader->use();
-			shader->setUniform("material.ambient", pDrawCall.mMaterial.value().ambient);
-			shader->setUniform("material.diffuse", pDrawCall.mMaterial.value().diffuse);
-			shader->setUniform("material.specular", pDrawCall.mMaterial.value().specular);
-			shader->setUniform("material.shininess", pDrawCall.mMaterial.value().shininess);
 			break;
 		case DrawStyle::LightMap:
 			shader = &mShaders[mLightMapIndex];
@@ -250,13 +182,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			if (pDrawCall.mDiffuseTextureID.has_value())
 				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mDiffuseTextureID.value()));
 			else
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
 
 			glActiveTexture(GL_TEXTURE1);
 			if (pDrawCall.mSpecularTextureID.has_value())
 				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mSpecularTextureID.value()));
 			else
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mTextureManager.getTextureID("missing")));
+				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
 				shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
 			break;
 		default:
@@ -304,10 +236,64 @@ void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 		draw(childMesh);
 }
 
+void OpenGLAPI::draw(const PointLight& pPointLight)
+{
+	const std::string uniform = "pointLights[" + std::to_string(pointLightDrawCount) + "]";
+	const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
+	const glm::vec3 ambientColour = diffuseColour * pPointLight.mAmbientIntensity;
+
+	mShaders[mLightMapIndex].setUniform((uniform + ".position").c_str(), pPointLight.mPosition);
+	mShaders[mLightMapIndex].setUniform((uniform + ".ambient").c_str(), ambientColour);
+	mShaders[mLightMapIndex].setUniform((uniform + ".diffuse").c_str(), diffuseColour);
+	mShaders[mLightMapIndex].setUniform((uniform + ".specular").c_str(), glm::vec3(pPointLight.mSpecularIntensity));
+	mShaders[mLightMapIndex].setUniform((uniform + ".constant").c_str(), pPointLight.mConstant);
+	mShaders[mLightMapIndex].setUniform((uniform + ".linear").c_str(), pPointLight.mLinear);
+	mShaders[mLightMapIndex].setUniform((uniform + ".quadratic").c_str(), pPointLight.mQuadratic);
+
+	pointLightDrawCount++;
+}
+
+void OpenGLAPI::draw(const DirectionalLight& pDirectionalLight)
+{
+	const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
+	const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
+	mShaders[mLightMapIndex].setUniform("dirLight.direction", pDirectionalLight.mDirection);
+	mShaders[mLightMapIndex].setUniform("dirLight.ambient", ambientColour);
+	mShaders[mLightMapIndex].setUniform("dirLight.diffuse", diffuseColour);
+	mShaders[mLightMapIndex].setUniform("dirLight.specular", glm::vec3(pDirectionalLight.mSpecularIntensity));
+
+	directionalLightDrawCount++;
+}
+void OpenGLAPI::draw(const SpotLight& pSpotLight)
+{
+	const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
+	const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
+	mShaders[mLightMapIndex].setUniform("spotLight.position", pSpotLight.mPosition);
+	mShaders[mLightMapIndex].setUniform("spotLight.direction", pSpotLight.mDirection);
+	mShaders[mLightMapIndex].setUniform("spotLight.diffuse", diffuseColour);
+	mShaders[mLightMapIndex].setUniform("spotLight.ambient", ambientColour);
+	mShaders[mLightMapIndex].setUniform("spotLight.specular", glm::vec3(pSpotLight.mSpecularIntensity));
+	mShaders[mLightMapIndex].setUniform("spotLight.constant", pSpotLight.mConstant);
+	mShaders[mLightMapIndex].setUniform("spotLight.linear", pSpotLight.mLinear);
+	mShaders[mLightMapIndex].setUniform("spotLight.quadratic", pSpotLight.mQuadratic);
+	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", pSpotLight.mCutOff);
+	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", pSpotLight.mOuterCutOff);
+
+	spotLightDrawCount++;
+}
+
 void OpenGLAPI::postDraw()
 {
 	mWindow.renderImGui();
 	mWindow.swapBuffers();
+
+	ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
+	ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
+	ZEPHYR_ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
+
+	pointLightDrawCount = 0;
+	directionalLightDrawCount = 0;
+	spotLightDrawCount = 0;
 }
 
 const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID)
@@ -428,6 +414,9 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 	ZEPHYR_ASSERT(textureHandle != -1, "Texture {} failed to load", pTexture.mName);
 
 	mTextures[pTexture.getID()] = { textureHandle };
+
+	if (pTexture.mName == "missing")
+		mMissingTextureID = pTexture.getID();
 
 	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, textureHandle);
 }

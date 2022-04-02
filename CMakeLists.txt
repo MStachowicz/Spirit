@@ -30,30 +30,24 @@ source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
 source/Renderer/MeshManager.hpp
 source/Renderer/MeshManager.cpp
-source/Renderer/Mesh.hpp
 source/Renderer/TextureManager.hpp
 source/Renderer/TextureManager.cpp
-source/Renderer/Texture.hpp
-source/Renderer/DrawCall.hpp
-source/Renderer/DrawCall.cpp
+source/Renderer/LightManager.hpp
+source/Renderer/LightManager.cpp
 source/Renderer/Camera.hpp
 source/Renderer/Camera.cpp
 source/Renderer/ImGuiConfig.hpp
-source/Renderer/LightManager.hpp
-source/Renderer/LightManager.cpp
 )
 target_include_directories(Renderer
-PUBLIC source/External/GLM
 PUBLIC source/Renderer
 PRIVATE source/External/stb
 PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Renderer
 PUBLIC ECS
-PUBLIC Utility # Drawcall.hpp requires this for various std::array helpers (those only end up being used for ImGui???)
+PUBLIC OpenGLAPI
 PRIVATE FileSystem
 PRIVATE Logger
-PRIVATE OpenGLAPI
 PRIVATE ImGui
 PRIVATE assimp
 )
@@ -73,14 +67,12 @@ source/OpenGLAPI/Shader.cpp
 )
 target_include_directories(OpenGLAPI
 PUBLIC source/OpenGLAPI
-PUBLIC source/External/GLM
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(OpenGLAPI
-PUBLIC Interface # Implements the InputAPI and GraphicsAPI interface
+PUBLIC ZephyrInterface # Implements the InputAPI and GraphicsAPI interface
 PRIVATE glad_GL
 PRIVATE glfw
-PRIVATE Renderer
 PRIVATE ImGui
 PRIVATE FileSystem
 PRIVATE Logger
@@ -134,18 +126,37 @@ PRIVATE Logger
 # ------------------------ JOBSYSTEM END ----------------------------
 
 # ------------------------ INTERFACE ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Zephyr Interfaces")
-add_library(Interface INTERFACE)
-target_include_directories(Interface INTERFACE source/Interface)
+message(STATUS "\n[ZEPHYR] -- Adding Zephyr GraphicsAPI + InputAPI Interfaces")
+add_library(ZephyrInterface INTERFACE
+source/Interface/DrawCall.hpp
+source/Interface/GraphicsAPI.hpp
+source/Interface/InputAPI.hpp
+)
+target_include_directories(ZephyrInterface INTERFACE
+INTERFACE source/Interface
+)
+target_link_libraries(ZephyrInterface
+INTERFACE Data
+)
 # ------------------------ INTERFACE END ----------------------------
 
-# ------------------------ UTILITY ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Utility interface")
-add_library(Utility INTERFACE)
-target_include_directories(Utility INTERFACE source/Utility)
-# ------------------------ UTILITY END ----------------------------
+# ------------------------ DATA ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Data interface")
+add_library(Data INTERFACE
+source/Data/Mesh.hpp
+source/Data/Texture.hpp
+source/Data/Light.hpp
+)
+target_include_directories(Data
+INTERFACE source/Data
+INTERFACE source/External/GLM
+)
+target_link_libraries(Data
+INTERFACE Utility
+)
+# ------------------------ DATA END ----------------------------
 
-# ------------------------ ECS END ----------------------------
+# ------------------------ ECS ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
 add_library(ECS INTERFACE
 source/ECS/Entity.hpp
@@ -158,6 +169,14 @@ target_link_libraries(ECS
 INTERFACE Logger # Can this be made Private by providing CPP files and making ECS a regular library?
 )
 # ------------------------ ECS END ----------------------------
+
+# ------------------------ UTILITY ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Utility interface")
+add_library(Utility INTERFACE)
+target_include_directories(Utility
+INTERFACE source/Utility
+)
+# ------------------------ UTILITY END ----------------------------
 
 # ------------------------ LOGGER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Git spdlog module")

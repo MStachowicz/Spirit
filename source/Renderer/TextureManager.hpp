@@ -17,8 +17,6 @@ namespace std
 class TextureManager
 {
 public:
-    const inline static size_t MAX_TEXTURES = 50;
-
     TextureManager();
     TextureID getTextureID(const std::string& pTextureName) const;
     std::string getTextureName(const TextureID& pTextureID) const;

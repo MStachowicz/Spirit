@@ -5,9 +5,8 @@
 #include "OpenGLWindow.hpp"
 #include "Shader.hpp"
 
-#include "Mesh.hpp"
-#include "TextureManager.hpp"
 #include "Utility.hpp"
+#include "Types.hpp"
 
 #include "unordered_map"
 #include "optional"
@@ -17,17 +16,21 @@
 
 struct GladGLContext;
 struct DrawCall;
+struct Mesh;
 enum class DrawMode;
 
 class OpenGLAPI : public GraphicsAPI
 {
 public:
-	OpenGLAPI(const MeshManager& pMeshManager, const TextureManager& pTextureManager, const LightManager& pLightManager);
+	OpenGLAPI(const LightManager& pLightManager);
 	~OpenGLAPI();
 
-	void onFrameStart() 						override;
-	void draw(const DrawCall& pDrawCall) 		override;
-	void postDraw() 							override;
+	void onFrameStart() 									override;
+	void draw(const DrawCall& pDrawCall) 					override;
+	void draw(const PointLight& pPointLight) 				override;
+	void draw(const DirectionalLight& pDirectionalLight) 	override;
+	void draw(const SpotLight& pSpotLight) 					override;
+	void postDraw() 										override;
 
 private:
 	void initialiseMesh(const Mesh& pMesh) 			override;
@@ -72,6 +75,10 @@ private:
 	size_t mMaterialShaderIndex;
 	size_t mLightMapIndex;
 	size_t mDepthViewerIndex;
+	TextureID mMissingTextureID;
+	int pointLightDrawCount;
+	int spotLightDrawCount;
+	int directionalLightDrawCount;
 
 	std::vector<Shader> mShaders;
 
@@ -132,7 +139,7 @@ private:
 
 	typedef unsigned int TextureHandle;
 	TextureHandle getTextureHandle(const TextureID& pTextureID) const;
-	std::array<TextureHandle, TextureManager::MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
+	std::array<TextureHandle, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
 
 	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
 	template <class T>
