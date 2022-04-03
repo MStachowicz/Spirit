@@ -5,10 +5,19 @@
 #include "Logger.hpp"
 #include "OpenGLAPI.hpp"
 
+#include "cmath"
+#include "numeric"
 #include "chrono"
 
 Renderer::Renderer()
-: mTextureManager()
+: mDrawCount(0)
+, mTargetFPS(60)
+, mCurrentFPS(0)
+, mCurrentFPSSmoothingFactor(0.1f)
+, mCurrentFPSSmoothed(0)
+, mFPSSampleSize(120)
+, mAverageFPS(0)
+, mTextureManager()
 , mMeshManager(mTextureManager)
 , mLightManager()
 , mOpenGLAPI(new OpenGLAPI(mLightManager))
@@ -82,10 +91,49 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
 	mOpenGLAPI->onFrameStart();
 
-	if (ImGui::Begin("Render options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("Render options", nullptr))
 	{
-		ImGui::Text("Frame time: %.3f ms", static_cast<double>((pTimeSinceLastDraw.count()) / 1000.0));
 		ImGui::Checkbox("Render light positions", &mLightManager.mRenderLightPositions);
+
+		{ // Render FPS
+			mCurrentFPS = 1.0f / (static_cast<float>((pTimeSinceLastDraw.count()) / 1000000.0f));
+			mCurrentFPSSmoothed = (mCurrentFPSSmoothingFactor * mCurrentFPS) + (1.0f - mCurrentFPSSmoothingFactor) * mCurrentFPSSmoothed;
+			static bool useRawData = false;
+			ImGui::Checkbox("Show raw data", &useRawData); // Whether we use smoothing for the incoming values of mCurrentFPS.
+			if (!useRawData)
+			{
+				ImGui::SameLine();
+				ImGui::SliderFloat("FPS smoothing factor", &mCurrentFPSSmoothingFactor, 0.f, 1.f);
+			}
+
+			ImGui::Separator();
+			ImGui::Text("Frame time: %.3f ms", static_cast<double>((pTimeSinceLastDraw.count()) / 1000.0));
+			ImGui::Text("FPS: %.0f", useRawData ? mCurrentFPS : mCurrentFPSSmoothed);
+			ImGui::Text("Target FPS: %d", mTargetFPS);
+
+			{ // Plotting mFPSTimes
+				// We keep a list of mFPSTimes sampling the mCurrentFPS at every Renderer::Draw.
+				// mAverageFPS gives the average FPS in the mFPSSampleSize of mFPSTimes.
+
+				// When changing mFPSSampleSize we have to clear the excess FPS entries in the start of the vector.
+				if (ImGui::SliderInt("FPS frame sample size", &mFPSSampleSize, 1, 1000))
+					if (mFPSSampleSize < mFPSTimes.size())
+						mFPSTimes.erase(mFPSTimes.begin(), mFPSTimes.end() - mFPSSampleSize); // O(n) mFPSTimes.erase linear with mFPSSampleSize
+
+				// When mFPSTimes is full, clears the first entry to allow ring buffer style push_back for output using ImGui::PlotLines
+				if (mFPSTimes.size() <= mFPSSampleSize)
+					mFPSTimes.push_back(useRawData ? mCurrentFPS : mCurrentFPSSmoothed);
+				else
+				{
+					mFPSTimes.erase(mFPSTimes.begin()); // O(n) mFPSTimes.erase linear with mFPSTimes.size()
+					mFPSTimes.push_back(useRawData ? mCurrentFPS : mCurrentFPSSmoothed);
+				}
+				mAverageFPS = std::reduce(mFPSTimes.begin(), mFPSTimes.end()) / static_cast<float>(mFPSTimes.size()); // O(?) reduce faster than accumulate, per frame
+				ImGui::PlotLines("", &mFPSTimes[0], static_cast<int>(mFPSTimes.size()), 0, ("Avg:" + std::to_string(std::round(mAverageFPS))).c_str(), 0.0f, mTargetFPS * 1.25f, ImVec2(ImGui::GetWindowWidth(), mTargetFPS * 1.25f));
+			}
+		}
+
+		ImGui::ShowDemoWindow();
 	}
 	ImGui::End();
 
@@ -329,7 +377,7 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 		});
 	}
 
-	drawCount++;
+	mDrawCount++;
 }
 
 void Renderer::postDraw()

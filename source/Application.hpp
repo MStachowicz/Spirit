@@ -19,12 +19,9 @@ private:
 
     bool    mPhysicsTimeStepChanged     = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
     int     mPhysicsTicksPerSecond      = 60; // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
-    int     mTargetFramesPerSecond      = 60; // Independently of physics, the number of frames the renderer will aim to draw per second.
-    std::chrono::duration<double>   mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mTargetFramesPerSecond;
+    std::chrono::duration<double>   mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mRenderer.mTargetFPS;
     std::chrono::milliseconds       maxFrameDelta   = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
-
     int     mPhysicsUpdatesCount        = 0; // TODO: move to physics system when added
-
 
     // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
     // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
@@ -36,7 +33,7 @@ private:
 
         LOG_INFO("Physics ticks per second: {}" , pPhysicsTicksPerSecond);
         LOG_INFO("Physics fixed timestep: {}ms" , std::chrono::round<std::chrono::microseconds>(physicsTimestep).count() / 1000.);
-        LOG_INFO("Renderer FPS: {}"             , mTargetFramesPerSecond);
+        LOG_INFO("Renderer FPS: {}"             , mRenderer.mTargetFPS);
         LOG_INFO("Render timestep: {}ms"        , std::chrono::round<std::chrono::microseconds>(mRenderTimestep).count() / 1000.);
 
         // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both
@@ -101,14 +98,14 @@ private:
         }
 
         const double totalTimeSeconds = std::chrono::round<std::chrono::milliseconds>(durationTotalSimulation).count() / 1000.;
-        const double renderFPS = (double)mRenderer.drawCount / totalTimeSeconds;
+        const double renderFPS = (double)mRenderer.mDrawCount / totalTimeSeconds;
         const double physicsFPS = (double)mPhysicsUpdatesCount / totalTimeSeconds;
 
         LOG_INFO("------------------------------------------------------------------------");
         LOG_INFO("Total simulation time: {}s", totalTimeSeconds);
         LOG_INFO("Total physics updates: {}", mPhysicsUpdatesCount);
         LOG_INFO("Averaged physics updates per second: {}/s", physicsFPS);
-        LOG_INFO("Total rendered frames: {}", mRenderer.drawCount);
+        LOG_INFO("Total rendered frames: {}", mRenderer.mDrawCount);
         LOG_INFO("Averaged render frames per second: {}/s", renderFPS);
     }
 };
