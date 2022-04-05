@@ -132,8 +132,6 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 				ImGui::PlotLines("", &mFPSTimes[0], static_cast<int>(mFPSTimes.size()), 0, ("Avg:" + std::to_string(std::round(mAverageFPS))).c_str(), 0.0f, mTargetFPS * 1.25f, ImVec2(ImGui::GetWindowWidth(), mTargetFPS * 1.25f));
 			}
 		}
-
-		ImGui::ShowDemoWindow();
 	}
 	ImGui::End();
 
