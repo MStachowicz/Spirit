@@ -32,6 +32,10 @@ public:
 	void draw(const SpotLight& pSpotLight) 					override;
 	void postDraw() 										override;
 
+	void newImGuiFrame()	override;
+	void renderImGuiFrame() override;
+	void renderImGui()		override;
+
 private:
 	void initialiseMesh(const Mesh& pMesh) 			override;
 	void initialiseTexture(const Texture& pTexture) override;

@@ -7,7 +7,7 @@ class LightManager
 {
     public:
         LightManager();
-        void outputImGui();
+        void renderImGui();
 
         const ECS::ComponentManager<DirectionalLight>& getDirectionalLights() const { return mDirectionalLights; };
         const ECS::ComponentManager<PointLight>& getPointLights() const             { return mPointLights; };

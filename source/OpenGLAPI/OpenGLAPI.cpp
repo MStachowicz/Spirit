@@ -64,53 +64,6 @@ OpenGLAPI::~OpenGLAPI()
 void OpenGLAPI::onFrameStart()
 {
 	clearBuffers();
-	mWindow.startImGuiFrame();
-
-	if (ImGui::Begin("OpenGL options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text(("OpenGL version: " + std::to_string(cOpenGLVersionMajor) + "." + std::to_string(cOpenGLVersionMinor)).c_str());
-		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
-		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
-
-		if (ImGui::ColorEdit3("Window clear colour", mWindowClearColour))
-			setClearColour(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2]);
-		if (ImGui::Checkbox("Depth test", &mDepthTest))
-			setDepthTest(mDepthTest);
-		if(mDepthTest)
-		{
-			if (ImGui::BeginCombo("Depth test type", convert(mDepthTestType).c_str(), ImGuiComboFlags()))
-			{
-				for (size_t i = 0; i < depthTestTypes.size(); i++)
-				{
-					if (ImGui::Selectable(depthTestTypes[i].c_str()))
-						setDepthTestType(static_cast<DepthTestType>(i));
-				}
-				ImGui::EndCombo();
-			}
-		}
-
-		if (ImGui::BeginCombo("Buffer draw style", convert(mBufferDrawType).c_str(), ImGuiComboFlags()))
-		{
-			for (size_t i = 0; i < BufferDrawTypes.size(); i++)
-			{
-				if (ImGui::Selectable(BufferDrawTypes[i].c_str()))
-					mBufferDrawType = static_cast<BufferDrawType>(i);
-			}
-			ImGui::EndCombo();
-		}
-
-		if (mBufferDrawType == BufferDrawType::Depth)
-		{
-			ImGui::Checkbox("Use linear depth testing" , &mLinearDepthView);
-		}
-
-
-		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
-		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
-		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
-	}
-	ImGui::End();
-
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
 	if (mBufferDrawType == BufferDrawType::Depth)
 	{
@@ -284,16 +237,69 @@ void OpenGLAPI::draw(const SpotLight& pSpotLight)
 
 void OpenGLAPI::postDraw()
 {
-	mWindow.renderImGui();
 	mWindow.swapBuffers();
 
 	ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
 	ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
 	ZEPHYR_ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
-
 	pointLightDrawCount = 0;
 	directionalLightDrawCount = 0;
 	spotLightDrawCount = 0;
+}
+
+void OpenGLAPI::newImGuiFrame()
+{
+	mWindow.startImGuiFrame();
+}
+void OpenGLAPI::renderImGuiFrame()
+{
+	mWindow.renderImGui();
+}
+void OpenGLAPI::renderImGui()
+{
+	if (ImGui::Begin("OpenGL options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text(("OpenGL version: " + std::to_string(cOpenGLVersionMajor) + "." + std::to_string(cOpenGLVersionMinor)).c_str());
+		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
+		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
+
+		if (ImGui::ColorEdit3("Window clear colour", mWindowClearColour))
+			setClearColour(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2]);
+		if (ImGui::Checkbox("Depth test", &mDepthTest))
+			setDepthTest(mDepthTest);
+		if(mDepthTest)
+		{
+			if (ImGui::BeginCombo("Depth test type", convert(mDepthTestType).c_str(), ImGuiComboFlags()))
+			{
+				for (size_t i = 0; i < depthTestTypes.size(); i++)
+				{
+					if (ImGui::Selectable(depthTestTypes[i].c_str()))
+						setDepthTestType(static_cast<DepthTestType>(i));
+				}
+				ImGui::EndCombo();
+			}
+		}
+
+		if (ImGui::BeginCombo("Buffer draw style", convert(mBufferDrawType).c_str(), ImGuiComboFlags()))
+		{
+			for (size_t i = 0; i < BufferDrawTypes.size(); i++)
+			{
+				if (ImGui::Selectable(BufferDrawTypes[i].c_str()))
+					mBufferDrawType = static_cast<BufferDrawType>(i);
+			}
+			ImGui::EndCombo();
+		}
+
+		if (mBufferDrawType == BufferDrawType::Depth)
+		{
+			ImGui::Checkbox("Use linear depth testing" , &mLinearDepthView);
+		}
+
+		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
+		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
+		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
+	}
+	ImGui::End();
 }
 
 const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID)

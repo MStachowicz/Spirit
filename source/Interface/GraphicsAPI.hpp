@@ -29,6 +29,10 @@ public:
 	virtual void draw(const SpotLight& pSpotLight) 					= 0;
 	virtual void postDraw() 										= 0;
 
+	virtual void newImGuiFrame() 	= 0;
+	virtual void renderImGuiFrame() = 0;
+	virtual void renderImGui() {};
+
 	virtual void initialiseMesh(const Mesh& pMesh) = 0;
 	virtual void initialiseTexture(const Texture& pTexture) = 0;
 

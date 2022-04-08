@@ -32,9 +32,8 @@ LightManager::LightManager()
 	}
 }
 
-void LightManager::outputImGui()
+void LightManager::renderImGui()
 {
-
 	if (ImGui::Begin("Light options"))
 	{
 		{ // Directional lights
