@@ -37,10 +37,9 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
-	for (size_t i = 0; i < 25; i++)
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition = glm::vec3(-1.0f, 0.0f, 10.0f - i);
+		drawCall.mPosition = glm::vec3(-1.0f, 0.0f, 1.f);
 		drawCall.mScale = glm::vec3(0.5f);
 		drawCall.mMesh = mMeshManager.getMeshID("backpack");
 		drawCall.mDrawStyle = DrawStyle::LightMap;
@@ -92,7 +91,7 @@ Renderer::~Renderer()
 
 void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
-	mTimeSinceLastDraw 	= static_cast<float>(pTimeSinceLastDraw.count()) / 1000.0f;
+	mTimeSinceLastDraw 	= static_cast<float>(pTimeSinceLastDraw.count()) / 1000.0f; // Convert microseconds to milliseconds
 
 	if (mUseRawPerformanceData)
 		mCurrentFPS = 1.0f / (static_cast<float>((pTimeSinceLastDraw.count()) / 1000000.0f));
