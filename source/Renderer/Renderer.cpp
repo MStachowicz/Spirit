@@ -27,6 +27,7 @@ Renderer::Renderer()
 , mCurrentFPS(0)
 , mTimeSinceLastDraw(0)
 , mImGuiRenderTimeTakenMS(0)
+, mDrawTimeTakenMS(0)
 {
 	mMeshManager.ForEach([this](const auto &mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
 	mTextureManager.ForEach([this](const auto &texture) { mOpenGLAPI->initialiseTexture(texture); });
@@ -109,22 +110,29 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 
 void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
-	mDrawCalls.ForEach([&](const DrawCall& pDrawCall)
-	{
-		mOpenGLAPI->draw(pDrawCall);
-	});
+	Stopwatch stopwatch;
 
-	if (mLightManager.mRenderLightPositions)
-	{
-		mLightManager.getPointLights().ForEach([&](const PointLight& pPointLight)
+	onFrameStart(pTimeSinceLastDraw);
+	{ // Draw all meshes via DrawCalls
+		mDrawCalls.ForEach([&](const DrawCall &pDrawCall)
 		{
-			lightPosition.mPosition = pPointLight.mPosition;
-			lightPosition.mColour	= pPointLight.mColour;
-			mOpenGLAPI->draw(lightPosition);
+			mOpenGLAPI->draw(pDrawCall);
 		});
+
+		if (mLightManager.mRenderLightPositions)
+		{
+			mLightManager.getPointLights().ForEach([&](const PointLight &pPointLight)
+			{
+				lightPosition.mPosition = pPointLight.mPosition;
+				lightPosition.mColour	= pPointLight.mColour;
+				mOpenGLAPI->draw(lightPosition);
+			});
+		}
 	}
+	postDraw();
 
 	mDrawCount++;
+	mDrawTimeTakenMS = stopwatch.getTime<std::milli, float>();
 }
 
 void Renderer::postDraw()
@@ -373,8 +381,9 @@ void Renderer::renderImGui()
 	{
 		// This is showing the last frame's RenderTimeTaken since the update has to happen after renderImGuiFrame below.
 		// TODO: Add above comment as a help marker.
-		ImGui::Text("ImGui render took:\t%.3fms", 	mImGuiRenderTimeTakenMS);
-		ImGui::Text("Frame time:%.3f ms", 			mTimeSinceLastDraw);
+		ImGui::Text("ImGui render took: %.3fms", 	mImGuiRenderTimeTakenMS);
+		ImGui::Text("Render took: %.3fms", 			mDrawTimeTakenMS);
+		ImGui::Text("Frame time: %.3f ms", 			mTimeSinceLastDraw);
 
 		ImGui::Separator();
 		ImGui::Text("Target FPS:%d", mTargetFPS);

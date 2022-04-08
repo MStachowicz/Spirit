@@ -53,4 +53,5 @@ private:
 
 	float mTimeSinceLastDraw;
 	float mImGuiRenderTimeTakenMS; // Time taken to render all ImGui. 1 Frame late to allow output to Performance window.
+	float mDrawTimeTakenMS; // Time taken to complete Renderer::Draw().
 };

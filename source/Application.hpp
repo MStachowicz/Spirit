@@ -90,9 +90,7 @@ private:
                 //renderState = currentState * alpha + previousState * (1 - alpha);
                 //mRenderer.draw(renderState);
 
-                mRenderer.onFrameStart(std::chrono::round<std::chrono::microseconds>(durationSinceLastRenderTick));
                 mRenderer.draw(std::chrono::round<std::chrono::microseconds>(durationSinceLastRenderTick));
-                mRenderer.postDraw();
                 durationSinceLastRenderTick = Duration::zero();
             }
         }
