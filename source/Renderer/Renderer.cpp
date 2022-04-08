@@ -17,7 +17,7 @@ Renderer::Renderer()
 , mMeshManager(mTextureManager)
 , mLightManager()
 , mOpenGLAPI(new OpenGLAPI(mLightManager))
-, mCamera(glm::vec3(0.0f, 0.0f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1), std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1))
+, mCamera(glm::vec3(0.0f, 1.7f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1), std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1))
 , mRenderImGui(true)
 , mShowFPSPlot(false)
 , mUseRawPerformanceData(false)
@@ -37,9 +37,42 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
+	{ // Cubes
+		std::array<glm::vec3, 10> cubePositions = {
+			glm::vec3(3.0f,   0.5f,  0.0f),
+			glm::vec3(-1.3f,  0.5f, -1.5f),
+			glm::vec3(1.5f,	  0.5f, -2.5f),
+			glm::vec3(-1.5f,  0.5f, -2.5f),
+			glm::vec3(2.4f,   0.5f, -3.5f),
+			glm::vec3(1.5f,   0.5f, -5.5f),
+			glm::vec3(-1.7f,  0.5f, -7.5f),
+			glm::vec3(1.3f,   0.5f, -8.5f),
+			glm::vec3(-3.8f,  0.5f, -12.3f),
+			glm::vec3(2.0f,   0.5f, -15.0f)};
+		for (size_t i = 0; i < cubePositions.size(); i++)
+		{
+			DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+			drawCall.mPosition = cubePositions[i];
+			drawCall.mMesh = mMeshManager.getMeshID("3DCube");
+
+			drawCall.mDrawStyle = DrawStyle::LightMap;
+			drawCall.mDiffuseTextureID = mTextureManager.getTextureID("metalContainerDiffuse");
+			drawCall.mSpecularTextureID = mTextureManager.getTextureID("metalContainerSpecular");
+			drawCall.mShininess = 64.f;
+		}
+	}
+	{ // Floor
+		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+		drawCall.mPosition;
+		drawCall.mRotation.x = -90.f;
+		drawCall.mScale = glm::vec3(25.f);
+		drawCall.mMesh = mMeshManager.getMeshID("Quad");
+		drawCall.mDrawStyle = DrawStyle::Textured;
+		drawCall.mTexture1 = mTextureManager.getTextureID("grassTile");
+	}
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition = glm::vec3(-1.0f, 0.0f, 1.f);
+		drawCall.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
 		drawCall.mScale = glm::vec3(0.5f);
 		drawCall.mMesh = mMeshManager.getMeshID("backpack");
 		drawCall.mDrawStyle = DrawStyle::LightMap;
@@ -49,7 +82,7 @@ Renderer::Renderer()
 	}
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition = glm::vec3(8.0f, 0.0f, 0.0f);
+		drawCall.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
 		drawCall.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
 		drawCall.mScale = glm::vec3(0.4f);
 		drawCall.mMesh = mMeshManager.getMeshID("xian");
@@ -59,28 +92,25 @@ Renderer::Renderer()
 		drawCall.mShininess = 64.f;
 	}
 
-	std::array<glm::vec3, 10> cubePositions = {
-    glm::vec3( 0.0f,  0.0f,  -30.0f),
-    glm::vec3( 2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3( 2.4f, -0.4f, -3.5f),
-    glm::vec3(-1.7f,  3.0f, -7.5f),
-    glm::vec3( 1.3f, -2.0f, -2.5f),
-    glm::vec3( 1.5f,  2.0f, -2.5f),
-    glm::vec3( 1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)};
-
-	for (size_t i = 0; i < cubePositions.size(); i++)
 	{
-		DrawCall &drawCall 	= mDrawCalls.Create(ECS::CreateEntity());
-		drawCall.mPosition 	= cubePositions[i];
-		drawCall.mMesh 		= mMeshManager.getMeshID("3DCube");
+		std::array<glm::vec3, 5> vegetation = {
+			glm::vec3(-1.5f, 0.0f, -0.48f),
+			glm::vec3(1.5f, 0.0f, 0.51f),
+			glm::vec3(0.0f, 0.0f, 0.7f),
+			glm::vec3(-0.3f, 0.0f, -2.3f),
+			glm::vec3(0.5f, 0.0f, -0.6f)};
 
-		drawCall.mDrawStyle 	   	= DrawStyle::LightMap;
-		drawCall.mDiffuseTextureID 	= mTextureManager.getTextureID("metalContainerDiffuse");
-		drawCall.mSpecularTextureID = mTextureManager.getTextureID("metalContainerSpecular");
-		drawCall.mShininess 		= 64.f;
+		for (const auto& position : vegetation)
+		{
+			DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+			drawCall.mScale = glm::vec3(0.2f);
+			drawCall.mPosition = position;
+			drawCall.mPosition.y += drawCall.mScale.y;
+
+			drawCall.mMesh = mMeshManager.getMeshID("Quad");
+			drawCall.mDrawStyle = DrawStyle::Textured;
+			drawCall.mTexture1 = mTextureManager.getTextureID("grassBillboard");
+		}
 	}
 }
 

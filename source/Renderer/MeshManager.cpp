@@ -201,7 +201,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
     }
     { // 2D SQUARE
         Mesh mesh;
-        mesh.mName = "2DSquare";
+        mesh.mName = "Quad";
         mesh.mVertices = {
             -1.0f, 1.0f, 0.0f,  // Top left
             -1.0f, -1.0f, 0.0f, // Bottom left
