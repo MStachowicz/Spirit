@@ -132,7 +132,6 @@ private:
 		EBO mEBO;
 		std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
 	};
-
 	// Get all the data required to draw this mesh in its default configuration.
 	const OpenGLMesh& getGLMesh(const MeshID& pMeshID);
 	// Recursively draw the OpenGLMesh and all its children.
@@ -141,9 +140,21 @@ private:
 	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
 	std::unordered_map<MeshID, OpenGLMesh> mGLMeshes;
 
-	typedef unsigned int TextureHandle;
-	TextureHandle getTextureHandle(const TextureID& pTextureID) const;
-	std::array<TextureHandle, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
+	struct OpenGLTexture
+	{
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+
+	public:
+		unsigned int getHandle() const { return mHandle; };
+		void loadData(const Texture& pTexture);
+		void generate();
+		void bind() const;
+		void release();
+	};
+
+	const OpenGLTexture& getTexture(const TextureID& pTextureID) const;
+	std::array<OpenGLTexture, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
 
 	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
 	template <class T>

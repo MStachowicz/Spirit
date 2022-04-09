@@ -102,26 +102,18 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			}
 			ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
 
+			glActiveTexture(GL_TEXTURE0);
 			if (pDrawCall.mTexture1.has_value())
-			{
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture1.value()));
-			}
+				getTexture(pDrawCall.mTexture1.value()).bind();
 			else
-			{
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
-			}
+				getTexture(mMissingTextureID).bind();
+
+			glActiveTexture(GL_TEXTURE1); // || GL_TEXTURE0 + 1
 			if (pDrawCall.mTexture2.has_value())
-			{
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mTexture2.value()));
-			}
+				getTexture(pDrawCall.mTexture2.value()).bind();
 			else
-			{
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
-			}
+				getTexture(mMissingTextureID).bind();
+
 			break;
 		case DrawStyle::UniformColour:
 			shader = &mShaders[mUniformShaderIndex];
@@ -136,16 +128,17 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 
 			glActiveTexture(GL_TEXTURE0);
 			if (pDrawCall.mDiffuseTextureID.has_value())
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mDiffuseTextureID.value()));
+				getTexture(pDrawCall.mDiffuseTextureID.value()).bind();
 			else
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
+				getTexture(mMissingTextureID).bind();
 
-			glActiveTexture(GL_TEXTURE1);
+			glActiveTexture(GL_TEXTURE1); // || GL_TEXTURE0 + 1
 			if (pDrawCall.mSpecularTextureID.has_value())
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(pDrawCall.mSpecularTextureID.value()));
+				getTexture(pDrawCall.mSpecularTextureID.value()).bind();
 			else
-				glBindTexture(GL_TEXTURE_2D, getTextureHandle(mMissingTextureID));
-				shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
+				getTexture(mMissingTextureID).bind();
+
+			shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
 			break;
 		default:
 			break;
@@ -311,12 +304,6 @@ const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID)
 	return it->second;
 }
 
-OpenGLAPI::TextureHandle OpenGLAPI::getTextureHandle(const TextureID& pTextureID) const
-{
-	ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Trying to access a texture off the end of OpenGL texture store.", pTextureID)
-	return mTextures[pTextureID];
-}
-
 template<class T>
 int getGLFWType()
 {
@@ -396,37 +383,24 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 		initialiseMesh(childMesh);
 }
 
+const OpenGLAPI::OpenGLTexture& OpenGLAPI::getTexture(const TextureID& pTextureID) const
+{
+	ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Trying to access a texture off the end of OpenGL texture store.", pTextureID)
+	return mTextures[pTextureID];
+}
+
 void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 {
-	unsigned int textureHandle;
-	glGenTextures(1, &textureHandle);
-	glBindTexture(GL_TEXTURE_2D, textureHandle);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	GLenum format = 0;
-	if (pTexture.mNumberOfChannels == 1)
-        format = GL_RED;
-    else if (pTexture.mNumberOfChannels == 3)
-        format = GL_RGB;
-    else if (pTexture.mNumberOfChannels == 4)
-        format = GL_RGBA;
-	ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
-
-	glTexImage2D(GL_TEXTURE_2D, 0, format, pTexture.mWidth, pTexture.mHeight, 0, format, GL_UNSIGNED_BYTE, pTexture.getData());
-	glGenerateMipmap(GL_TEXTURE_2D);
-	ZEPHYR_ASSERT(textureHandle != -1, "Texture {} failed to load", pTexture.mName);
-
-	mTextures[pTexture.getID()] = { textureHandle };
+	OpenGLTexture newTexture;
+	newTexture.generate();
+	newTexture.bind();
+	newTexture.loadData(pTexture);
+	mTextures[pTexture.getID()] = { newTexture };
 
 	if (pTexture.mName == "missing")
 		mMissingTextureID = pTexture.getID();
 
-	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, textureHandle);
+	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, newTexture.getHandle());
 }
 
 int OpenGLAPI::getPolygonMode(const DrawMode& pDrawMode)
@@ -562,4 +536,43 @@ void OpenGLAPI::EBO::release()
 {
 	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
 	glDeleteBuffers(1, &mHandle);
+}
+void OpenGLAPI::OpenGLTexture::loadData(const Texture& pTexture)
+{
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	GLenum format = 0;
+	if (pTexture.mNumberOfChannels == 1)
+        format = GL_RED;
+    else if (pTexture.mNumberOfChannels == 3)
+        format = GL_RGB;
+    else if (pTexture.mNumberOfChannels == 4)
+        format = GL_RGBA;
+	ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, pTexture.mWidth, pTexture.mHeight, 0, format, GL_UNSIGNED_BYTE, pTexture.getData());
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	ZEPHYR_ASSERT(mHandle != -1, "Texture {} failed to load", pTexture.mName);
+}
+void OpenGLAPI::OpenGLTexture::generate()
+{
+	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated Texture")
+	glGenTextures(1, &mHandle);
+	mInitialised = true;
+}
+void OpenGLAPI::OpenGLTexture::bind() const
+{
+	ZEPHYR_ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind");
+	glBindTexture(GL_TEXTURE_2D, mHandle);
+}
+void OpenGLAPI::OpenGLTexture::release()
+{
+	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
+	glDeleteTextures(1, &mHandle);
 }
