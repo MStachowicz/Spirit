@@ -69,6 +69,7 @@ Renderer::Renderer()
 		drawCall.mMesh = mMeshManager.getMeshID("Quad");
 		drawCall.mDrawStyle = DrawStyle::LightMap;
 		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
+		drawCall.mSpecularTextureID = mTextureManager.getTextureID("black");
 		drawCall.mShininess = 128.f;
 	}
 	{
