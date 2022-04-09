@@ -199,7 +199,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
             0.5f, 1.0f};
         addMesh(mesh);
     }
-    { // 2D SQUARE
+    { // QUAD
         Mesh mesh;
         mesh.mName = "Quad";
         mesh.mVertices = {
@@ -218,10 +218,15 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
             1.0f, 0.0f,
             0.0f, 0.0f,
             0.0f, 1.0f};
+        mesh.mNormals = {
+            0.0f, 0.0f, 1.f,
+            0.0f, 0.0f, 1.f,
+            0.0f, 0.0f, 1.f,
+            0.0f, 0.0f, 1.f  };
         mesh.mIndices = {
             0, 1, 3, // first triangle
-            1, 2, 3  // second triangle
-        };
+            1, 2, 3};  // second triangle
+
         addMesh(mesh);
     }
     { // 3D CUBE (supported vertex attributes: Position, Texture coordinates(2D), Normal, Colour)

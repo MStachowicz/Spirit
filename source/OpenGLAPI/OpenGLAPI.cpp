@@ -80,6 +80,7 @@ void OpenGLAPI::onFrameStart()
 
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
 {
+	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh); // Grab the OpenGLMesh for the Zephyr Mesh requested in the DrawCall.
 	const Shader *shader = nullptr;
 
 	if (mBufferDrawType == BufferDrawType::Colour)
@@ -128,6 +129,8 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			shader->setUniform("colour", pDrawCall.mColour.value());
 			break;
 		case DrawStyle::LightMap:
+			ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[util::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lighting.")
+
 			shader = &mShaders[mLightMapIndex];
 			shader->use();
 
@@ -169,7 +172,6 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	}
 	glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(pDrawCall.mDrawMode));
 
-	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh); // Grab the OpenGLMesh for the Zephyr Mesh requested in the DrawCall.
 	draw(GLMesh);
 }
 

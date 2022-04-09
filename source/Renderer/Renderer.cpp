@@ -67,8 +67,9 @@ Renderer::Renderer()
 		drawCall.mRotation.x = -90.f;
 		drawCall.mScale = glm::vec3(25.f);
 		drawCall.mMesh = mMeshManager.getMeshID("Quad");
-		drawCall.mDrawStyle = DrawStyle::Textured;
-		drawCall.mTexture1 = mTextureManager.getTextureID("grassTile");
+		drawCall.mDrawStyle = DrawStyle::LightMap;
+		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
+		drawCall.mShininess = 128.f;
 	}
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
