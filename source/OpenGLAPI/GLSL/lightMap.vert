@@ -8,6 +8,8 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform float textureRepeatFactor;
+
 out vec3 FragPos;
 out vec3 Normal;
 out vec2 TexCoords;
@@ -16,7 +18,7 @@ void main()
 {
     FragPos = vec3(model * vec4(VertexPosition, 1.0));
     Normal = mat3(transpose(inverse(model))) * VertexNormal;
-    TexCoords = VertexTexCoord;
+    TexCoords = VertexTexCoord * vec2(textureRepeatFactor);
 
     gl_Position = projection * view * vec4(FragPos, 1.0);
 }

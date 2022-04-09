@@ -57,4 +57,5 @@ struct DrawCall
 	std::optional<TextureID> mSpecularTextureID	= std::nullopt;
 	std::optional<float> 	 mShininess			= std::nullopt;
 
+	std::optional<float>	 mTextureRepeatFactor = std::nullopt;
 };

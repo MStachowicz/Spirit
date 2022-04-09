@@ -71,6 +71,7 @@ Renderer::Renderer()
 		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
 		drawCall.mSpecularTextureID = mTextureManager.getTextureID("black");
 		drawCall.mShininess = 128.f;
+		drawCall.mTextureRepeatFactor = 20.f;
 	}
 	{
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
@@ -393,6 +394,10 @@ void Renderer::renderImGui()
 					if (!pDrawCall.mShininess.has_value())
 						pDrawCall.mShininess = 64.f;
 					ImGui::SliderFloat("Shininess", &pDrawCall.mShininess.value(), 0.1f, 128.f);
+
+					if (!pDrawCall.mTextureRepeatFactor.has_value())
+						pDrawCall.mTextureRepeatFactor = 1.f;
+					ImGui::SliderFloat("Texture repeat factor", &pDrawCall.mTextureRepeatFactor.value(), 1.f, 128.f);
 				}
 				default:
 					break;
