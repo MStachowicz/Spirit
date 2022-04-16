@@ -95,7 +95,7 @@ Renderer::Renderer()
 		drawCall.mShininess = 64.f;
 	}
 
-	{
+	{ // Billboard grass
 		std::array<glm::vec3, 5> vegetation = {
 			glm::vec3(-1.5f, 0.0f, -0.48f),
 			glm::vec3(1.5f, 0.0f, 0.51f),
@@ -113,6 +113,27 @@ Renderer::Renderer()
 			drawCall.mMesh = mMeshManager.getMeshID("Quad");
 			drawCall.mDrawStyle = DrawStyle::Textured;
 			drawCall.mTexture1 = mTextureManager.getTextureID("grassBillboard");
+		}
+	}
+
+	{// Windows
+		std::array<glm::vec3, 5> windowPositions = {
+			glm::vec3(-1.5f, 0.0f, 1.48f),
+			glm::vec3(1.5f, 0.0f, 1.51f),
+			glm::vec3(0.0f, 0.0f, 1.7f),
+			glm::vec3(-0.3f, 0.0f, 1.3f),
+			glm::vec3(0.5f, 0.0f, 1.6f)};
+
+		for (const auto& position : windowPositions)
+		{
+			DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+			drawCall.mScale = glm::vec3(0.2f);
+			drawCall.mPosition = position;
+			drawCall.mPosition.y += drawCall.mScale.y;
+
+			drawCall.mMesh = mMeshManager.getMeshID("Quad");
+			drawCall.mDrawStyle = DrawStyle::Textured;
+			drawCall.mTexture1 = mTextureManager.getTextureID("window");
 		}
 	}
 }
