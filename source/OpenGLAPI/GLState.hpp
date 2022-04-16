@@ -75,11 +75,35 @@ namespace GLType
         "Constant Alpha",
         "One Minus Constant Alpha"}};
 
-    int convert(const BlendFactorType& pBlendFactor);
+    enum class CullFacesType
+    {
+        Back,          // Culls only the back faces (Default OpenGL setting).
+        Front,         // Culls only the front faces.
+        FrontAndBack,  // Culls both the front and back faces.
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(GLType::CullFacesType::Count)> cullFaceTypes {
+        "Back",
+        "Front",
+        "Front and Back"};
 
-	inline std::string toString(const DepthTestType& pDepthTestType)   { return depthTestTypes[util::toIndex(pDepthTestType)]; }
-    inline std::string toString(const BufferDrawType& pBufferDrawType) { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
-    inline std::string toString(const BlendFactorType& pBlendFactorType) { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
+    enum class FrontFaceOrientation
+    {
+        Clockwise,          // Clockwise polygons are identified as front-facing.
+        CounterClockwise,   // Counter-clockwise polygons are identified as front-facing (Default OpenGL setting).
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(GLType::FrontFaceOrientation::Count)> frontFaceOrientationTypes {
+        "Clockwise",
+        "CounterClockwise"};
+
+    inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
+    inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
+    inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
+    inline std::string toString(const CullFacesType& pCullFaceType)                 { return cullFaceTypes[util::toIndex(pCullFaceType)]; }
+    inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)  { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
+
+    int convert(const BlendFactorType &pBlendFactor);
 }
 
 // Tracks the current GLState and provides helpers to set global GL state using GlTypes.
@@ -91,10 +115,17 @@ public:
 	void toggleDepthTest(const bool& pDepthTest);
 	void setDepthTestType(const GLType::DepthTestType& pType);
 
-	// Pixels can be drawn using a function that blends the incoming (source) RGBA values with the RGBA values that are already in the frame buffer (the destination values).
-	// Blending is default disabled in OpenGL.
+	// Specifies if objects with alpha values <1 should be blended using function set with setBlendFunction().
     void toggleBlending(const bool& pBlend);
+    // Specifies how the RGBA factors of source and destination are blended to give the final pixel colour when encountering transparent objects.
     void setBlendFunction(const GLType::BlendFactorType& pSourceFactor, const GLType::BlendFactorType& pDestinationFactor);
+
+    // Specifies if facets specified by setFrontFaceOrientation are candidates for culling.
+    void toggleCullFaces(const bool& pCull);
+    // Specifies which facets are candidates for culling.
+    void setCullFacesType(const GLType::CullFacesType& pCullFaceType);
+    // Specifies the orientation of front-facing polygons. Used to mark facets for culling.
+    void setFrontFaceOrientation(const GLType::FrontFaceOrientation& pFrontFaceOrientation);
 
     // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
     void setClearColour(const std::array<float, 4>& pColour);
@@ -110,6 +141,10 @@ private:
     bool mBlend;
     GLType::BlendFactorType mSourceBlendFactor;
     GLType::BlendFactorType mDestinationBlendFactor;
+
+    bool mCullFaces;
+    GLType::CullFacesType mCullFacesType;
+    GLType::FrontFaceOrientation mFrontFaceOrientation;
 
     int mBufferClearBitField; // Bit field sent to OpenGL clear buffers before next draw.
     std::array<float, 4> mWindowClearColour;

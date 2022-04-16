@@ -37,6 +37,9 @@ GLState::GLState()
     , mBlend(true)
     , mSourceBlendFactor(GLType::BlendFactorType::SourceAlpha)
     , mDestinationBlendFactor(GLType::BlendFactorType::OneMinusSourceAlpha)
+    , mCullFaces(true)
+    , mCullFacesType(GLType::CullFacesType::Back)
+    , mFrontFaceOrientation(GLType::FrontFaceOrientation::CounterClockwise)
     , mBufferClearBitField(GL_COLOR_BUFFER_BIT) // GL_DEPTH_BUFFER_BIT is optionally added in toggleDepthTest()
     , mWindowClearColour{0.0f, 0.0f, 0.0f, 1.0f}
 {
@@ -47,6 +50,14 @@ GLState::GLState()
     toggleBlending(mBlend);
     if (mBlend)
         setBlendFunction(mSourceBlendFactor, mDestinationBlendFactor);
+
+    toggleCullFaces(mCullFaces);
+    if (mCullFaces)
+    {
+        setCullFacesType(mCullFacesType);
+        setFrontFaceOrientation(mFrontFaceOrientation);
+    }
+
 }
 
 void GLState::toggleDepthTest(const bool& pDepthTest)
@@ -65,8 +76,7 @@ void GLState::toggleDepthTest(const bool& pDepthTest)
 		mBufferClearBitField &= ~GL_DEPTH_BUFFER_BIT;
 	}
 }
-// Pixels can be drawn using a function that blends the incoming (source) RGBA values with the RGBA values that are already in the frame buffer (the destination values).
-// Blending is default disabled in OpenGL.
+
 void GLState::toggleBlending(const bool& pBlend)
 {
     mBlend = pBlend;
@@ -75,6 +85,16 @@ void GLState::toggleBlending(const bool& pBlend)
         glEnable(GL_BLEND);
     else
         glDisable(GL_BLEND);
+}
+
+void GLState::toggleCullFaces(const bool& pCull)
+{
+    mCullFaces = pCull;
+
+    if (mCullFaces)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
 }
 
 void GLState::setDepthTestType(const GLType::DepthTestType& pType)
@@ -114,6 +134,33 @@ void GLState::setBlendFunction(const GLType::BlendFactorType &pSourceFactor, con
     && pDestinationFactor           != GLType::BlendFactorType::ConstantAlpha
     && pDestinationFactor           != GLType::BlendFactorType::OneMinusConstantAlpha)
     , "Constant blend factors require glBlendColor() to set the constant. Not supported yet.");
+}
+
+void GLState::setCullFacesType(const GLType::CullFacesType& pCullFaceType)
+{
+    mCullFacesType = pCullFaceType;
+    switch (mCullFacesType)
+    {
+        case GLType::CullFacesType::Back:          glCullFace(GL_BACK);           return;
+        case GLType::CullFacesType::Front:         glCullFace(GL_FRONT);          return;
+        case GLType::CullFacesType::FrontAndBack:  glCullFace(GL_FRONT_AND_BACK); return;
+        case GLType::CullFacesType::Count:
+        default:
+        ZEPHYR_ASSERT(false, "Unknown CullFacesType requested"); return;
+    }
+}
+
+void GLState::setFrontFaceOrientation(const GLType::FrontFaceOrientation& pFrontFaceOrientation)
+{
+    mFrontFaceOrientation = pFrontFaceOrientation;
+    switch (mFrontFaceOrientation)
+    {
+        case GLType::FrontFaceOrientation::Clockwise:        glFrontFace(GL_CW);  return;
+        case GLType::FrontFaceOrientation::CounterClockwise: glFrontFace(GL_CCW); return;
+        case GLType::FrontFaceOrientation::Count:
+        default:
+        ZEPHYR_ASSERT(false, "Unknown FrontFaceOrientation requested"); return;
+    }
 }
 
 void GLState::setClearColour(const std::array<float, 4> &pColour)
@@ -192,5 +239,32 @@ void GLState::renderImGui()
             }
         }
 
+    }
+
+    {// Cull face options
+        if (ImGui::Checkbox("Cull faces", &mCullFaces))
+            toggleCullFaces(mCullFaces);
+
+        if (mCullFaces)
+        {
+            if (ImGui::BeginCombo("Mode", GLType::toString(mCullFacesType).c_str()))
+            {
+                for (size_t i = 0; i < util::toIndex(GLType::CullFacesType::Count); i++)
+                {
+                    if (ImGui::Selectable(GLType::cullFaceTypes[i].c_str()))
+                        setCullFacesType(static_cast<GLType::CullFacesType>(i));
+                }
+                ImGui::EndCombo();
+            }
+            if (ImGui::BeginCombo("Front face orientation", GLType::toString(mFrontFaceOrientation).c_str()))
+            {
+                for (size_t i = 0; i < util::toIndex(GLType::FrontFaceOrientation::Count); i++)
+                {
+                    if (ImGui::Selectable(GLType::frontFaceOrientationTypes[i].c_str()))
+                        setFrontFaceOrientation(static_cast<GLType::FrontFaceOrientation>(i));
+                }
+                ImGui::EndCombo();
+            }
+        }
     }
 }
