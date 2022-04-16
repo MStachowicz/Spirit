@@ -58,6 +58,8 @@ PRIVATE assimp
 add_library(OpenGLAPI
 source/OpenGLAPI/OpenGLAPI.hpp
 source/OpenGLAPI/OpenGLAPI.cpp
+source/OpenGLAPI/GLState.hpp
+source/OpenGLAPI/GLState.cpp
 source/OpenGLAPI/OpenGLWindow.hpp
 source/OpenGLAPI/OpenGLWindow.cpp
 source/OpenGLAPI/GLFWInput.hpp

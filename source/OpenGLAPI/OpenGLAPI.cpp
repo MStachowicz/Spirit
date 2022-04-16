@@ -19,17 +19,14 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	: GraphicsAPI(pLightManager)
 	, cOpenGLVersionMajor(3)
 	, cOpenGLVersionMinor(3)
-	, mWindowClearColour{0.0f, 0.0f, 0.0f}
-	, mDepthTest(true)
-	, mBufferDrawType(BufferDrawType::Colour)
+	, mBufferDrawType(GLType::BufferDrawType::Colour)
 	, mLinearDepthView(false)
-	, mDepthTestType(DepthTestType::Less)
-	, mBufferClearBitField(GL_COLOR_BUFFER_BIT)
 	, mZNearPlane(0.1f)
 	, mZFarPlane (100.0f)
 	, mFOV(45.f)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 	, mGLADContext(initialiseGLAD())
+	, mGLState()
 	, mTexture1ShaderIndex(0)
 	, mTexture2ShaderIndex(1)
 	, mMaterialShaderIndex(2)
@@ -44,11 +41,6 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
-
-	setDepthTest(mDepthTest);
-	if (mDepthTest)
-		setDepthTestType(mDepthTestType);
-
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
 }
 
@@ -63,9 +55,11 @@ OpenGLAPI::~OpenGLAPI()
 
 void OpenGLAPI::onFrameStart()
 {
-	clearBuffers();
+	mGLState.clearBuffers();
+
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
-	if (mBufferDrawType == BufferDrawType::Depth)
+
+	if (mBufferDrawType == GLType::BufferDrawType::Depth)
 	{
 		mShaders[mDepthViewerIndex].use();
 		mShaders[mDepthViewerIndex].setUniform("near", mZNearPlane);
@@ -83,7 +77,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh); // Grab the OpenGLMesh for the Zephyr Mesh requested in the DrawCall.
 	const Shader *shader = nullptr;
 
-	if (mBufferDrawType == BufferDrawType::Colour)
+	if (mBufferDrawType == GLType::BufferDrawType::Colour)
 	{
 		// #OPTIMIZATION: Future per component combination for entity
 		switch (pDrawCall.mDrawStyle)
@@ -150,7 +144,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			break;
 		}
 	}
-	else if (mBufferDrawType == BufferDrawType::Depth)
+	else if (mBufferDrawType == GLType::BufferDrawType::Depth)
 	{
 		shader = &mShaders[mDepthViewerIndex];
 		shader->use();
@@ -263,42 +257,26 @@ void OpenGLAPI::renderImGui()
 		ImGui::Text(("OpenGL version: " + std::to_string(cOpenGLVersionMajor) + "." + std::to_string(cOpenGLVersionMinor)).c_str());
 		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
 		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
-
-		if (ImGui::ColorEdit3("Window clear colour", mWindowClearColour))
-			setClearColour(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2]);
-		if (ImGui::Checkbox("Depth test", &mDepthTest))
-			setDepthTest(mDepthTest);
-		if(mDepthTest)
-		{
-			if (ImGui::BeginCombo("Depth test type", convert(mDepthTestType).c_str(), ImGuiComboFlags()))
-			{
-				for (size_t i = 0; i < depthTestTypes.size(); i++)
-				{
-					if (ImGui::Selectable(depthTestTypes[i].c_str()))
-						setDepthTestType(static_cast<DepthTestType>(i));
-				}
-				ImGui::EndCombo();
-			}
-		}
-
-		if (ImGui::BeginCombo("Buffer draw style", convert(mBufferDrawType).c_str(), ImGuiComboFlags()))
-		{
-			for (size_t i = 0; i < BufferDrawTypes.size(); i++)
-			{
-				if (ImGui::Selectable(BufferDrawTypes[i].c_str()))
-					mBufferDrawType = static_cast<BufferDrawType>(i);
-			}
-			ImGui::EndCombo();
-		}
-
-		if (mBufferDrawType == BufferDrawType::Depth)
-		{
-			ImGui::Checkbox("Use linear depth testing" , &mLinearDepthView);
-		}
-
 		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
 		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
+
+		if (ImGui::BeginCombo("Buffer draw style", GLType::toString(mBufferDrawType).c_str(), ImGuiComboFlags()))
+    	{
+			for (size_t i = 0; i < GLType::bufferDrawTypes.size(); i++)
+    	    {
+    	        if (ImGui::Selectable(GLType::bufferDrawTypes[i].c_str()))
+    	            mBufferDrawType = static_cast<GLType::BufferDrawType>(i);
+    	    }
+    	    ImGui::EndCombo();
+    	}
+
+    	if (mBufferDrawType == GLType::BufferDrawType::Depth)
+    	    ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
+
+		ImGui::Separator();
+		mGLState.renderImGui();
+
 	}
 	ImGui::End();
 }
@@ -448,53 +426,6 @@ void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 	OpenGLWindow::currentWindow->mAspectRatio = width / height;
 }
 
-void OpenGLAPI::setDepthTest(const bool& pDepthTest)
-{
-	if (pDepthTest)
-	{
-		glEnable(GL_DEPTH_TEST);
-		mDepthTest = true;
-		mBufferClearBitField |= GL_DEPTH_BUFFER_BIT;
-	}
-	else
-	{
-		mDepthTest = false;
-		glDisable(GL_DEPTH_TEST);
-		mGLADContext->Clear(GL_DEPTH_BUFFER_BIT);
-		mBufferClearBitField &= ~GL_DEPTH_BUFFER_BIT;
-	}
-}
-
-
-void OpenGLAPI::setDepthTestType(const OpenGLAPI::DepthTestType& pType)
-{
-	ZEPHYR_ASSERT(mDepthTest, "Depth test has to be on to allow setting the depth testing type.");
-
-	mDepthTestType = pType;
-	switch (mDepthTestType)
-	{
-	case OpenGLAPI::DepthTestType::Always:		 glDepthFunc(GL_ALWAYS); 	return;
-	case OpenGLAPI::DepthTestType::Never:		 glDepthFunc(GL_NEVER); 	return;
-	case OpenGLAPI::DepthTestType::Less:		 glDepthFunc(GL_LESS); 		return;
-	case OpenGLAPI::DepthTestType::Equal:		 glDepthFunc(GL_EQUAL);	 	return;
-	case OpenGLAPI::DepthTestType::LessEqual:	 glDepthFunc(GL_LEQUAL	);  return;
-	case OpenGLAPI::DepthTestType::Greater:		 glDepthFunc(GL_GREATER); 	return;
-	case OpenGLAPI::DepthTestType::NotEqual:	 glDepthFunc(GL_NOTEQUAL); 	return;
-	case OpenGLAPI::DepthTestType::GreaterEqual: glDepthFunc(GL_GEQUAL); 	return;
-	default: ZEPHYR_ASSERT(false, "Unknown DepthTestType requested");		return;
-	}
-}
-
-void OpenGLAPI::clearBuffers()
-{
-	mGLADContext->Clear(mBufferClearBitField);
-}
-
-void OpenGLAPI::setClearColour(const float &pRed, const float &pGreen, const float &pBlue)
-{
-	mGLADContext->ClearColor(pRed, pGreen, pBlue, 1.0f);
-}
-
 void OpenGLAPI::VAO::generate()
 {
 	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO")
@@ -545,13 +476,6 @@ void OpenGLAPI::EBO::release()
 }
 void OpenGLAPI::OpenGLTexture::loadData(const Texture& pTexture)
 {
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 	GLenum format = 0;
 	if (pTexture.mNumberOfChannels == 1)
         format = GL_RED;
@@ -560,6 +484,15 @@ void OpenGLAPI::OpenGLTexture::loadData(const Texture& pTexture)
     else if (pTexture.mNumberOfChannels == 4)
         format = GL_RGBA;
 	ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
+
+	// set the texture wrapping parameters
+	// GL_REPEAT - (default wrapping method)
+	// GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, format, pTexture.mWidth, pTexture.mHeight, 0, format, GL_UNSIGNED_BYTE, pTexture.getData());
 	glGenerateMipmap(GL_TEXTURE_2D);

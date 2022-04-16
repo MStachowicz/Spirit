@@ -3,6 +3,7 @@
 #include "GraphicsAPI.hpp"
 
 #include "OpenGLWindow.hpp"
+#include "GLState.hpp"
 #include "Shader.hpp"
 
 #include "Utility.hpp"
@@ -40,30 +41,13 @@ private:
 	void initialiseMesh(const Mesh& pMesh) 			override;
 	void initialiseTexture(const Texture& pTexture) override;
 
-	void setClearColour(const float& pRed, const float& pGreen, const float& pBlue);
-	void clearBuffers();
 	int getPolygonMode(const DrawMode& pDrawMode);
 
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
-	float mWindowClearColour[3]; // Colour the window will be cleared with in RGB 0-1.
-	bool mDepthTest;
-
-	enum BufferDrawType {Colour, Depth, Count};
-	BufferDrawType mBufferDrawType;
-	static inline const std::array<std::string, util::toIndex(BufferDrawType::Count)> BufferDrawTypes { "Colour", "Depth" };
-	static std::string convert(const BufferDrawType& pBufferDrawType) { return BufferDrawTypes[util::toIndex(pBufferDrawType)]; }
 	// By default, OpenGL projection uses non-linear depth values (they have a very high precision for small z-values and a low precision for large z-values).
 	// By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
 	bool mLinearDepthView;
-
-	enum class DepthTestType {  Always, Never, Less, Equal, NotEqual, Greater, LessEqual, GreaterEqual, Count };
-	DepthTestType mDepthTestType;
-	void setDepthTest(const bool& pDepthTest);
-	void setDepthTestType(const DepthTestType& pType);
-	static inline const std::array<std::string, util::toIndex(DepthTestType::Count)> depthTestTypes { "Always", "Never", "Less", "Equal", "Not equal", "Greater than", "Less than or equal", "Greater than or equal" };
-	static std::string convert(const DepthTestType& pDepthTestType) { return depthTestTypes[util::toIndex(pDepthTestType)]; }
-
-	int mBufferClearBitField; // Bit field sent to OpenGL clear buffers before next draw.
+	GLType::BufferDrawType BufferDrawType;
 	float mZNearPlane;
 	float mZFarPlane;
 	float mFOV;
@@ -72,6 +56,7 @@ private:
 	// ***************************************************************************************************
 	OpenGLWindow mWindow;		 // GLFW window which both GLFWInput and OpenGLAPI depend on for their construction.
 	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
+	GLState mGLState;
 
 	size_t mTexture1ShaderIndex;
 	size_t mTexture2ShaderIndex;
@@ -84,6 +69,7 @@ private:
 	int spotLightDrawCount;
 	int directionalLightDrawCount;
 
+	GLType::BufferDrawType mBufferDrawType;
 	std::vector<Shader> mShaders;
 
 	// VBO represents some data pushed to the GPU.
