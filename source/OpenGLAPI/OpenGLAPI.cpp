@@ -281,7 +281,7 @@ void OpenGLAPI::renderImGui()
 	ImGui::End();
 }
 
-const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID)
+const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID) const
 {
 	const auto it = mGLMeshes.find(pMeshID);
 	ZEPHYR_ASSERT(it != mGLMeshes.end(), "No draw info found for this Mesh ID. Was the mesh correctly initialised?");
@@ -305,11 +305,11 @@ int getGLFWType()
 };
 
 template <class T>
-std::optional<OpenGLAPI::VBO> OpenGLAPI::bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute)
+std::optional<GLData::VBO> OpenGLAPI::bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute)
 {
 	if (!pData.empty())
 	{
-		VBO vbo;
+		GLData::VBO vbo;
 		vbo.generate();
 		vbo.bind();
 		glBufferData(GL_ARRAY_BUFFER, pData.size() * sizeof(T), &pData.front(), GL_STATIC_DRAW);
@@ -367,7 +367,7 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 		initialiseMesh(childMesh);
 }
 
-const OpenGLAPI::OpenGLTexture& OpenGLAPI::getTexture(const TextureID& pTextureID) const
+const GLData::Texture& OpenGLAPI::getTexture(const TextureID& pTextureID) const
 {
 	ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Trying to access a texture off the end of OpenGL texture store.", pTextureID)
 	return mTextures[pTextureID];
@@ -375,15 +375,17 @@ const OpenGLAPI::OpenGLTexture& OpenGLAPI::getTexture(const TextureID& pTextureI
 
 void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 {
-	OpenGLTexture newTexture;
+	GLData::Texture newTexture;
 	newTexture.generate();
 	newTexture.bind();
-	newTexture.loadData(pTexture);
+	newTexture.pushData(pTexture.mWidth, pTexture.mHeight, pTexture.mNumberOfChannels, pTexture.getData());
 	mTextures[pTexture.getID()] = { newTexture };
 
+	// Cache the ID of the 'missing' texture.
 	if (pTexture.mName == "missing")
 		mMissingTextureID = pTexture.getID();
 
+    ZEPHYR_ASSERT(newTexture.getHandle() != -1, "Texture {} failed to load", pTexture.mName);
 	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, newTexture.getHandle());
 }
 
@@ -424,94 +426,4 @@ void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 	OpenGLWindow::currentWindow->mWidth = pWidth;
 	OpenGLWindow::currentWindow->mHeight = pHeight;
 	OpenGLWindow::currentWindow->mAspectRatio = width / height;
-}
-
-void OpenGLAPI::VAO::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO")
-	glGenVertexArrays(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::VAO::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "VAO has not been generated before bind, call glGenVertexArrays before bind");
-	glBindVertexArray(mHandle);
-}
-void OpenGLAPI::VAO::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VAO");
-	glDeleteVertexArrays(1, &mHandle);
-}
-void OpenGLAPI::VBO::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VBO")
-	glGenBuffers(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::VBO::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "VBO has not been generated before bind, call glGenBuffers before bind");
-	glBindBuffer(GL_ARRAY_BUFFER, mHandle);
-}
-void OpenGLAPI::VBO::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VBO");
-	glDeleteBuffers(1, &mHandle);
-}
-void OpenGLAPI::EBO::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated EBO")
-	glGenBuffers(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::EBO::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before bind, call glGenVertexArrays before bind");
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
-}
-void OpenGLAPI::EBO::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
-	glDeleteBuffers(1, &mHandle);
-}
-void OpenGLAPI::OpenGLTexture::loadData(const Texture& pTexture)
-{
-	GLenum format = 0;
-	if (pTexture.mNumberOfChannels == 1)
-        format = GL_RED;
-    else if (pTexture.mNumberOfChannels == 3)
-        format = GL_RGB;
-    else if (pTexture.mNumberOfChannels == 4)
-        format = GL_RGBA;
-	ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
-
-	// set the texture wrapping parameters
-	// GL_REPEAT - (default wrapping method)
-	// GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, format, pTexture.mWidth, pTexture.mHeight, 0, format, GL_UNSIGNED_BYTE, pTexture.getData());
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	ZEPHYR_ASSERT(mHandle != -1, "Texture {} failed to load", pTexture.mName);
-}
-void OpenGLAPI::OpenGLTexture::generate()
-{
-	ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated Texture")
-	glGenTextures(1, &mHandle);
-	mInitialised = true;
-}
-void OpenGLAPI::OpenGLTexture::bind() const
-{
-	ZEPHYR_ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind");
-	glBindTexture(GL_TEXTURE_2D, mHandle);
-}
-void OpenGLAPI::OpenGLTexture::release()
-{
-	ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
-	glDeleteTextures(1, &mHandle);
 }

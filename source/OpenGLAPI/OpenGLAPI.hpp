@@ -37,11 +37,36 @@ public:
 	void renderImGuiFrame() override;
 	void renderImGui()		override;
 
-private:
 	void initialiseMesh(const Mesh& pMesh) 			override;
 	void initialiseTexture(const Texture& pTexture) override;
+private:
+	struct OpenGLMesh
+	{
+		enum class DrawMethod { Indices, Array, Null };
+
+		unsigned int mDrawMode = 0;
+		int mDrawSize = -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
+		DrawMethod mDrawMethod = DrawMethod::Null;
+		std::vector<OpenGLMesh> mChildMeshes;
+
+		GLData::VAO mVAO;
+		GLData::EBO mEBO;
+		std::array<std::optional<GLData::VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
+	};
 
 	int getPolygonMode(const DrawMode& pDrawMode);
+	// Get all the data required to draw this mesh in its default configuration.
+	const OpenGLMesh& getGLMesh(const MeshID& pMeshID) const;
+	const GLData::Texture& getTexture(const TextureID& pTextureID) const;
+	// Recursively draw the OpenGLMesh and all its children.
+	void draw(const OpenGLMesh& pMesh);
+
+	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
+	template <class T>
+	std::optional<GLData::VBO> bufferAttributeData(const std::vector<T> &pData, const Shader::Attribute& pAttribute);
+
+	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
+	static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 
 	const int cOpenGLVersionMajor, cOpenGLVersionMinor;
 	// By default, OpenGL projection uses non-linear depth values (they have a very high precision for small z-values and a low precision for large z-values).
@@ -70,82 +95,11 @@ private:
 	int directionalLightDrawCount;
 
 	GLType::BufferDrawType mBufferDrawType;
+
 	std::vector<Shader> mShaders;
-
-	// VBO represents some data pushed to the GPU.
-	// VBO::release needs to be called before destruction to free the associated memory.
-	struct VBO
-	{
-		void generate();
-		void bind() const;
-		void release();
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-	};
-	struct VAO
-	{
-		void generate();
-		void bind() const;
-		void release();
-		unsigned int getHandle() { return mHandle; };
-
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-	};
-	struct EBO
-	{
-		void generate();
-		void bind() const;
-		void release();
-		unsigned int getHandle() { return mHandle; };
-
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-	};
-	struct OpenGLMesh
-	{
-		enum class DrawMethod{ Indices, Array, Null };
-
-		unsigned int mDrawMode 			= 0;
-		int mDrawSize 					= -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
-		DrawMethod mDrawMethod 			= DrawMethod::Null;
-		std::vector<OpenGLMesh> mChildMeshes;
-
-		VAO mVAO;
-		EBO mEBO;
-		std::array<std::optional<VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
-	};
-	// Get all the data required to draw this mesh in its default configuration.
-	const OpenGLMesh& getGLMesh(const MeshID& pMeshID);
-	// Recursively draw the OpenGLMesh and all its children.
-	void draw(const OpenGLMesh& pMesh);
 	// Draw info is fetched every draw call.
 	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
 	std::unordered_map<MeshID, OpenGLMesh> mGLMeshes;
+	std::array<GLData::Texture, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
 
-	struct OpenGLTexture
-	{
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-
-	public:
-		unsigned int getHandle() const { return mHandle; };
-		void loadData(const Texture& pTexture);
-		void generate();
-		void bind() const;
-		void release();
-	};
-
-	const OpenGLTexture& getTexture(const TextureID& pTextureID) const;
-	std::array<OpenGLTexture, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
-
-	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
-	template <class T>
-	std::optional<VBO> bufferAttributeData(const std::vector<T> &pData, const Shader::Attribute& pAttribute);
-
-	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
-	static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 };

@@ -106,6 +106,68 @@ namespace GLType
     int convert(const BlendFactorType &pBlendFactor);
 }
 
+// Wraps OpenGL data types that hold GPU data. Each type follows the same class structure:
+// generate() - Creates a handle that data can be bound to.
+// bind()     - Makes the data 'current'
+// release()  - Deletes the data on the GPU freeing the handle (has to be called before destruction).
+namespace GLData
+{
+    // Vertex Array Object (VAO)
+    // Stores all of the state needed to supply vertex data. VAO::bind() needs to be called before setting the state using VBO's and EBO's.
+    // It stores the format of the vertex data as well as the Buffer Objects (see below) providing the vertex data arrays.
+    // Note: If you change any of the data in the buffers referenced by an existing VAO (VBO/EBO), those changes will be seen by users of the VAO.
+	struct VAO
+	{
+		void generate();
+		void bind() const;
+		void release();
+		unsigned int getHandle() { return mHandle; };
+
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+    // Vertex Buffer Object
+    // Buffer storing per-vertex array data.
+    struct VBO
+	{
+		void generate();
+		void bind() const;
+		void release();
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+    // Element Buffer Object
+    // Buffer storing vertex index data defining which order to draw vertex data stored in a VBO.
+    // EBO's are used only if a mesh uses Indexed drawing.
+	struct EBO
+	{
+		void generate();
+		void bind() const;
+		void release();
+		unsigned int getHandle() { return mHandle; };
+
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+    // OpenGL Texture object.
+    // Represents a texture pushed to the GPU.
+    struct Texture
+	{
+		void generate();
+		void bind() const;
+        void pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData);
+		void release();
+		unsigned int getHandle() { return mHandle; };
+
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+	};
+}
+
 // Tracks the current GLState and provides helpers to set global GL state using GlTypes.
 class GLState
 {

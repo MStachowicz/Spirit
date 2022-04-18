@@ -268,3 +268,94 @@ void GLState::renderImGui()
         }
     }
 }
+namespace GLData
+{
+    void VAO::generate()
+    {
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO")
+        glGenVertexArrays(1, &mHandle);
+        mInitialised = true;
+    }
+    void VAO::bind() const
+    {
+        ZEPHYR_ASSERT(mInitialised, "VAO has not been generated before bind, call glGenVertexArrays before bind");
+        glBindVertexArray(mHandle);
+    }
+    void VAO::release()
+    {
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VAO");
+        glDeleteVertexArrays(1, &mHandle);
+        mInitialised = false;
+    }
+    void VBO::generate()
+    {
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VBO")
+        glGenBuffers(1, &mHandle);
+        mInitialised = true;
+    }
+    void VBO::bind() const
+    {
+        ZEPHYR_ASSERT(mInitialised, "VBO has not been generated before bind, call glGenBuffers before bind");
+        glBindBuffer(GL_ARRAY_BUFFER, mHandle);
+    }
+    void VBO::release()
+    {
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VBO");
+        glDeleteBuffers(1, &mHandle);
+        mInitialised = false;
+    }
+    void EBO::generate()
+    {
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated EBO")
+        glGenBuffers(1, &mHandle);
+        mInitialised = true;
+    }
+    void EBO::bind() const
+    {
+        ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before bind, call glGenVertexArrays before bind");
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
+    }
+    void EBO::release()
+    {
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
+        glDeleteBuffers(1, &mHandle);
+        mInitialised = false;
+    }
+    void Texture::generate()
+    {
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated Texture")
+        glGenTextures(1, &mHandle);
+        mInitialised = true;
+    }
+    void Texture::bind() const
+    {
+        ZEPHYR_ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind");
+        glBindTexture(GL_TEXTURE_2D, mHandle);
+    }
+    void Texture::pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData)
+	{
+        GLenum format = 0;
+        if (pNumberOfChannels == 1)      format = GL_RED;
+        else if (pNumberOfChannels == 3) format = GL_RGB;
+        else if (pNumberOfChannels == 4) format = GL_RGBA;
+        ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
+
+        // set the texture wrapping parameters
+        // GL_REPEAT - (default wrapping method)
+        // GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        // set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, pWidth, pHeight, 0, format, GL_UNSIGNED_BYTE, pData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    void Texture::release()
+    {
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised Texture");
+        glDeleteTextures(1, &mHandle);
+        mInitialised = false;
+    }
+}
