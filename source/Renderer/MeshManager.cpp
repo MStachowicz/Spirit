@@ -160,7 +160,16 @@ bool MeshManager::isMeshValid(const Mesh& pMesh)
     // This check will only check leaf nodes since a child could have more children.
     // isMeshValid should take a bool isRoot.
     if (pMesh.mChildMeshes.empty())
-        ZEPHYR_ASSERT(!pMesh.mVertices.empty(), "Mesh position data cannot be empty.");
+    {
+        ZEPHYR_ASSERT(!pMesh.mVertices.empty(), "Mesh position data cannot be empty");
+
+        if (!pMesh.mNormals.empty())
+            ZEPHYR_ASSERT(pMesh.mNormals.size() == pMesh.mVertices.size(), "Normal data needs to be the same size as position data");
+        if (!pMesh.mColours.empty())
+            ZEPHYR_ASSERT(pMesh.mColours.size() == pMesh.mVertices.size(), "Colour data needs to be the same size as position data");
+        if (!pMesh.mTextureCoordinates.empty())
+            ZEPHYR_ASSERT((static_cast<float>(pMesh.mVertices.size()) / static_cast<float>(pMesh.mTextureCoordinates.size())) == 1.5f, "2D Texture data needs to be at 2:3 ratio with position data");
+    }
 
     if (!pMesh.mChildMeshes.empty()) // Check all the children are valid
     {
@@ -203,189 +212,155 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
         Mesh mesh;
         mesh.mName = "Quad";
         mesh.mVertices = {
-            -1.0f, 1.0f, 0.0f,  // Top left
-            -1.0f, -1.0f, 0.0f, // Bottom left
-            1.0f, -1.0f, 0.0f,  // Bottom right
-            1.0f, 1.0f, 0.0f,   // Top right
-        };
-        mesh.mColours = {
-            0.0f, 0.0f, 1.0f,
-            0.0f, 1.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            1.0f, 1.0f, 0.0f};
+           -1.0f,  1.0f, 0.0f,  // Top-left
+           -1.0f, -1.0f, 0.0f,  // Bottom-left
+            1.0f, -1.0f, 0.0f,  // Bottom-right
+            1.0f,  1.0f, 0.0f}; // Top-right
         mesh.mTextureCoordinates = {
-            1.0f, 1.0f,
-            1.0f, 0.0f,
+            0.0f, 1.0f,
             0.0f, 0.0f,
-            0.0f, 1.0f};
+            1.0f, 0.0f,
+            1.0f, 1.0f};
         mesh.mNormals = {
             0.0f, 0.0f, 1.f,
             0.0f, 0.0f, 1.f,
             0.0f, 0.0f, 1.f,
-            0.0f, 0.0f, 1.f  };
+            0.0f, 0.0f, 1.f};
         mesh.mIndices = {
-            0, 1, 3, // first triangle
-            1, 2, 3};  // second triangle
+            0, 1, 2,
+            0, 2, 3};
 
         addMesh(mesh);
     }
-    { // 3D CUBE (supported vertex attributes: Position, Texture coordinates(2D), Normal, Colour)
+    { // 3D CUBE (supported vertex attributes: Position, Texture coordinates(2D), Normal)
         Mesh mesh;
         mesh.mName = "3DCube";
         mesh.mVertices = {
-            -0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, 0.5f, -0.5f,
-            0.5f, 0.5f, -0.5f,
-            -0.5f, 0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-
-            -0.5f, -0.5f, 0.5f,
-            0.5f, -0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-            -0.5f, -0.5f, 0.5f,
-
-            -0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-
-            -0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, 0.5f,
-            0.5f, -0.5f, 0.5f,
-            -0.5f, -0.5f, 0.5f,
-            -0.5f, -0.5f, -0.5f,
-
-            -0.5f, 0.5f, -0.5f,
-            0.5f, 0.5f, -0.5f,
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, -0.5f};
+            // Back face
+            -0.5f, -0.5f, -0.5f, // Bottom-left
+             0.5f,  0.5f, -0.5f, // top-right
+             0.5f, -0.5f, -0.5f, // bottom-right
+             0.5f,  0.5f, -0.5f, // top-right
+            -0.5f, -0.5f, -0.5f, // bottom-left
+            -0.5f,  0.5f, -0.5f, // top-left
+            // Front face
+            -0.5f, -0.5f,  0.5f, // bottom-left
+             0.5f, -0.5f,  0.5f, // bottom-right
+             0.5f,  0.5f,  0.5f, // top-right
+             0.5f,  0.5f,  0.5f, // top-right
+            -0.5f,  0.5f,  0.5f, // top-left
+            -0.5f, -0.5f,  0.5f, // bottom-left
+            // Left face
+            -0.5f,  0.5f,  0.5f, // top-right
+            -0.5f,  0.5f, -0.5f, // top-left
+            -0.5f, -0.5f, -0.5f, // bottom-left
+            -0.5f, -0.5f, -0.5f, // bottom-left
+            -0.5f, -0.5f,  0.5f, // bottom-right
+            -0.5f,  0.5f,  0.5f, // top-right
+            // Right face
+             0.5f,  0.5f,  0.5f, // top-left
+             0.5f, -0.5f, -0.5f, // bottom-right
+             0.5f,  0.5f, -0.5f, // top-right
+             0.5f, -0.5f, -0.5f, // bottom-right
+             0.5f,  0.5f,  0.5f, // top-left
+             0.5f, -0.5f,  0.5f, // bottom-left
+            // Bottom face
+            -0.5f, -0.5f, -0.5f, // top-right
+             0.5f, -0.5f, -0.5f, // top-left
+             0.5f, -0.5f,  0.5f, // bottom-left
+             0.5f, -0.5f,  0.5f, // bottom-left
+            -0.5f, -0.5f,  0.5f, // bottom-right
+            -0.5f, -0.5f, -0.5f, // top-right
+            // Top face
+            -0.5f,  0.5f, -0.5f, // top-left
+             0.5f,  0.5f,  0.5f, // bottom-right
+             0.5f,  0.5f, -0.5f, // top-right
+             0.5f,  0.5f,  0.5f, // bottom-right
+            -0.5f,  0.5f, -0.5f, // top-left
+            -0.5f,  0.5f,  0.5f  // bottom-left
+        };
         mesh.mNormals = {
-            0.0f, 0.0f, -1.0f,
-            0.0f, 0.0f, -1.0f,
-            0.0f, 0.0f, -1.0f,
-            0.0f, 0.0f, -1.0f,
-            0.0f, 0.0f, -1.0f,
-            0.0f, 0.0f, -1.0f,
-            0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f,
-            -1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            0.0f, -1.0f, 0.0f,
-            0.0f, -1.0f, 0.0f,
-            0.0f, -1.0f, 0.0f,
-            0.0f, -1.0f, 0.0f,
-            0.0f, -1.0f, 0.0f,
-            0.0f, -1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f};
+            // Back face
+            0.0f, 0.0f, -1.f, // Bottom-left
+            0.0f, 0.0f, -1.f, // top-right
+            0.0f, 0.0f, -1.f, // bottom-right
+            0.0f, 0.0f, -1.f, // top-right
+            0.0f, 0.0f, -1.f, // bottom-left
+            0.0f, 0.0f, -1.f, // top-left
+            // Front face
+            0.0f, 0.0f, 1.f, // bottom-left
+            0.0f, 0.0f, 1.f, // bottom-right
+            0.0f, 0.0f, 1.f, // top-right
+            0.0f, 0.0f, 1.f, // top-right
+            0.0f, 0.0f, 1.f, // top-left
+            0.0f, 0.0f, 1.f, // bottom-left
+            // Left face
+            -1.0f, 0.0f, 0.f, // top-right
+            -1.0f, 0.0f, 0.f, // top-left
+            -1.0f, 0.0f, 0.f, // bottom-left
+            -1.0f, 0.0f, 0.f, // bottom-left
+            -1.0f, 0.0f, 0.f, // bottom-right
+            -1.0f, 0.0f, 0.f, // top-right
+            // Right face
+            1.0f, 0.0f, 0.f, // top-left
+            1.0f, 0.0f, 0.f, // bottom-right
+            1.0f, 0.0f, 0.f, // top-right
+            1.0f, 0.0f, 0.f, // bottom-right
+            1.0f, 0.0f, 0.f, // top-left
+            1.0f, 0.0f, 0.f, // bottom-left
+            // Bottom face
+            0.0f, -1.0f, 0.f, // top-right
+            0.0f, -1.0f, 0.f, // top-left
+            0.0f, -1.0f, 0.f, // bottom-left
+            0.0f, -1.0f, 0.f, // bottom-left
+            0.0f, -1.0f, 0.f, // bottom-right
+            0.0f, -1.0f, 0.f, // top-right
+            // Top face
+            0.0f, 1.0f, 0.f, // top-left
+            0.0f, 1.0f, 0.f, // bottom-right
+            0.0f, 1.0f, 0.f, // top-right
+            0.0f, 1.0f, 0.f, // bottom-right
+            0.0f, 1.0f, 0.f, // top-left
+            0.0f, 1.0f, 0.f, // bottom-left
+            };
         mesh.mTextureCoordinates = {
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            1.0f, 1.0f,
-            1.0f, 1.0f,
-            0.0f, 1.0f,
-            0.0f, 0.0f,
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            1.0f, 1.0f,
-            1.0f, 1.0f,
-            0.0f, 1.0f,
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            1.0f, 1.0f,
-            0.0f, 1.0f,
-            0.0f, 1.0f,
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            1.0f, 0.0f,
-            1.0f, 1.0f,
-            0.0f, 1.0f,
-            0.0f, 1.0f,
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-            1.0f, 0.0f,
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-            1.0f, 0.0f,
-            0.0f, 0.0f,
-            0.0f, 1.0f};
-        const glm::vec3 colour = glm::vec3(0.0f, 0.0f, 1.0f);
-        mesh.mColours = {
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b,
-            colour.r, colour.g, colour.b};
+            0.0f, 0.0f, // Bottom-left
+            1.0f, 1.0f, // top-right
+            1.0f, 0.0f, // bottom-right
+            1.0f, 1.0f, // top-right
+            0.0f, 0.0f, // bottom-left
+            0.0f, 1.0f, // top-left
+            0.0f, 0.0f, // bottom-left
+            1.0f, 0.0f, // bottom-right
+            1.0f, 1.0f, // top-right
+            1.0f, 1.0f, // top-right
+            0.0f, 1.0f, // top-left
+            0.0f, 0.0f, // bottom-left
+            1.0f, 0.0f, // top-right
+            1.0f, 1.0f, // top-left
+            0.0f, 1.0f, // bottom-left
+            0.0f, 1.0f, // bottom-left
+            0.0f, 0.0f, // bottom-right
+            1.0f, 0.0f, // top-right
+            1.0f, 0.0f, // top-left
+            0.0f, 1.0f, // bottom-right
+            1.0f, 1.0f, // top-right
+            0.0f, 1.0f, // bottom-right
+            1.0f, 0.0f, // top-left
+            0.0f, 0.0f, // bottom-left
+            0.0f, 1.0f, // top-right
+            1.0f, 1.0f, // top-left
+            1.0f, 0.0f, // bottom-left
+            1.0f, 0.0f, // bottom-left
+            0.0f, 0.0f, // bottom-right
+            0.0f, 1.0f, // top-right
+            0.0f, 1.0f, // top-left
+            1.0f, 0.0f, // bottom-right
+            1.0f, 1.0f, // top-right
+            1.0f, 0.0f, // bottom-right
+            0.0f, 1.0f, // top-left
+            0.0f, 0.0f  // bottom-left
+            };
         addMesh(mesh);
     }
 }
