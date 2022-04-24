@@ -33,14 +33,22 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, mUniformShaderIndex(4)
 	, mLightMapIndex(5)
 	, mDepthViewerIndex(6)
+	, mScreenTextureIndex(7)
+	, mScreenQuad(0)
 	, mMissingTextureID(0)
 	, pointLightDrawCount(0)
 	, spotLightDrawCount(0)
 	, directionalLightDrawCount(0)
-	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView") }
+	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView"), Shader("screenTexture") }
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
+
+	mMainScreenFBO.generate();
+	mMainScreenFBO.attachColourBuffer();
+	mMainScreenFBO.attachDepthBuffer();
+
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
+
 	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
 }
 
@@ -55,7 +63,8 @@ OpenGLAPI::~OpenGLAPI()
 
 void OpenGLAPI::onFrameStart()
 {
-	mGLState.clearBuffers();
+	mMainScreenFBO.bind();
+	mMainScreenFBO.clearBuffers();
 
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
 
@@ -167,7 +176,6 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 
 	draw(GLMesh);
 }
-
 void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 {
 	if (pMesh.mDrawSize > 0)
@@ -183,7 +191,6 @@ void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 	for (const auto& childMesh : pMesh.mChildMeshes)
 		draw(childMesh);
 }
-
 void OpenGLAPI::draw(const PointLight& pPointLight)
 {
 	const std::string uniform = "pointLights[" + std::to_string(pointLightDrawCount) + "]";
@@ -200,7 +207,6 @@ void OpenGLAPI::draw(const PointLight& pPointLight)
 
 	pointLightDrawCount++;
 }
-
 void OpenGLAPI::draw(const DirectionalLight& pDirectionalLight)
 {
 	const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
@@ -232,6 +238,26 @@ void OpenGLAPI::draw(const SpotLight& pSpotLight)
 
 void OpenGLAPI::postDraw()
 {
+	// Unbind after completing draw to ensure all subsequent actions apply to the default FBO.
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	{ // Draw the colour output to the screen.
+		// Disable culling and depth testing to draw a quad in normalised screen coordinates
+		// using the mMainScreenFBO colour-buffer filled in the Draw functions in the last frame.
+		GLState previousState = mGLState;
+		mGLState.toggleCullFaces(false);
+		mGLState.toggleDepthTest(false);
+
+		ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "mMainScreenFBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
+
+		mShaders[mScreenTextureIndex].use();
+		glActiveTexture(GL_TEXTURE0);
+		mMainScreenFBO.getColourTexture().bind();
+		draw(getGLMesh(mScreenQuad));
+
+		mGLState = previousState;
+	}
+
 	mWindow.swapBuffers();
 
 	ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
@@ -338,6 +364,9 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 		{
 			mGLMeshes.emplace(std::make_pair(pMesh.getID(), OpenGLMesh()));
 			newMesh = &mGLMeshes[pMesh.getID()];
+
+			if (pMesh.mName == "Quad")
+				mScreenQuad = pMesh.getID();
 		}
 	}
 	ZEPHYR_ASSERT(newMesh != nullptr, "newMesh not initialised successfully");

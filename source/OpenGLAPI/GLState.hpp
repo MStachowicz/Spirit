@@ -4,6 +4,7 @@
 
 #include "string"
 #include "array"
+#include "optional"
 
 // Wraps all the GL types into enums and provides helper functions to extract the values or string representations.
 // All the enums come with a matching array to allow iterating over the enums in ImGui and converting to string by O(1) indexing.
@@ -100,10 +101,13 @@ namespace GLType
     inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
     inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
     inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
-    inline std::string toString(const CullFacesType& pCullFaceType)                 { return cullFaceTypes[util::toIndex(pCullFaceType)]; }
+    inline std::string toString(const CullFacesType& pCullFacesType)                 { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
     inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)  { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
 
-    int convert(const BlendFactorType &pBlendFactor);
+    int convert(const DepthTestType& pDepthTestType);
+    int convert(const BlendFactorType& pBlendFactorType);
+    int convert(const CullFacesType& pCullFacesType);
+    int convert(const FrontFaceOrientation& pFrontFaceOrientation);
 }
 
 // Wraps OpenGL data types that hold GPU data. Each type follows the same class structure:
@@ -122,7 +126,6 @@ namespace GLData
 		void bind() const;
 		void release();
 		unsigned int getHandle() { return mHandle; };
-
 	private:
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
@@ -147,7 +150,6 @@ namespace GLData
 		void bind() const;
 		void release();
 		unsigned int getHandle() { return mHandle; };
-
 	private:
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
@@ -156,16 +158,54 @@ namespace GLData
     // Represents a texture pushed to the GPU.
     struct Texture
 	{
+        friend struct FBO;
+
 		void generate();
 		void bind() const;
         void pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData);
 		void release();
 		unsigned int getHandle() { return mHandle; };
-
 	private:
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
 	};
+    // Render Buffer Object
+    // RBO's contain images optimized for use as render targets, and are the logical choice when you do not need to sample (i.e. in a post-pass shader) from the produced image.
+    // If you need to resample (such as when reading depth back in a second shader pass), use Texture instead.
+    // RBO's are created and used specifically with Framebuffer Objects (FBO's).
+    struct RBO
+    {
+        void generate();
+		void bind() const;
+        void release();
+		unsigned int getHandle() { return mHandle; };
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+    };
+    // Framebuffer object.
+    // Allows creation of user-defined framebuffers that can be rendered to without disturbing the main screen.
+    struct FBO
+    {
+        void generate();
+		void bind() const;
+        void release();
+		unsigned int getHandle() { return mHandle; };
+        Texture& getColourTexture();
+        void clearBuffers();
+
+        void attachColourBuffer();
+        void detachColourBuffer();
+        void attachDepthBuffer();
+        void detachDepthBuffer();
+	private:
+        std::optional<Texture> mTextureAttachment   = std::nullopt;
+        std::optional<RBO> mDepthAttachment         = std::nullopt;
+
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+        int mBufferClearBitField = 0; // Bit field sent to OpenGL clear buffers before next draw.
+    };
 }
 
 // Tracks the current GLState and provides helpers to set global GL state using GlTypes.
@@ -173,6 +213,11 @@ class GLState
 {
 public:
     GLState();
+
+    // Copies the state of pOther and sets all the discrepant GL states.
+    GLState& operator=(const GLState& pOther);
+    // Checks if GLState matches what OpenGL state machine is set to.
+    bool validateState();
 
 	void toggleDepthTest(const bool& pDepthTest);
 	void setDepthTestType(const GLType::DepthTestType& pType);
@@ -191,7 +236,6 @@ public:
 
     // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
     void setClearColour(const std::array<float, 4>& pColour);
-	void clearBuffers();
 
     // Outputs the current GLState with options to change flags.
     void renderImGui();
@@ -208,6 +252,5 @@ private:
     GLType::CullFacesType mCullFacesType;
     GLType::FrontFaceOrientation mFrontFaceOrientation;
 
-    int mBufferClearBitField; // Bit field sent to OpenGL clear buffers before next draw.
     std::array<float, 4> mWindowClearColour;
 };

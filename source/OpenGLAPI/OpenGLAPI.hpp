@@ -89,17 +89,19 @@ private:
 	size_t mMaterialShaderIndex;
 	size_t mLightMapIndex;
 	size_t mDepthViewerIndex;
+	size_t mScreenTextureIndex;
+	MeshID mScreenQuad;
 	TextureID mMissingTextureID;
 	int pointLightDrawCount;
 	int spotLightDrawCount;
 	int directionalLightDrawCount;
 
 	GLType::BufferDrawType mBufferDrawType;
+	GLData::FBO mMainScreenFBO;
 
 	std::vector<Shader> mShaders;
 	// Draw info is fetched every draw call.
 	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
 	std::unordered_map<MeshID, OpenGLMesh> mGLMeshes;
 	std::array<GLData::Texture, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
-
 };
