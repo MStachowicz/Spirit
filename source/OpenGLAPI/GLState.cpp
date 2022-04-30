@@ -370,8 +370,8 @@ namespace GLData
         ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised FBO");
         glDeleteFramebuffers(1, &mHandle);
 
-        if (mTextureAttachment.has_value())
-            mTextureAttachment->release();
+        if (mColourAttachment.has_value())
+            mColourAttachment->release();
         if (mDepthAttachment.has_value())
             mDepthAttachment->release();
 
@@ -380,61 +380,80 @@ namespace GLData
     Texture& FBO::getColourTexture()
     {
         ZEPHYR_ASSERT(mInitialised, "Attempting to get texture handle on uninitialised FBO");
-        ZEPHYR_ASSERT(mTextureAttachment.has_value(), "Attempting to get texture on FBO with no attached texture");
-        ZEPHYR_ASSERT(mTextureAttachment->mInitialised, "Attempting to get uninitialised texture of FBO");
+        ZEPHYR_ASSERT(mColourAttachment.has_value(), "Attempting to get texture on FBO with no attached texture");
+        ZEPHYR_ASSERT(mColourAttachment->mInitialised, "Attempting to get uninitialised texture of FBO");
 
-        return mTextureAttachment.value();
+        return mColourAttachment.value();
     }
     void FBO::clearBuffers()
     {
         glClear(mBufferClearBitField);
     }
-    void FBO::attachColourBuffer()
+    void FBO::resize(const int& pWidth, const int& pHeight)
     {
-        ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching texture");
-        ZEPHYR_ASSERT(!mTextureAttachment.has_value(), "FBO already has an attached texture");
+        if (mColourAttachment.has_value())
+        {
+            detachColourBuffer();
+            attachColourBuffer(pWidth, pHeight);
+        }
+        if (mDepthAttachment.has_value())
+        {
+            detachDepthBuffer();
+            attachDepthBuffer(pWidth, pHeight);
+        }
 
         bind();
-        mTextureAttachment = Texture();
-        mTextureAttachment->generate();
-        mTextureAttachment->bind();
+        glViewport(0, 0, pWidth, pHeight);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void FBO::attachColourBuffer(const int& pWidth, const int& pHeight)
+    {
+        ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching texture");
+        ZEPHYR_ASSERT(!mColourAttachment.has_value(), "FBO already has an attached texture");
+
+        bind();
+        mColourAttachment = Texture();
+        mColourAttachment->generate();
+        mColourAttachment->bind();
 
         {// Attaching a colour output texture to FBO
             // Data param is passed as NULL - we're only allocating memory and filling the texture when we render to the FBO.
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTextureAttachment->getHandle(), 0);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pWidth, pHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColourAttachment->getHandle(), 0);
         }
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // GL_NEAREST so that we don't interpolate multiple samples from the intermediate texture to the final screen render.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
         //{// Attaching a depth buffer to texture
         //    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 800, 600, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mTextureAttachment->getHandle(), 0);
+        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mColourAttachment->getHandle(), 0);
         //}
         //{// Attaching a stencil buffer to texture
         //    glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX, 800, 600, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, NULL);
-        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, mTextureAttachment->getHandle(), 0);
+        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, mColourAttachment->getHandle(), 0);
         //}
         //{// Attaching both a stencil and depth buffer as a single texture. 32bit = 24 bits of depth info + 8 bits stencil info
         //    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 800, 600, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, mTextureAttachment->getHandle(), 0);
+        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, mColourAttachment->getHandle(), 0);
         //}
 
-       // glBindFramebuffer(GL_FRAMEBUFFER, 0);
         mBufferClearBitField |= GL_COLOR_BUFFER_BIT;
-
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     void FBO::detachColourBuffer()
     {
-        ZEPHYR_ASSERT(mTextureAttachment.has_value(), "There is no attached texture to remove from FBO");
-
-        bind();
-        mTextureAttachment->release();
-        mTextureAttachment.reset();
+        ZEPHYR_ASSERT(mColourAttachment.has_value(), "There is no attached texture to remove from FBO");
+        mColourAttachment->release();
+        mColourAttachment.reset();
         mBufferClearBitField &= ~GL_COLOR_BUFFER_BIT;
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-    void FBO::attachDepthBuffer()
+    void FBO::attachDepthBuffer(const int& pWidth, const int& pHeight)
     {
         ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching buffer");
         ZEPHYR_ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached buffer");
@@ -446,10 +465,9 @@ namespace GLData
 
         // Allocate the storage for the buffer then unbind it to make sure we're not accidentally rendering to the wrong framebuffer.
         // Lastly attach it to this FBO
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1920, 1080);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, pWidth, pHeight);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mDepthAttachment->getHandle());
         //glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         mBufferClearBitField |= GL_DEPTH_BUFFER_BIT;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

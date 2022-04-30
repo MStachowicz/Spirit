@@ -194,12 +194,13 @@ namespace GLData
         Texture& getColourTexture();
         void clearBuffers();
 
-        void attachColourBuffer();
+        void resize(const int& pWidth, const int& pHeight);
+        void attachColourBuffer(const int& pWidth, const int& pHeight);
         void detachColourBuffer();
-        void attachDepthBuffer();
+        void attachDepthBuffer(const int& pWidth, const int& pHeight);
         void detachDepthBuffer();
 	private:
-        std::optional<Texture> mTextureAttachment   = std::nullopt;
+        std::optional<Texture> mColourAttachment    = std::nullopt;
         std::optional<RBO> mDepthAttachment         = std::nullopt;
 
 		bool mInitialised 		= false;

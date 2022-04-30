@@ -40,6 +40,10 @@ public:
 	void initialiseMesh(const Mesh& pMesh) 			override;
 	void initialiseTexture(const Texture& pTexture) override;
 private:
+	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
+	inline static std::vector<OpenGLAPI*> OpenGLInstances;
+	void onResize(const int pWidth, const int pHeight);
+
 	struct OpenGLMesh
 	{
 		enum class DrawMethod { Indices, Array, Null };

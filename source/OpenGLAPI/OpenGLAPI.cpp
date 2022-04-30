@@ -19,13 +19,12 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	: GraphicsAPI(pLightManager)
 	, cOpenGLVersionMajor(3)
 	, cOpenGLVersionMinor(3)
-	, mBufferDrawType(GLType::BufferDrawType::Colour)
 	, mLinearDepthView(false)
 	, mZNearPlane(0.1f)
 	, mZFarPlane (100.0f)
 	, mFOV(45.f)
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
-	, mGLADContext(initialiseGLAD())
+	, mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLAPI construction (OpenGLInstances.size() == 1)
 	, mGLState()
 	, mTexture1ShaderIndex(0)
 	, mTexture2ShaderIndex(1)
@@ -39,26 +38,36 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, pointLightDrawCount(0)
 	, spotLightDrawCount(0)
 	, directionalLightDrawCount(0)
+	, mBufferDrawType(GLType::BufferDrawType::Colour)
 	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView"), Shader("screenTexture") }
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
 	mMainScreenFBO.generate();
-	mMainScreenFBO.attachColourBuffer();
-	mMainScreenFBO.attachDepthBuffer();
+	mMainScreenFBO.attachColourBuffer(mWindow.mWidth, mWindow.mHeight);
+	mMainScreenFBO.attachDepthBuffer(mWindow.mWidth, mWindow.mHeight);
 
+	// Set the initial viewport size for the FBO
+	mMainScreenFBO.bind();
 	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	LOG_INFO("OpenGL successfully initialised using GLFW and GLAD");
+
+	OpenGLInstances.push_back(this);
+	LOG_INFO("Constructed new OpenGLAPI instance");
 }
 
 OpenGLAPI::~OpenGLAPI()
 {
-	if (mGLADContext)
+	if (mGLADContext && OpenGLInstances.size() == 1)
 	{
 		free(mGLADContext);
-		LOG_INFO("OpenGLAPI destructor called. Freeing GLAD memory.");
+		LOG_INFO("Final OpenGLAPI destructor called. Freeing GLAD memory.");
 	}
+
+	auto it = std::find(OpenGLInstances.begin(), OpenGLInstances.end(), this);
+	if (it != OpenGLInstances.end())
+		OpenGLInstances.erase(it);
 }
 
 void OpenGLAPI::onFrameStart()
@@ -282,6 +291,7 @@ void OpenGLAPI::renderImGui()
 	{
 		ImGui::Text(("OpenGL version: " + std::to_string(cOpenGLVersionMajor) + "." + std::to_string(cOpenGLVersionMinor)).c_str());
 		ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
+		ImGui::Text(("Aspect ratio: " + std::to_string(static_cast<float>(mWindow.mWidth) /  static_cast<float>(mWindow.mHeight))).c_str());
 		ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
 		ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
@@ -440,19 +450,29 @@ GladGLContext* OpenGLAPI::initialiseGLAD()
 	return GLADContext;
 }
 
+void OpenGLAPI::onResize(const int pWidth, const int pHeight)
+{
+	mMainScreenFBO.resize(pWidth, pHeight);
+	mWindow.mWidth = pWidth;
+	mWindow.mHeight = pHeight;
+	mWindow.mAspectRatio = static_cast<float>(pWidth) /  static_cast<float>(pHeight);
+}
+
 void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 {
-	LOG_INFO("Window resolution changed to {}x{}", pWidth, pHeight);
-	glViewport(0, 0, pWidth, pHeight);
-
 	const float width = static_cast<float>(pWidth);
 	const float height = static_cast<float>(pHeight);
+	LOG_INFO("Window resolution changed to {}x{}", pWidth, pHeight);
 
 	ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2(width, height);
-	io.FontGlobalScale = ((width * height) / 1.4f ) / (1920.f * 1080.f);;
+	io.FontGlobalScale = std::round(ImGui::GetMainViewport()->DpiScale);
 
-	OpenGLWindow::currentWindow->mWidth = pWidth;
-	OpenGLWindow::currentWindow->mHeight = pHeight;
-	OpenGLWindow::currentWindow->mAspectRatio = width / height;
+	for (auto *OpenGLinstance : OpenGLInstances)
+	{
+		if (OpenGLinstance)
+		{
+			OpenGLinstance->onResize(pWidth, pHeight);
+		}
+	}
 }
