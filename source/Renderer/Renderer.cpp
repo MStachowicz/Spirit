@@ -210,83 +210,20 @@ void Renderer::renderImGui()
 		}
 		ImGui::End();
 
-		static ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize;
-		if (ImGui::Begin("ImGui options", nullptr, window_flags))
+		if (ImGui::Begin("ImGui options"))
 		{
 			ImGuiIO &io = ImGui::GetIO();
-			ImGui::SliderFloat("FontGlobalScale", &io.FontGlobalScale, 0.1f, 5.f);
-			ImGui::SliderFloat2("DisplaySize", &io.DisplaySize.x, 1.f, 3840.f);
-			ImGui::Checkbox("FontAllowUserScaling", &io.FontAllowUserScaling);
-			ImGui::Checkbox("ConfigDockingWithShift", &io.ConfigDockingWithShift);
+			ImGui::Text("DisplaySize: %.fx%.f", io.DisplaySize.x, io.DisplaySize.y);
+			ImGui::Text("MainViewport()->DpiScale: %.3f", ImGui::GetMainViewport()->DpiScale);
+			ImGui::DragFloat("FontGlobalScale", &io.FontGlobalScale, 0.005f, 0.3f, 4.0f, "%.1f");
 			ImGui::Checkbox("WantCaptureMouse", &io.WantCaptureMouse);
-			ImGui::SliderFloat("Mainviewport DpiScale", &ImGui::GetMainViewport()->DpiScale, 1.f, 300.f);
 
-			if (ImGui::TreeNode("Window options"))
+			if(ImGui::TreeNode("Style editor"))
 			{
-				ImGui::Text("These options only affect the parent 'ImGui options' window");
-				struct ImGuiWindowOption
-				{
-					const char *displayName;
-					const int ImGuiFlag;
-					bool set;
-				};
-				static std::array<ImGuiWindowOption, 24> ImGuiWindowOptions =
-					{{{"NoTitleBar", ImGuiWindowFlags_NoTitleBar, false},
-					  {"NoResize", ImGuiWindowFlags_NoResize, false},
-					  {"NoMove", ImGuiWindowFlags_NoMove, false},
-					  {"NoScrollbar", ImGuiWindowFlags_NoScrollbar, false},
-					  {"NoScrollWithMouse", ImGuiWindowFlags_NoScrollWithMouse, false},
-					  {"NoCollapse  ", ImGuiWindowFlags_NoCollapse, false},
-					  {"AlwaysAutoResize", ImGuiWindowFlags_AlwaysAutoResize, false},
-					  {"NoBackground", ImGuiWindowFlags_NoBackground, false},
-					  {"NoSavedSettings", ImGuiWindowFlags_NoSavedSettings, false},
-					  {"NoMouseInputs", ImGuiWindowFlags_NoMouseInputs, false},
-					  {"MenuBar", ImGuiWindowFlags_MenuBar, false},
-					  {"HorizontalScrollbar", ImGuiWindowFlags_HorizontalScrollbar, false},
-					  {"NoFocusOnAppearing", ImGuiWindowFlags_NoFocusOnAppearing, false},
-					  {"NoBringToFrontOnFocus", ImGuiWindowFlags_NoBringToFrontOnFocus, false},
-					  {"AlwaysVerticalScrollbar", ImGuiWindowFlags_AlwaysVerticalScrollbar, false},
-					  {"AlwaysHorizontalScrollbar", ImGuiWindowFlags_AlwaysHorizontalScrollbar, false},
-					  {"AlwaysUseWindowPadding", ImGuiWindowFlags_AlwaysUseWindowPadding, false},
-					  {"NoNavInputs", ImGuiWindowFlags_NoNavInputs, false},
-					  {"NoNavFocus", ImGuiWindowFlags_NoNavFocus, false},
-					  {"UnsavedDocument", ImGuiWindowFlags_UnsavedDocument, false},
-					  {"NoDocking", ImGuiWindowFlags_NoDocking, false},
-					  {"NoNav", ImGuiWindowFlags_NoNav, false},
-					  {"NoDecoration", ImGuiWindowFlags_NoDecoration, false},
-					  {"NoInputs", ImGuiWindowFlags_NoInputs, false}}};
-
-				for (int i = 0; i < ImGuiWindowOptions.size(); i++)
-				{
-
-					ImGuiWindowOptions[i].set = ((window_flags & ImGuiWindowOptions[i].ImGuiFlag) == ImGuiWindowOptions[i].ImGuiFlag);
-
-					if (ImGui::Checkbox(ImGuiWindowOptions[i].displayName, &ImGuiWindowOptions[i].set))
-					{
-						if (ImGuiWindowOptions[i].set)
-						{
-							// Disabling NoMouseInputs as it results in being locked out of ImGui navigation
-							if (((ImGuiWindowOptions[i].ImGuiFlag) & ImGuiWindowFlags_NoMouseInputs) == ImGuiWindowFlags_NoMouseInputs)
-							{
-								ImGuiWindowOptions[i].set = false;
-								continue;
-							}
-
-							window_flags |= ImGuiWindowOptions[i].ImGuiFlag;
-						}
-						else
-							window_flags &= ~ImGuiWindowOptions[i].ImGuiFlag;
-					}
-					if (ImGuiWindowOptions[i].ImGuiFlag == ImGuiWindowFlags_NoNav
-					|| ImGuiWindowOptions[i].ImGuiFlag == ImGuiWindowFlags_NoDecoration
-					|| ImGuiWindowOptions[i].ImGuiFlag == ImGuiWindowFlags_NoInputs)
-					{
-						ImGui::SameLine();
-						ImGui::Text(" (group action)");
-					}
-				}
+				ImGui::ShowStyleEditor();
 				ImGui::TreePop();
 			}
+
 		}
 		ImGui::End();
 
@@ -423,12 +360,13 @@ void Renderer::renderImGui()
 				default:
 					break;
 				}
-
-
 				ImGui::TreePop();
 			} });
 		}
 		ImGui::End();
+
+		ImGui::ShowDemoWindow();
+		ImGui::ShowMetricsWindow();
 
 		mLightManager.renderImGui();
 		mOpenGLAPI->renderImGui();
