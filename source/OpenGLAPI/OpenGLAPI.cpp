@@ -39,6 +39,7 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, spotLightDrawCount(0)
 	, directionalLightDrawCount(0)
 	, mBufferDrawType(GLType::BufferDrawType::Colour)
+	, mPostProcessingOptions()
 	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView"), Shader("screenTexture") }
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
@@ -83,6 +84,16 @@ void OpenGLAPI::onFrameStart()
 		mShaders[mDepthViewerIndex].setUniform("near", mZNearPlane);
 		mShaders[mDepthViewerIndex].setUniform("far",  mZFarPlane);
 		mShaders[mDepthViewerIndex].setUniform("linearDepthView",  mLinearDepthView);
+	}
+
+	{ // PostProcessing setters
+		mShaders[mScreenTextureIndex].use();
+		mShaders[mScreenTextureIndex].setUniform("invertColours", mPostProcessingOptions.mInvertColours);
+		mShaders[mScreenTextureIndex].setUniform("grayScale", mPostProcessingOptions.mGrayScale);
+		mShaders[mScreenTextureIndex].setUniform("sharpen", mPostProcessingOptions.mSharpen);
+		mShaders[mScreenTextureIndex].setUniform("blur", mPostProcessingOptions.mBlur);
+		mShaders[mScreenTextureIndex].setUniform("edgeDetection", mPostProcessingOptions.mEdgeDetection);
+		mShaders[mScreenTextureIndex].setUniform("offset", mPostProcessingOptions.mKernelOffset);
 	}
 
 	// TODO: Set this for all shaders that use viewPosition.
@@ -313,6 +324,20 @@ void OpenGLAPI::renderImGui()
 		ImGui::Separator();
 		mGLState.renderImGui();
 
+    	ImGui::Separator();
+		if (ImGui::TreeNode("PostProcessing"))
+		{
+			ImGui::Checkbox("Invert", 	 	  &mPostProcessingOptions.mInvertColours);
+			ImGui::Checkbox("Grayscale", 	  &mPostProcessingOptions.mGrayScale);
+			ImGui::Checkbox("Sharpen", 	 	  &mPostProcessingOptions.mSharpen);
+			ImGui::Checkbox("Blur", 	 	  &mPostProcessingOptions.mBlur);
+			ImGui::Checkbox("Edge detection", &mPostProcessingOptions.mEdgeDetection);
+
+			if (mPostProcessingOptions.mSharpen || mPostProcessingOptions.mBlur || mPostProcessingOptions.mEdgeDetection)
+				ImGui::SliderFloat("Kernel offset", &mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
+
+			ImGui::TreePop();
+		}
 	}
 	ImGui::End();
 }

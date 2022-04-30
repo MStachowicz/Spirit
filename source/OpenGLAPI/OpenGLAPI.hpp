@@ -103,6 +103,17 @@ private:
 	GLType::BufferDrawType mBufferDrawType;
 	GLData::FBO mMainScreenFBO;
 
+	struct PostProcessingOptions
+	{
+		bool mInvertColours = false;
+		bool mGrayScale 	= false;
+		bool mSharpen 		= false;
+		bool mBlur 			= false;
+		bool mEdgeDetection = false;
+		float mKernelOffset = 1.0f / 300.0f;
+	};
+	PostProcessingOptions mPostProcessingOptions;
+
 	std::vector<Shader> mShaders;
 	// Draw info is fetched every draw call.
 	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
