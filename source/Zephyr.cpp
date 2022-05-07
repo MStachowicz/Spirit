@@ -2,6 +2,7 @@
 #include "Application.hpp"
 #include "JobSystem.hpp"
 #include "FileSystem.hpp"
+#include "Utility.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +16,7 @@ int main(int argc, char *argv[])
         LOG_INFO("Argument {}: {}", index + 1, argv[index]);
 
     File::setupDirectories(argv[0]);
+    util::File::initialise(argv[0]);
     JobSystem::initialise();
 
     Application app;
