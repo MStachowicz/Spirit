@@ -11,6 +11,7 @@ namespace std
     namespace filesystem
     {
         class path;
+        class directory_entry;
     }
 }
 
@@ -27,12 +28,16 @@ public:
             pFunction(mTextures[i]);
     }
 
-    // Loads a texture from pFilePath using stb_image. Returns the TextureID for the loaded Texture.
+    // Loads individual texture data at pFilePath using stb_image. Returns the TextureID for the loaded Texture.
     TextureID loadTexture(const std::filesystem::path& pFilePath, const Texture::Purpose pPurpose = Texture::Purpose::Diffuse, const std::string& pName = "");
+    // Loads all the cubemap textures. pCubeMapDirectory is the root of all the cubemaps individually storing 6 textures per folder.
+    void loadCubeMaps(const std::filesystem::directory_entry& pCubeMapDirectory);
 private:
     size_t activeTextures = 0;
 
     std::array<Texture, MAX_TEXTURES> mTextures;
     std::unordered_map<std::string, TextureID> mNameLookup;
     std::unordered_map<std::string, TextureID> mFilePathLookup;
+
+    std::vector<CubeMapTexture> mCubeMaps;
 };

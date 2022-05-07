@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION // This modifies the header such that it only contains the relevant definition source code
 #include "stb_image.h"
 #include "FileSystem.hpp"
+#include "Utility.hpp"
 
 TextureID TextureManager::getTextureID(const std::string &pTextureName) const
 {
@@ -23,11 +24,39 @@ TextureManager::TextureManager()
 {
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
 
-    // Load all the textures in the textures directory
-    const auto files = File::getFiles(File::textureDirectory);
+    util::File::ForEachFile(util::File::textureDirectory, [&](auto& entry)
+    {
+        if (entry.is_regular_file())
+            loadTexture(entry.path()); // Load all the texture files in the root texture folder.
+        else if (entry.is_directory() && entry.path().stem().string() == "Cubemaps")
+            loadCubeMaps(entry); // Load textures in the Cubemaps directory
+    });
+}
 
-    for (const auto& file : files)
-        loadTexture(file.path());
+void TextureManager::loadCubeMaps(const std::filesystem::directory_entry &pCubeMapsDirectory)
+{
+    // Iterate over every folder inside pCubeMapsDirectory, for each folder iterate over 6 textures to load individual
+    // CubeMapTexture objects.
+    util::File::ForEachFile(pCubeMapsDirectory, [&](auto &cubemapDirectory)
+    {
+        ZEPHYR_ASSERT(cubemapDirectory.is_directory(), "Path given was not a directory. Store cubemaps in folders.");
+        CubeMapTexture cubemap;
+        cubemap.mName = cubemapDirectory.path().stem().string();
+        cubemap.mFilePath = cubemapDirectory.path();
+
+        int count = 0;
+        util::File::ForEachFile(cubemapDirectory, [&](auto& cubemapTexture)
+        {
+            ZEPHYR_ASSERT(cubemapTexture.is_regular_file(), "Cubemap directory contains non-texture files.");
+            ZEPHYR_ASSERT(count < cubemap.textures.size(), "There are more files in the cubemap directory than permitted.");
+            cubemap.textures[count] = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            count++;
+        });
+
+        ZEPHYR_ASSERT(count == 6, "There must be 6 loaded textures for a cubemap.");
+        mCubeMaps.push_back(cubemap);
+        LOG_INFO("Cubemap '{}' loaded by TextureManager", cubemap.mName);
+    });
 }
 
 TextureID TextureManager::loadTexture(const std::filesystem::path& pFilePath, const Texture::Purpose pPurpose, const std::string& pName/* = "" */)
@@ -42,7 +71,7 @@ TextureID TextureManager::loadTexture(const std::filesystem::path& pFilePath, co
     }
     else
     {
-        Texture &newTexture = mTextures[activeTextures];
+        Texture& newTexture = mTextures[activeTextures];
         newTexture.mData = stbi_load(pFilePath.string().c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
         ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
 
@@ -50,6 +79,7 @@ TextureID TextureManager::loadTexture(const std::filesystem::path& pFilePath, co
             newTexture.mName = pName;
         else
             newTexture.mName = pFilePath.stem().string();
+
         newTexture.mFilePath = pFilePath.string();
         newTexture.mPurpose = pPurpose;
         newTexture.mID = activeTextures;
