@@ -440,7 +440,7 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 	newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)] 			= bufferAttributeData<float>(pMesh.mColours, Shader::Attribute::ColourRGB);
 	newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)] 	= bufferAttributeData<float>(pMesh.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
 
-	LOG_INFO("Zephyr mesh: '{}' Mesh ID: {} loaded into OpenGL with VAO {}", pMesh.mName, pMesh.getID(), newMesh->mVAO.getHandle());
+	LOG_INFO("OpenGL::Mesh: '{}' with MeshID: {} loaded into OpenGL with VAO: {}", pMesh.mName, pMesh.getID(), newMesh->mVAO.getHandle());
 
 	for (const auto& childMesh : pMesh.mChildMeshes)
 		initialiseMesh(childMesh);
@@ -465,7 +465,7 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 		mMissingTextureID = pTexture.getID();
 
     ZEPHYR_ASSERT(newTexture.getHandle() != -1, "Texture {} failed to load", pTexture.mName);
-	LOG_INFO("Texture '{}' loaded given ID: {}", pTexture.mName, newTexture.getHandle());
+	LOG_INFO("OpenGL::Texture '{}' loaded given VAO: {}", pTexture.mName, newTexture.getHandle());
 }
 
 int OpenGLAPI::getPolygonMode(const DrawMode& pDrawMode)
@@ -502,7 +502,7 @@ void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 {
 	const float width = static_cast<float>(pWidth);
 	const float height = static_cast<float>(pHeight);
-	LOG_INFO("Window resolution changed to {}x{}", pWidth, pHeight);
+	LOG_INFO("OpenGL Window resolution changed to {}x{}", pWidth, pHeight);
 
 	ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2(width, height);

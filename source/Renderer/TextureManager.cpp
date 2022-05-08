@@ -68,7 +68,7 @@ void TextureManager::loadCubeMaps(const std::filesystem::directory_entry& pCubeM
 
         ZEPHYR_ASSERT(count == 6, "There must be 6 loaded textures for a cubemap.");
         mCubeMaps.push_back(cubemap);
-        LOG_INFO("Cubemap '{}' loaded by TextureManager", cubemap.mName);
+        LOG_INFO("Zephyr::Cubemap '{}' loaded", cubemap.mName);
     });
 }
 
@@ -105,6 +105,7 @@ Texture& TextureManager::loadTexture(const std::filesystem::path& pFilePath, con
         activeTextures++;
         ZEPHYR_ASSERT(activeTextures == mNameLookup.size(), "NameLookup should have parity with mTextures size");
         ZEPHYR_ASSERT(activeTextures == mFilePathLookup.size(), "FilePathLookup should have parity with mTextures size");
+        LOG_INFO("Zephyr::Texture '{}' loaded given TextureID {}", newTexture.mName, newTexture.mID);
         return newTexture;
     }
 }

@@ -96,7 +96,7 @@ void Shader::load()
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 	ZEPHYR_ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
-	LOG_INFO("Shader '{}' loaded given ID: {}", mName, mHandle);
+	LOG_INFO("OpenGL::Shader '{}' loaded given ID: {}", mName, mHandle);
 }
 
 void Shader::use() const
