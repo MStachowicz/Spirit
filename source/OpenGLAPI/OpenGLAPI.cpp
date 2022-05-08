@@ -216,7 +216,7 @@ void OpenGLAPI::draw(const PointLight& pPointLight)
 	const std::string uniform = "pointLights[" + std::to_string(pointLightDrawCount) + "]";
 	const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pPointLight.mAmbientIntensity;
-
+	mShaders[mLightMapIndex].use();
 	mShaders[mLightMapIndex].setUniform((uniform + ".position").c_str(), pPointLight.mPosition);
 	mShaders[mLightMapIndex].setUniform((uniform + ".ambient").c_str(), ambientColour);
 	mShaders[mLightMapIndex].setUniform((uniform + ".diffuse").c_str(), diffuseColour);
@@ -231,6 +231,7 @@ void OpenGLAPI::draw(const DirectionalLight& pDirectionalLight)
 {
 	const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
+	mShaders[mLightMapIndex].use();
 	mShaders[mLightMapIndex].setUniform("dirLight.direction", pDirectionalLight.mDirection);
 	mShaders[mLightMapIndex].setUniform("dirLight.ambient", ambientColour);
 	mShaders[mLightMapIndex].setUniform("dirLight.diffuse", diffuseColour);
@@ -242,6 +243,7 @@ void OpenGLAPI::draw(const SpotLight& pSpotLight)
 {
 	const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
+	mShaders[mLightMapIndex].use();
 	mShaders[mLightMapIndex].setUniform("spotLight.position", pSpotLight.mPosition);
 	mShaders[mLightMapIndex].setUniform("spotLight.direction", pSpotLight.mDirection);
 	mShaders[mLightMapIndex].setUniform("spotLight.diffuse", diffuseColour);
@@ -277,8 +279,6 @@ void OpenGLAPI::postDraw()
 
 		mGLState = previousState;
 	}
-
-	mWindow.swapBuffers();
 
 	ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
 	ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
@@ -412,8 +412,18 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 	ZEPHYR_ASSERT(newMesh != nullptr, "newMesh not initialised successfully");
 
 	newMesh->mDrawMode = GL_TRIANGLES; // OpenGLAPI only supports GL_TRIANGLES at this revision
-	newMesh->mDrawMethod = pMesh.mIndices.empty() ? OpenGLMesh::DrawMethod::Array : OpenGLMesh::DrawMethod::Indices;
-	newMesh->mDrawSize = pMesh.mIndices.empty() ? static_cast<int>(pMesh.mVertices.size()) : static_cast<int>(pMesh.mIndices.size());
+
+	if (!pMesh.mIndices.empty())
+	{
+		newMesh->mDrawMethod = OpenGLMesh::DrawMethod::Indices;
+		newMesh->mDrawSize = static_cast<int>(pMesh.mIndices.size());
+	}
+	else
+	{
+		newMesh->mDrawMethod = OpenGLMesh::DrawMethod::Array;
+		ZEPHYR_ASSERT(newMesh->mDrawMode == GL_TRIANGLES, "Only GL_TRIANGLES is supported")
+		newMesh->mDrawSize = static_cast<int>(pMesh.mVertices.size()) / 3; // Divide verts by 3 as we draw the vertices by triangle count.
+	}
 
 	newMesh->mVAO.generate();
 	newMesh->mVAO.bind(); // Have to bind VAO before buffering VBO and EBO data
