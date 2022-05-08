@@ -22,8 +22,6 @@ std::string TextureManager::getTextureName(const TextureID& pTextureID) const
 
 TextureManager::TextureManager()
 {
-    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-
     util::File::ForEachFile(util::File::textureDirectory, [&](auto& entry)
     {
         if (entry.is_regular_file())
@@ -33,10 +31,10 @@ TextureManager::TextureManager()
     });
 }
 
-void TextureManager::loadCubeMaps(const std::filesystem::directory_entry &pCubeMapsDirectory)
+void TextureManager::loadCubeMaps(const std::filesystem::directory_entry& pCubeMapsDirectory)
 {
     // Iterate over every folder inside pCubeMapsDirectory, for each folder iterate over 6 textures to load individual
-    // CubeMapTexture objects.
+    // texture data into a CubeMapTexture object.
     util::File::ForEachFile(pCubeMapsDirectory, [&](auto &cubemapDirectory)
     {
         ZEPHYR_ASSERT(cubemapDirectory.is_directory(), "Path given was not a directory. Store cubemaps in folders.");
@@ -48,8 +46,23 @@ void TextureManager::loadCubeMaps(const std::filesystem::directory_entry &pCubeM
         util::File::ForEachFile(cubemapDirectory, [&](auto& cubemapTexture)
         {
             ZEPHYR_ASSERT(cubemapTexture.is_regular_file(), "Cubemap directory contains non-texture files.");
-            ZEPHYR_ASSERT(count < cubemap.textures.size(), "There are more files in the cubemap directory than permitted.");
-            cubemap.textures[count] = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+
+            const std::string textureName = cubemapTexture.path().stem().string();
+
+            // The loadTexture calls below push the texture to the TextureManager and then are also copied into the cubemap.
+            if (textureName == "right")
+                cubemap.mRight = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            else if (textureName == "left")
+                cubemap.mLeft = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            else if (textureName == "top")
+                cubemap.mTop = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            else if (textureName == "bottom")
+                cubemap.mBottom = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            else if (textureName == "back")
+                cubemap.mBack = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            else if (textureName == "front")
+                cubemap.mFront = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+
             count++;
         });
 
@@ -59,15 +72,20 @@ void TextureManager::loadCubeMaps(const std::filesystem::directory_entry &pCubeM
     });
 }
 
-TextureID TextureManager::loadTexture(const std::filesystem::path& pFilePath, const Texture::Purpose pPurpose, const std::string& pName/* = "" */)
+Texture& TextureManager::loadTexture(const std::filesystem::path& pFilePath, const Texture::Purpose pPurpose, const std::string& pName/* = "" */)
 {
+    if (pPurpose == Texture::Purpose::Cubemap)
+        stbi_set_flip_vertically_on_load(false);
+    else
+        stbi_set_flip_vertically_on_load(true);
+
     ZEPHYR_ASSERT(File::exists(pFilePath.string()), "The texture file with path {} could not be found.", pFilePath)
 
     const auto& textureLocation = mFilePathLookup.find(pFilePath.string());
     if (textureLocation != mFilePathLookup.end())
     {
-        // If the texture in this location has been loaded before, skip load and return the same TextureID.
-        return textureLocation->second;
+        // If the texture in this location has been loaded before, skip load and return the Texture.
+        return mTextures[textureLocation->second];
     }
     else
     {
@@ -75,22 +93,18 @@ TextureID TextureManager::loadTexture(const std::filesystem::path& pFilePath, co
         newTexture.mData = stbi_load(pFilePath.string().c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
         ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
 
-        if (!pName.empty())
-            newTexture.mName = pName;
-        else
-            newTexture.mName = pFilePath.stem().string();
-
-        newTexture.mFilePath = pFilePath.string();
+        newTexture.mName = pName.empty() ? pFilePath.stem().string() : pName;
+        newTexture.mFilePath = pFilePath;
         newTexture.mPurpose = pPurpose;
         newTexture.mID = activeTextures;
 
         ZEPHYR_ASSERT(mNameLookup.find(newTexture.mName) == mNameLookup.end(), "Name has to be unique");
         mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID));
-        mFilePathLookup.insert(std::make_pair(newTexture.mFilePath, newTexture.mID));
+        mFilePathLookup.insert(std::make_pair(newTexture.mFilePath.string(), newTexture.mID));
 
         activeTextures++;
         ZEPHYR_ASSERT(activeTextures == mNameLookup.size(), "NameLookup should have parity with mTextures size");
         ZEPHYR_ASSERT(activeTextures == mFilePathLookup.size(), "FilePathLookup should have parity with mTextures size");
-        return newTexture.mID;
+        return newTexture;
     }
 }

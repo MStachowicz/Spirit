@@ -13,12 +13,12 @@ struct Texture
 
     enum class Purpose { Diffuse, Normal, Specular, Height, Cubemap, None };
 
-    std::string mName       = "";
-    std::string mFilePath   = "";
-    int mWidth              = -1;
-    int mHeight             = -1;
-    int mNumberOfChannels   = -1;
-    Purpose mPurpose        = Purpose::None;
+    std::string mName               = "";
+    std::filesystem::path mFilePath = "";
+    int mWidth                      = -1;
+    int mHeight                     = -1;
+    int mNumberOfChannels           = -1;
+    Purpose mPurpose                = Purpose::None;
 
     const unsigned char* getData() const { return mData; }
     TextureID getID() const { return mID; }
@@ -32,5 +32,11 @@ struct CubeMapTexture
 {
     std::string mName       = "";
     std::filesystem::path mFilePath;
-    std::array<TextureID, 6> textures = {0, 0, 0, 0, 0, 0};
+
+    Texture mRight;
+    Texture mLeft;
+    Texture mTop;
+    Texture mBottom;
+    Texture mBack;
+    Texture mFront;
 };

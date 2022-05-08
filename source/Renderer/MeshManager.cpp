@@ -148,7 +148,7 @@ void MeshManager::processTextures(Mesh& pMesh, aiMaterial* pMaterial, const Text
         aiString fileName;
         pMaterial->GetTexture(type, i, &fileName);
         const std::string textureFilePath = pMesh.mFilePath + "/" + fileName.C_Str();
-        TextureID tex = mTextureManager.loadTexture(textureFilePath, pPurpose);
+        TextureID tex = mTextureManager.loadTexture(textureFilePath, pPurpose).getID();
         pMesh.mTextures.push_back(tex);
     }
 }
