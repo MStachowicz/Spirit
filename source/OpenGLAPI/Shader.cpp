@@ -36,6 +36,7 @@ void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
 			mRequiredAttributes.insert(Attribute::TextureCoordinate2D);
 
 	mTextureUnits += findOccurrences(pSourceCode, "sampler2D");
+	mTextureUnits += findOccurrences(pSourceCode, "samplerCube");
 
 	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
 }
