@@ -71,7 +71,7 @@ OpenGLAPI::~OpenGLAPI()
 		OpenGLInstances.erase(it);
 }
 
-void OpenGLAPI::onFrameStart()
+void OpenGLAPI::preDraw()
 {
 	mMainScreenFBO.bind();
 	mMainScreenFBO.clearBuffers();
@@ -286,6 +286,11 @@ void OpenGLAPI::postDraw()
 	pointLightDrawCount = 0;
 	directionalLightDrawCount = 0;
 	spotLightDrawCount = 0;
+}
+
+void OpenGLAPI::endFrame()
+{
+	mWindow.swapBuffers();
 }
 
 void OpenGLAPI::newImGuiFrame()

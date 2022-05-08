@@ -152,7 +152,7 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 	else
 		mCurrentFPS = (mDataSmoothingFactor * (1.0f / (static_cast<float>((pTimeSinceLastDraw.count()) / 1000000.0f)))) + (1.0f - mDataSmoothingFactor) * mCurrentFPS;
 
-	mOpenGLAPI->onFrameStart();
+	mOpenGLAPI->preDraw();
 
 	{ // Setup lights in GraphicsAPI
 		mLightManager.getPointLights().ForEach([this](const PointLight& pPointLight) { mOpenGLAPI->draw(pPointLight); });
@@ -190,8 +190,9 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 
 void Renderer::postDraw()
 {
-	renderImGui();
-	mOpenGLAPI->postDraw(); // Swaps the buffers, must be called after draw
+	mOpenGLAPI->postDraw();
+	renderImGui(); // Render ImGui after all GraphicsAPI draw calls are finished before endFrame
+	mOpenGLAPI->endFrame();
 }
 
 void Renderer::renderImGui()

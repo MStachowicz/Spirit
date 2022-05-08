@@ -26,12 +26,13 @@ public:
 	OpenGLAPI(const LightManager& pLightManager);
 	~OpenGLAPI();
 
-	void onFrameStart() 									override;
-	void draw(const DrawCall& pDrawCall) 					override;
-	void draw(const PointLight& pPointLight) 				override;
-	void draw(const DirectionalLight& pDirectionalLight) 	override;
-	void draw(const SpotLight& pSpotLight) 					override;
-	void postDraw() 										override;
+	void preDraw() 										 override;
+	void draw(const DrawCall& pDrawCall) 				 override;
+	void draw(const PointLight& pPointLight) 			 override;
+	void draw(const DirectionalLight& pDirectionalLight) override;
+	void draw(const SpotLight& pSpotLight) 				 override;
+	void postDraw() 									 override;
+	void endFrame() 									 override;
 
 	void newImGuiFrame()	override;
 	void renderImGuiFrame() override;

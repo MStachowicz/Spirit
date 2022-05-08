@@ -22,12 +22,13 @@ public:
 	{};
 	virtual ~GraphicsAPI() {}; // GraphicsAPI is a pure virtual interface used polymorphically.
 
-	virtual void onFrameStart() 									= 0;
+	virtual void preDraw() 											= 0;
 	virtual void draw(const DrawCall& pDrawCall) 					= 0;
 	virtual void draw(const PointLight& pPointLight) 				= 0;
 	virtual void draw(const DirectionalLight& pDirectionalLight) 	= 0;
 	virtual void draw(const SpotLight& pSpotLight) 					= 0;
 	virtual void postDraw() 										= 0;
+	virtual void endFrame()											= 0;
 
 	virtual void newImGuiFrame() 	= 0;
 	virtual void renderImGuiFrame() = 0;
