@@ -95,6 +95,7 @@ private:
 	size_t mLightMapIndex;
 	size_t mDepthViewerIndex;
 	size_t mScreenTextureIndex;
+	size_t mSkyBoxShaderIndex;
 	MeshID mScreenQuad;
 	TextureID mMissingTextureID;
 	int pointLightDrawCount;
