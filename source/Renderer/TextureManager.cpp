@@ -6,6 +6,8 @@
 #include "FileSystem.hpp"
 #include "Utility.hpp"
 
+#include "set"
+
 TextureID TextureManager::getTextureID(const std::string &pTextureName) const
 {
     const auto it = mNameLookup.find(pTextureName);
@@ -43,30 +45,41 @@ void TextureManager::loadCubeMaps(const std::filesystem::directory_entry& pCubeM
         cubemap.mFilePath = cubemapDirectory.path();
 
         int count = 0;
+        std::set<int> widths;
+        std::set<int> heights;
+        std::set<int> channelCounts;
+
         util::File::ForEachFile(cubemapDirectory, [&](auto& cubemapTexture)
         {
             ZEPHYR_ASSERT(cubemapTexture.is_regular_file(), "Cubemap directory contains non-texture files.");
 
+            Texture* newTexture = nullptr;
             const std::string textureName = cubemapTexture.path().stem().string();
 
-            // The loadTexture calls below push the texture to the TextureManager and then are also copied into the cubemap.
-            if (textureName == "right")
-                cubemap.mRight = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
-            else if (textureName == "left")
-                cubemap.mLeft = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
-            else if (textureName == "top")
-                cubemap.mTop = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
-            else if (textureName == "bottom")
-                cubemap.mBottom = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
-            else if (textureName == "back")
-                cubemap.mBack = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
-            else if (textureName == "front")
-                cubemap.mFront = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+            if (textureName == "right")       newTexture = &cubemap.mRight;
+            else if (textureName == "left")   newTexture = &cubemap.mLeft;
+            else if (textureName == "top")    newTexture = &cubemap.mTop;
+            else if (textureName == "bottom") newTexture = &cubemap.mBottom;
+            else if (textureName == "back")   newTexture = &cubemap.mBack;
+            else if (textureName == "front")  newTexture = &cubemap.mFront;
+            else ZEPHYR_ASSERT(false, "Unkown name for CubeMap texture.")
 
+            // @PERFORMANCE
+            // loadTexture will push the Texture data to the mTexture array before returning.
+            // The line below will copy the Texture data to the cubemap duplicating the data.
+            *newTexture = loadTexture(cubemapTexture.path(), Texture::Purpose::Cubemap);
+
+            widths.insert(newTexture->mWidth);
+            heights.insert(newTexture->mHeight);
+            channelCounts.insert(newTexture->mNumberOfChannels);
             count++;
         });
 
         ZEPHYR_ASSERT(count == 6, "There must be 6 loaded textures for a cubemap.");
+        ZEPHYR_ASSERT(widths.size() == 1, "There are missmatched texture widths in the cubemap.");
+        ZEPHYR_ASSERT(heights.size() == 1, "There are missmatched texture heights in the cubemap.");
+        ZEPHYR_ASSERT(channelCounts.size() == 1, "There are missmatched texture channel counts in the cubemap.");
+
         mCubeMaps.push_back(cubemap);
         LOG_INFO("Zephyr::Cubemap '{}' loaded", cubemap.mName);
     });
