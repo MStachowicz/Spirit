@@ -413,7 +413,7 @@ namespace GLData
         ZEPHYR_ASSERT(!mColourAttachment.has_value(), "FBO already has an attached texture");
 
         bind();
-        mColourAttachment = Texture();
+        mColourAttachment = { Texture::Type::Texture2D };
         mColourAttachment->generate();
         mColourAttachment->bind();
 
@@ -487,28 +487,45 @@ namespace GLData
     }
     void Texture::bind() const
     {
-        ZEPHYR_ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind");
-        glBindTexture(GL_TEXTURE_2D, mHandle);
+        ZEPHYR_ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind.");
+
+        if (mType == Type::Texture2D)
+            glBindTexture(GL_TEXTURE_2D, mHandle);
+        else if (mType == Type::CubeMap)
+            glBindTexture(GL_TEXTURE_CUBE_MAP, mHandle);
     }
-    void Texture::pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData)
+    void Texture::pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData, const int& pCubeMapIndexOffset /*= -1*/)
 	{
+        ZEPHYR_ASSERT(pData, "Invalid Texture data.");
+
         GLenum format = 0;
         if (pNumberOfChannels == 1)      format = GL_RED;
         else if (pNumberOfChannels == 3) format = GL_RGB;
         else if (pNumberOfChannels == 4) format = GL_RGBA;
-        ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels")
+        ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels");
 
-        // set the texture wrapping parameters
-        // GL_REPEAT - (default wrapping method)
-        // GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        // set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, format, pWidth, pHeight, 0, format, GL_UNSIGNED_BYTE, pData);
-        glGenerateMipmap(GL_TEXTURE_2D);
+        if (pCubeMapIndexOffset == -1)
+        {
+            ZEPHYR_ASSERT(mType == Type::Texture2D, "Trying to push Texture 2D data to non Texture 2D object.");
+            glTexImage2D(GL_TEXTURE_2D, 0, format, pWidth, pHeight, 0, format, GL_UNSIGNED_BYTE, pData);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            // GL_REPEAT - (default wrapping method)
+            // GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            ZEPHYR_ASSERT(mType == Type::CubeMap, "Trying to push CubeMap data to non-CubeMap object.");
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + pCubeMapIndexOffset, 0, format, pWidth, pHeight, 0, format, GL_UNSIGNED_BYTE, pData);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        }
     }
     void Texture::release()
     {
@@ -517,6 +534,7 @@ namespace GLData
         mInitialised = false;
     }
 }
+
 namespace GLType
 {
     int convert(const DepthTestType& pDepthTestType)

@@ -160,14 +160,26 @@ namespace GLData
 	{
         friend struct FBO;
 
+        enum class Type
+        {
+            Texture2D, // Texture target: GL_TEXTURE_2D
+            CubeMap, // Texture target: GL_TEXTURE_CUBE_MAP
+            None
+        };
+        Texture(const Type& pType) : mType(pType) {}
+        Texture() = default;
+
 		void generate();
 		void bind() const;
-        void pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData);
+        // Pushes the texture data using glTexImage2D.
+        // If pCubeMapIndexOffset is supplied the data is pushed to GL_TEXTURE_CUBE_MAP at index GL_TEXTURE_CUBE_MAP_POSITIVE_X (0) + offset to GL_TEXTURE_CUBE_MAP_NEGATIVE_Z (5).
+        void pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData, const int& pCubeMapIndexOffset = -1);
 		void release();
 		unsigned int getHandle() { return mHandle; };
 	private:
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
+        Type mType              = Type::None;
 	};
     // Render Buffer Object
     // RBO's contain images optimized for use as render targets, and are the logical choice when you do not need to sample (i.e. in a post-pass shader) from the produced image.

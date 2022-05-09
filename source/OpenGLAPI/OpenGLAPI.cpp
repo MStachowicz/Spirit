@@ -35,6 +35,7 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, mScreenTextureIndex(7)
 	, mSkyBoxShaderIndex(8)
 	, mScreenQuad(0)
+	, mSkyBoxMeshID(0)
 	, mMissingTextureID(0)
 	, pointLightDrawCount(0)
 	, spotLightDrawCount(0)
@@ -261,6 +262,25 @@ void OpenGLAPI::draw(const SpotLight& pSpotLight)
 
 void OpenGLAPI::postDraw()
 {
+	{ // Skybox render
+		// Skybox is drawn in postDraw to maximise depth test culling of the textures in the cubemap which will always pass otherwise.
+		// Depth testing must be set to GL_LEQUAL because the depth values of skybox's are equal to depth buffer contents.
+		mShaders[mSkyBoxShaderIndex].use();
+		const glm::mat4 view = glm::mat4(glm::mat3(mViewMatrix)); // remove translation from the view matrix
+		mShaders[mSkyBoxShaderIndex].setUniform("view", view);
+		mShaders[mSkyBoxShaderIndex].setUniform("projection", mProjection);
+
+		GLState previousState = mGLState;
+		mGLState.toggleDepthTest(true);
+		mGLState.setDepthTestType(GLType::DepthTestType::LessEqual);
+
+		glActiveTexture(GL_TEXTURE0);
+		mCubeMaps.front().bind();
+		draw(getGLMesh(mSkyBoxMeshID));
+
+		mGLState = previousState;
+	}
+
 	// Unbind after completing draw to ensure all subsequent actions apply to the default FBO.
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -408,6 +428,8 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 
 			if (pMesh.mName == "Quad")
 				mScreenQuad = pMesh.getID();
+			else if (pMesh.mName == "Skybox")
+				mSkyBoxMeshID = pMesh.getID();
 		}
 	}
 	ZEPHYR_ASSERT(newMesh != nullptr, "newMesh not initialised successfully");
@@ -455,7 +477,7 @@ const GLData::Texture& OpenGLAPI::getTexture(const TextureID& pTextureID) const
 
 void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 {
-	GLData::Texture newTexture;
+	GLData::Texture newTexture = { GLData::Texture::Type::Texture2D };
 	newTexture.generate();
 	newTexture.bind();
 	newTexture.pushData(pTexture.mWidth, pTexture.mHeight, pTexture.mNumberOfChannels, pTexture.getData());
@@ -469,15 +491,35 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 	LOG_INFO("OpenGL::Texture '{}' loaded given VAO: {}", pTexture.mName, newTexture.getHandle());
 }
 
+void OpenGLAPI::initialiseCubeMap(const CubeMapTexture& pCubeMap)
+{
+	// OpenGL cubeMap texture objects store all 6 faces under 1 VAO hence only one generate and bind is used before 6 pushData calls
+	// Each face can be offset by index (last param of pushData) in the order Right (0), Left (1), Top(2), Bottom(3), Back(4), Front(5)
+
+	GLData::Texture newCubeMap = { GLData::Texture::Type::CubeMap };
+	newCubeMap.generate();
+	newCubeMap.bind();
+
+	newCubeMap.pushData(pCubeMap.mRight.mWidth, pCubeMap.mRight.mHeight, pCubeMap.mRight.mNumberOfChannels, pCubeMap.mRight.getData(), 0);
+	newCubeMap.pushData(pCubeMap.mLeft.mWidth, pCubeMap.mLeft.mHeight, pCubeMap.mLeft.mNumberOfChannels, pCubeMap.mLeft.getData(), 1);
+	newCubeMap.pushData(pCubeMap.mTop.mWidth, pCubeMap.mTop.mHeight, pCubeMap.mTop.mNumberOfChannels, pCubeMap.mTop.getData(), 2);
+	newCubeMap.pushData(pCubeMap.mBottom.mWidth, pCubeMap.mBottom.mHeight, pCubeMap.mBottom.mNumberOfChannels, pCubeMap.mBottom.getData(), 3);
+	newCubeMap.pushData(pCubeMap.mFront.mWidth, pCubeMap.mFront.mHeight, pCubeMap.mFront.mNumberOfChannels, pCubeMap.mFront.getData(), 4);
+	newCubeMap.pushData(pCubeMap.mBack.mWidth, pCubeMap.mBack.mHeight, pCubeMap.mBack.mNumberOfChannels, pCubeMap.mBack.getData(), 5);
+
+	mCubeMaps.push_back(newCubeMap);
+	LOG_INFO("OpenGL::CubeMapTexture '{}' loaded given VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
+}
+
 int OpenGLAPI::getPolygonMode(const DrawMode& pDrawMode)
 {
 	switch (pDrawMode)
 	{
-	case DrawMode::Fill: 		return GL_FILL;
-	case DrawMode::Wireframe: 	return GL_LINE;
-	default:
-   		ZEPHYR_ASSERT(false, "DrawMode does not have a conversion to GLFW type.");
-		return -1;
+		case DrawMode::Fill: 		return GL_FILL;
+		case DrawMode::Wireframe: 	return GL_LINE;
+		default:
+   			ZEPHYR_ASSERT(false, "DrawMode does not have a conversion to GLFW type.");
+			return -1;
 	}
 }
 

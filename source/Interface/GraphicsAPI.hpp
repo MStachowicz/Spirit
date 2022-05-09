@@ -8,6 +8,7 @@ class TextureManager;
 class LightManager;
 struct Mesh;
 struct Texture;
+struct CubeMapTexture;
 struct DrawCall;
 struct PointLight;
 struct DirectionalLight;
@@ -36,6 +37,7 @@ public:
 
 	virtual void initialiseMesh(const Mesh& pMesh) = 0;
 	virtual void initialiseTexture(const Texture& pTexture) = 0;
+	virtual void initialiseCubeMap(const CubeMapTexture& pCubeMap) = 0;
 
 	void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
 	void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }

@@ -29,8 +29,9 @@ Renderer::Renderer()
 , mImGuiRenderTimeTakenMS(0)
 , mDrawTimeTakenMS(0)
 {
-	mMeshManager.ForEach([this](const auto &mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
-	mTextureManager.ForEach([this](const auto &texture) { mOpenGLAPI->initialiseTexture(texture); });
+	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
+	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
+	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
 
 	lightPosition.mScale 		= glm::vec3(0.1f);
 	lightPosition.mMesh 		= mMeshManager.getMeshID("3DCube");

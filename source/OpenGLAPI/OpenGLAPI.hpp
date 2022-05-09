@@ -38,8 +38,10 @@ public:
 	void renderImGuiFrame() override;
 	void renderImGui()		override;
 
-	void initialiseMesh(const Mesh& pMesh) 			override;
-	void initialiseTexture(const Texture& pTexture) override;
+	void initialiseMesh(const Mesh& pMesh) 			 	   override;
+	void initialiseTexture(const Texture& pTexture)  	   override;
+	void initialiseCubeMap(const CubeMapTexture& pCubeMap) override;
+
 private:
 	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
 	inline static std::vector<OpenGLAPI*> OpenGLInstances;
@@ -97,6 +99,7 @@ private:
 	size_t mScreenTextureIndex;
 	size_t mSkyBoxShaderIndex;
 	MeshID mScreenQuad;
+	MeshID mSkyBoxMeshID;
 	TextureID mMissingTextureID;
 	int pointLightDrawCount;
 	int spotLightDrawCount;
@@ -121,4 +124,5 @@ private:
 	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
 	std::unordered_map<MeshID, OpenGLMesh> mGLMeshes;
 	std::array<GLData::Texture, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
+	std::vector<GLData::Texture> mCubeMaps;
 };
