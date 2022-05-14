@@ -106,8 +106,8 @@ void OpenGLAPI::preDraw()
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
 {
 	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh); // Grab the OpenGLMesh for the Zephyr Mesh requested in the DrawCall.
-	const Shader *shader = nullptr;
 
+	const Shader *shader = nullptr;
 	if (mBufferDrawType == GLType::BufferDrawType::Colour)
 	{
 		// #OPTIMIZATION: Future per component combination for entity
@@ -194,7 +194,15 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 		shader->setUniform("view", mViewMatrix);
 		shader->setUniform("projection", mProjection);
 	}
-	glPolygonMode(GL_FRONT_AND_BACK, getPolygonMode(pDrawCall.mDrawMode));
+
+	switch (pDrawCall.mDrawMode)
+	{
+		case DrawMode::Fill: 	  mGLState.setPolygonMode(GLType::PolygonMode::Fill); break;
+		case DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); break;
+		default:
+   			ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLAPI draw.");
+			break;
+	}
 
 	draw(GLMesh);
 }
@@ -375,41 +383,6 @@ const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID) const
 	return it->second;
 }
 
-template<class T>
-int getGLFWType()
-{
-	if (constexpr(std::is_same_v<T, int>))
-		return GL_INT;
-	else if (constexpr(std::is_same_v<T, float>))
-		return GL_FLOAT;
-	else if (constexpr(std::is_same_v<T, glm::vec3>))
-		return GL_FLOAT;
-	else
-	{
-		ZEPHYR_ASSERT(false, "Could not convert the template type to a GLFW type.")
-		return -1;
-	}
-};
-
-template <class T>
-std::optional<GLData::VBO> OpenGLAPI::bufferAttributeData(const std::vector<T>& pData, const Shader::Attribute& pAttribute)
-{
-	if (!pData.empty())
-	{
-		GLData::VBO vbo;
-		vbo.generate();
-		vbo.bind();
-		glBufferData(GL_ARRAY_BUFFER, pData.size() * sizeof(T), &pData.front(), GL_STATIC_DRAW);
-		const GLint attributeIndex = static_cast<GLint>(Shader::getAttributeLocation(pAttribute));
-		const GLint attributeComponentCount = static_cast<GLint>(Shader::getAttributeComponentCount(pAttribute));
-		glVertexAttribPointer(attributeIndex, attributeComponentCount, getGLFWType<T>(), GL_FALSE, attributeComponentCount * sizeof(T), (void *)0);
-		glEnableVertexAttribArray(attributeIndex);
-		return vbo;
-	}
-	else
-		return std::nullopt;
-}
-
 void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 {
 	OpenGLMesh* newMesh = nullptr;
@@ -455,13 +428,37 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 	{
 		newMesh->mEBO.generate();
 		newMesh->mEBO.bind();
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, pMesh.mIndices.size() * sizeof(int), &pMesh.mIndices.front(), GL_STATIC_DRAW);
+		newMesh->mEBO.pushData(pMesh.mIndices);
 	}
 
-	newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)] 			= bufferAttributeData<float>(pMesh.mVertices, Shader::Attribute::Position3D);
-	newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)] 				= bufferAttributeData<float>(pMesh.mNormals, Shader::Attribute::Normal3D);
-	newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)] 			= bufferAttributeData<float>(pMesh.mColours, Shader::Attribute::ColourRGB);
-	newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)] 	= bufferAttributeData<float>(pMesh.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
+	if (!pMesh.mVertices.empty())
+	{
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)] = GLData::VBO();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->generate();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->bind();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->pushData(pMesh.mVertices, Shader::getAttributeLocation(Shader::Attribute::Position3D), Shader::getAttributeComponentCount(Shader::Attribute::Position3D));
+	}
+	if (!pMesh.mNormals.empty())
+	{
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)] = GLData::VBO();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->generate();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->bind();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->pushData(pMesh.mNormals, Shader::getAttributeLocation(Shader::Attribute::Normal3D), Shader::getAttributeComponentCount(Shader::Attribute::Normal3D));
+	}
+	if (!pMesh.mColours.empty())
+	{
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)] = GLData::VBO();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->generate();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->bind();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->pushData(pMesh.mColours, Shader::getAttributeLocation(Shader::Attribute::ColourRGB), Shader::getAttributeComponentCount(Shader::Attribute::ColourRGB));
+	}
+	if (!pMesh.mTextureCoordinates.empty())
+	{
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)] = GLData::VBO();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->generate();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->bind();
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->pushData(pMesh.mTextureCoordinates, Shader::getAttributeLocation(Shader::Attribute::TextureCoordinate2D), Shader::getAttributeComponentCount(Shader::Attribute::TextureCoordinate2D));
+	}
 
 	LOG_INFO("OpenGL::Mesh: '{}' with MeshID: {} loaded into OpenGL with VAO: {}", pMesh.mName, pMesh.getID(), newMesh->mVAO.getHandle());
 

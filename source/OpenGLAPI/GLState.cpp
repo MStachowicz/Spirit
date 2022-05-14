@@ -15,6 +15,7 @@ GLState::GLState()
     , mCullFacesType(GLType::CullFacesType::Back)
     , mFrontFaceOrientation(GLType::FrontFaceOrientation::CounterClockwise)
     , mWindowClearColour{0.0f, 0.0f, 0.0f, 1.0f}
+    , mPolygonMode(GLType::PolygonMode::Fill)
 {
     toggleDepthTest(mDepthTest);
     if (mDepthTest)
@@ -111,6 +112,13 @@ bool GLState::validateState()
         static std::array<float, 4> clearColour;
         glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColour.data());
         if (clearColour != mWindowClearColour)
+            return false;
+    }
+
+    { // Check polygon mode
+        static int polygonMode;
+        glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
+        if (convert(mPolygonMode) != polygonMode)
             return false;
     }
 
@@ -281,6 +289,12 @@ void GLState::setClearColour(const std::array<float, 4> &pColour)
     glClearColor(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2], mWindowClearColour[3]);
 }
 
+void GLState::setPolygonMode(const GLType::PolygonMode& pPolygonMode)
+{
+    mPolygonMode = pPolygonMode;
+    glPolygonMode(GL_FRONT_AND_BACK, GLType::convert(pPolygonMode));
+}
+
 namespace GLData
 {
     void VAO::generate()
@@ -317,6 +331,17 @@ namespace GLData
         glDeleteBuffers(1, &mHandle);
         mInitialised = false;
     }
+    void VBO::pushData(const std::vector<float>& pData, const int& attributeIndex, const int& attributeSize)
+    {
+        ZEPHYR_ASSERT(mInitialised, "Initialise VBO before calling pushData.");
+
+        glBufferData(GL_ARRAY_BUFFER, pData.size() * sizeof(float), &pData.front(), GL_STATIC_DRAW);
+
+        // const GLint attributeIndex = static_cast<GLint>(Shader::getAttributeLocation(pAttribute));
+        // const GLint attributeComponentCount = static_cast<GLint>(Shader::getAttributeComponentCount(pAttribute));
+        glVertexAttribPointer(attributeIndex, attributeSize, GL_FLOAT, GL_FALSE, attributeSize * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(attributeIndex);
+    }
     void EBO::generate()
     {
         ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated EBO")
@@ -327,6 +352,10 @@ namespace GLData
     {
         ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before bind, call generate before bind");
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
+    }
+    void EBO::pushData(const std::vector<int>& pIndexData)
+    {
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndexData.size() * sizeof(int), &pIndexData.front(), GL_STATIC_DRAW);
     }
     void EBO::release()
     {
@@ -605,6 +634,19 @@ namespace GLType
             case FrontFaceOrientation::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown FrontFaceOrientation requested");
+                return 0;
+        }
+    }
+    int convert(const PolygonMode& pPolygonMode)
+    {
+        switch (pPolygonMode)
+        {
+            case PolygonMode::Point: return GL_POINT;
+            case PolygonMode::Line:  return GL_LINE;
+            case PolygonMode::Fill:  return GL_FILL;
+            case PolygonMode::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown PolygonMode requested");
                 return 0;
         }
     }

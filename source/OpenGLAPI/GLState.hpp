@@ -98,16 +98,32 @@ namespace GLType
         "Clockwise",
         "CounterClockwise"};
 
+    // Polygon rasterization mode
+    // Vertices are marked as boundary/non-boundary with an edge flag generated internally by OpenGL when it decomposes triangle stips and fans.
+    enum class PolygonMode
+    {
+        Point, // Polygon vertices that are marked as the start of a boundary edge are drawn as points. Point attributes such as GL_POINT_SIZE and GL_POINT_SMOOTH control the rasterization of the points.
+        Line,  // Boundary edges of the polygon are drawn as line segments. Line attributes such as GL_LINE_WIDTH and GL_LINE_SMOOTH control the rasterization of the lines.
+        Fill,  // The interior of the polygon is filled. Polygon attributes such as GL_POLYGON_SMOOTH control the rasterization of the polygon. (Default OpenGL setting).
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(PolygonMode::Count)> polygonModeTypes{
+        "Point",
+        "Line",
+        "Fill"};
+
     inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
     inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
     inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
-    inline std::string toString(const CullFacesType& pCullFacesType)                 { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
+    inline std::string toString(const CullFacesType& pCullFacesType)                { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
     inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)  { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
+    inline std::string toString(const PolygonMode& pPolygonMode)                    { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
 
     int convert(const DepthTestType& pDepthTestType);
     int convert(const BlendFactorType& pBlendFactorType);
     int convert(const CullFacesType& pCullFacesType);
     int convert(const FrontFaceOrientation& pFrontFaceOrientation);
+    int convert(const PolygonMode& pPolygonMode);
 }
 
 // Wraps OpenGL data types that hold GPU data. Each type follows the same class structure:
@@ -136,6 +152,7 @@ namespace GLData
 	{
 		void generate();
 		void bind() const;
+        void pushData(const std::vector<float>& pData, const int& attributeIndex, const int& attributeSize);
 		void release();
 	private:
 		bool mInitialised 		= false;
@@ -149,6 +166,7 @@ namespace GLData
 		void generate();
 		void bind() const;
 		void release();
+        void pushData(const std::vector<int>& pIndexData);
 		unsigned int getHandle() { return mHandle; };
 	private:
 		bool mInitialised 		= false;
@@ -249,6 +267,10 @@ public:
 
     // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
     void setClearColour(const std::array<float, 4>& pColour);
+    // Controls the interpretation of polygons for rasterization.
+    // pPolygonMode: Specifies how polygons will be rasterized.
+    // Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
+    void setPolygonMode(const GLType::PolygonMode& pPolygonMode);
 
     // Outputs the current GLState with options to change flags.
     void renderImGui();
@@ -266,4 +288,5 @@ private:
     GLType::FrontFaceOrientation mFrontFaceOrientation;
 
     std::array<float, 4> mWindowClearColour;
+    GLType::PolygonMode mPolygonMode;
 };

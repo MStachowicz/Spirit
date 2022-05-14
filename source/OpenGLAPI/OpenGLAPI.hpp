@@ -68,10 +68,6 @@ private:
 	// Recursively draw the OpenGLMesh and all its children.
 	void draw(const OpenGLMesh& pMesh);
 
-	// Pushes the Mesh attribute to a GPU using a VBO. Returns the VBO generated.
-	template <class T>
-	std::optional<GLData::VBO> bufferAttributeData(const std::vector<T> &pData, const Shader::Attribute& pAttribute);
-
 	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
 
