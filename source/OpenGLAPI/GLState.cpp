@@ -16,6 +16,7 @@ GLState::GLState()
     , mFrontFaceOrientation(GLType::FrontFaceOrientation::CounterClockwise)
     , mWindowClearColour{0.0f, 0.0f, 0.0f, 1.0f}
     , mPolygonMode(GLType::PolygonMode::Fill)
+    , mActiveTextureUnit(0)
 {
     toggleDepthTest(mDepthTest);
     if (mDepthTest)
@@ -33,6 +34,8 @@ GLState::GLState()
     }
 
     setClearColour(mWindowClearColour);
+    setPolygonMode(mPolygonMode);
+    setActiveTextureUnit(mActiveTextureUnit);
 
     ZEPHYR_ASSERT(validateState(), "GLState is inconsistant with actual OpenGL state.");
 }
@@ -60,6 +63,12 @@ GLState& GLState::operator=(const GLState& pOther)
 
     if (mWindowClearColour != pOther.mWindowClearColour)
         setClearColour(pOther.mWindowClearColour);
+
+    if (mPolygonMode != pOther.mPolygonMode)
+        setPolygonMode(pOther.mPolygonMode);
+
+    if (mActiveTextureUnit != pOther.mActiveTextureUnit)
+        setActiveTextureUnit(pOther.mActiveTextureUnit);
 
     ZEPHYR_ASSERT(validateState(), "Copying GLState failed, there are inconsistencies between OpenGL state.");
     return *this;
@@ -119,6 +128,13 @@ bool GLState::validateState()
         static int polygonMode;
         glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
         if (convert(mPolygonMode) != polygonMode)
+            return false;
+    }
+
+    { // Check active texture unit
+        static int activeTextureUnit;
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTextureUnit);
+        if (GL_TEXTURE0 + mActiveTextureUnit != activeTextureUnit)
             return false;
     }
 
@@ -293,6 +309,13 @@ void GLState::setPolygonMode(const GLType::PolygonMode& pPolygonMode)
 {
     mPolygonMode = pPolygonMode;
     glPolygonMode(GL_FRONT_AND_BACK, GLType::convert(pPolygonMode));
+}
+
+void GLState::setActiveTextureUnit(const int& pTextureUnitPosition)
+{
+    mActiveTextureUnit = pTextureUnitPosition;
+    glActiveTexture(GL_TEXTURE0 + pTextureUnitPosition);
+    // GL_INVALID_ENUM is generated if texture is not one of GL_TEXTUREi, where i ranges from zero to the value of GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS minus one.
 }
 
 void GLState::drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)

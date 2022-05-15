@@ -305,6 +305,9 @@ public:
     // Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
     void setPolygonMode(const GLType::PolygonMode& pPolygonMode);
 
+    // Selects active texture unit subsequent texture state calls will affect. The number of texture units an implementation supports is implementation dependent, but must be at least 80.
+    void setActiveTextureUnit(const int& pUnitPosition);
+
     // Render primitives from array data
     // pPrimitiveMode: What kind of primitives to render.
     // pCount: Number of elements to be rendered.
@@ -335,4 +338,6 @@ private:
 
     std::array<float, 4> mWindowClearColour;
     GLType::PolygonMode mPolygonMode;
+
+    int mActiveTextureUnit;
 };

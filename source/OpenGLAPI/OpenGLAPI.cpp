@@ -127,13 +127,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			}
 			ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
 
-			glActiveTexture(GL_TEXTURE0);
+			mGLState.setActiveTextureUnit(0);
 			if (pDrawCall.mTexture1.has_value())
 				getTexture(pDrawCall.mTexture1.value()).bind();
 			else
 				getTexture(mMissingTextureID).bind();
 
-			glActiveTexture(GL_TEXTURE1); // || GL_TEXTURE0 + 1
+			mGLState.setActiveTextureUnit(1);
 			if (pDrawCall.mTexture2.has_value())
 				getTexture(pDrawCall.mTexture2.value()).bind();
 			else
@@ -151,13 +151,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			shader = &mShaders[mLightMapIndex];
 			shader->use();
 
-			glActiveTexture(GL_TEXTURE0);
+			mGLState.setActiveTextureUnit(0);
 			if (pDrawCall.mDiffuseTextureID.has_value())
 				getTexture(pDrawCall.mDiffuseTextureID.value()).bind();
 			else
 				getTexture(mMissingTextureID).bind();
 
-			glActiveTexture(GL_TEXTURE1); // || GL_TEXTURE0 + 1
+			mGLState.setActiveTextureUnit(1);
 			if (pDrawCall.mSpecularTextureID.has_value())
 				getTexture(pDrawCall.mSpecularTextureID.value()).bind();
 			else
@@ -282,7 +282,7 @@ void OpenGLAPI::postDraw()
 		mGLState.toggleDepthTest(true);
 		mGLState.setDepthTestType(GLType::DepthTestType::LessEqual);
 
-		glActiveTexture(GL_TEXTURE0);
+		mGLState.setActiveTextureUnit(0);
 		mCubeMaps.front().bind();
 		draw(getGLMesh(mSkyBoxMeshID));
 
@@ -302,7 +302,7 @@ void OpenGLAPI::postDraw()
 		ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "mMainScreenFBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 
 		mShaders[mScreenTextureIndex].use();
-		glActiveTexture(GL_TEXTURE0);
+		mGLState.setActiveTextureUnit(0);
 		mMainScreenFBO.getColourTexture().bind();
 		draw(getGLMesh(mScreenQuad));
 
