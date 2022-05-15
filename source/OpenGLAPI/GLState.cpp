@@ -295,6 +295,23 @@ void GLState::setPolygonMode(const GLType::PolygonMode& pPolygonMode)
     glPolygonMode(GL_FRONT_AND_BACK, GLType::convert(pPolygonMode));
 }
 
+void GLState::drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)
+{
+    glDrawElements(convert(pPrimitiveMode), pCount, GL_UNSIGNED_INT, 0);
+    //GL_INVALID_ENUM is generated if mode is not an accepted value.
+    //GL_INVALID_VALUE is generated if count is negative.
+    //GL_INVALID_OPERATION is generated if a geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.
+    //GL_INVALID_OPERATION is generated if a non-zero buffer object name is bound to an enabled array or the element array and the buffer object's data store is currently mapped.
+}
+void GLState::drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)
+{
+    glDrawArrays(convert(pPrimitiveMode), 0, pCount);
+    //GL_INVALID_ENUM is generated if mode is not an accepted value.
+    //GL_INVALID_VALUE is generated if count is negative.
+    //GL_INVALID_OPERATION is generated if a non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped.
+    //GL_INVALID_OPERATION is generated if a geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.
+}
+
 namespace GLData
 {
     void VAO::generate()
@@ -647,6 +664,28 @@ namespace GLType
             case PolygonMode::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown PolygonMode requested");
+                return 0;
+        }
+    }
+    int convert(const PrimitiveMode& pPrimitiveMode)
+    {
+        switch (pPrimitiveMode)
+        {
+            case PrimitiveMode::Points:                 return GL_POINTS;
+            case PrimitiveMode::LineStrip:              return GL_LINE_STRIP;
+            case PrimitiveMode::LineLoop:               return GL_LINE_LOOP;
+            case PrimitiveMode::Lines:                  return GL_LINES;
+            case PrimitiveMode::LineStripAdjacency:     return GL_LINE_STRIP_ADJACENCY;
+            case PrimitiveMode::LinesAdjacency:         return GL_LINES_ADJACENCY;
+            case PrimitiveMode::TriangleStrip:          return GL_TRIANGLE_STRIP;
+            case PrimitiveMode::TriangleFan:            return GL_TRIANGLE_FAN;
+            case PrimitiveMode::Triangles:              return GL_TRIANGLES;
+            case PrimitiveMode::TriangleStripAdjacency: return GL_TRIANGLE_STRIP_ADJACENCY;
+            case PrimitiveMode::TrianglesAdjacency:     return GL_TRIANGLES_ADJACENCY;
+            case PrimitiveMode::Patches:                return GL_PATCHES;
+            case PrimitiveMode::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown PrimitiveMode requested");
                 return 0;
         }
     }

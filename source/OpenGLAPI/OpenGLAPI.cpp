@@ -213,9 +213,9 @@ void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 		pMesh.mVAO.bind();
 
 		if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Indices)
-			glDrawElements(pMesh.mDrawMode, static_cast<GLsizei>(pMesh.mDrawSize), GL_UNSIGNED_INT, 0);
+			mGLState.drawElements(pMesh.mDrawMode, pMesh.mDrawSize);
 		else if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Array)
-			glDrawArrays(pMesh.mDrawMode, 0, static_cast<GLsizei>(pMesh.mDrawSize));
+			mGLState.drawArrays(pMesh.mDrawMode, pMesh.mDrawSize);
 	}
 
 	for (const auto& childMesh : pMesh.mChildMeshes)
@@ -407,7 +407,7 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 	}
 	ZEPHYR_ASSERT(newMesh != nullptr, "newMesh not initialised successfully");
 
-	newMesh->mDrawMode = GL_TRIANGLES; // OpenGLAPI only supports GL_TRIANGLES at this revision
+	newMesh->mDrawMode = GLType::PrimitiveMode::Triangles; // OpenGLAPI only supports Triangles at this revision
 
 	if (!pMesh.mIndices.empty())
 	{
@@ -417,8 +417,8 @@ void OpenGLAPI::initialiseMesh(const Mesh& pMesh)
 	else
 	{
 		newMesh->mDrawMethod = OpenGLMesh::DrawMethod::Array;
-		ZEPHYR_ASSERT(newMesh->mDrawMode == GL_TRIANGLES, "Only GL_TRIANGLES is supported")
-		newMesh->mDrawSize = static_cast<int>(pMesh.mVertices.size()) / 3; // Divide verts by 3 as we draw the vertices by triangle count.
+		ZEPHYR_ASSERT(newMesh->mDrawMode == GLType::PrimitiveMode::Triangles, "Only PrimitiveMode::Triangles is supported")
+		newMesh->mDrawSize = static_cast<int>(pMesh.mVertices.size()) / 3; // Divide verts by 3 as we draw the vertices by Triangles count.
 	}
 
 	newMesh->mVAO.generate();
@@ -506,18 +506,6 @@ void OpenGLAPI::initialiseCubeMap(const CubeMapTexture& pCubeMap)
 
 	mCubeMaps.push_back(newCubeMap);
 	LOG_INFO("OpenGL::CubeMapTexture '{}' loaded given VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
-}
-
-int OpenGLAPI::getPolygonMode(const DrawMode& pDrawMode)
-{
-	switch (pDrawMode)
-	{
-		case DrawMode::Fill: 		return GL_FILL;
-		case DrawMode::Wireframe: 	return GL_LINE;
-		default:
-   			ZEPHYR_ASSERT(false, "DrawMode does not have a conversion to GLFW type.");
-			return -1;
-	}
 }
 
 GladGLContext* OpenGLAPI::initialiseGLAD()

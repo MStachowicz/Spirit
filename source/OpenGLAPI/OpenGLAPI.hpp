@@ -51,7 +51,7 @@ private:
 	{
 		enum class DrawMethod { Indices, Array, Null };
 
-		unsigned int mDrawMode = 0;
+		GLType::PrimitiveMode mDrawMode = GLType::PrimitiveMode::Triangles;
 		int mDrawSize = -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
 		DrawMethod mDrawMethod = DrawMethod::Null;
 		std::vector<OpenGLMesh> mChildMeshes;
@@ -61,7 +61,6 @@ private:
 		std::array<std::optional<GLData::VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
 	};
 
-	int getPolygonMode(const DrawMode& pDrawMode);
 	// Get all the data required to draw this mesh in its default configuration.
 	const OpenGLMesh& getGLMesh(const MeshID& pMeshID) const;
 	const GLData::Texture& getTexture(const TextureID& pTextureID) const;

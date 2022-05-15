@@ -112,18 +112,51 @@ namespace GLType
         "Line",
         "Fill"};
 
+    // Interpretation scheme used to determine what a stream of vertices represents when being rendered.
+    enum class PrimitiveMode
+    {
+        Points,
+        LineStrip,
+        LineLoop,
+        Lines,
+        LineStripAdjacency,
+        LinesAdjacency,
+        TriangleStrip,
+        TriangleFan,
+        Triangles,
+        TriangleStripAdjacency,
+        TrianglesAdjacency,
+        Patches,
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(PrimitiveMode::Count)> primitiveModeTypes{
+        "Points"
+        "LineStrip"
+        "LineLoop"
+        "Lines"
+        "LineStripAdjacency"
+        "LinesAdjacency"
+        "TriangleStrip"
+        "TriangleFan"
+        "Triangles"
+        "TriangleStripAdjacency"
+        "TrianglesAdjacency"
+        "Patches"};
+
     inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
     inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
     inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
     inline std::string toString(const CullFacesType& pCullFacesType)                { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
     inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)  { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
     inline std::string toString(const PolygonMode& pPolygonMode)                    { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
+    inline std::string toString(const PrimitiveMode& pPrimitiveMode)                { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
 
     int convert(const DepthTestType& pDepthTestType);
     int convert(const BlendFactorType& pBlendFactorType);
     int convert(const CullFacesType& pCullFacesType);
     int convert(const FrontFaceOrientation& pFrontFaceOrientation);
     int convert(const PolygonMode& pPolygonMode);
+    int convert(const PrimitiveMode& pPrimitiveMode);
 }
 
 // Wraps OpenGL data types that hold GPU data. Each type follows the same class structure:
@@ -271,6 +304,19 @@ public:
     // pPolygonMode: Specifies how polygons will be rasterized.
     // Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
     void setPolygonMode(const GLType::PolygonMode& pPolygonMode);
+
+    // Render primitives from array data
+    // pPrimitiveMode: What kind of primitives to render.
+    // pCount: Number of elements to be rendered.
+    // Specifies multiple geometric primitives with very few subroutine calls.
+    // Instead of passing each individual vertex, normal, texture coordinate... you can pre-specify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
+    void drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount);
+    // Render primitives from array data
+    // pPrimitiveMode: What kind of primitives to render.
+    // pCount: Number of indices to be rendered.
+    // Specifies multiple geometric primitives with very few subroutine calls.
+    // Instead of passing each individual vertex, normal, texture coordinate... you can pre-specify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
+    void drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount);
 
     // Outputs the current GLState with options to change flags.
     void renderImGui();
