@@ -143,6 +143,18 @@ namespace GLType
         "TrianglesAdjacency"
         "Patches"};
 
+    enum class FramebufferTarget
+    {
+        DrawFramebuffer,
+        ReadFramebuffer,
+        Framebuffer,
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(FramebufferTarget::Count)> FrameBufferTargetTypes{
+        "DrawFramebuffer",
+        "ReadFramebuffer",
+        "Framebuffer"};
+
     inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
     inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
     inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
@@ -150,6 +162,7 @@ namespace GLType
     inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)  { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
     inline std::string toString(const PolygonMode& pPolygonMode)                    { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
     inline std::string toString(const PrimitiveMode& pPrimitiveMode)                { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
+    inline std::string toString(const FramebufferTarget& pFramebufferTarget)        { return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)]; }
 
     int convert(const DepthTestType& pDepthTestType);
     int convert(const BlendFactorType& pBlendFactorType);
@@ -157,8 +170,10 @@ namespace GLType
     int convert(const FrontFaceOrientation& pFrontFaceOrientation);
     int convert(const PolygonMode& pPolygonMode);
     int convert(const PrimitiveMode& pPrimitiveMode);
+    int convert(const FramebufferTarget& pFramebufferTarget);
 }
 
+class GLState;
 // Wraps OpenGL data types that hold GPU data. Each type follows the same class structure:
 // generate() - Creates a handle that data can be bound to.
 // bind()     - Makes the data 'current'
@@ -251,16 +266,16 @@ namespace GLData
     struct FBO
     {
         void generate();
-		void bind() const;
+		void bind(GLState& pGLState) const;
         void release();
 		unsigned int getHandle() { return mHandle; };
         Texture& getColourTexture();
         void clearBuffers();
 
-        void resize(const int& pWidth, const int& pHeight);
-        void attachColourBuffer(const int& pWidth, const int& pHeight);
+        void resize(const int& pWidth, const int& pHeight, GLState& pGLState);
+        void attachColourBuffer(const int& pWidth, const int& pHeight, GLState& pGLState);
         void detachColourBuffer();
-        void attachDepthBuffer(const int& pWidth, const int& pHeight);
+        void attachDepthBuffer(const int& pWidth, const int& pHeight, GLState& pGLState);
         void detachDepthBuffer();
 	private:
         std::optional<Texture> mColourAttachment    = std::nullopt;
@@ -321,6 +336,20 @@ public:
     // Instead of passing each individual vertex, normal, texture coordinate... you can pre-specify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
     void drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount);
 
+    // Bind a FBO to a framebuffer target
+    void bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle);
+    // Unbind any current framebuffer, this binds the default OpenGL framebuffer.
+    void unbindFramebuffer();
+    void checkFramebufferBufferComplete();
+
+    // Set the global viewport
+    // Specify the width and height of the viewport. When a context is first attached to a window, width and height are set to the dimensions of that window.
+    // The viewport specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
+    // Let x nd y nd be normalized device coordinates. Then the window coordinates x w y w are computed as follows:
+    // x w = x nd + 1 ⁢ width 2 + x
+    // y w = y nd + 1 ⁢ height 2 + y
+    void setViewport(const int& pWidth, const int& pHeight);
+
     // Outputs the current GLState with options to change flags.
     void renderImGui();
 
@@ -340,4 +369,12 @@ private:
     GLType::PolygonMode mPolygonMode;
 
     int mActiveTextureUnit;
+    unsigned int mActiveFramebuffer;
+
+    // Index data:
+    // 0: Position X (0,0 = bottom-left)
+    // 1: Position Y (0,0 = bottom-left)
+    // 2: Size X
+    // 3: Size Y
+    std::array<int, 4> mViewport;
 };

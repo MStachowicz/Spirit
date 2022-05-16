@@ -17,6 +17,7 @@ GLState::GLState()
     , mWindowClearColour{0.0f, 0.0f, 0.0f, 1.0f}
     , mPolygonMode(GLType::PolygonMode::Fill)
     , mActiveTextureUnit(0)
+    , mViewport{0, 0, 0, 0} // Set in constructor
 {
     toggleDepthTest(mDepthTest);
     if (mDepthTest)
@@ -36,6 +37,11 @@ GLState::GLState()
     setClearColour(mWindowClearColour);
     setPolygonMode(mPolygonMode);
     setActiveTextureUnit(mActiveTextureUnit);
+
+    {// Set Viewport
+        // glviewport is set up by the window created before GL is initialised so we query it directly and assign to our GLState tracked member mViewport
+        glGetIntegerv(GL_VIEWPORT, mViewport.data());
+    }
 
     ZEPHYR_ASSERT(validateState(), "GLState is inconsistant with actual OpenGL state.");
 }
@@ -70,6 +76,9 @@ GLState& GLState::operator=(const GLState& pOther)
     if (mActiveTextureUnit != pOther.mActiveTextureUnit)
         setActiveTextureUnit(pOther.mActiveTextureUnit);
 
+    if (mViewport != pOther.mViewport)
+        setViewport(pOther.mViewport[0], pOther.mViewport[1]);
+
     ZEPHYR_ASSERT(validateState(), "Copying GLState failed, there are inconsistencies between OpenGL state.");
     return *this;
 }
@@ -99,7 +108,6 @@ bool GLState::validateState()
         glGetIntegerv(GL_BLEND_DST, &destinationBlendFactor);
         if (convert(mDestinationBlendFactor) != destinationBlendFactor)
             return false;
-
     }
 
     {// Check cull flags match
@@ -135,6 +143,13 @@ bool GLState::validateState()
         static int activeTextureUnit;
         glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTextureUnit);
         if (GL_TEXTURE0 + mActiveTextureUnit != activeTextureUnit)
+            return false;
+    }
+
+    {// Check viewport size
+        static std::array<int, 4> viewportDimensions;
+        glGetIntegerv(GL_VIEWPORT, viewportDimensions.data());
+        if (mViewport != viewportDimensions)
             return false;
     }
 
@@ -335,6 +350,32 @@ void GLState::drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int&
     //GL_INVALID_OPERATION is generated if a geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.
 }
 
+void GLState::bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle)
+{
+    mActiveFramebuffer = pFBOHandle;
+    glBindFramebuffer(convert(pFramebufferTargetType), pFBOHandle);
+    //GL_INVALID_ENUM is generated if target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER.
+    //GL_INVALID_OPERATION is generated if framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers.
+}
+void GLState::unbindFramebuffer()
+{
+    mActiveFramebuffer = 0;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+void GLState::checkFramebufferBufferComplete()
+{
+    ZEPHYR_ASSERT(mActiveFramebuffer != 0, "Checking default framebuffer. Default FBO is always valid.");
+    ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
+}
+
+void GLState::setViewport(const int& pWidth, const int& pHeight)
+{
+    mViewport[2] = pWidth;
+    mViewport[3] = pHeight;
+    glViewport(0, 0, pWidth, pHeight);
+    //GL_INVALID_VALUE is generated if either width or height is negative.
+}
+
 namespace GLData
 {
     void VAO::generate()
@@ -426,13 +467,10 @@ namespace GLData
         glGenFramebuffers(1, &mHandle);
         mInitialised = true;
     }
-    void FBO::bind() const
+    void FBO::bind(GLState& pGLState) const
     {
         ZEPHYR_ASSERT(mInitialised, "FBO has not been generated before bind, call generate before bind");
-        ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "FrameBuffer not complete. Fix before calling bind.");
-
-        glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
-        // It is also possible to bind a framebuffer to a read or write target specifically by binding to GL_READ_FRAMEBUFFER or GL_DRAW_FRAMEBUFFER respectively.
+        pGLState.bindFramebuffer(GLType::FramebufferTarget::Framebuffer, mHandle);
     }
     void FBO::release()
     {
@@ -458,30 +496,26 @@ namespace GLData
     {
         glClear(mBufferClearBitField);
     }
-    void FBO::resize(const int& pWidth, const int& pHeight)
+    void FBO::resize(const int& pWidth, const int& pHeight, GLState& pGLState)
     {
         if (mColourAttachment.has_value())
         {
             detachColourBuffer();
-            attachColourBuffer(pWidth, pHeight);
+            attachColourBuffer(pWidth, pHeight, pGLState);
         }
         if (mDepthAttachment.has_value())
         {
             detachDepthBuffer();
-            attachDepthBuffer(pWidth, pHeight);
+            attachDepthBuffer(pWidth, pHeight, pGLState);
         }
-
-        bind();
-        glViewport(0, 0, pWidth, pHeight);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void FBO::attachColourBuffer(const int& pWidth, const int& pHeight)
+    void FBO::attachColourBuffer(const int& pWidth, const int& pHeight, GLState& pGLState)
     {
         ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching texture");
         ZEPHYR_ASSERT(!mColourAttachment.has_value(), "FBO already has an attached texture");
 
-        bind();
+        bind(pGLState);
         mColourAttachment = { Texture::Type::Texture2D };
         mColourAttachment->generate();
         mColourAttachment->bind();
@@ -522,12 +556,12 @@ namespace GLData
         mColourAttachment.reset();
         mBufferClearBitField &= ~GL_COLOR_BUFFER_BIT;
     }
-    void FBO::attachDepthBuffer(const int& pWidth, const int& pHeight)
+    void FBO::attachDepthBuffer(const int& pWidth, const int& pHeight, GLState& pGLState)
     {
         ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching buffer");
         ZEPHYR_ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached buffer");
 
-        bind();
+        bind(pGLState);
         mDepthAttachment = RBO();
         mDepthAttachment->generate();
         mDepthAttachment->bind();
@@ -709,6 +743,20 @@ namespace GLType
             case PrimitiveMode::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown PrimitiveMode requested");
+                return 0;
+        }
+    }
+
+    int convert(const FramebufferTarget& pFramebufferTarget)
+    {
+        switch (pFramebufferTarget)
+        {
+            case FramebufferTarget::DrawFramebuffer: return GL_DRAW_FRAMEBUFFER;
+            case FramebufferTarget::ReadFramebuffer: return GL_READ_FRAMEBUFFER;
+            case FramebufferTarget::Framebuffer:     return GL_FRAMEBUFFER;
+            case FramebufferTarget::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown FramebufferTarget requested");
                 return 0;
         }
     }

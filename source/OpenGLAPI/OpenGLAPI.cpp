@@ -47,14 +47,8 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
 	mMainScreenFBO.generate();
-	mMainScreenFBO.attachColourBuffer(mWindow.mWidth, mWindow.mHeight);
-	mMainScreenFBO.attachDepthBuffer(mWindow.mWidth, mWindow.mHeight);
-
-	// Set the initial viewport size for the FBO
-	mMainScreenFBO.bind();
-	glViewport(0, 0, mWindow.mWidth, mWindow.mHeight);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	mMainScreenFBO.attachColourBuffer(mWindow.mWidth, mWindow.mHeight, mGLState);
+	mMainScreenFBO.attachDepthBuffer(mWindow.mWidth, mWindow.mHeight, mGLState);
 
 	OpenGLInstances.push_back(this);
 	LOG_INFO("Constructed new OpenGLAPI instance");
@@ -75,8 +69,9 @@ OpenGLAPI::~OpenGLAPI()
 
 void OpenGLAPI::preDraw()
 {
-	mMainScreenFBO.bind();
+	mMainScreenFBO.bind(mGLState);
 	mMainScreenFBO.clearBuffers();
+	mGLState.checkFramebufferBufferComplete();
 
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
 
@@ -290,7 +285,7 @@ void OpenGLAPI::postDraw()
 	}
 
 	// Unbind after completing draw to ensure all subsequent actions apply to the default FBO.
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	mGLState.unbindFramebuffer();
 
 	{ // Draw the colour output to the screen.
 		// Disable culling and depth testing to draw a quad in normalised screen coordinates
@@ -298,8 +293,6 @@ void OpenGLAPI::postDraw()
 		GLState previousState = mGLState;
 		mGLState.toggleCullFaces(false);
 		mGLState.toggleDepthTest(false);
-
-		ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "mMainScreenFBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 
 		mShaders[mScreenTextureIndex].use();
 		mGLState.setActiveTextureUnit(0);
@@ -520,10 +513,11 @@ GladGLContext* OpenGLAPI::initialiseGLAD()
 
 void OpenGLAPI::onResize(const int pWidth, const int pHeight)
 {
-	mMainScreenFBO.resize(pWidth, pHeight);
+	mMainScreenFBO.resize(pWidth, pHeight, mGLState);
+	mGLState.setViewport(pWidth, pHeight);
 	mWindow.mWidth = pWidth;
 	mWindow.mHeight = pHeight;
-	mWindow.mAspectRatio = static_cast<float>(pWidth) /  static_cast<float>(pHeight);
+	mWindow.mAspectRatio = static_cast<float>(pWidth) / static_cast<float>(pHeight);
 }
 
 void OpenGLAPI::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
