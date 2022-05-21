@@ -32,7 +32,7 @@ OpenGLWindow::OpenGLWindow(const int& pMajorVersion, const int& pMinorVersion, c
     glfwWindowHint(GLFW_RESIZABLE, pResizable ? GL_TRUE : GL_FALSE);
     mHandle = glfwCreateWindow(mWidth, mHeight, "Zephyr", NULL, NULL);
     ZEPHYR_ASSERT(mHandle != nullptr, "GLFW window creation failed");
-    LOG_INFO("OpenGL {}.{} window created with resolution {}x{} ", mOpenGLMinorVersion, mOpenGLMajorVersion, mWidth, mHeight);
+    LOG_INFO("OpenGL {}.{} window created with resolution {}x{} ", mOpenGLMajorVersion, mOpenGLMinorVersion, mWidth, mHeight);
 
     activeGLFWWindows++;
     currentWindow = this;
@@ -49,8 +49,8 @@ OpenGLWindow::OpenGLWindow(const int& pMajorVersion, const int& pMinorVersion, c
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(mHandle, true);
 
-        ZEPHYR_ASSERT(mOpenGLMajorVersion == 3 && mOpenGLMinorVersion == 3, "Initialising ImGui with wrong OpenGL version string.");
-        ImGui_ImplOpenGL3_Init("#version 330");
+        const std::string openGLVersionString = "#version " + std::to_string(mOpenGLMajorVersion) + std::to_string(mOpenGLMinorVersion) + "0";
+        ImGui_ImplOpenGL3_Init(openGLVersionString.c_str());
     }
 }
 
