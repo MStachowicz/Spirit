@@ -5,9 +5,6 @@ in vec3 Normal;
 in vec2 TexCoords;
 out vec4 FragColor;
 
-struct LightMap {
-    float shininess;
-};
 struct DirLight {
     vec3 direction;
 
@@ -42,16 +39,17 @@ struct SpotLight {
     vec3 specular;
 };
 
-
-uniform vec3 viewPosition;
-uniform LightMap lightMap;
-uniform sampler2D texture0; // Diffuse texture
-uniform sampler2D texture1; // Specular texture
-
 #define NR_POINT_LIGHTS 4
 uniform DirLight dirLight;
 uniform SpotLight spotLight;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
+
+uniform vec3 viewPosition;
+uniform float shininess;
+
+uniform sampler2D texture0; // Diffuse texture
+uniform sampler2D texture1; // Specular texture
+
 
 // function prototypes
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
@@ -81,7 +79,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), lightMap.shininess);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     // combine results
     vec3 ambient = light.ambient * vec3(texture(texture0, TexCoords));
     vec3 diffuse = light.diffuse * diff * vec3(texture(texture0, TexCoords));
@@ -97,7 +95,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), lightMap.shininess);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     // attenuation
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
@@ -119,7 +117,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), lightMap.shininess);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     // attenuation
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));

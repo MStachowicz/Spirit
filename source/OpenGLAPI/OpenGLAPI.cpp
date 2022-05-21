@@ -158,7 +158,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			else
 				getTexture(mMissingTextureID).bind();
 
-			shader->setUniform("lightMap.shininess", pDrawCall.mShininess.value());
+			shader->setUniform("shininess", pDrawCall.mShininess.value());
 
 			if (pDrawCall.mTextureRepeatFactor.has_value() && (pDrawCall.mDiffuseTextureID.has_value() || pDrawCall.mSpecularTextureID.has_value()))
 				shader->setUniform("textureRepeatFactor", pDrawCall.mTextureRepeatFactor.value());
