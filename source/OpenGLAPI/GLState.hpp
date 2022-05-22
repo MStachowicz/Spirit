@@ -20,6 +20,79 @@ namespace GLType
         "Colour",
         "Depth"};
 
+    enum class DataType
+    {
+        Float, Vec2, Vec3, Vec4,
+        Double, DVec2, DVec3, DVec4,
+        Int, IVec2, IVec3, IVec4,
+        UnsignedInt, UVec2, UVec3, UVec4,
+        Bool, BVec2, BVec3, BVec4,
+        Mat2, Mat3, Mat4,
+        Mat2x3, Mat2x4, Mat3x2, Mat3x4, Mat4x2, Mat4x3,
+        Dmat2, Dmat3, Dmat4,
+        Dmat2x3, Dmat2x4, Dmat3x2, Dmat3x4, Dmat4x2, Dmat4x3,
+        Sampler1D, Sampler2D, Sampler3D,
+        SamplerCube,
+        Sampler1DShadow, Sampler2DShadow,
+        Sampler1DArray, Sampler2DArray,
+        Sampler1DArrayShadow, Sampler2DArrayShadow,
+        Sampler2DMS, Sampler2DMSArray,
+        SamplerCubeShadow,
+        SamplerBuffer,
+        Sampler2DRect,
+        Sampler2DRectShadow,
+        Isampler1D, Isampler2D, Isampler3D,
+        IsamplerCube,
+        Isampler1DArray, Isampler2DArray,
+        Isampler2DMS,
+        Isampler2DMSArray,
+        IsamplerBuffer,
+        Isampler2DRect,
+        Usampler1D, Usampler2D, Usampler3D,
+        UsamplerCube,
+        Usampler2DArray,
+        Usampler2DMS,
+        Usampler2DMSArray,
+        UsamplerBuffer,
+        Usampler2DRect,
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(GLType::DataType::Count)> DataTypes{
+        "Float", "Vec2", "Vec3", "Vec4",
+        "Double", "DVec2", "DVec3", "DVec4",
+        "Int", "IVec2", "IVec3", "IVec4",
+        "UnsignedInt", "UVec2", "UVec3", "UVec4",
+        "Bool", "BVec2", "BVec3", "BVec4",
+        "Mat2", "Mat3", "Mat4",
+        "Mat2x3", "Mat2x4", "Mat3x2", "Mat3x4", "Mat4x2", "Mat4x3",
+        "Dmat2", "Dmat3", "Dmat4",
+        "Dmat2x3", "Dmat2x4", "Dmat3x2", "Dmat3x4", "Dmat4x2", "Dmat4x3",
+        "Sampler1D", "Sampler2D", "Sampler3D",
+        "SamplerCube",
+        "Sampler1DShadow", "Sampler2DShadow",
+        "Sampler1DArray", "Sampler2DArray",
+        "Sampler1DArrayShadow", "Sampler2DArrayShadow",
+        "Sampler2DMS", "Sampler2DMSArray",
+        "SamplerCubeShadow",
+        "SamplerBuffer",
+        "Sampler2DRect",
+        "Sampler2DRectShadow",
+        "Isampler1D", "Isampler2D", "Isampler3D",
+        "IsamplerCube",
+        "Isampler1DArray", "Isampler2DArray",
+        "Isampler2DMS",
+        "Isampler2DMSArray",
+        "IsamplerBuffer",
+        "Isampler2DRect",
+        "Usampler1D", "Usampler2D", "Usampler3D",
+        "UsamplerCube",
+        "Usampler2DArray",
+        "Usampler2DMS",
+        "Usampler2DMSArray",
+        "UsamplerBuffer",
+        "Usampler2DRect"
+    };
+
     enum class DepthTestType
     {
         Always,
@@ -155,6 +228,7 @@ namespace GLType
         "ReadFramebuffer",
         "Framebuffer"};
 
+    inline std::string toString(const DataType& pDataType)                          { return DataTypes[util::toIndex(pDataType)]; }
     inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
     inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
     inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
@@ -163,6 +237,9 @@ namespace GLType
     inline std::string toString(const PolygonMode& pPolygonMode)                    { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
     inline std::string toString(const PrimitiveMode& pPrimitiveMode)                { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
     inline std::string toString(const FramebufferTarget& pFramebufferTarget)        { return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)]; }
+
+    int convert(const DataType& pDataType);
+    DataType convert(const int& pDataType);
 
     int convert(const DepthTestType& pDepthTestType);
     int convert(const BlendFactorType& pBlendFactorType);

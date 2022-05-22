@@ -666,6 +666,173 @@ namespace GLData
 
 namespace GLType
 {
+    int convert(const DataType& pDataType)
+    {
+        switch (pDataType)
+        {
+            case DataType::Float :                return GL_FLOAT;
+            case DataType::Vec2 :                 return GL_FLOAT_VEC2;
+            case DataType::Vec3 :                 return GL_FLOAT_VEC3;
+            case DataType::Vec4 :                 return GL_FLOAT_VEC4;
+            case DataType::Double :               return GL_DOUBLE;
+            case DataType::DVec2 :                return GL_DOUBLE_VEC2;
+            case DataType::DVec3 :                return GL_DOUBLE_VEC3;
+            case DataType::DVec4 :                return GL_DOUBLE_VEC4;
+            case DataType::Int :                  return GL_INT;
+            case DataType::IVec2 :                return GL_INT_VEC2;
+            case DataType::IVec3 :                return GL_INT_VEC3;
+            case DataType::IVec4 :                return GL_INT_VEC4;
+            case DataType::UnsignedInt :          return GL_UNSIGNED_INT;
+            case DataType::UVec2 :                return GL_UNSIGNED_INT_VEC2;
+            case DataType::UVec3 :                return GL_UNSIGNED_INT_VEC3;
+            case DataType::UVec4 :                return GL_UNSIGNED_INT_VEC4;
+            case DataType::Bool :                 return GL_BOOL;
+            case DataType::BVec2 :                return GL_BOOL_VEC2;
+            case DataType::BVec3 :                return GL_BOOL_VEC3;
+            case DataType::BVec4 :                return GL_BOOL_VEC4;
+            case DataType::Mat2 :                 return GL_FLOAT_MAT2;
+            case DataType::Mat3 :                 return GL_FLOAT_MAT3;
+            case DataType::Mat4 :                 return GL_FLOAT_MAT4;
+            case DataType::Mat2x3 :               return GL_FLOAT_MAT2x3;
+            case DataType::Mat2x4 :               return GL_FLOAT_MAT2x4;
+            case DataType::Mat3x2 :               return GL_FLOAT_MAT3x2;
+            case DataType::Mat3x4 :               return GL_FLOAT_MAT3x4;
+            case DataType::Mat4x2 :               return GL_FLOAT_MAT4x2;
+            case DataType::Mat4x3 :               return GL_FLOAT_MAT4x3;
+            case DataType::Dmat2 :                return GL_DOUBLE_MAT2;
+            case DataType::Dmat3 :                return GL_DOUBLE_MAT3;
+            case DataType::Dmat4 :                return GL_DOUBLE_MAT4;
+            case DataType::Dmat2x3 :              return GL_DOUBLE_MAT2x3;
+            case DataType::Dmat2x4 :              return GL_DOUBLE_MAT2x4;
+            case DataType::Dmat3x2 :              return GL_DOUBLE_MAT3x2;
+            case DataType::Dmat3x4 :              return GL_DOUBLE_MAT3x4;
+            case DataType::Dmat4x2 :              return GL_DOUBLE_MAT4x2;
+            case DataType::Dmat4x3 :              return GL_DOUBLE_MAT4x3;
+            case DataType::Sampler1D :            return GL_SAMPLER_1D;
+            case DataType::Sampler2D :            return GL_SAMPLER_2D;
+            case DataType::Sampler3D :            return GL_SAMPLER_3D;
+            case DataType::SamplerCube :          return GL_SAMPLER_CUBE;
+            case DataType::Sampler1DShadow :      return GL_SAMPLER_1D_SHADOW;
+            case DataType::Sampler2DShadow :      return GL_SAMPLER_2D_SHADOW;
+            case DataType::Sampler1DArray :       return GL_SAMPLER_1D_ARRAY;
+            case DataType::Sampler2DArray :       return GL_SAMPLER_2D_ARRAY;
+            case DataType::Sampler1DArrayShadow : return GL_SAMPLER_1D_ARRAY_SHADOW;
+            case DataType::Sampler2DArrayShadow : return GL_SAMPLER_2D_ARRAY_SHADOW;
+            case DataType::Sampler2DMS :          return GL_SAMPLER_2D_MULTISAMPLE;
+            case DataType::Sampler2DMSArray :     return GL_SAMPLER_2D_MULTISAMPLE_ARRAY;
+            case DataType::SamplerCubeShadow :    return GL_SAMPLER_CUBE_SHADOW;
+            case DataType::SamplerBuffer :        return GL_SAMPLER_BUFFER;
+            case DataType::Sampler2DRect :        return GL_SAMPLER_2D_RECT;
+            case DataType::Sampler2DRectShadow :  return GL_SAMPLER_2D_RECT_SHADOW;
+            case DataType::Isampler1D :           return GL_INT_SAMPLER_1D;
+            case DataType::Isampler2D :           return GL_INT_SAMPLER_2D;
+            case DataType::Isampler3D :           return GL_INT_SAMPLER_3D;
+            case DataType::IsamplerCube :         return GL_INT_SAMPLER_CUBE;
+            case DataType::Isampler1DArray :      return GL_INT_SAMPLER_1D_ARRAY;
+            case DataType::Isampler2DArray :      return GL_INT_SAMPLER_2D_ARRAY;
+            case DataType::Isampler2DMS :         return GL_INT_SAMPLER_2D_MULTISAMPLE;
+            case DataType::Isampler2DMSArray :    return GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
+            case DataType::IsamplerBuffer :       return GL_INT_SAMPLER_BUFFER;
+            case DataType::Isampler2DRect :       return GL_INT_SAMPLER_2D_RECT;
+            case DataType::Usampler1D :           return GL_UNSIGNED_INT_SAMPLER_1D;
+            case DataType::Usampler2D :           return GL_UNSIGNED_INT_SAMPLER_2D;
+            case DataType::Usampler3D :           return GL_UNSIGNED_INT_SAMPLER_3D;
+            case DataType::UsamplerCube :         return GL_UNSIGNED_INT_SAMPLER_CUBE;
+            case DataType::Usampler2DArray :      return GL_UNSIGNED_INT_SAMPLER_2D_ARRAY;
+            case DataType::Usampler2DMS :         return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE;
+            case DataType::Usampler2DMSArray :    return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
+            case DataType::UsamplerBuffer :       return GL_UNSIGNED_INT_SAMPLER_BUFFER;
+            case DataType::Usampler2DRect :       return GL_UNSIGNED_INT_SAMPLER_2D_RECT;
+            case DataType::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                return 0;
+        }
+    }
+
+    DataType convert(const int& pDataType)
+    {
+        switch (pDataType)
+        {
+            case GL_FLOAT :                                     return DataType::Float;
+            case GL_FLOAT_VEC2 :                                return DataType::Vec2;
+            case GL_FLOAT_VEC3 :                                return DataType::Vec3;
+            case GL_FLOAT_VEC4 :                                return DataType::Vec4;
+            case GL_DOUBLE :                                    return DataType::Double;
+            case GL_DOUBLE_VEC2 :                               return DataType::DVec2;
+            case GL_DOUBLE_VEC3 :                               return DataType::DVec3;
+            case GL_DOUBLE_VEC4 :                               return DataType::DVec4;
+            case GL_INT :                                       return DataType::Int;
+            case GL_INT_VEC2 :                                  return DataType::IVec2;
+            case GL_INT_VEC3 :                                  return DataType::IVec3;
+            case GL_INT_VEC4 :                                  return DataType::IVec4;
+            case GL_UNSIGNED_INT :                              return DataType::UnsignedInt;
+            case GL_UNSIGNED_INT_VEC2 :                         return DataType::UVec2;
+            case GL_UNSIGNED_INT_VEC3 :                         return DataType::UVec3;
+            case GL_UNSIGNED_INT_VEC4 :                         return DataType::UVec4;
+            case GL_BOOL :                                      return DataType::Bool;
+            case GL_BOOL_VEC2 :                                 return DataType::BVec2;
+            case GL_BOOL_VEC3 :                                 return DataType::BVec3;
+            case GL_BOOL_VEC4 :                                 return DataType::BVec4;
+            case GL_FLOAT_MAT2 :                                return DataType::Mat2;
+            case GL_FLOAT_MAT3 :                                return DataType::Mat3;
+            case GL_FLOAT_MAT4 :                                return DataType::Mat4;
+            case GL_FLOAT_MAT2x3 :                              return DataType::Mat2x3;
+            case GL_FLOAT_MAT2x4 :                              return DataType::Mat2x4;
+            case GL_FLOAT_MAT3x2 :                              return DataType::Mat3x2;
+            case GL_FLOAT_MAT3x4 :                              return DataType::Mat3x4;
+            case GL_FLOAT_MAT4x2 :                              return DataType::Mat4x2;
+            case GL_FLOAT_MAT4x3 :                              return DataType::Mat4x3;
+            case GL_DOUBLE_MAT2 :                               return DataType::Dmat2;
+            case GL_DOUBLE_MAT3 :                               return DataType::Dmat3;
+            case GL_DOUBLE_MAT4 :                               return DataType::Dmat4;
+            case GL_DOUBLE_MAT2x3 :                             return DataType::Dmat2x3;
+            case GL_DOUBLE_MAT2x4 :                             return DataType::Dmat2x4;
+            case GL_DOUBLE_MAT3x2 :                             return DataType::Dmat3x2;
+            case GL_DOUBLE_MAT3x4 :                             return DataType::Dmat3x4;
+            case GL_DOUBLE_MAT4x2 :                             return DataType::Dmat4x2;
+            case GL_DOUBLE_MAT4x3 :                             return DataType::Dmat4x3;
+            case GL_SAMPLER_1D :                                return DataType::Sampler1D;
+            case GL_SAMPLER_2D :                                return DataType::Sampler2D;
+            case GL_SAMPLER_3D :                                return DataType::Sampler3D;
+            case GL_SAMPLER_CUBE :                              return DataType::SamplerCube;
+            case GL_SAMPLER_1D_SHADOW :                         return DataType::Sampler1DShadow;
+            case GL_SAMPLER_2D_SHADOW :                         return DataType::Sampler2DShadow;
+            case GL_SAMPLER_1D_ARRAY :                          return DataType::Sampler1DArray;
+            case GL_SAMPLER_2D_ARRAY :                          return DataType::Sampler2DArray;
+            case GL_SAMPLER_1D_ARRAY_SHADOW :                   return DataType::Sampler1DArrayShadow;
+            case GL_SAMPLER_2D_ARRAY_SHADOW :                   return DataType::Sampler2DArrayShadow;
+            case GL_SAMPLER_2D_MULTISAMPLE :                    return DataType::Sampler2DMS;
+            case GL_SAMPLER_2D_MULTISAMPLE_ARRAY :              return DataType::Sampler2DMSArray;
+            case GL_SAMPLER_CUBE_SHADOW :                       return DataType::SamplerCubeShadow;
+            case GL_SAMPLER_BUFFER :                            return DataType::SamplerBuffer;
+            case GL_SAMPLER_2D_RECT :                           return DataType::Sampler2DRect;
+            case GL_SAMPLER_2D_RECT_SHADOW :                    return DataType::Sampler2DRectShadow;
+            case GL_INT_SAMPLER_1D :                            return DataType::Isampler1D;
+            case GL_INT_SAMPLER_2D :                            return DataType::Isampler2D;
+            case GL_INT_SAMPLER_3D :                            return DataType::Isampler3D;
+            case GL_INT_SAMPLER_CUBE :                          return DataType::IsamplerCube;
+            case GL_INT_SAMPLER_1D_ARRAY :                      return DataType::Isampler1DArray;
+            case GL_INT_SAMPLER_2D_ARRAY :                      return DataType::Isampler2DArray;
+            case GL_INT_SAMPLER_2D_MULTISAMPLE :                return DataType::Isampler2DMS;
+            case GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY :          return DataType::Isampler2DMSArray;
+            case GL_INT_SAMPLER_BUFFER :                        return DataType::IsamplerBuffer;
+            case GL_INT_SAMPLER_2D_RECT :                       return DataType::Isampler2DRect;
+            case GL_UNSIGNED_INT_SAMPLER_1D :                   return DataType::Usampler1D;
+            case GL_UNSIGNED_INT_SAMPLER_2D :                   return DataType::Usampler2D;
+            case GL_UNSIGNED_INT_SAMPLER_3D :                   return DataType::Usampler3D;
+            case GL_UNSIGNED_INT_SAMPLER_CUBE :                 return DataType::UsamplerCube;
+            case GL_UNSIGNED_INT_SAMPLER_2D_ARRAY :             return DataType::Usampler2DArray;
+            case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE :       return DataType::Usampler2DMS;
+            case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY : return DataType::Usampler2DMSArray;
+            case GL_UNSIGNED_INT_SAMPLER_BUFFER :               return DataType::UsamplerBuffer;
+            case GL_UNSIGNED_INT_SAMPLER_2D_RECT :              return DataType::Usampler2DRect;
+            default:
+                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                return DataType::Count;
+        }
+    }
+
     int convert(const DepthTestType& pDepthTestType)
     {
     	switch (pDepthTestType)
