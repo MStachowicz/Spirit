@@ -436,13 +436,39 @@ namespace GLData
     }
     void EBO::pushData(const std::vector<int>& pIndexData)
     {
+        ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before pushData, call generate before pushData");
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndexData.size() * sizeof(int), &pIndexData.front(), GL_STATIC_DRAW);
     }
     void EBO::release()
     {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised EBO");
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised UBO");
         glDeleteBuffers(1, &mHandle);
         mInitialised = false;
+    }
+     void UBO::generate()
+    {
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated UBO")
+        glGenBuffers(1, &mHandle);
+        mInitialised = true;
+    }
+    void UBO::bind() const
+    {
+        ZEPHYR_ASSERT(mInitialised, "UBO has not been generated before bind, call generate before bind");
+        glBindBuffer(GL_UNIFORM_BUFFER, mHandle);
+    }
+    void UBO::release()
+    {
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised UBO");
+        glDeleteBuffers(1, &mHandle);
+        mInitialised = false;
+    }
+    void UBO::pushData(const int &pSize, const int &pUniformIndex)
+    {
+        ZEPHYR_ASSERT(mInitialised, "UBO has not been generated before pushData, call generate before pushData");
+        // Reserve the memory for the data size with glBufferData then define the
+        // range of the buffer that links to a uniform binding point with glBindBufferRange
+        glBufferData(GL_UNIFORM_BUFFER, pSize, NULL, GL_STATIC_DRAW);
+        glBindBufferRange(GL_UNIFORM_BUFFER, pUniformIndex, mHandle, 0, pSize);
     }
     void RBO::generate()
     {

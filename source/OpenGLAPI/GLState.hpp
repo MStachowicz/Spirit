@@ -220,6 +220,18 @@ namespace GLData
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
 	};
+
+    struct UBO
+    {
+		void generate();
+		void bind() const;
+		void release();
+        void pushData(const int& pSize, const int& pUniformIndex);
+		unsigned int getHandle() { return mHandle; };
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+    };
     // OpenGL Texture object.
     // Represents a texture pushed to the GPU.
     struct Texture
