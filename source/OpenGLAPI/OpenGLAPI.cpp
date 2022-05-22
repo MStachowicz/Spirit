@@ -17,7 +17,7 @@
 
 OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	: GraphicsAPI(pLightManager)
-	, cOpenGLVersionMajor(3)
+	, cOpenGLVersionMajor(4)
 	, cOpenGLVersionMinor(3)
 	, mLinearDepthView(false)
 	, mZNearPlane(0.1f)

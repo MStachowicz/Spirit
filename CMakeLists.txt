@@ -224,7 +224,7 @@ add_subdirectory(source/External/GLFW External/GLFW)
 # ------------------------ GLAD ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding GLAD2 module")
 add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
-glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=3.3)
+glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=4.3)
 # ------------------------ GLAD END ----------------------------
 
 # ------------------------ GLM ----------------------------
