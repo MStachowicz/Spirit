@@ -92,7 +92,7 @@ Texture& TextureManager::loadTexture(const std::filesystem::path& pFilePath, con
     else
         stbi_set_flip_vertically_on_load(true);
 
-    ZEPHYR_ASSERT(File::exists(pFilePath.string()), "The texture file with path {} could not be found.", pFilePath)
+    ZEPHYR_ASSERT(File::exists(pFilePath.string()), "The texture file with path {} could not be found.", pFilePath.string()) // #C++20 if switched logger to use std::format, direct use of std::filesystem::path is available
 
     const auto& textureLocation = mFilePathLookup.find(pFilePath.string());
     if (textureLocation != mFilePathLookup.end())

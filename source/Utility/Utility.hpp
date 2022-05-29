@@ -32,7 +32,7 @@ namespace util
             ZEPHYR_ASSERT(util::File::exists(executablePath), "Could not find the exectuable path")
 
             const auto &found = exectuablePathStr.find("Zephyr");
-            ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr string in the supplied executable path {}", executablePath)
+            ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr string in the supplied executable path {}", executablePath.string()) // #C++20 if switched logger to use std::format, direct use of std::filesystem::path is available
             rootDirectory = exectuablePathStr.substr(0, found + 6); // offset substr by length of "Zephyr"
             ZEPHYR_ASSERT(util::File::exists(rootDirectory), "Could not find the rootDirectory path")
 
