@@ -410,7 +410,11 @@ namespace GLData
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
 	};
-
+    // Uniform Buffer Object
+    // A Buffer Object that is used to store uniform data for a shader program. They can be used to share
+    // uniforms between different programs, as well as quickly change between sets of uniforms for the same program object.
+    // Used to provide buffer-backed storage for uniforms.
+    // https://www.khronos.org/opengl/wiki/Uniform_Buffer_Object
     struct UBO
     {
 		void generate();
@@ -449,6 +453,41 @@ namespace GLData
 		unsigned int mHandle 	= 0;
         Type mType              = Type::None;
 	};
+
+    // A shader-program global variable.
+    // Declared with the "uniform" storage qualifier in GLSL or inside a Uniform Buffer Object (UBO).
+    // Uniform variables don't change from one shader invocation to the next within a particular rendering call thus their value is uniform among all invocations. This makes them unlike shader stage inputs and outputs, which are often different for each invocation of a shader stage.
+    // These act as parameters that the user of a shader program can pass to that program. Their values are stored in a program object.
+    // https://www.khronos.org/opengl/wiki/Uniform_(GLSL)
+    struct UniformVariable
+    {
+        std::string mName      = "";
+        GLType::DataType mType = GLType::DataType::Count;
+        int mSize              = -1;
+        int mOffset            = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
+        int mLocation          = -1;
+        int mBlockIndex        = -1;
+        int mArraySize         = -1;  // For elements that are aggregated into arrays, this is the number of elements in the array
+        int mArrayStride       = -1;  // For elements that are aggregated into arrays, this is the number of bytes from the start of one element to the start of the next one
+        int mMatrixStride      = -1;  // Number of bytes from the start of one column/row vector to the next column/row (depending on whether the matrix is laid out as column-major or row-major)
+        int mIsRowMajor        = -1;  // For matrix elements, the column/row-major ordering.
+    };
+    // UniformBlocks are GLSL interface blocks which group UniformVariable's.
+    // UniformBlock's can be buffer-backed using UniformBufferObjects allowing data to be shared across shader-programs.
+    // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
+    // Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
+    // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Uniform_blocks
+    struct UniformBlock
+    {
+        std::string mName         = "";
+        int mBlockIndex           = -1; // Index of the UniformBlock in its parentShader.
+        int mBufferBinding        = -1; // The binding of the block to a corrresponding buffer-backing
+        int mBufferDataSize       = -1; // Size of the block in bytes.
+        int mActiveVariablesCount = -1; // The number of UniformVariables this block contains.
+
+        std::vector<UniformVariable> mVariables;
+        std::vector<int> mVariableIndices;
+    };
     // Render Buffer Object
     // RBO's contain images optimized for use as render targets, and are the logical choice when you do not need to sample (i.e. in a post-pass shader) from the produced image.
     // If you need to resample (such as when reading depth back in a second shader pass), use Texture instead.
@@ -555,6 +594,9 @@ public:
     // Outputs the current GLState with options to change flags.
     void renderImGui();
 
+    static int getActiveUniformBlockCount(const unsigned int& pShaderHandle);
+    static GLData::UniformBlock getUniformBlock(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndex);
+    static GLData::UniformVariable getUniformVariable(const unsigned int& pShaderHandle, const unsigned int& pUniformVariableIndex);
 private:
 	bool mDepthTest;
 	GLType::DepthTestType mDepthTestType;

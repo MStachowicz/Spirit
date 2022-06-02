@@ -368,6 +368,76 @@ void GLState::checkFramebufferBufferComplete()
     ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 }
 
+int GLState::getActiveUniformBlockCount(const unsigned int& pShaderHandle)
+{
+    GLint blockCount = 0;
+    glGetProgramInterfaceiv(pShaderHandle, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &blockCount);
+    return blockCount;
+}
+
+GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderHandle, const unsigned int& pUniformVariableIndex)
+{
+    // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
+    // https://www.khronos.org/opengl/wiki/Program_Introspection
+
+    static const std::array<GLenum, 9> propertyQuery = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_LOCATION, GL_BLOCK_INDEX, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR};
+
+    std::array<GLint, propertyQuery.size()> propertyValues = {0};
+    glGetProgramResourceiv(pShaderHandle, GL_UNIFORM, pUniformVariableIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(), static_cast<GLsizei>(propertyValues.size()), NULL, propertyValues.data());
+
+    GLData::UniformVariable uniformVariable;
+    uniformVariable.mName.resize(propertyValues[0]);
+    glGetProgramResourceName(pShaderHandle, GL_UNIFORM, pUniformVariableIndex, propertyValues[0], NULL, uniformVariable.mName.data());
+    ZEPHYR_ASSERT(!uniformVariable.mName.empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderHandle);
+    uniformVariable.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+
+    uniformVariable.mType         = GLType::convert(propertyValues[1]);
+	uniformVariable.mOffset       = propertyValues[2];
+	uniformVariable.mLocation     = propertyValues[3];
+	uniformVariable.mBlockIndex   = propertyValues[4];
+	uniformVariable.mArraySize    = propertyValues[5];
+	uniformVariable.mArrayStride  = propertyValues[6];
+	uniformVariable.mMatrixStride = propertyValues[7];
+	uniformVariable.mIsRowMajor   = propertyValues[8];
+    return uniformVariable;
+}
+
+GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndex)
+{
+    static const std::array<GLenum, 4> propertyQuery = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
+
+	std::array<GLint, propertyQuery.size()> uniformBlockValues = {0};
+    glGetProgramResourceiv(pShaderHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(),  static_cast<GLsizei>(uniformBlockValues.size()), NULL, uniformBlockValues.data());
+
+    GLData::UniformBlock uniformBlock;
+    { // Get the name of the uniform block
+        uniformBlock.mName.resize(uniformBlockValues[0]);
+        glGetProgramResourceName(pShaderHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, uniformBlockValues[0], NULL, uniformBlock.mName.data());
+        ZEPHYR_ASSERT(!uniformBlock.mName.empty(), "Failed to get name of uniform block in shader with handle {}", pShaderHandle);
+        uniformBlock.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+    }
+    uniformBlock.mBlockIndex           = glGetUniformBlockIndex(pShaderHandle, uniformBlock.mName.c_str());
+    uniformBlock.mActiveVariablesCount = uniformBlockValues[1];
+    uniformBlock.mBufferBinding        = uniformBlockValues[2];
+    uniformBlock.mBufferDataSize       = uniformBlockValues[3];
+    // TODO: check There is also a limitation on the available storage per uniform buffer.
+	// This is queried through GL_MAX_UNIFORM_BLOCK_SIZE. This is in basic machine units (ie: bytes).
+
+    if (uniformBlock.mActiveVariablesCount > 0)
+    {
+        // Get the array of active variable indices associated with the uniform block. (GL_ACTIVE_VARIABLES)
+        // The indices correspond in size to GL_NUM_ACTIVE_VARIABLES
+        uniformBlock.mVariableIndices.resize(uniformBlock.mActiveVariablesCount);
+        const GLenum activeUnifProp[1] = {GL_ACTIVE_VARIABLES};
+        glGetProgramResourceiv(pShaderHandle, GL_UNIFORM_BLOCK, uniformBlock.mBlockIndex, 1, activeUnifProp, uniformBlock.mActiveVariablesCount, NULL, uniformBlock.mVariableIndices.data());
+
+        for (int variableIndex = 0; variableIndex < uniformBlock.mActiveVariablesCount; variableIndex++)
+            uniformBlock.mVariables.push_back(GLState::getUniformVariable(pShaderHandle, uniformBlock.mVariableIndices[variableIndex]));
+    }
+
+    return uniformBlock;
+}
+
 void GLState::setViewport(const int& pWidth, const int& pHeight)
 {
     mViewport[2] = pWidth;
