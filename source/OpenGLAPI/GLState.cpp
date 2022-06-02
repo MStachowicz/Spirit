@@ -833,6 +833,77 @@ namespace GLType
         }
     }
 
+    int convert(const ShaderResourceType& pResourceType)
+    {
+        switch (pResourceType)
+    	{
+            case ShaderResourceType::Uniform:                         return GL_UNIFORM;
+            case ShaderResourceType::UniformBlock:                    return GL_UNIFORM_BLOCK;
+            case ShaderResourceType::ShaderStorageBlock:              return GL_SHADER_STORAGE_BLOCK;
+            case ShaderResourceType::BufferVariable:                  return GL_BUFFER_VARIABLE;
+            case ShaderResourceType::Buffer:                          return GL_BUFFER;
+            case ShaderResourceType::ProgramInput:                    return GL_PROGRAM_INPUT;
+            case ShaderResourceType::ProgramOutput:                   return GL_PROGRAM_OUTPUT;
+            case ShaderResourceType::AtomicCounterBuffer:             return GL_ATOMIC_COUNTER_BUFFER;
+            //case ShaderResourceType::AtomicCounterShader:           return GL_ATOMIC_COUNTER_SHADER;
+            case ShaderResourceType::VertexSubroutineUniform:         return GL_VERTEX_SUBROUTINE_UNIFORM;
+            case ShaderResourceType::FragmentSubroutineUniform:       return GL_FRAGMENT_SUBROUTINE_UNIFORM;
+            case ShaderResourceType::GeometrySubroutineUniform:       return GL_GEOMETRY_SUBROUTINE_UNIFORM;
+            case ShaderResourceType::ComputeSubroutineUniform:        return GL_COMPUTE_SUBROUTINE_UNIFORM;
+            case ShaderResourceType::TessControlSubroutineUniform:    return GL_TESS_CONTROL_SUBROUTINE_UNIFORM;
+            case ShaderResourceType::TessEvaluationSubroutineUniform: return GL_TESS_EVALUATION_SUBROUTINE_UNIFORM;
+            case ShaderResourceType::TransformFeedbackBuffer:         return GL_TRANSFORM_FEEDBACK_BUFFER;
+            case ShaderResourceType::TransformFeedbackVarying:        return GL_TRANSFORM_FEEDBACK_VARYING;
+
+            case ShaderResourceType::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ShaderResourceType requested");
+                return 0;
+        }
+    }
+
+    int convert(const ShaderResourceProperty& pShaderResourceProperty)
+    {
+        switch (pShaderResourceProperty)
+    	{
+            case ShaderResourceProperty::NameLength:                       return GL_NAME_LENGTH;
+            case ShaderResourceProperty::Type:                             return GL_TYPE;
+            case ShaderResourceProperty::ArraySize:                        return GL_ARRAY_SIZE;
+            case ShaderResourceProperty::Offset:                           return GL_OFFSET;
+            case ShaderResourceProperty::BlockIndex:                       return GL_BLOCK_INDEX;
+            case ShaderResourceProperty::ArrayStride:                      return GL_ARRAY_STRIDE;
+            case ShaderResourceProperty::MatrixStride:                     return GL_MATRIX_STRIDE;
+            case ShaderResourceProperty::IsRowMajor:                       return GL_IS_ROW_MAJOR;
+            case ShaderResourceProperty::AtomicCounterBufferIndex:         return GL_ATOMIC_COUNTER_BUFFER_INDEX;
+            case ShaderResourceProperty::TextureBuffer:                    return GL_TEXTURE_BUFFER;
+            case ShaderResourceProperty::BufferBinding:                    return GL_BUFFER_BINDING;
+            case ShaderResourceProperty::BufferDataSize:                   return GL_BUFFER_DATA_SIZE;
+            case ShaderResourceProperty::NumActiveVariables:               return GL_NUM_ACTIVE_VARIABLES;
+            case ShaderResourceProperty::ActiveVariables:                  return GL_ACTIVE_VARIABLES;
+            case ShaderResourceProperty::ReferencedByVertexShader:         return GL_REFERENCED_BY_VERTEX_SHADER;
+            case ShaderResourceProperty::ReferencedByTessControlShader:    return GL_REFERENCED_BY_TESS_CONTROL_SHADER;
+            case ShaderResourceProperty::ReferencedByTessEvaluationShader: return GL_REFERENCED_BY_TESS_EVALUATION_SHADER;
+            case ShaderResourceProperty::ReferencedByGeometryShader:       return GL_REFERENCED_BY_GEOMETRY_SHADER;
+            case ShaderResourceProperty::ReferencedByFragmentShader:       return GL_REFERENCED_BY_FRAGMENT_SHADER;
+            case ShaderResourceProperty::ReferencedByComputeShader:        return GL_REFERENCED_BY_COMPUTE_SHADER;
+            case ShaderResourceProperty::NumCompatibleSubroutines:         return GL_NUM_COMPATIBLE_SUBROUTINES;
+            case ShaderResourceProperty::CompatibleSubroutines:            return GL_COMPATIBLE_SUBROUTINES;
+            case ShaderResourceProperty::TopLevelArraySize:                return GL_TOP_LEVEL_ARRAY_SIZE;
+            case ShaderResourceProperty::TopLevelArrayStride:              return GL_TOP_LEVEL_ARRAY_STRIDE;
+            case ShaderResourceProperty::Location:                         return GL_LOCATION;
+            case ShaderResourceProperty::LocationIndex:                    return GL_LOCATION_INDEX;
+            case ShaderResourceProperty::IsPerPatch:                       return GL_IS_PER_PATCH;
+            case ShaderResourceProperty::LocationComponent:                return GL_LOCATION_COMPONENT;
+            case ShaderResourceProperty::TransformFeedbackBufferIndex:     return GL_TRANSFORM_FEEDBACK_BUFFER_INDEX;
+            case ShaderResourceProperty::TransformFeedbackBufferStride:    return GL_TRANSFORM_FEEDBACK_BUFFER_STRIDE;
+
+            case ShaderResourceProperty::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ShaderResourceProperty requested");
+                return 0;
+        }
+    }
+
     int convert(const DepthTestType& pDepthTestType)
     {
     	switch (pDepthTestType)

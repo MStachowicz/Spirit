@@ -57,8 +57,8 @@ namespace GLType
         Usampler2DRect,
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::DataType::Count)> DataTypes{
-        "Float", "Vec2", "Vec3", "Vec4",
+    static inline const std::array<std::string, util::toIndex(GLType::DataType::Count)> dataTypes{
+        "Float", "vec2", "vec3", "vec4",
         "Double", "DVec2", "DVec3", "DVec4",
         "Int", "IVec2", "IVec3", "IVec4",
         "UnsignedInt", "UVec2", "UVec3", "UVec4",
@@ -92,6 +92,115 @@ namespace GLType
         "UsamplerBuffer",
         "Usampler2DRect"
     };
+
+    enum class ShaderResourceType
+    {
+        Uniform,
+        UniformBlock,
+        ShaderStorageBlock,
+        BufferVariable,
+        Buffer,
+        ProgramInput,
+        ProgramOutput,
+        AtomicCounterBuffer,
+        //AtomicCounterShader,
+        VertexSubroutineUniform,
+        FragmentSubroutineUniform,
+        GeometrySubroutineUniform,
+        ComputeSubroutineUniform,
+        TessControlSubroutineUniform,
+        TessEvaluationSubroutineUniform,
+        TransformFeedbackBuffer,
+        TransformFeedbackVarying,
+
+        Count
+    };
+
+    static inline const std::array<std::string, util::toIndex(GLType::ShaderResourceType::Count)> shaderResourceTypes{
+        "Uniform",
+        "UniformBlock",
+        "ShaderStorageBlock",
+        "BufferVariable",
+        "Buffer",
+        "ProgramInput",
+        "ProgramOutput",
+        "AtomicCounterBuffer",
+        //"AtomicCounterShader",
+        "VertexSubroutineUniform",
+        "FragmentSubroutineUniform",
+        "GeometrySubroutineUniform",
+        "ComputeSubroutineUniform",
+        "TessControlSubroutineUniform",
+        "TessEvaluationSubroutineUniform",
+        "TransformFeedbackBuffer",
+        "TransformFeedbackVarying"};
+
+    enum class ShaderResourceProperty
+    {
+        NameLength,
+        Type,
+        ArraySize,
+        Offset,
+        BlockIndex,
+        ArrayStride,
+        MatrixStride,
+        IsRowMajor,
+        AtomicCounterBufferIndex,
+        TextureBuffer,
+        BufferBinding,
+        BufferDataSize,
+        NumActiveVariables,
+        ActiveVariables,
+        ReferencedByVertexShader,
+        ReferencedByTessControlShader,
+        ReferencedByTessEvaluationShader,
+        ReferencedByGeometryShader,
+        ReferencedByFragmentShader,
+        ReferencedByComputeShader,
+        NumCompatibleSubroutines,
+        CompatibleSubroutines,
+        TopLevelArraySize,
+        TopLevelArrayStride,
+        Location,
+        LocationIndex,
+        IsPerPatch,
+        LocationComponent,
+        TransformFeedbackBufferIndex,
+        TransformFeedbackBufferStride,
+
+        Count
+    };
+    static inline const std::array<std::string, util::toIndex(GLType::ShaderResourceProperty::Count)> shaderResourceProperties{
+        "NameLength",
+        "Type",
+        "ArraySize",
+        "Offset",
+        "BlockIndex",
+        "ArrayStride",
+        "MatrixStride",
+        "IsRowMajor",
+        "AtomicCounterBufferIndex",
+        "TextureBuffer",
+        "BufferBinding",
+        "BufferDataSize",
+        "NumActiveVariables",
+        "ActiveVariables",
+        "ReferencedByVertexShader",
+        "ReferencedByTessControlShader",
+        "ReferencedByTessEvaluationShader",
+        "ReferencedByGeometryShader",
+        "ReferencedByFragmentShader",
+        "ReferencedByComputeShader",
+        "NumCompatibleSubroutines",
+        "CompatibleSubroutines",
+        "TopLevelArraySize",
+        "TopLevelArrayStride",
+        "Location",
+        "LocationIndex",
+        "IsPerPatch",
+        "LocationComponent",
+        "TransformFeedbackBufferIndex",
+        "TransformFeedbackBufferStride"};
 
     enum class DepthTestType
     {
@@ -228,19 +337,23 @@ namespace GLType
         "ReadFramebuffer",
         "Framebuffer"};
 
-    inline std::string toString(const DataType& pDataType)                          { return DataTypes[util::toIndex(pDataType)]; }
-    inline std::string toString(const DepthTestType& pDepthTestType)                { return depthTestTypes[util::toIndex(pDepthTestType)]; }
-    inline std::string toString(const BufferDrawType& pBufferDrawType)              { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
-    inline std::string toString(const BlendFactorType& pBlendFactorType)            { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
-    inline std::string toString(const CullFacesType& pCullFacesType)                { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
-    inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)  { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
-    inline std::string toString(const PolygonMode& pPolygonMode)                    { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
-    inline std::string toString(const PrimitiveMode& pPrimitiveMode)                { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
-    inline std::string toString(const FramebufferTarget& pFramebufferTarget)        { return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)]; }
+    inline std::string toString(const DataType& pDataType)                              { return dataTypes[util::toIndex(pDataType)]; }
+    inline std::string toString(const ShaderResourceType& pResourceType)                { return shaderResourceTypes[util::toIndex(pResourceType)]; }
+    inline std::string toString(const ShaderResourceProperty& pShaderResourceProperty)  { return shaderResourceProperties[util::toIndex(pShaderResourceProperty)]; }
+    inline std::string toString(const DepthTestType& pDepthTestType)                    { return depthTestTypes[util::toIndex(pDepthTestType)]; }
+    inline std::string toString(const BufferDrawType& pBufferDrawType)                  { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
+    inline std::string toString(const BlendFactorType& pBlendFactorType)                { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
+    inline std::string toString(const CullFacesType& pCullFacesType)                    { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
+    inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)      { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
+    inline std::string toString(const PolygonMode& pPolygonMode)                        { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
+    inline std::string toString(const PrimitiveMode& pPrimitiveMode)                    { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
+    inline std::string toString(const FramebufferTarget& pFramebufferTarget)            { return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)]; }
 
-    int convert(const DataType& pDataType);
     DataType convert(const int& pDataType);
 
+    int convert(const DataType& pDataType);
+    int convert(const ShaderResourceType& pResourceType);
+    int convert(const ShaderResourceProperty& pShaderResourceProperty);
     int convert(const DepthTestType& pDepthTestType);
     int convert(const BlendFactorType& pBlendFactorType);
     int convert(const CullFacesType& pCullFacesType);
