@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utility.hpp"
+#include "glm/fwd.hpp"
 
 #include "string"
 #include "array"
@@ -504,12 +505,13 @@ namespace GLData
     // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Uniform_blocks
     struct UniformBlock
     {
-        std::string mName         = "";
-        int mBlockIndex           = -1; // Index of the UniformBlock in its parentShader.
-        int mBufferBinding        = -1; // The binding of the block to a corrresponding buffer-backing
-        int mBufferDataSize       = -1; // Size of the block in bytes.
-        int mActiveVariablesCount = -1; // The number of UniformVariables this block contains.
+        std::string mName           = "";
+        int mBlockIndex             = -1; // Index of the UniformBlock in its parentShader.
+        int mParentShaderHandle     = -1;
+        int mBufferDataSize         = -1; // Size of the block in bytes.
+        int mActiveVariablesCount   = -1; // The number of UniformVariables this block contains.
 
+        std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding UniformBlockBindingPoint
         std::vector<UniformVariable> mVariables;
         std::vector<int> mVariableIndices;
     };
@@ -608,6 +610,31 @@ public:
     void unbindFramebuffer();
     void checkFramebufferBufferComplete();
 
+    // Assign a binding point to a uniform block.
+    // This makes the Uniform block buffer-backed allowing UniformVariables belonging to the block to be set using setUniformBlockVariable.
+    void bindUniformBlock(GLData::UniformBlock& pUniformBlock);
+
+    template<class T>
+    void setUniformBlockVariable(const std::string& pName, const T& pValue)
+    {
+        for (auto& bindingPoint : mUniformBlockBindingPoints)
+        {
+            const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::UniformVariable& pVariable)
+            {
+                return pVariable.mName == pName;
+            });
+
+            if (foundVariable != std::end(bindingPoint.mVariables))
+            {
+                bindingPoint.mUBO.bind();
+                setBlockUniform(*foundVariable, pValue);
+                return;
+            }
+        }
+
+        ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName)
+    }
+
     // Set the global viewport
     // Specify the width and height of the viewport. When a context is first attached to a window, width and height are set to the dimensions of that window.
     // The viewport specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
@@ -646,6 +673,23 @@ private:
     // 2: Size X
     // 3: Size Y
     std::array<int, 4> mViewport;
+
+    // The remaining functions and members are helpers and not regular OpenGL parts
+    // Use this to replace the Shader::bindingpoint
+    struct UniformBlockBindingPoint
+    {
+        GLData::UBO mUBO;       // The buffer for all the data used by all the UniformBlocks bound to this point.
+        std::string mName = ""; // Name of the UniformBlock instances sharing this buffer.
+        size_t mInstances;      // The number of UniformBlock instances using this buffer.
+        unsigned int mBindingPoint; // The location of this binding point in the parent mUniformBlockBindingPoints vector.
+        std::vector<GLData::UniformVariable> mVariables;  // Copy of all the UniformVariables this buffer... buffers.
+    };
+    std::vector<UniformBlockBindingPoint> mUniformBlockBindingPoints;
+    void setBlockUniform(const GLData::UniformVariable& pVariable, const float& pValue);
+    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue);
+    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue);
+    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue);
+    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue);
 
     std::string getErrorMessage();
     std::string getErrorMessage(const std::unordered_map<GLType::ErrorType, std::string>& pErrorMessageOverrides);

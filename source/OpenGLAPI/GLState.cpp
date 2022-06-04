@@ -5,6 +5,9 @@
 #include "glad/gl.h"
 #include "imgui.h"
 
+#include "glm/mat4x4.hpp" // mat4, dmat4
+#include "glm/gtc/type_ptr.hpp" //  glm::value_ptr
+
 #include "set"
 
 GLState::GLState()
@@ -370,6 +373,80 @@ void GLState::checkFramebufferBufferComplete()
     ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 }
 
+void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
+{
+    UniformBlockBindingPoint* bindingPoint = nullptr;
+
+    // #C++20 Convert to std::contains on vector.
+    const auto it = std::find_if(mUniformBlockBindingPoints.begin(), mUniformBlockBindingPoints.end(), [&pUniformBlock](const UniformBlockBindingPoint& bindingPoint)
+    { return bindingPoint.mName == pUniformBlock.mName; });
+
+    if (it == mUniformBlockBindingPoints.end())
+    {
+        // If there is no binding point for this UniformBlock create it and its UBO.
+        // This allows the uniform variables inside the block to be set using setUniformBlockVariable()
+        // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
+        mUniformBlockBindingPoints.push_back(UniformBlockBindingPoint());
+        bindingPoint = &mUniformBlockBindingPoints.back();
+        bindingPoint->mInstances++;
+        bindingPoint->mBindingPoint  = static_cast<unsigned int>(mUniformBlockBindingPoints.size() - 1);
+        bindingPoint->mName          = pUniformBlock.mName;
+        bindingPoint->mVariables     = pUniformBlock.mVariables;
+
+        bindingPoint->mUBO.generate();
+        bindingPoint->mUBO.bind();
+        // Reserve the size of the UniformBlock in the GPU memory
+        auto dataSize = pUniformBlock.mBufferDataSize;
+        glBufferData(GL_UNIFORM_BUFFER, dataSize, NULL, GL_STATIC_DRAW);
+        glBindBufferRange(GL_UNIFORM_BUFFER, bindingPoint->mBindingPoint, bindingPoint->mUBO.getHandle(), 0, dataSize);
+    }
+    else
+    {
+        // If the UniformBlock has been encountered before. We bind it to the same mBindingPoint of the previously
+        // created UniformBlockBufferBacking meaning the blocks share the GPU memory.
+        bindingPoint = &(*it);
+        bindingPoint->mInstances++;
+        bindingPoint->mUBO.bind();
+    }
+
+    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for Uniform Block '{}'", pUniformBlock.mName);
+    pUniformBlock.mBindingPoint = bindingPoint->mBindingPoint;
+
+    glUniformBlockBinding(pUniformBlock.mParentShaderHandle, pUniformBlock.mBlockIndex, bindingPoint->mBindingPoint);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::UniformBlockBinding));
+}
+
+void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const float& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Float, "Attempting to set float data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, &pValue);
+}
+void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec2, "Attempting to set vec2 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec3, "Attempting to set vec3 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec4, "Attempting to set vec4 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat4, "Attempting to set mat4 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+
 int GLState::getActiveUniformBlockCount(const unsigned int& pShaderHandle)
 {
     GLint blockCount = 0;
@@ -420,11 +497,12 @@ GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderHandle,
     }
     uniformBlock.mBlockIndex           = glGetUniformBlockIndex(pShaderHandle, uniformBlock.mName.c_str());
     uniformBlock.mActiveVariablesCount = uniformBlockValues[1];
-    uniformBlock.mBufferBinding        = uniformBlockValues[2];
+    uniformBlock.mBindingPoint         = static_cast<unsigned int>(uniformBlockValues[2]);
     uniformBlock.mBufferDataSize       = uniformBlockValues[3];
+    uniformBlock.mParentShaderHandle   = pShaderHandle;
+
     // TODO: check There is also a limitation on the available storage per uniform buffer.
 	// This is queried through GL_MAX_UNIFORM_BLOCK_SIZE. This is in basic machine units (ie: bytes).
-
     if (uniformBlock.mActiveVariablesCount > 0)
     {
         // Get the array of active variable indices associated with the uniform block. (GL_ACTIVE_VARIABLES)
