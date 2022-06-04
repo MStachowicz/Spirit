@@ -29,6 +29,7 @@ void ZephyrAssertImplementation(const std::string& pCondition, const char* pFile
 {
     // Parses all the params and outputs them via SPDLOG
     // #C++20 - Migrate the fmt::format to std::format
+    //        - use std::source_location (non-macro function name)
     // Once migrated to std::format, additional std types get formatting e.g. std::filesystem::path
     // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1636r0.pdf
     const std::string message = fmt::format(std::forward<Args>(pArgs)...);
@@ -40,6 +41,7 @@ inline void ZephyrAssertMessageImplementation(const std::string& pErrorMessage, 
 {
     // Parses all the params and outputs them via SPDLOG
     // #C++20 - Migrate the fmt::format to std::format
+    //        - use std::source_location (non-macro function name)
     // Once migrated to std::format, additional std types get formatting e.g. std::filesystem::path
     // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1636r0.pdf
     Logger::GetLogger()->critical(fmt::format("ASSERT FAILED\nMESSAGE: {}\nFILE:    {}:{}", pErrorMessage, pFile, pLine));
