@@ -5,6 +5,8 @@
 #include "glad/gl.h"
 #include "imgui.h"
 
+#include "set"
+
 GLState::GLState()
     : mDepthTest(true)
     , mDepthTestType(GLType::DepthTestType::Less)
@@ -443,7 +445,7 @@ void GLState::setViewport(const int& pWidth, const int& pHeight)
     mViewport[2] = pWidth;
     mViewport[3] = pHeight;
     glViewport(0, 0, pWidth, pHeight);
-    //GL_INVALID_VALUE is generated if either width or height is negative.
+    ZEPHYR_ASSERT_MSG(getErrorMessage({{GLType::ErrorType::InvalidValue, "Either width or height is negative"}}));
 }
 
 namespace GLData
@@ -1094,4 +1096,74 @@ namespace GLType
                 return 0;
         }
     }
+}
+
+std::string GLState::getErrorMessage()
+{
+    std::set<GLType::ErrorType> errors;
+    GLenum glError(glGetError());
+    while (glError != GL_NO_ERROR)
+    {
+        switch (glError)
+        {
+        case GL_INVALID_OPERATION:             errors.insert(GLType::ErrorType::InvalidOperation);             break;
+        case GL_INVALID_ENUM:                  errors.insert(GLType::ErrorType::InvalidEnum);                  break;
+        case GL_INVALID_VALUE:                 errors.insert(GLType::ErrorType::InvalidValue);                 break;
+        case GL_OUT_OF_MEMORY:                 errors.insert(GLType::ErrorType::OutOfMemory);                  break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: errors.insert(GLType::ErrorType::InvalidFramebufferOperation);  break;
+        }
+
+        glError = glGetError();
+    }
+
+    std::string errorString = "";
+    for (const auto& error : errors)
+    {
+        if (errorString.empty())
+            errorString = GLType::toString(error);
+        else
+            errorString += "\n" + GLType::toString(error);
+    }
+
+    return errorString;
+}
+
+std::string GLState::getErrorMessage(const std::unordered_map<GLType::ErrorType, std::string>& pErrorMessageOverrides)
+{
+    std::set<GLType::ErrorType> errors;
+    GLenum glError(glGetError());
+    while (glError != GL_NO_ERROR)
+    {
+        switch (glError)
+        {
+        case GL_INVALID_OPERATION:             errors.insert(GLType::ErrorType::InvalidOperation);             break;
+        case GL_INVALID_ENUM:                  errors.insert(GLType::ErrorType::InvalidEnum);                  break;
+        case GL_INVALID_VALUE:                 errors.insert(GLType::ErrorType::InvalidValue);                 break;
+        case GL_OUT_OF_MEMORY:                 errors.insert(GLType::ErrorType::OutOfMemory);                  break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: errors.insert(GLType::ErrorType::InvalidFramebufferOperation);  break;
+        }
+
+        glError = glGetError();
+    }
+
+    std::string errorString = "";
+    for (const auto& error : errors)
+    {
+        const auto it = pErrorMessageOverrides.find(error);
+        if (it != pErrorMessageOverrides.end())
+        {
+            if (errorString.empty())
+                errorString = it->second;
+            else
+                errorString += "\n" + it->second;
+        }
+        else
+        {
+            if (errorString.empty())
+                errorString = GLType::toString(error);
+            else
+                errorString += "\n" + GLType::toString(error);
+        }
+    }
+    return errorString;
 }

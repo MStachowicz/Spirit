@@ -4,6 +4,7 @@
 
 #include "string"
 #include "array"
+#include "unordered_map"
 #include "optional"
 
 // Wraps all the GL types into enums and provides helper functions to extract the values or string representations.
@@ -337,6 +338,29 @@ namespace GLType
         "ReadFramebuffer",
         "Framebuffer"};
 
+    enum class ErrorType
+    {
+        InvalidEnum,
+        InvalidValue,
+        InvalidOperation,
+        InvalidFramebufferOperation,
+        OutOfMemory,
+        StackUnderflow,
+        StackOverflow,
+        Count
+    };
+
+    // Messages from https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetError.xhtml
+    static inline const std::array<std::string, util::toIndex(ErrorType::Count)> ErrorMessages{
+        "GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag",
+        "GL_INVALID_VALUE: A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag",
+        "GL_INVALID_OPERATION: The specified operation is not allowed in the current state. The offending command is ignored and has no other side effect than to set the error flag",
+        "GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag",
+        "GL_OUT_OF_MEMORY: There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded",
+        "GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow",
+        "GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow"
+    };
+
     inline std::string toString(const DataType& pDataType)                              { return dataTypes[util::toIndex(pDataType)]; }
     inline std::string toString(const ShaderResourceType& pResourceType)                { return shaderResourceTypes[util::toIndex(pResourceType)]; }
     inline std::string toString(const ShaderResourceProperty& pShaderResourceProperty)  { return shaderResourceProperties[util::toIndex(pShaderResourceProperty)]; }
@@ -348,6 +372,7 @@ namespace GLType
     inline std::string toString(const PolygonMode& pPolygonMode)                        { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
     inline std::string toString(const PrimitiveMode& pPrimitiveMode)                    { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
     inline std::string toString(const FramebufferTarget& pFramebufferTarget)            { return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)]; }
+    inline std::string toString(const ErrorType& pErrorType)                            { return ErrorMessages[util::toIndex(pErrorType)]; }
 
     DataType convert(const int& pDataType);
 
@@ -621,4 +646,7 @@ private:
     // 2: Size X
     // 3: Size Y
     std::array<int, 4> mViewport;
+
+    std::string getErrorMessage();
+    std::string getErrorMessage(const std::unordered_map<GLType::ErrorType, std::string>& pErrorMessageOverrides);
 };
