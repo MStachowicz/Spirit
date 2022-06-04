@@ -31,7 +31,7 @@ void ZephyrAssertImplementation(const std::string& condition, const int& line, c
     // Once migrated to std::format, additional std types get formatting e.g. std::filesystem::path
     // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1636r0.pdf
     const std::string message = fmt::format(std::forward<Args>(args)...);
-    Logger::GetLogger()->critical(fmt::format("ASSERT FAILED\nMESSAGE:   {}\nCONDITION: {}\nFILE:      {}\nLINE:      {}", message, condition, fileName, line));
+    Logger::GetLogger()->critical(fmt::format("ASSERT FAILED\nMESSAGE:   {}\nCONDITION: {}\nFILE: {}:{}", message, condition, fileName, line));
     throw std::logic_error(message);
 }
 #else
