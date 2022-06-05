@@ -4,47 +4,19 @@
 #include "Utility.hpp"
 #include "Logger.hpp"
 
+#include "GLState.hpp"
 #include "glad/gl.h"
 
 #include "glm/mat4x4.hpp" // mat4, dmat4
 #include "glm/gtc/type_ptr.hpp" //  glm::value_ptr
 
- Shader::Shader(const std::string &pName)
+ Shader::Shader(const std::string& pName, GLState& pGLState)
 	: mName(pName)
 	, mSourcePath(File::GLSLShaderDirectory)
 	, mTextureUnits(0)
 {
-	load();
-}
-
-void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
-{
-	if (mRequiredAttributes.find(Attribute::Position3D) == mRequiredAttributes.end())
-		if(pSourceCode.find(getAttributeName(Attribute::Position3D)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::Position3D);
-
-	if (mRequiredAttributes.find(Attribute::Normal3D) == mRequiredAttributes.end())
-		if (pSourceCode.find(getAttributeName(Attribute::Normal3D)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::Normal3D);
-
-	if (mRequiredAttributes.find(Attribute::ColourRGB) == mRequiredAttributes.end())
-		if (pSourceCode.find(getAttributeName(Attribute::ColourRGB)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::ColourRGB);
-
-	if (mRequiredAttributes.find(Attribute::TextureCoordinate2D) == mRequiredAttributes.end())
-		if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::TextureCoordinate2D);
-
-	mTextureUnits += findOccurrences(pSourceCode, "sampler2D");
-	mTextureUnits += findOccurrences(pSourceCode, "samplerCube");
-
-	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
-}
-
-void Shader::load()
-{
-	const std::string vertexShaderPath 		= mSourcePath + mName + ".vert";
-	const std::string fragmentShaderPath 	= mSourcePath + mName + ".frag";
+	const std::string vertexShaderPath   = mSourcePath + mName + ".vert";
+	const std::string fragmentShaderPath = mSourcePath + mName + ".frag";
 	ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
 	ZEPHYR_ASSERT(File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath);
 
@@ -55,7 +27,7 @@ void Shader::load()
 		const char *vertexShaderSource = source.c_str();
 		glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 		glCompileShader(vertexShader);
-		ZEPHYR_ASSERT(!hasCompileErrors(Type::Vertex, vertexShader), "Failed to compile vertex shader {}", mName + ".vert");
+		ZEPHYR_ASSERT(!hasCompileErrors(Type::Vertex, vertexShader), "Failed to compile vertex shader {}.vert", mName);
 		initialiseRequiredAttributes(source);
 	}
 
@@ -66,7 +38,7 @@ void Shader::load()
 		const char *fragmentShaderSource = source.c_str();
 		glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 		glCompileShader(fragmentShader);
-		ZEPHYR_ASSERT(!hasCompileErrors(Type::Fragment, fragmentShader), "Failed to compile fragment shader {}", mName + ".frag");
+		ZEPHYR_ASSERT(!hasCompileErrors(Type::Fragment, fragmentShader), "Failed to compile fragment shader {}.frag", mName);
 		initialiseRequiredAttributes(source);
 	}
 
@@ -92,11 +64,44 @@ void Shader::load()
 		}
 	}
 
+	{ // Find and setup all the UniformBlocks in this Shader using OpenGL Program introspection.
+		const int blockCount = GLState::getActiveUniformBlockCount(mHandle);
+		for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
+		{
+			mUniformBlocks.push_back(GLState::getUniformBlock(mHandle, blockIndex));
+			pGLState.bindUniformBlock(mUniformBlocks.back());
+		}
+	}
+
 	// Delete the shaders after linking as they're no longer needed
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 	ZEPHYR_ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
 	LOG_INFO("OpenGL::Shader '{}' loaded given ID: {}", mName, mHandle);
+}
+
+void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
+{
+	if (mRequiredAttributes.find(Attribute::Position3D) == mRequiredAttributes.end())
+		if(pSourceCode.find(getAttributeName(Attribute::Position3D)) != std::string::npos)
+			mRequiredAttributes.insert(Attribute::Position3D);
+
+	if (mRequiredAttributes.find(Attribute::Normal3D) == mRequiredAttributes.end())
+		if (pSourceCode.find(getAttributeName(Attribute::Normal3D)) != std::string::npos)
+			mRequiredAttributes.insert(Attribute::Normal3D);
+
+	if (mRequiredAttributes.find(Attribute::ColourRGB) == mRequiredAttributes.end())
+		if (pSourceCode.find(getAttributeName(Attribute::ColourRGB)) != std::string::npos)
+			mRequiredAttributes.insert(Attribute::ColourRGB);
+
+	if (mRequiredAttributes.find(Attribute::TextureCoordinate2D) == mRequiredAttributes.end())
+		if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
+			mRequiredAttributes.insert(Attribute::TextureCoordinate2D);
+
+	mTextureUnits += findOccurrences(pSourceCode, "sampler2D");
+	mTextureUnits += findOccurrences(pSourceCode, "samplerCube");
+
+	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
 }
 
 void Shader::use() const
@@ -132,7 +137,7 @@ int Shader::getAttributeComponentCount(const Attribute& pAttribute)
 		return 2; // X and Y components
 	default:
 		ZEPHYR_ASSERT(false, "Could not determine the size of the attribute pAttribute");
-		break;
+		return 0;
 	}
 }
 
@@ -228,6 +233,7 @@ std::string Shader::getAttributeName(const Attribute& pAttribute)
 		return "VertexTexCoord";
 	else
 		ZEPHYR_ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", pAttribute);
+		return "";
 }
 
 bool Shader::hasCompileErrors(const Type& pType, const unsigned int pID)

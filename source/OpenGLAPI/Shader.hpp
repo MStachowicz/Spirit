@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GLState.hpp"
+
 #include "glm/fwd.hpp"
 
 #include "string"
@@ -11,7 +13,7 @@
 class Shader
 {
 public:
-    Shader(const std::string &pName);
+    Shader(const std::string &pName, GLState& pGLState);
 
     // These are per-vertex attributes found in GLSL shaders.
     // Each attribute must be named the same in the GLSL files. getAttributeName() returns the expected string in the shader.
@@ -48,7 +50,6 @@ public:
     // Specified as "layout (location = X)" in GLSL shaders.
     static int getAttributeLocation(const Attribute& pAttribute);
 private:
-    void load();
     // Search source code for any per-vertex attributes a Mesh will require to be drawn by this shader.
     void initialiseRequiredAttributes(const std::string& pSourceCode);
     int getUniformLocation(const std::string &pName) const;
@@ -56,15 +57,20 @@ private:
     std::string mName;
     std::string mSourcePath;
     unsigned int mHandle;
-    std::set<Shader::Attribute> mRequiredAttributes; // The required Attributes a mesh must have to be rendered using this Shader.
     int mTextureUnits; // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
+    std::set<Shader::Attribute> mRequiredAttributes; // The required Attributes a mesh must have to be rendered using this Shader.
+
+    // TODO: make this an array of size GL_MAX_X_UNIFORM_BLOCKS + (X = Split the uniform blocks per shader stage)
+    // Each shader stage has a limit on the number of separate uniform buffer binding locations. These are queried using
+    // glGetIntegerv with GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, or GL_MAX_FRAGMENT_UNIFORM_BLOCKS.
+    std::vector<GLData::UniformBlock> mUniformBlocks;
 
     static inline const Shader* shaderInUse = nullptr; // Keeps track of current Shader object set with use(). Used for error checking in checkForUseErrors().
 	static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders using sampler2D
-    enum class Type { Vertex, Fragment, Program };
 
     static int findOccurrences(const std::string& pStringToSearch, const std::string& pSubStringToFind);
     static std::string getAttributeName(const Attribute &pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
     static bool checkForUseErrors(const Shader &pCalledFrom);
+    enum class Type { Vertex, Fragment, Program };
     static bool hasCompileErrors(const Type &pType, const unsigned int pID);
 };

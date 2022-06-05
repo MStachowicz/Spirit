@@ -42,7 +42,7 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, directionalLightDrawCount(0)
 	, mBufferDrawType(GLType::BufferDrawType::Colour)
 	, mPostProcessingOptions()
-	, mShaders{ Shader("texture1"), Shader("texture2"), Shader("material"), Shader("colour"), Shader("uniformColour"), Shader("lightMap"), Shader("depthView"), Shader("screenTexture"), Shader("skybox") }
+	, mShaders{ Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("depthView", mGLState), Shader("screenTexture", mGLState), Shader("skybox", mGLState) }
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
