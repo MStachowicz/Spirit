@@ -73,7 +73,10 @@ void OpenGLAPI::preDraw()
 	mMainScreenFBO.clearBuffers();
 	mGLState.checkFramebufferBufferComplete();
 
+	// #OPTIMISATION do this only when view or projection changes.
 	mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
+	mGLState.setUniformBlockVariable("ViewProperties.view", mViewMatrix);
+	mGLState.setUniformBlockVariable("ViewProperties.projection", mProjection);
 
 	if (mBufferDrawType == GLType::BufferDrawType::Depth)
 	{
@@ -182,13 +185,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.y), glm::vec3(0.0, 1.0, 0.0));
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.z), glm::vec3(0.0, 0.0, 1.0));
 	trans = glm::scale(trans, pDrawCall.mScale);
-
-	{
-		shader->setUniform("model", trans);
-		 // #OPTIMIZATION: view and projection only set when they change (camera + )
-		shader->setUniform("view", mViewMatrix);
-		shader->setUniform("projection", mProjection);
-	}
+	shader->setUniform("model", trans);
 
 	switch (pDrawCall.mDrawMode)
 	{
@@ -218,17 +215,17 @@ void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 }
 void OpenGLAPI::draw(const PointLight& pPointLight)
 {
-	const std::string uniform = "pointLights[" + std::to_string(pointLightDrawCount) + "]";
+	const std::string uniform = "Lights.mPointLights[" + std::to_string(pointLightDrawCount) + "]";
 	const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pPointLight.mAmbientIntensity;
-	mShaders[mLightMapIndex].use();
-	mShaders[mLightMapIndex].setUniform((uniform + ".position").c_str(), pPointLight.mPosition);
-	mShaders[mLightMapIndex].setUniform((uniform + ".ambient").c_str(), ambientColour);
-	mShaders[mLightMapIndex].setUniform((uniform + ".diffuse").c_str(), diffuseColour);
-	mShaders[mLightMapIndex].setUniform((uniform + ".specular").c_str(), glm::vec3(pPointLight.mSpecularIntensity));
-	mShaders[mLightMapIndex].setUniform((uniform + ".constant").c_str(), pPointLight.mConstant);
-	mShaders[mLightMapIndex].setUniform((uniform + ".linear").c_str(), pPointLight.mLinear);
-	mShaders[mLightMapIndex].setUniform((uniform + ".quadratic").c_str(), pPointLight.mQuadratic);
+
+	mGLState.setUniformBlockVariable((uniform + ".position").c_str(), pPointLight.mPosition);
+	mGLState.setUniformBlockVariable((uniform + ".ambient").c_str(), ambientColour);
+	mGLState.setUniformBlockVariable((uniform + ".diffuse").c_str(), diffuseColour);
+	mGLState.setUniformBlockVariable((uniform + ".specular").c_str(), glm::vec3(pPointLight.mSpecularIntensity));
+	mGLState.setUniformBlockVariable((uniform + ".constant").c_str(), pPointLight.mConstant);
+	mGLState.setUniformBlockVariable((uniform + ".linear").c_str(), pPointLight.mLinear);
+	mGLState.setUniformBlockVariable((uniform + ".quadratic").c_str(), pPointLight.mQuadratic);
 
 	pointLightDrawCount++;
 }
@@ -236,11 +233,11 @@ void OpenGLAPI::draw(const DirectionalLight& pDirectionalLight)
 {
 	const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
-	mShaders[mLightMapIndex].use();
-	mShaders[mLightMapIndex].setUniform("dirLight.direction", pDirectionalLight.mDirection);
-	mShaders[mLightMapIndex].setUniform("dirLight.ambient", ambientColour);
-	mShaders[mLightMapIndex].setUniform("dirLight.diffuse", diffuseColour);
-	mShaders[mLightMapIndex].setUniform("dirLight.specular", glm::vec3(pDirectionalLight.mSpecularIntensity));
+
+	mGLState.setUniformBlockVariable("Lights.mDirectionalLight.direction", pDirectionalLight.mDirection);
+	mGLState.setUniformBlockVariable("Lights.mDirectionalLight.ambient", ambientColour);
+	mGLState.setUniformBlockVariable("Lights.mDirectionalLight.diffuse", diffuseColour);
+	mGLState.setUniformBlockVariable("Lights.mDirectionalLight.specular", glm::vec3(pDirectionalLight.mSpecularIntensity));
 
 	directionalLightDrawCount++;
 }
@@ -248,17 +245,17 @@ void OpenGLAPI::draw(const SpotLight& pSpotLight)
 {
 	const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
-	mShaders[mLightMapIndex].use();
-	mShaders[mLightMapIndex].setUniform("spotLight.position", pSpotLight.mPosition);
-	mShaders[mLightMapIndex].setUniform("spotLight.direction", pSpotLight.mDirection);
-	mShaders[mLightMapIndex].setUniform("spotLight.diffuse", diffuseColour);
-	mShaders[mLightMapIndex].setUniform("spotLight.ambient", ambientColour);
-	mShaders[mLightMapIndex].setUniform("spotLight.specular", glm::vec3(pSpotLight.mSpecularIntensity));
-	mShaders[mLightMapIndex].setUniform("spotLight.constant", pSpotLight.mConstant);
-	mShaders[mLightMapIndex].setUniform("spotLight.linear", pSpotLight.mLinear);
-	mShaders[mLightMapIndex].setUniform("spotLight.quadratic", pSpotLight.mQuadratic);
-	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", pSpotLight.mCutOff);
-	mShaders[mLightMapIndex].setUniform("spotLight.cutOff", pSpotLight.mOuterCutOff);
+
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.position", pSpotLight.mPosition);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.direction", pSpotLight.mDirection);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.diffuse", diffuseColour);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.ambient", ambientColour);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.specular", glm::vec3(pSpotLight.mSpecularIntensity));
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.constant", pSpotLight.mConstant);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.linear", pSpotLight.mLinear);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.quadratic", pSpotLight.mQuadratic);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.cutOff", pSpotLight.mCutOff);
+	mGLState.setUniformBlockVariable("Lights.mSpotLight.cutOff", pSpotLight.mOuterCutOff);
 
 	spotLightDrawCount++;
 }
@@ -270,7 +267,7 @@ void OpenGLAPI::postDraw()
 		// Depth testing must be set to GL_LEQUAL because the depth values of skybox's are equal to depth buffer contents.
 		mShaders[mSkyBoxShaderIndex].use();
 		const glm::mat4 view = glm::mat4(glm::mat3(mViewMatrix)); // remove translation from the view matrix
-		mShaders[mSkyBoxShaderIndex].setUniform("view", view);
+		mShaders[mSkyBoxShaderIndex].setUniform("viewNoTranslation", view);
 		mShaders[mSkyBoxShaderIndex].setUniform("projection", mProjection);
 
 		GLState previousState = mGLState;

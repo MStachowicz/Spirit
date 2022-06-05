@@ -1,11 +1,12 @@
-#version 330 core
+#version 420 core
 
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
+
 out vec4 FragColor;
 
-struct DirLight {
+struct DirectionalLight {
     vec3 direction;
 
     vec3 ambient;
@@ -15,15 +16,14 @@ struct DirLight {
 struct PointLight {
     vec3 position;
 
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-
     float constant;
     float linear;
     float quadratic;
-};
 
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
 struct SpotLight {
     vec3 position;
     vec3 direction;
@@ -40,9 +40,12 @@ struct SpotLight {
 };
 
 #define NR_POINT_LIGHTS 4
-uniform DirLight dirLight;
-uniform SpotLight spotLight;
-uniform PointLight pointLights[NR_POINT_LIGHTS];
+layout(shared) uniform Lights
+{
+    DirectionalLight mDirectionalLight;
+    SpotLight mSpotLight;
+    PointLight mPointLights[NR_POINT_LIGHTS];
+} lights;
 
 uniform vec3 viewPosition;
 uniform float shininess;
@@ -50,29 +53,8 @@ uniform float shininess;
 uniform sampler2D texture0; // Diffuse texture
 uniform sampler2D texture1; // Specular texture
 
-
-// function prototypes
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
-
-void main()
-{
-    vec3 norm = normalize(Normal);
-    vec3 viewDir = normalize(viewPosition - FragPos);
-
-    vec3 result = CalcDirLight(dirLight, norm, viewDir);
-
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
-
-    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
-
-    FragColor = vec4(result, 1.0);
-}
-
 // Calculates the color when using a directional light.
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
+vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir)
 {
     vec3 lightDir = normalize(-light.direction);
     // diffuse shading
@@ -133,4 +115,19 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
     return (ambient + diffuse + specular);
+}
+
+void main()
+{
+    vec3 norm = normalize(Normal);
+    vec3 viewDir = normalize(viewPosition - FragPos);
+
+    vec3 result = CalcDirectionalLight(lights.mDirectionalLight, norm, viewDir);
+
+    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+        result += CalcPointLight(lights.mPointLights[i], norm, FragPos, viewDir);
+
+    result += CalcSpotLight(lights.mSpotLight, norm, FragPos, viewDir);
+
+    FragColor = vec4(result, 1.0);
 }
