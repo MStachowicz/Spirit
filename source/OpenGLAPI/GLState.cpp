@@ -341,26 +341,19 @@ void GLState::setActiveTextureUnit(const int& pTextureUnitPosition)
 void GLState::drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)
 {
     glDrawElements(convert(pPrimitiveMode), pCount, GL_UNSIGNED_INT, 0);
-    //GL_INVALID_ENUM is generated if mode is not an accepted value.
-    //GL_INVALID_VALUE is generated if count is negative.
-    //GL_INVALID_OPERATION is generated if a geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.
-    //GL_INVALID_OPERATION is generated if a non-zero buffer object name is bound to an enabled array or the element array and the buffer object's data store is currently mapped.
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawElements));
 }
 void GLState::drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)
 {
     glDrawArrays(convert(pPrimitiveMode), 0, pCount);
-    //GL_INVALID_ENUM is generated if mode is not an accepted value.
-    //GL_INVALID_VALUE is generated if count is negative.
-    //GL_INVALID_OPERATION is generated if a non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped.
-    //GL_INVALID_OPERATION is generated if a geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawArrays));
 }
 
 void GLState::bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle)
 {
     mActiveFramebuffer = pFBOHandle;
     glBindFramebuffer(convert(pFramebufferTargetType), pFBOHandle);
-    //GL_INVALID_ENUM is generated if target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER.
-    //GL_INVALID_OPERATION is generated if framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers.
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindFramebuffer));
 }
 void GLState::unbindFramebuffer()
 {
@@ -523,7 +516,7 @@ void GLState::setViewport(const int& pWidth, const int& pHeight)
     mViewport[2] = pWidth;
     mViewport[3] = pHeight;
     glViewport(0, 0, pWidth, pHeight);
-    ZEPHYR_ASSERT_MSG(getErrorMessage({{GLType::ErrorType::InvalidValue, "Either width or height is negative"}}));
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::Viewport));
 }
 
 namespace GLData
@@ -1194,19 +1187,17 @@ std::string GLState::getErrorMessage()
         glError = glGetError();
     }
 
-    std::string errorString = "";
+    if (errors.empty())
+        return "";
+
+    std::string errorString = "Found OpenGL error(s):";
     for (const auto& error : errors)
-    {
-        if (errorString.empty())
-            errorString = GLType::toString(error);
-        else
-            errorString += "\n" + GLType::toString(error);
-    }
+        errorString += "\n" + GLType::toString(error);
 
     return errorString;
 }
 
-std::string GLState::getErrorMessage(const std::unordered_map<GLType::ErrorType, std::string>& pErrorMessageOverrides)
+std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction)
 {
     std::set<GLType::ErrorType> errors;
     GLenum glError(glGetError());
@@ -1224,23 +1215,25 @@ std::string GLState::getErrorMessage(const std::unordered_map<GLType::ErrorType,
         glError = glGetError();
     }
 
-    std::string errorString = "";
+    if (errors.empty())
+        return "";
+
+    std::string errorString = "Found OpenGL error(s) using function gl" + GLType::toString(pCallingFunction) + ":";
     for (const auto& error : errors)
     {
-        const auto it = pErrorMessageOverrides.find(error);
-        if (it != pErrorMessageOverrides.end())
+        const auto& errorMessageOverrides = GLType::functionErrorTypeMapping[util::toIndex(pCallingFunction)];
+        const auto errorTypeIterator = errorMessageOverrides.find(error);
+
+        if (errorTypeIterator != errorMessageOverrides.end())
         {
-            if (errorString.empty())
-                errorString = it->second;
-            else
-                errorString += "\n" + it->second;
+            for (const auto &errorMessage : errorTypeIterator->second)
+            {
+                errorString += "\n" + errorMessage;
+            }
         }
         else
-        {
-            if (errorString.empty())
-                errorString = GLType::toString(error);
-            else
-                errorString += "\n" + GLType::toString(error);
+        {// If functionErrorTypeMapping doesn't override the ErrorType, use the default toString
+            errorString += "\n" + GLType::toString(error);
         }
     }
     return errorString;
