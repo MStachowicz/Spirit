@@ -366,6 +366,97 @@ void GLState::checkFramebufferBufferComplete()
     ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 }
 
+unsigned int GLState::CreateShader(const GLType::ShaderProgramType& pProgramType)
+{
+    unsigned int shaderID = glCreateShader(GLType::convert(pProgramType));
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::CreateShader));
+    ZEPHYR_ASSERT(shaderID != 0, "Error occurred creating the shader object");
+    return shaderID;
+}
+
+void GLState::ShaderSource(const unsigned int& pShaderHandle, const std::string& pShaderSource)
+{
+    const char* programSource = pShaderSource.c_str();
+    glShaderSource(pShaderHandle, 1, &programSource, NULL);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::ShaderSource));
+}
+
+void GLState::CompileShader(const unsigned int& pShaderHandle)
+{
+    glCompileShader(pShaderHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::CompileShader));
+
+    GLint success;
+    glGetShaderiv(pShaderHandle, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        GLint infoLogCharCount = 0;
+        glGetShaderiv(pShaderHandle, GL_INFO_LOG_LENGTH, &infoLogCharCount);
+        std::string infoLog = "";
+        infoLog.resize(infoLogCharCount);
+        glGetShaderInfoLog(pShaderHandle, infoLogCharCount, NULL, infoLog.data());
+        infoLog.pop_back();
+        ZEPHYR_ASSERT(false, "Shader compilation failed\n{}", infoLog);
+    }
+}
+
+unsigned int GLState::CreateProgram()
+{
+    unsigned int programHandle = glCreateProgram();
+    ZEPHYR_ASSERT(programHandle != 0, "Error occurred creating the shader program object");
+    return programHandle;
+}
+
+void GLState::AttachShader(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderHandle)
+{
+    glAttachShader(pShaderProgramHandle, pShaderHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::AttachShader));
+}
+
+void GLState::LinkProgram(const unsigned int& pShaderProgramHandle)
+{
+    // If program contains shader objects of type GL_VERTEX_SHADER, and optionally of type GL_GEOMETRY_SHADER, but does not contain shader objects of type GL_FRAGMENT_SHADER,
+    // the vertex shader executable will be installed on the programmable vertex processor,
+    // the geometry shader executable, if present, will be installed on the programmable geometry processor,
+    // but no executable will be installed on the fragment processor.
+    // The results of rasterizing primitives with such a program will be UNDEFINED.
+    glLinkProgram(pShaderProgramHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::LinkProgram));
+
+    GLint success;
+    glGetProgramiv(pShaderProgramHandle, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        GLint infoLogCharCount = 0;
+        glGetShaderiv(pShaderProgramHandle, GL_INFO_LOG_LENGTH, &infoLogCharCount);
+        std::string infoLog = "";
+        infoLog.resize(infoLogCharCount);
+        glGetShaderInfoLog(pShaderProgramHandle, infoLogCharCount, NULL, infoLog.data());
+        infoLog.pop_back();
+        ZEPHYR_ASSERT(false, "Shader program linking failed\n{}", infoLog);
+    }
+}
+
+void GLState::DeleteShader(const unsigned int& pShaderHandle)
+{
+    glDeleteShader(pShaderHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteShader));
+}
+
+void GLState::UseProgram(const unsigned int& pShaderProgramHandle)
+{
+    glUseProgram(pShaderProgramHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteShader));
+}
+
+int GLState::GetUniformLocation(const unsigned int& pShaderProgramHandle, const std::string& pName)
+{
+    GLint location = glGetUniformLocation(pShaderProgramHandle, pName.c_str());
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::GetUniformLocation));
+    ZEPHYR_ASSERT(location != -1, "pName does not correspond to an active uniform variable in program or pName starts with the reserved prefix 'gl_' or pName is associated with an atomic counter or a named uniform block.");
+    return location;
+}
+
 void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
 {
     UniformBlockBindingPoint* bindingPoint = nullptr;
@@ -440,14 +531,14 @@ void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const gl
 	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 
-int GLState::getActiveUniformBlockCount(const unsigned int& pShaderHandle)
+int GLState::getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle)
 {
     GLint blockCount = 0;
-    glGetProgramInterfaceiv(pShaderHandle, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &blockCount);
+    glGetProgramInterfaceiv(pShaderProgramHandle, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &blockCount);
     return blockCount;
 }
 
-GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderHandle, const unsigned int& pUniformVariableIndex)
+GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex)
 {
     // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
     // https://www.khronos.org/opengl/wiki/Program_Introspection
@@ -455,12 +546,12 @@ GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderH
     static const std::array<GLenum, 9> propertyQuery = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_LOCATION, GL_BLOCK_INDEX, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR};
 
     std::array<GLint, propertyQuery.size()> propertyValues = {0};
-    glGetProgramResourceiv(pShaderHandle, GL_UNIFORM, pUniformVariableIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(), static_cast<GLsizei>(propertyValues.size()), NULL, propertyValues.data());
+    glGetProgramResourceiv(pShaderProgramHandle, GL_UNIFORM, pUniformVariableIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(), static_cast<GLsizei>(propertyValues.size()), NULL, propertyValues.data());
 
     GLData::UniformVariable uniformVariable;
     uniformVariable.mName.resize(propertyValues[0]);
-    glGetProgramResourceName(pShaderHandle, GL_UNIFORM, pUniformVariableIndex, propertyValues[0], NULL, uniformVariable.mName.data());
-    ZEPHYR_ASSERT(!uniformVariable.mName.empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderHandle);
+    glGetProgramResourceName(pShaderProgramHandle, GL_UNIFORM, pUniformVariableIndex, propertyValues[0], NULL, uniformVariable.mName.data());
+    ZEPHYR_ASSERT(!uniformVariable.mName.empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderProgramHandle);
     uniformVariable.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
 
     uniformVariable.mType         = GLType::convert(propertyValues[1]);
@@ -474,25 +565,25 @@ GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderH
     return uniformVariable;
 }
 
-GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndex)
+GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex)
 {
     static const std::array<GLenum, 4> propertyQuery = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
 
 	std::array<GLint, propertyQuery.size()> uniformBlockValues = {0};
-    glGetProgramResourceiv(pShaderHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(),  static_cast<GLsizei>(uniformBlockValues.size()), NULL, uniformBlockValues.data());
+    glGetProgramResourceiv(pShaderProgramHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(),  static_cast<GLsizei>(uniformBlockValues.size()), NULL, uniformBlockValues.data());
 
     GLData::UniformBlock uniformBlock;
     { // Get the name of the uniform block
         uniformBlock.mName.resize(uniformBlockValues[0]);
-        glGetProgramResourceName(pShaderHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, uniformBlockValues[0], NULL, uniformBlock.mName.data());
-        ZEPHYR_ASSERT(!uniformBlock.mName.empty(), "Failed to get name of uniform block in shader with handle {}", pShaderHandle);
+        glGetProgramResourceName(pShaderProgramHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, uniformBlockValues[0], NULL, uniformBlock.mName.data());
+        ZEPHYR_ASSERT(!uniformBlock.mName.empty(), "Failed to get name of uniform block in shader with handle {}", pShaderProgramHandle);
         uniformBlock.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
     }
-    uniformBlock.mBlockIndex           = glGetUniformBlockIndex(pShaderHandle, uniformBlock.mName.c_str());
+    uniformBlock.mBlockIndex           = glGetUniformBlockIndex(pShaderProgramHandle, uniformBlock.mName.c_str());
     uniformBlock.mActiveVariablesCount = uniformBlockValues[1];
     uniformBlock.mBindingPoint         = static_cast<unsigned int>(uniformBlockValues[2]);
     uniformBlock.mBufferDataSize       = uniformBlockValues[3];
-    uniformBlock.mParentShaderHandle   = pShaderHandle;
+    uniformBlock.mParentShaderHandle   = pShaderProgramHandle;
 
     // TODO: check There is also a limitation on the available storage per uniform buffer.
 	// This is queried through GL_MAX_UNIFORM_BLOCK_SIZE. This is in basic machine units (ie: bytes).
@@ -502,10 +593,10 @@ GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderHandle,
         // The indices correspond in size to GL_NUM_ACTIVE_VARIABLES
         uniformBlock.mVariableIndices.resize(uniformBlock.mActiveVariablesCount);
         const GLenum activeUnifProp[1] = {GL_ACTIVE_VARIABLES};
-        glGetProgramResourceiv(pShaderHandle, GL_UNIFORM_BLOCK, uniformBlock.mBlockIndex, 1, activeUnifProp, uniformBlock.mActiveVariablesCount, NULL, uniformBlock.mVariableIndices.data());
+        glGetProgramResourceiv(pShaderProgramHandle, GL_UNIFORM_BLOCK, uniformBlock.mBlockIndex, 1, activeUnifProp, uniformBlock.mActiveVariablesCount, NULL, uniformBlock.mVariableIndices.data());
 
         for (int variableIndex = 0; variableIndex < uniformBlock.mActiveVariablesCount; variableIndex++)
-            uniformBlock.mVariables.push_back(GLState::getUniformVariable(pShaderHandle, uniformBlock.mVariableIndices[variableIndex]));
+            uniformBlock.mVariables.push_back(GLState::getUniformVariable(pShaderProgramHandle, uniformBlock.mVariableIndices[variableIndex]));
     }
 
     return uniformBlock;
@@ -976,6 +1067,57 @@ namespace GLType
         }
     }
 
+    std::string toString(const Function& pFunction)
+    {
+        switch (pFunction)
+        {
+            case Function::UniformBlockBinding : return "UniformBlockBinding";
+            case Function::Viewport :            return "Viewport";
+            case Function::DrawElements :        return "DrawElements";
+            case Function::DrawArrays :          return "DrawArrays";
+            case Function::BindFramebuffer :     return "BindFramebuffer";
+            case Function::CreateShader :        return "CreateShader";
+            case Function::ShaderSource :        return "ShaderSource";
+            case Function::CompileShader :       return "CompileShader";
+            case Function::CreateProgram :       return "CreateProgram";
+            case Function::AttachShader :        return "AttachShader";
+            case Function::LinkProgram :         return "LinkProgram";
+            case Function::DeleteShader :        return "DeleteShader";
+            case Function::UseProgram :          return "UseProgram";
+            case Function::GetUniformLocation :  return "GetUniformLocation";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown Function requested");
+                return "";
+        }
+    }
+
+    std::string toString(const ShaderProgramType& pShaderProgramType)
+    {
+        switch (pShaderProgramType)
+        {
+            case ShaderProgramType::Vertex:     return "VertexShader";
+            case ShaderProgramType::Geometry:   return "GeometryShader";
+            case ShaderProgramType::Fragment:   return "FragmentShader";
+            case ShaderProgramType::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
+                return "";
+        }
+    }
+    int convert(const ShaderProgramType& pShaderProgramType)
+    {
+        switch (pShaderProgramType)
+        {
+            case ShaderProgramType::Vertex:     return GL_VERTEX_SHADER;
+            case ShaderProgramType::Geometry:   return GL_GEOMETRY_SHADER;
+            case ShaderProgramType::Fragment:   return GL_FRAGMENT_SHADER;
+            case ShaderProgramType::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
+                return 0;
+        }
+    }
+
     int convert(const ShaderResourceType& pResourceType)
     {
         switch (pResourceType)
@@ -1199,6 +1341,71 @@ std::string GLState::getErrorMessage()
 
 std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction)
 {
+    const static std::array<std::unordered_map<GLType::ErrorType, std::vector<std::string>>, util::toIndex(GLType::Function::Count)> functionErrorTypeMapping =
+    {{
+        { // UniformBlockBinding
+            { GLType::ErrorType::InvalidValue, {
+                "uniformBlockIndex is not an active uniform block index of program"
+                , "uniformBlockBinding is greater than or equal to the value of GL_MAX_UNIFORM_BUFFER_BINDINGS"
+                , "program is not the name of a program object generated by the GL"
+            }}
+        },
+        { // Viewport
+            { GLType::ErrorType::InvalidValue,     { "Either width or height is negative" }}
+        },
+        { // DrawElements
+            { GLType::ErrorType::InvalidEnum,      {"Mode is not an accepted value"}},
+            { GLType::ErrorType::InvalidValue,     {"Count is negative"}},
+            { GLType::ErrorType::InvalidOperation, {
+                "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object",
+                "Non-zero buffer object name is bound to an enabled array or the element array and the buffer object's data store is currently mapped"
+            }}
+        },
+        { // DrawArrays
+            { GLType::ErrorType::InvalidEnum,      { "Mode is not an accepted value" }},
+            { GLType::ErrorType::InvalidValue,     {"Count is negative" }},
+            { GLType::ErrorType::InvalidOperation, {
+                "Non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped",
+                "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object"
+            }}
+        },
+        { // BindFramebuffer
+            { GLType::ErrorType::InvalidEnum,      { "Target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER" }},
+            { GLType::ErrorType::InvalidOperation, { "Framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers" }}
+        },
+        { // CreateShader
+            { GLType::ErrorType::InvalidEnum,      { "pShaderType is not an accepted value" }}
+        },
+        { // ShaderSource
+            { GLType::ErrorType::InvalidValue,      { "pShader is not a value generated by OpenGL", "Count is less than 0" }},
+            { GLType::ErrorType::InvalidOperation,  { "pShader is not a shader object" }}
+        },
+        { // CompileShader
+            { GLType::ErrorType::InvalidValue,      { "pShader is not a value generated by OpenGL" }},
+            { GLType::ErrorType::InvalidOperation,  { "pShader is not a shader object" }}
+        },
+        {}, // CreateProgram
+        { // AttachShader
+            { GLType::ErrorType::InvalidValue,      { "Either program or shader is not a value generated by OpenGL" }},
+            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object", "Shader is not a shader object", "Shader is already attached to program" }}
+        },
+        { // LinkProgram
+            { GLType::ErrorType::InvalidValue,      { "Program is not a value generated by OpenGL" }},
+            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object", "Program is the currently active program object and transform feedback mode is active" }}
+        },
+        { // DeleteShader
+            { GLType::ErrorType::InvalidValue,      { "Shader is not a value generated by OpenGL" }}
+        },
+        { // UseProgram
+            { GLType::ErrorType::InvalidValue,      { "Program is neither 0 nor a value generated by OpenGL." }},
+            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object.", "Program could not be made part of current state.", "Transform feedback mode is active." }}
+        },
+        { // GetUniformLocation
+            { GLType::ErrorType::InvalidValue,      { "program is not a value generated by OpenGL." }},
+            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object.", "Program has not been successfully linked." }}
+        },
+    }};
+
     std::set<GLType::ErrorType> errors;
     GLenum glError(glGetError());
     while (glError != GL_NO_ERROR)
@@ -1221,7 +1428,7 @@ std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction)
     std::string errorString = "Found OpenGL error(s) using function gl" + GLType::toString(pCallingFunction) + ":";
     for (const auto& error : errors)
     {
-        const auto& errorMessageOverrides = GLType::functionErrorTypeMapping[util::toIndex(pCallingFunction)];
+        const auto& errorMessageOverrides = functionErrorTypeMapping[util::toIndex(pCallingFunction)];
         const auto errorTypeIterator = errorMessageOverrides.find(error);
 
         if (errorTypeIterator != errorMessageOverrides.end())

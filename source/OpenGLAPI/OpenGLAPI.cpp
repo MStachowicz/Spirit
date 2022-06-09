@@ -80,25 +80,25 @@ void OpenGLAPI::preDraw()
 
 	if (mBufferDrawType == GLType::BufferDrawType::Depth)
 	{
-		mShaders[mDepthViewerIndex].use();
-		mShaders[mDepthViewerIndex].setUniform("near", mZNearPlane);
-		mShaders[mDepthViewerIndex].setUniform("far",  mZFarPlane);
-		mShaders[mDepthViewerIndex].setUniform("linearDepthView",  mLinearDepthView);
+		mShaders[mDepthViewerIndex].use(mGLState);
+		mShaders[mDepthViewerIndex].setUniform(mGLState, "near", mZNearPlane);
+		mShaders[mDepthViewerIndex].setUniform(mGLState, "far",  mZFarPlane);
+		mShaders[mDepthViewerIndex].setUniform(mGLState, "linearDepthView",  mLinearDepthView);
 	}
 
 	{ // PostProcessing setters
-		mShaders[mScreenTextureIndex].use();
-		mShaders[mScreenTextureIndex].setUniform("invertColours", mPostProcessingOptions.mInvertColours);
-		mShaders[mScreenTextureIndex].setUniform("grayScale", mPostProcessingOptions.mGrayScale);
-		mShaders[mScreenTextureIndex].setUniform("sharpen", mPostProcessingOptions.mSharpen);
-		mShaders[mScreenTextureIndex].setUniform("blur", mPostProcessingOptions.mBlur);
-		mShaders[mScreenTextureIndex].setUniform("edgeDetection", mPostProcessingOptions.mEdgeDetection);
-		mShaders[mScreenTextureIndex].setUniform("offset", mPostProcessingOptions.mKernelOffset);
+		mShaders[mScreenTextureIndex].use(mGLState);
+		mShaders[mScreenTextureIndex].setUniform(mGLState, "invertColours", mPostProcessingOptions.mInvertColours);
+		mShaders[mScreenTextureIndex].setUniform(mGLState, "grayScale", mPostProcessingOptions.mGrayScale);
+		mShaders[mScreenTextureIndex].setUniform(mGLState, "sharpen", mPostProcessingOptions.mSharpen);
+		mShaders[mScreenTextureIndex].setUniform(mGLState, "blur", mPostProcessingOptions.mBlur);
+		mShaders[mScreenTextureIndex].setUniform(mGLState, "edgeDetection", mPostProcessingOptions.mEdgeDetection);
+		mShaders[mScreenTextureIndex].setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
 	}
 
 	// TODO: Set this for all shaders that use viewPosition.
-	mShaders[mLightMapIndex].use();
-	mShaders[mLightMapIndex].setUniform("viewPosition", mViewPosition);
+	mShaders[mLightMapIndex].use(mGLState);
+	mShaders[mLightMapIndex].setUniform(mGLState, "viewPosition", mViewPosition);
 }
 
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
@@ -115,13 +115,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
 			{
 				shader = &mShaders[mTexture2ShaderIndex];
-				shader->use();
-				shader->setUniform("mixFactor", pDrawCall.mMixFactor.value());
+				shader->use(mGLState);
+				shader->setUniform(mGLState, "mixFactor", pDrawCall.mMixFactor.value());
 			}
 			else
 			{
 				shader = &mShaders[mTexture1ShaderIndex];
-				shader->use();
+				shader->use(mGLState);
 			}
 			ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
 
@@ -140,14 +140,14 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			break;
 		case DrawStyle::UniformColour:
 			shader = &mShaders[mUniformShaderIndex];
-			shader->use();
-			shader->setUniform("colour", pDrawCall.mColour.value());
+			shader->use(mGLState);
+			shader->setUniform(mGLState, "colour", pDrawCall.mColour.value());
 			break;
 		case DrawStyle::LightMap:
 			ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[util::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lighting.")
 
 			shader = &mShaders[mLightMapIndex];
-			shader->use();
+			shader->use(mGLState);
 
 			mGLState.setActiveTextureUnit(0);
 			if (pDrawCall.mDiffuseTextureID.has_value())
@@ -161,12 +161,12 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 			else
 				getTexture(mMissingTextureID).bind();
 
-			shader->setUniform("shininess", pDrawCall.mShininess.value());
+			shader->setUniform(mGLState, "shininess", pDrawCall.mShininess.value());
 
 			if (pDrawCall.mTextureRepeatFactor.has_value() && (pDrawCall.mDiffuseTextureID.has_value() || pDrawCall.mSpecularTextureID.has_value()))
-				shader->setUniform("textureRepeatFactor", pDrawCall.mTextureRepeatFactor.value());
+				shader->setUniform(mGLState, "textureRepeatFactor", pDrawCall.mTextureRepeatFactor.value());
 			else
-				shader->setUniform("textureRepeatFactor", 1.f);
+				shader->setUniform(mGLState, "textureRepeatFactor", 1.f);
 
 			break;
 		default:
@@ -176,7 +176,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	else if (mBufferDrawType == GLType::BufferDrawType::Depth)
 	{
 		shader = &mShaders[mDepthViewerIndex];
-		shader->use();
+		shader->use(mGLState);
 	}
 	ZEPHYR_ASSERT(shader != nullptr, "Shader to draw with has not been set.")
 
@@ -185,7 +185,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.y), glm::vec3(0.0, 1.0, 0.0));
 	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.z), glm::vec3(0.0, 0.0, 1.0));
 	trans = glm::scale(trans, pDrawCall.mScale);
-	shader->setUniform("model", trans);
+	shader->setUniform(mGLState, "model", trans);
 
 	switch (pDrawCall.mDrawMode)
 	{
@@ -265,10 +265,10 @@ void OpenGLAPI::postDraw()
 	{ // Skybox render
 		// Skybox is drawn in postDraw to maximise depth test culling of the textures in the cubemap which will always pass otherwise.
 		// Depth testing must be set to GL_LEQUAL because the depth values of skybox's are equal to depth buffer contents.
-		mShaders[mSkyBoxShaderIndex].use();
+		mShaders[mSkyBoxShaderIndex].use(mGLState);
 		const glm::mat4 view = glm::mat4(glm::mat3(mViewMatrix)); // remove translation from the view matrix
-		mShaders[mSkyBoxShaderIndex].setUniform("viewNoTranslation", view);
-		mShaders[mSkyBoxShaderIndex].setUniform("projection", mProjection);
+		mShaders[mSkyBoxShaderIndex].setUniform(mGLState, "viewNoTranslation", view);
+		mShaders[mSkyBoxShaderIndex].setUniform(mGLState, "projection", mProjection);
 
 		GLState previousState = mGLState;
 		mGLState.toggleDepthTest(true);
@@ -291,7 +291,7 @@ void OpenGLAPI::postDraw()
 		mGLState.toggleCullFaces(false);
 		mGLState.toggleDepthTest(false);
 
-		mShaders[mScreenTextureIndex].use();
+		mShaders[mScreenTextureIndex].use(mGLState);
 		mGLState.setActiveTextureUnit(0);
 		mMainScreenFBO.getColourTexture().bind();
 		draw(getGLMesh(mScreenQuad));

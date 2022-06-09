@@ -31,16 +31,16 @@ public:
     const std::string& getName() const { return mName; };
     const int& getTexturesUnitsCount() const { return mTextureUnits; };
 
-    void use() const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
-    void setUniform(const std::string& pName, const bool& pValue) const;
-    void setUniform(const std::string& pName, const int& pValue) const;
-    void setUniform(const std::string& pName, const float& pValue) const;
-    void setUniform(const std::string& pName, const glm::vec2& pValue) const;
-    void setUniform(const std::string& pName, const glm::vec3& pValue) const;
-    void setUniform(const std::string& pName, const glm::vec4& pValue) const;
-    void setUniform(const std::string& pName, const glm::mat2& pValue) const;
-    void setUniform(const std::string& pName, const glm::mat3& pValue) const;
-    void setUniform(const std::string& pName, const glm::mat4& pValue) const;
+    void use(GLState& pGLState) const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
+    void setUniform(GLState& pGLState, const std::string& pName, const bool& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const int& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const float& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const glm::vec2& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const glm::vec3& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const glm::vec4& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const glm::mat2& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const glm::mat3& pValue) const;
+    void setUniform(GLState& pGLState, const std::string& pName, const glm::mat4& pValue) const;
 
     // Returns the number of components the specified attribute consists of.
     // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)
@@ -52,7 +52,6 @@ public:
 private:
     // Search source code for any per-vertex attributes a Mesh will require to be drawn by this shader.
     void initialiseRequiredAttributes(const std::string& pSourceCode);
-    int getUniformLocation(const std::string &pName) const;
 
     std::string mName;
     std::string mSourcePath;
@@ -71,6 +70,4 @@ private:
     static int findOccurrences(const std::string& pStringToSearch, const std::string& pSubStringToFind);
     static std::string getAttributeName(const Attribute &pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
     static bool checkForUseErrors(const Shader &pCalledFrom);
-    enum class Type { Vertex, Fragment, Program };
-    static bool hasCompileErrors(const Type &pType, const unsigned int pID);
 };
