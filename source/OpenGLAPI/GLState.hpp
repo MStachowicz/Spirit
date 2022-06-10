@@ -744,9 +744,10 @@ public:
     void renderImGui();
 
 
-    static int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle);
-    static GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex);
-    static GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex);
+    int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const;
+    int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
+    GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;
+    GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const;
 private:
 	bool mDepthTest;
 	GLType::DepthTestType mDepthTestType;

@@ -45,10 +45,49 @@
 		pGLState.LinkProgram(mHandle);
 	}
 
-	{ // Setup the available texture units.
+	{ // Setup all the unform variables for the linked shader program using OpenGL program introspection
+		{ // UniformBlock setup
+			const int blockCount = pGLState.getActiveUniformBlockCount(mHandle);
+			for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
+			{
+				mUniformBlocks.push_back(pGLState.getUniformBlock(mHandle, blockIndex));
+				pGLState.bindUniformBlock(mUniformBlocks.back());
+			}
+		}
+
+		{ // Loose UniformVariable setup
+			const int uniformCount = pGLState.getActiveUniformCount(mHandle);
+			for (int uniformIndex = 0; uniformIndex < uniformCount; ++uniformIndex)
+			{
+				GLData::UniformVariable uniform = pGLState.getUniformVariable(mHandle, uniformIndex);
+
+				// Only add 'loose' uniforms, uniform block variables are handled in GLState::getUniformBlock
+				if (uniform.mBlockIndex == -1)
+					mUniformVariables.push_back(uniform);
+			}
+		}
+	}
+
+	{
+		for (const auto &uniformBlock : mUniformBlocks)
+		{
+			for (const auto &uniformBlockVariable : uniformBlock.mVariables)
+			{
+				if (uniformBlockVariable.mType == GLType::DataType::Sampler2D || uniformBlockVariable.mType == GLType::DataType::SamplerCube)
+					mTextureUnits++;
+			}
+		}
+		for (const auto &uniformVariable : mUniformVariables)
+		{
+			if (uniformVariable.mType == GLType::DataType::Sampler2D || uniformVariable.mType == GLType::DataType::SamplerCube)
+				mTextureUnits++;
+		}
 		ZEPHYR_ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
+	}
+
+	{ // Setup the available texture units.
 		// We have to tell OpenGL which texture unit each shader 'uniform sampler2D' belongs to by setting each sampler using glUniform1i.
-		// We only have to set this once. This relies on initialiseRequiredAttributes() being called before to set mTextureUnits.
+		// We only have to set this once.
 		if (mTextureUnits > 0)
 		{
 			use(pGLState);
@@ -57,15 +96,6 @@
 				const std::string textureUniformName = "texture" + std::to_string(j);
 				setUniform(pGLState, textureUniformName, j);
 			}
-		}
-	}
-
-	{ // Find and setup all the UniformBlocks in this Shader using OpenGL Program introspection.
-		const int blockCount = GLState::getActiveUniformBlockCount(mHandle);
-		for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
-		{
-			mUniformBlocks.push_back(GLState::getUniformBlock(mHandle, blockIndex));
-			pGLState.bindUniformBlock(mUniformBlocks.back());
 		}
 	}
 
@@ -92,9 +122,6 @@ void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
 	if (mRequiredAttributes.find(Attribute::TextureCoordinate2D) == mRequiredAttributes.end())
 		if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
 			mRequiredAttributes.insert(Attribute::TextureCoordinate2D);
-
-	mTextureUnits += findOccurrences(pSourceCode, "sampler2D");
-	mTextureUnits += findOccurrences(pSourceCode, "samplerCube");
 
 	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
 }
@@ -220,17 +247,4 @@ std::string Shader::getAttributeName(const Attribute& pAttribute)
 	else
 		ZEPHYR_ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", pAttribute);
 		return "";
-}
-
-int Shader::findOccurrences(const std::string& pStringToSearch, const std::string& pSubStringToFind)
-{
-	int occurrences = 0;
-	std::string::size_type position = 0;
-	while ((position = pStringToSearch.find(pSubStringToFind, position)) != std::string::npos)
-	{
-		++occurrences;
-		position += pSubStringToFind.length();
-	}
-
-	return occurrences;
 }

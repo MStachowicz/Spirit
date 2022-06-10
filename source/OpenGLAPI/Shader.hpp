@@ -63,11 +63,12 @@ private:
     // Each shader stage has a limit on the number of separate uniform buffer binding locations. These are queried using
     // glGetIntegerv with GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, or GL_MAX_FRAGMENT_UNIFORM_BLOCKS.
     std::vector<GLData::UniformBlock> mUniformBlocks;
+    // All the 'loose' uniform variables that exist in the shader. These do not belong to UniformBlock's.
+    std::vector<GLData::UniformVariable> mUniformVariables;
 
     static inline const Shader* shaderInUse = nullptr; // Keeps track of current Shader object set with use(). Used for error checking in checkForUseErrors().
-	static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders using sampler2D
+	static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
 
-    static int findOccurrences(const std::string& pStringToSearch, const std::string& pSubStringToFind);
     static std::string getAttributeName(const Attribute &pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
     static bool checkForUseErrors(const Shader &pCalledFrom);
 };

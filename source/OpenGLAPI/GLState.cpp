@@ -531,14 +531,21 @@ void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const gl
 	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 
-int GLState::getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle)
+int GLState::getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const
 {
     GLint blockCount = 0;
     glGetProgramInterfaceiv(pShaderProgramHandle, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &blockCount);
     return blockCount;
 }
 
-GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex)
+ int GLState::getActiveUniformCount(const unsigned int& pShaderProgramHandle) const
+ {
+    GLint uniformCount = 0;
+    glGetProgramInterfaceiv(pShaderProgramHandle, GL_UNIFORM, GL_ACTIVE_RESOURCES, &uniformCount);
+    return uniformCount;
+ }
+
+GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const
 {
     // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
     // https://www.khronos.org/opengl/wiki/Program_Introspection
@@ -565,7 +572,7 @@ GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderP
     return uniformVariable;
 }
 
-GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex)
+GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const
 {
     static const std::array<GLenum, 4> propertyQuery = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
 
@@ -596,7 +603,7 @@ GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgram
         glGetProgramResourceiv(pShaderProgramHandle, GL_UNIFORM_BLOCK, uniformBlock.mBlockIndex, 1, activeUnifProp, uniformBlock.mActiveVariablesCount, NULL, uniformBlock.mVariableIndices.data());
 
         for (int variableIndex = 0; variableIndex < uniformBlock.mActiveVariablesCount; variableIndex++)
-            uniformBlock.mVariables.push_back(GLState::getUniformVariable(pShaderProgramHandle, uniformBlock.mVariableIndices[variableIndex]));
+            uniformBlock.mVariables.push_back(getUniformVariable(pShaderProgramHandle, uniformBlock.mVariableIndices[variableIndex]));
     }
 
     return uniformBlock;
