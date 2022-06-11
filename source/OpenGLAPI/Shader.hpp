@@ -2,8 +2,6 @@
 
 #include "GLState.hpp"
 
-#include "glm/fwd.hpp"
-
 #include "string"
 #include "set"
 
@@ -32,15 +30,22 @@ public:
     const int& getTexturesUnitsCount() const { return mTextureUnits; };
 
     void use(GLState& pGLState) const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
-    void setUniform(GLState& pGLState, const std::string& pName, const bool& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const int& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const float& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const glm::vec2& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const glm::vec3& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const glm::vec4& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const glm::mat2& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const glm::mat3& pValue) const;
-    void setUniform(GLState& pGLState, const std::string& pName, const glm::mat4& pValue) const;
+
+    template<class T>
+    void setUniform(GLState& pGLState, const std::string& pVariableName, const T& pValue) const
+    {
+        const auto variable = std::find_if(std::begin(mUniformVariables), std::end(mUniformVariables),
+            [&pVariableName](const GLData::UniformVariable& pVariable) { return pVariable.mName == pVariableName; });
+
+        if (variable != std::end(mUniformVariables))
+        {
+            use(pGLState);
+            pGLState.setUniform(*variable, pValue);
+            return;
+        }
+        else
+            ZEPHYR_ASSERT(false, "Uniform variable '{}' not found in shader '{}'", pVariableName, mName);
+    }
 
     // Returns the number of components the specified attribute consists of.
     // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)

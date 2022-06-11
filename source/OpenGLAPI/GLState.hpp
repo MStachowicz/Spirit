@@ -748,6 +748,15 @@ public:
     int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
     GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;
     GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const bool& pValue)      const;
+    void setUniform(const GLData::UniformVariable& pVariable, const int& pValue)       const;
+    void setUniform(const GLData::UniformVariable& pVariable, const float& pValue)     const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat2& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat3& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue) const;
 private:
 	bool mDepthTest;
 	GLType::DepthTestType mDepthTestType;

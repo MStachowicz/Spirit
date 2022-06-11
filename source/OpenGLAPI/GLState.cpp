@@ -531,6 +531,58 @@ void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const gl
 	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const bool& pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Bool, "Attempting to set {} uniform variable '{}' with bool data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniform1i(pVariable.mLocation, (GLint)pValue); // Setting a boolean is treated as integer
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const int& pValue) const
+{
+    // Setting texture sampler types uses int to set their bound texture unit.
+    // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Int
+    || pVariable.mType == GLType::DataType::Sampler2D
+    || pVariable.mType == GLType::DataType::SamplerCube
+    , "Attempting to set {} uniform variable '{}' with int data", GLType::toString(pVariable.mType), pVariable.mName);
+
+	glUniform1i(pVariable.mLocation, (GLint)pValue);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const float& pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Float, "Attempting to set {} uniform variable '{}' with float data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniform1f(pVariable.mLocation, pValue);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec2, "Attempting to set {} uniform variable '{}' with vec2 data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniform2fv(pVariable.mLocation, 1, &pValue[0]);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::vec3 &pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec3, "Attempting to set {} uniform variable '{}' with vec3 data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniform3fv(pVariable.mLocation, 1, &pValue[0]);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::vec4 &pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec4, "Attempting to set {} uniform variable '{}' with vec4 data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniform4fv(pVariable.mLocation, 1, &pValue[0]);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::mat2& pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat2, "Attempting to set {} uniform variable '{}' with mat2 data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniformMatrix2fv(pVariable.mLocation, 1, GL_FALSE, &pValue[0][0]);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::mat3& pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat3, "Attempting to set {} uniform variable '{}' with mat3 data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniformMatrix3fv(pVariable.mLocation, 1, GL_FALSE, &pValue[0][0]);
+}
+void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue) const
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat4, "Attempting to set {} uniform variable '{}' with mat4 data", GLType::toString(pVariable.mType), pVariable.mName);
+	glUniformMatrix4fv(pVariable.mLocation, 1, GL_FALSE, glm::value_ptr(pValue));
+}
+
 int GLState::getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const
 {
     GLint blockCount = 0;
