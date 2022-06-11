@@ -39,7 +39,7 @@ public:
 
         if (variable != std::end(mUniformVariables))
         {
-            use(pGLState);
+            use(pGLState); // #Optimisation - Only perform this use() once when setting a series of variables on one shader.
             pGLState.setUniform(*variable, pValue);
             return;
         }
@@ -63,7 +63,6 @@ private:
     unsigned int mHandle;
     int mTextureUnits; // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
     std::set<Shader::Attribute> mRequiredAttributes; // The required Attributes a mesh must have to be rendered using this Shader.
-
     // TODO: make this an array of size GL_MAX_X_UNIFORM_BLOCKS + (X = Split the uniform blocks per shader stage)
     // Each shader stage has a limit on the number of separate uniform buffer binding locations. These are queried using
     // glGetIntegerv with GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, or GL_MAX_FRAGMENT_UNIFORM_BLOCKS.
@@ -71,9 +70,7 @@ private:
     // All the 'loose' uniform variables that exist in the shader. These do not belong to UniformBlock's.
     std::vector<GLData::UniformVariable> mUniformVariables;
 
-    static inline const Shader* shaderInUse = nullptr; // Keeps track of current Shader object set with use(). Used for error checking in checkForUseErrors().
-	static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
+    static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
 
     static std::string getAttributeName(const Attribute &pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
-    static bool checkForUseErrors(const Shader &pCalledFrom);
 };

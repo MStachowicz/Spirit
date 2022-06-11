@@ -9,13 +9,11 @@
 	, mSourcePath(File::GLSLShaderDirectory)
 	, mTextureUnits(0)
 {
-	const std::string vertexShaderPath   = mSourcePath + mName + ".vert";
-	const std::string fragmentShaderPath = mSourcePath + mName + ".frag";
-	ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
-	ZEPHYR_ASSERT(File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath);
 
 	unsigned int vertexShader;
 	{
+		const std::string vertexShaderPath = mSourcePath + mName + ".vert";
+		ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
 		vertexShader = pGLState.CreateShader(GLType::ShaderProgramType::Vertex);
 		std::string source = File::readFromFile(vertexShaderPath);
 		pGLState.ShaderSource(vertexShader, source);
@@ -25,6 +23,8 @@
 
 	unsigned int fragmentShader;
 	{
+		const std::string fragmentShaderPath = mSourcePath + mName + ".frag";
+		ZEPHYR_ASSERT(File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath);
 		fragmentShader = pGLState.CreateShader(GLType::ShaderProgramType::Fragment);
 		std::string source = File::readFromFile(fragmentShaderPath);
 		pGLState.ShaderSource(fragmentShader, source);
@@ -32,10 +32,26 @@
 		initialiseRequiredAttributes(source);
 	}
 
+	std::optional<unsigned int> geometryShader;
+	{
+		const std::string shaderPath = mSourcePath + mName + ".geom";
+		if (File::exists(shaderPath))
+		{
+			geometryShader = pGLState.CreateShader(GLType::ShaderProgramType::Geometry);
+			std::string source = File::readFromFile(shaderPath);
+			pGLState.ShaderSource(geometryShader.value(), source);
+			pGLState.CompileShader(geometryShader.value());
+			initialiseRequiredAttributes(source);
+		}
+	}
+
 	{
 		mHandle = pGLState.CreateProgram();
 		pGLState.AttachShader(mHandle, vertexShader);
 		pGLState.AttachShader(mHandle, fragmentShader);
+		if (geometryShader.has_value())
+			pGLState.AttachShader(mHandle, geometryShader.value());
+
 		pGLState.LinkProgram(mHandle);
 	}
 
@@ -96,6 +112,9 @@
 	// Delete the shaders after linking as they're no longer needed
 	pGLState.DeleteShader(vertexShader);
 	pGLState.DeleteShader(fragmentShader);
+	if (geometryShader.has_value())
+		pGLState.DeleteShader(geometryShader.value());
+
 	LOG_INFO("OpenGL::Shader '{}' loaded given ID: {}", mName, mHandle);
 }
 
@@ -123,7 +142,6 @@ void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
 void Shader::use(GLState& pGLState) const
 {
 	pGLState.UseProgram(mHandle);
-	shaderInUse = this;
 }
 
 int Shader::getAttributeLocation(const Attribute& pAttribute)
@@ -155,22 +173,6 @@ int Shader::getAttributeComponentCount(const Attribute& pAttribute)
 		ZEPHYR_ASSERT(false, "Could not determine the size of the attribute pAttribute");
 		return 0;
 	}
-}
-
-bool Shader::checkForUseErrors(const Shader& pCalledFrom)
-{
-	if (!shaderInUse)
-	{
-		LOG_ERROR("No shader has been set to current in OpenGL state, call Shader::Use() before trying to set a uniform.");
-		return false;
-	}
-	if (shaderInUse != &pCalledFrom)
-	{
-		LOG_ERROR("Trying to set a uniform on a shader not current in OpenGL state, call Shader::Use() before trying to set a uniform.");
-		return false;
-	}
-	else
-		return true;
 }
 
 std::string Shader::getAttributeName(const Attribute& pAttribute)
