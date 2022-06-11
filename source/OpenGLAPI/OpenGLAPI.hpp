@@ -75,6 +75,7 @@ private:
 	// By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
 	bool mLinearDepthView;
 	GLType::BufferDrawType BufferDrawType;
+	bool mVisualiseNormals;
 	float mZNearPlane;
 	float mZFarPlane;
 	float mFOV;
@@ -93,6 +94,7 @@ private:
 	size_t mDepthViewerIndex;
 	size_t mScreenTextureIndex;
 	size_t mSkyBoxShaderIndex;
+	size_t mVisualiseNormalIndex;
 	MeshID mScreenQuad;
 	MeshID mSkyBoxMeshID;
 	TextureID mMissingTextureID;

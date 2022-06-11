@@ -20,6 +20,7 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, cOpenGLVersionMajor(4)
 	, cOpenGLVersionMinor(3)
 	, mLinearDepthView(false)
+	, mVisualiseNormals(false)
 	, mZNearPlane(0.1f)
 	, mZFarPlane (100.0f)
 	, mFOV(45.f)
@@ -34,6 +35,7 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, mDepthViewerIndex(6)
 	, mScreenTextureIndex(7)
 	, mSkyBoxShaderIndex(8)
+	, mVisualiseNormalIndex(9)
 	, mScreenQuad(0)
 	, mSkyBoxMeshID(0)
 	, mMissingTextureID(0)
@@ -42,7 +44,7 @@ OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
 	, directionalLightDrawCount(0)
 	, mBufferDrawType(GLType::BufferDrawType::Colour)
 	, mPostProcessingOptions()
-	, mShaders{ Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("depthView", mGLState), Shader("screenTexture", mGLState), Shader("skybox", mGLState) }
+	, mShaders{ Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("depthView", mGLState), Shader("screenTexture", mGLState), Shader("skybox", mGLState), Shader("visualiseNormal", mGLState) }
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
@@ -197,6 +199,12 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	}
 
 	draw(GLMesh);
+
+	if (mVisualiseNormals)
+	{
+		mShaders[mVisualiseNormalIndex].setUniform(mGLState, "model", trans);
+		draw(GLMesh);
+	}
 }
 void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 {
@@ -344,6 +352,8 @@ void OpenGLAPI::renderImGui()
 
     	if (mBufferDrawType == GLType::BufferDrawType::Depth)
     	    ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
+
+		ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
 
 		ImGui::Separator();
 		mGLState.renderImGui();
