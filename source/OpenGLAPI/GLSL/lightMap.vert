@@ -13,15 +13,17 @@ layout(shared) uniform ViewProperties
     mat4 projection;
 } viewProperties;
 
-out vec3 FragPos;
-out vec3 Normal;
-out vec2 TexCoords;
+out VS_OUT {
+    vec3 FragPos;
+    vec3 Normal;
+    vec2 TexCoords;
+} vs_out;
 
 void main()
 {
-    FragPos = vec3(model * vec4(VertexPosition, 1.0));
-    Normal = mat3(transpose(inverse(model))) * VertexNormal;
-    TexCoords = VertexTexCoord * vec2(textureRepeatFactor);
+    vs_out.FragPos   = vec3(model * vec4(VertexPosition, 1.0));
+    vs_out.Normal    = mat3(transpose(inverse(model))) * VertexNormal;
+    vs_out.TexCoords = VertexTexCoord * vec2(textureRepeatFactor);
 
-    gl_Position = viewProperties.projection * viewProperties.view * vec4(FragPos, 1.0);
+    gl_Position      = viewProperties.projection * viewProperties.view * vec4(vs_out.FragPos, 1.0);
 }
