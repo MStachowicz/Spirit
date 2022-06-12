@@ -62,7 +62,7 @@ void TextureManager::loadCubeMaps(const std::filesystem::directory_entry& pCubeM
             else if (textureName == "bottom") newTexture = &cubemap.mBottom;
             else if (textureName == "back")   newTexture = &cubemap.mBack;
             else if (textureName == "front")  newTexture = &cubemap.mFront;
-            else ZEPHYR_ASSERT(false, "Unkown name for CubeMap texture.")
+            else ZEPHYR_ASSERT(false, "Cubemap texture name '{}' is invalid" , textureName)
 
             // @PERFORMANCE
             // loadTexture will push the Texture data to the mTexture array before returning.
