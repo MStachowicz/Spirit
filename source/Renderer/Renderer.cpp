@@ -62,11 +62,12 @@ Renderer::Renderer()
 			drawCall.mShininess = 64.f;
 		}
 	}
+	const float floorSize = 25.f;
 	{ // Floor
 		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
 		drawCall.mPosition;
 		drawCall.mRotation.x = -90.f;
-		drawCall.mScale = glm::vec3(25.f);
+		drawCall.mScale = glm::vec3(floorSize);
 		drawCall.mMesh = mMeshManager.getMeshID("Quad");
 		drawCall.mDrawStyle = DrawStyle::LightMap;
 		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
@@ -97,12 +98,16 @@ Renderer::Renderer()
 	}
 
 	{ // Billboard grass
-		std::array<glm::vec3, 5> vegetation = {
-			glm::vec3(-1.5f, 0.0f, -0.48f),
-			glm::vec3(1.5f, 0.0f, 0.51f),
-			glm::vec3(0.0f, 0.0f, 0.7f),
-			glm::vec3(-0.3f, 0.0f, -2.3f),
-			glm::vec3(0.5f, 0.0f, -0.6f)};
+		const size_t grassCount = 10000;
+		std::array<glm::vec3, grassCount> vegetation;
+		{
+			std::array<float, grassCount> randomX;
+			util::fillRandomNumbers(-floorSize, floorSize, randomX);
+			std::array<float, grassCount> randomZ;
+			util::fillRandomNumbers(-floorSize, floorSize, randomZ);
+			for (size_t i = 0; i < grassCount; i++)
+				vegetation[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
+		}
 
 		for (const auto& position : vegetation)
 		{
