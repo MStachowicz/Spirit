@@ -11,7 +11,7 @@
 class Shader
 {
 public:
-    Shader(const std::string &pName, GLState& pGLState);
+    Shader(const std::string& pName, GLState& pGLState);
 
     // These are per-vertex attributes found in GLSL shaders.
     // Each attribute must be named the same in the GLSL files. getAttributeName() returns the expected string in the shader.
@@ -25,8 +25,7 @@ public:
         Count
     }; // The possible vertex attributes supported by OpenGLAPI GLSL shaders.
 
-    const std::set<Shader::Attribute>& getRequiredAttributes() const { return mRequiredAttributes; };
-    const std::string& getName() const { return mName; };
+    const std::string& getName()       const { return mName; };
     const int& getTexturesUnitsCount() const { return mTextureUnits; };
 
     void use(GLState& pGLState) const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
@@ -56,13 +55,13 @@ public:
     static int getAttributeLocation(const Attribute& pAttribute);
 private:
     // Search source code for any per-vertex attributes a Mesh will require to be drawn by this shader.
-    void initialiseRequiredAttributes(const std::string& pSourceCode);
+    void scanForAttributes(const std::string& pSourceCode);
 
     std::string mName;
     std::string mSourcePath;
     unsigned int mHandle;
     int mTextureUnits; // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
-    std::set<Shader::Attribute> mRequiredAttributes; // The required Attributes a mesh must have to be rendered using this Shader.
+    std::set<Shader::Attribute> mAttributes; // The vertex attributes the shader requires to execute a draw call.
     // TODO: make this an array of size GL_MAX_X_UNIFORM_BLOCKS + (X = Split the uniform blocks per shader stage)
     // Each shader stage has a limit on the number of separate uniform buffer binding locations. These are queried using
     // glGetIntegerv with GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, or GL_MAX_FRAGMENT_UNIFORM_BLOCKS.

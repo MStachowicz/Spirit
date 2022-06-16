@@ -18,7 +18,7 @@
 		std::string source = File::readFromFile(vertexShaderPath);
 		pGLState.ShaderSource(vertexShader, source);
 		pGLState.CompileShader(vertexShader);
-		initialiseRequiredAttributes(source);
+		scanForAttributes(source);
 	}
 
 	unsigned int fragmentShader;
@@ -29,7 +29,6 @@
 		std::string source = File::readFromFile(fragmentShaderPath);
 		pGLState.ShaderSource(fragmentShader, source);
 		pGLState.CompileShader(fragmentShader);
-		initialiseRequiredAttributes(source);
 	}
 
 	std::optional<unsigned int> geometryShader;
@@ -41,7 +40,6 @@
 			std::string source = File::readFromFile(shaderPath);
 			pGLState.ShaderSource(geometryShader.value(), source);
 			pGLState.CompileShader(geometryShader.value());
-			initialiseRequiredAttributes(source);
 		}
 	}
 
@@ -118,25 +116,25 @@
 	LOG_INFO("OpenGL::Shader '{}' loaded given ID: {}", mName, mHandle);
 }
 
-void Shader::initialiseRequiredAttributes(const std::string& pSourceCode)
+void Shader::scanForAttributes(const std::string& pSourceCode)
 {
-	if (mRequiredAttributes.find(Attribute::Position3D) == mRequiredAttributes.end())
+	if (mAttributes.find(Attribute::Position3D) == mAttributes.end())
 		if(pSourceCode.find(getAttributeName(Attribute::Position3D)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::Position3D);
+			mAttributes.insert(Attribute::Position3D);
 
-	if (mRequiredAttributes.find(Attribute::Normal3D) == mRequiredAttributes.end())
+	if (mAttributes.find(Attribute::Normal3D) == mAttributes.end())
 		if (pSourceCode.find(getAttributeName(Attribute::Normal3D)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::Normal3D);
+			mAttributes.insert(Attribute::Normal3D);
 
-	if (mRequiredAttributes.find(Attribute::ColourRGB) == mRequiredAttributes.end())
+	if (mAttributes.find(Attribute::ColourRGB) == mAttributes.end())
 		if (pSourceCode.find(getAttributeName(Attribute::ColourRGB)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::ColourRGB);
+			mAttributes.insert(Attribute::ColourRGB);
 
-	if (mRequiredAttributes.find(Attribute::TextureCoordinate2D) == mRequiredAttributes.end())
+	if (mAttributes.find(Attribute::TextureCoordinate2D) == mAttributes.end())
 		if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
-			mRequiredAttributes.insert(Attribute::TextureCoordinate2D);
+			mAttributes.insert(Attribute::TextureCoordinate2D);
 
-	ZEPHYR_ASSERT(!mRequiredAttributes.empty() && mRequiredAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mRequiredAttributes.size());
+	ZEPHYR_ASSERT(!mAttributes.empty() && mAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mAttributes.size());
 }
 
 void Shader::use(GLState& pGLState) const
