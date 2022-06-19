@@ -31,6 +31,11 @@ namespace ECS
             return entities[index];
         }
 
+        inline std::vector<Component> Get() const
+        {
+            return components;
+        }
+
         inline void ForEach(const std::function<void(const Component& pComponent)>& pFunction) const
         {
             for (size_t i = 0; i < size(); i++)
