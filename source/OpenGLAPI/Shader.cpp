@@ -76,6 +76,15 @@
 		}
 	}
 
+	{// Setup available Shader buffer objects.
+		const int blockCount = pGLState.getShaderStorageBlockCount(mHandle);
+		for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
+		{
+			mShaderBufferBlocks.push_back(pGLState.getShaderStorageBlock(mHandle, blockIndex));
+			pGLState.bindShaderStorageBlock(mShaderBufferBlocks.back());
+		}
+	}
+
 	{
 		for (const auto &uniformBlock : mUniformBlocks)
 		{

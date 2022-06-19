@@ -376,7 +376,6 @@ namespace GLType
         LinkProgram,
         DeleteShader,
         UseProgram,
-        GetUniformLocation,
         Count
     };
     std::string toString(const Function& pFunction);
@@ -477,8 +476,26 @@ namespace GLData
 		void generate();
 		void bind() const;
 		void release();
-        void pushData(const int& pSize, const int& pUniformIndex);
-		unsigned int getHandle() { return mHandle; };
+		unsigned int getHandle() const { return mHandle; };
+	private:
+		bool mInitialised 		= false;
+		unsigned int mHandle 	= 0;
+    };
+    // A Shader Storage block Object (SSBO)
+    // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
+    // Compared to UBO's SSBOs:
+    // Can be much larger. The spec guarantees that SSBOs can be up to 128MB. Most implementations will let you allocate a size up to the limit of GPU memory.
+    // Are writable, even atomically. SSBOs reads and writes use incoherent memory accesses, so they need the appropriate barriers, just as Image Load Store operations.
+    // Can have variable storage, up to whatever buffer range was bound for that particular buffer. This means that you can have an array of arbitrary length in an SSBO (at the end, rather).
+    // The actual size of the array, based on the range of the buffer bound, can be queried at runtime in the shader using the length function on the unbounded array variable.
+    // SSBO access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
+    // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
+    struct SSBO
+    {
+		void generate();
+		void bind() const;
+		void release();
+		unsigned int getHandle() const { return mHandle; };
 	private:
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
@@ -504,7 +521,7 @@ namespace GLData
         // If pCubeMapIndexOffset is supplied the data is pushed to GL_TEXTURE_CUBE_MAP at index GL_TEXTURE_CUBE_MAP_POSITIVE_X (0) + offset to GL_TEXTURE_CUBE_MAP_NEGATIVE_Z (5).
         void pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData, const int& pCubeMapIndexOffset = -1);
 		void release();
-		unsigned int getHandle() { return mHandle; };
+		unsigned int getHandle() const { return mHandle; };
 	private:
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
@@ -520,7 +537,6 @@ namespace GLData
     {
         std::string mName      = "";
         GLType::DataType mType = GLType::DataType::Count;
-        int mSize              = -1;
         int mOffset            = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
         int mLocation          = -1;
         int mBlockIndex        = -1;
@@ -544,6 +560,45 @@ namespace GLData
 
         std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding UniformBlockBindingPoint
         std::vector<UniformVariable> mVariables;
+        std::vector<int> mVariableIndices;
+    };
+    // A GLSL variable that belongs to a ShaderStorageBlock
+    struct ShaderStorageBlockVariable
+    {
+        std::string mName        = "";
+        GLType::DataType mType   = GLType::DataType::Count;
+        int mOffset              = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
+        int mBlockIndex          = -1;
+        int mArraySize           = -1;  // For elements that are aggregated into arrays, this is the number of elements in the array
+        int mArrayStride         = -1;  // For elements that are aggregated into arrays, this is the number of bytes from the start of one element to the start of the next one
+        int mMatrixStride        = -1;  // Number of bytes from the start of one column/row vector to the next column/row (depending on whether the matrix is laid out as column-major or row-major)
+        int mIsRowMajor          = -1;  // For matrix elements, the column/row-major ordering.
+        // The number of active array elements of the top-level shader storage block member.
+        // If the top-level block member is not declared as an array, the value is '1'. If the top-level block member is an array with no declared size, the value zero is written to params.
+        int mTopLevelArraySize   = -1;
+        // The stride between array elements of the top-level shader storage block member.
+        // For top-level block members declared as arrays, the value written is the difference, in basic machine units, between the offsets of the active variable for consecutive elements in the top-level array.
+        // For top-level block members not declared as an array, the value is '0'.
+        int mTopLevelArrayStride = -1;
+    };
+
+    // ShaderStorageBlock's are GLSL interface blocks which group ShaderStorageBlockVariable's.
+    // ShaderStorageBlock's can be buffer-backed using SSBO's allowing data to be shared across shader-programs.
+    // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
+    // Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
+    // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Shader_storage_blocks
+    // Compares to UniformBlock's ShaderStorageBlock's can store more data, are writable atomically, can have variable storage (array of arbitrary length).
+    // ShaderStorageBlock access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
+    struct ShaderStorageBlock
+    {
+        std::string mName           = "";
+        int mBlockIndex             = -1; // Index of the ShaderStorageBlock in its parentShader.
+        int mParentShaderHandle     = -1;
+        int mBufferDataSize         = -1; // Size of the block in bytes.
+        int mActiveVariablesCount   = -1; // The number of ShaderStorageBlockVariables this block contains.
+
+        std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding ShaderStorageBlockBindingPoint
+        std::vector<ShaderStorageBlockVariable> mVariables;
         std::vector<int> mVariableIndices;
     };
     // Render Buffer Object
@@ -672,7 +727,7 @@ public:
 
     // Links a program object
     // As a result of a successful link operation, all active user-defined uniform variables belonging to program will be initialized to 0
-    // The active uniform variables will be assigned a location that can be queried by calling glGetUniformLocation.
+    // The active uniform variables will be assigned a location that can be queried using GL program introspection.
     // Any active user-defined attribute variables that have not been bound to a generic vertex attribute index will be bound to one at this time.
     // When a program object has been successfully linked, the program object can be made part of current state by calling glUseProgram
     // If the program object currently in use is relinked unsuccessfully the executables and associated state will remain part of the current state until a
@@ -697,18 +752,42 @@ public:
     // After it is removed from use, it cannot be made part of current state until it has been successfully relinked.
     void UseProgram(const unsigned int& pShaderProgramHandle);
 
-    // Returns the location of a uniform variable
-    // Name must be an active uniform variable name in program that is not a structure, an array of structures, or a subcomponent of a vector or a matrix.
-    // The array element operator "[]" and the structure field operator "." may be used in name in order to select elements within an array or fields within a structure.
-    // The actual locations assigned to uniform variables are not known until the program object is linked successfully.
-    // After a program object has been linked successfully, the index values for uniform variables remain fixed until the next link command occurs.
-    int GetUniformLocation(const unsigned int& pShaderProgramHandle, const std::string& pName);
+    // Set the global viewport
+    // Specify the width and height of the viewport. When a context is first attached to a window, width and height are set to the dimensions of that window.
+    // The viewport specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
+    // Let x nd y nd be normalized device coordinates. Then the window coordinates x w y w are computed as follows:
+    // x w = x nd + 1 ⁢ width 2 + x
+    // y w = y nd + 1 ⁢ height 2 + y
+    void setViewport(const int& pWidth, const int& pHeight);
+
+    // Outputs the current GLState with options to change flags.
+    void renderImGui();
 
 
-    // Assign a binding point to a uniform block.
-    // This makes the Uniform block buffer-backed allowing UniformVariables belonging to the block to be set using setUniformBlockVariable.
-    // #GLHelperFunction
+    int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
+    int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const;
+    GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;
+    GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const;
+    // Assign a binding point to a UniformBlock.
+    // This makes the UniformBlock buffer-backed allowing UniformVariables belonging to the block to be set using setUniformBlockVariable.
     void bindUniformBlock(GLData::UniformBlock& pUniformBlock);
+
+    int getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle) const;
+    GLData::ShaderStorageBlock getShaderStorageBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockIndex) const;
+    GLData::ShaderStorageBlockVariable getShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockVariableIndex) const;
+    // Assign a binding point to a ShaderStorageBlock
+    // This makes the ShaderStorageBlock buffer-backed allowing variables belonging to the block to be set using setBufferBlockVariable.
+    void bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock);
+
+    void setUniform(const GLData::UniformVariable& pVariable, const bool& pValue)      const;
+    void setUniform(const GLData::UniformVariable& pVariable, const int& pValue)       const;
+    void setUniform(const GLData::UniformVariable& pVariable, const float& pValue)     const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat2& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat3& pValue) const;
+    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue) const;
 
     // #GLHelperFunction
     template<class T>
@@ -732,31 +811,27 @@ public:
         ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName)
     }
 
-    // Set the global viewport
-    // Specify the width and height of the viewport. When a context is first attached to a window, width and height are set to the dimensions of that window.
-    // The viewport specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
-    // Let x nd y nd be normalized device coordinates. Then the window coordinates x w y w are computed as follows:
-    // x w = x nd + 1 ⁢ width 2 + x
-    // y w = y nd + 1 ⁢ height 2 + y
-    void setViewport(const int& pWidth, const int& pHeight);
+    // #GLHelperFunction
+    template<class T>
+    void setShaderStorageBlockVariable(const std::string& pName, const T& pValue)
+    {
+        for (auto& bindingPoint : mShaderStorageBlockBindingPoints)
+        {
+            const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::ShaderStorageBlockVariable& pVariable)
+            {
+                return pVariable.mName == pName;
+            });
 
-    // Outputs the current GLState with options to change flags.
-    void renderImGui();
+            if (foundVariable != std::end(bindingPoint.mVariables))
+            {
+                bindingPoint.mSSBO.bind();
+                setShaderBlockVariable(*foundVariable, pValue);
+                return;
+            }
+        }
 
-
-    int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const;
-    int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
-    GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;
-    GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const bool& pValue)      const;
-    void setUniform(const GLData::UniformVariable& pVariable, const int& pValue)       const;
-    void setUniform(const GLData::UniformVariable& pVariable, const float& pValue)     const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat2& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat3& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue) const;
+        ZEPHYR_ASSERT(false, "No shader storage block variable found with name '{}'", pName)
+    }
 private:
 	bool mDepthTest;
 	GLType::DepthTestType mDepthTestType;
@@ -783,7 +858,6 @@ private:
     std::array<int, 4> mViewport;
 
     // The remaining functions and members are helpers and not regular OpenGL parts
-    // Use this to replace the Shader::bindingpoint
     struct UniformBlockBindingPoint
     {
         GLData::UBO mUBO;       // The buffer for all the data used by all the UniformBlocks bound to this point.
@@ -793,12 +867,29 @@ private:
         std::vector<GLData::UniformVariable> mVariables;  // Copy of all the UniformVariables this buffer... buffers.
     };
     std::vector<UniformBlockBindingPoint> mUniformBlockBindingPoints;
+
+    struct ShaderStorageBlockBindingPoint
+    {
+        GLData::SSBO mSSBO;      // The buffer for all the data used by all the ShaderStorageBlock bound to this point.
+        std::string mName = ""; // Name of the UniformBlock instances sharing this buffer.
+        size_t mInstances;      // The number of UniformBlock instances using this buffer.
+        unsigned int mBindingPoint; // The location of this binding point in the parent mShaderStorageBlockBindingPoints vector.
+        std::vector<GLData::ShaderStorageBlockVariable> mVariables;  // Copy of all the UniformVariables this buffer... buffers.
+    };
+    std::vector<ShaderStorageBlockBindingPoint> mShaderStorageBlockBindingPoints;
+
+    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const float& pValue);
+    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec2& pValue);
+    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec3& pValue);
+    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec4& pValue);
+    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::mat4& pValue);
+
     void setBlockUniform(const GLData::UniformVariable& pVariable, const float& pValue);
     void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue);
     void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue);
     void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue);
     void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue);
 
-    std::string getErrorMessage();
-    std::string getErrorMessage(const GLType::Function& pCallingFunction);
+    std::string getErrorMessage() const;
+    std::string getErrorMessage(const GLType::Function& pCallingFunction) const;
 };

@@ -68,6 +68,7 @@ private:
     std::vector<GLData::UniformBlock> mUniformBlocks;
     // All the 'loose' uniform variables that exist in the shader. These do not belong to UniformBlock's.
     std::vector<GLData::UniformVariable> mUniformVariables;
+    std::vector<GLData::ShaderStorageBlock> mShaderBufferBlocks;
 
     static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
 

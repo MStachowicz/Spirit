@@ -449,14 +449,6 @@ void GLState::UseProgram(const unsigned int& pShaderProgramHandle)
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteShader));
 }
 
-int GLState::GetUniformLocation(const unsigned int& pShaderProgramHandle, const std::string& pName)
-{
-    GLint location = glGetUniformLocation(pShaderProgramHandle, pName.c_str());
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::GetUniformLocation));
-    ZEPHYR_ASSERT(location != -1, "pName does not correspond to an active uniform variable in program or pName starts with the reserved prefix 'gl_' or pName is associated with an atomic counter or a named uniform block.");
-    return location;
-}
-
 void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
 {
     UniformBlockBindingPoint* bindingPoint = nullptr;
@@ -499,6 +491,81 @@ void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
     glUniformBlockBinding(pUniformBlock.mParentShaderHandle, pUniformBlock.mBlockIndex, bindingPoint->mBindingPoint);
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::UniformBlockBinding));
 }
+
+void GLState::bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock)
+{
+    ShaderStorageBlockBindingPoint* bindingPoint = nullptr;
+
+    // #C++20 Convert to std::contains on vector.
+    const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderBufferBlock](const ShaderStorageBlockBindingPoint& bindingPoint)
+    { return bindingPoint.mName == pShaderBufferBlock.mName; });
+
+    if (it == mShaderStorageBlockBindingPoints.end())
+    {
+        // If there is no binding point for this ShaderBufferBlock create it and its UBO.
+        // This allows the ShaderBufferBlockVariable's inside the block to be set using setShaderStorageBlockVariable()
+        // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
+        mShaderStorageBlockBindingPoints.push_back(ShaderStorageBlockBindingPoint());
+        bindingPoint = &mShaderStorageBlockBindingPoints.back();
+        bindingPoint->mInstances++;
+        bindingPoint->mBindingPoint  = static_cast<unsigned int>(mShaderStorageBlockBindingPoints.size() - 1);
+        bindingPoint->mName          = pShaderBufferBlock.mName;
+        bindingPoint->mVariables     = pShaderBufferBlock.mVariables;
+
+        bindingPoint->mSSBO.generate();
+        bindingPoint->mSSBO.bind();
+        // Reserve the size of the UniformBlock in the GPU memory
+        const auto dataSize = pShaderBufferBlock.mBufferDataSize;
+        glBufferData(GL_SHADER_STORAGE_BUFFER, dataSize, NULL, GL_STATIC_DRAW);
+        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, bindingPoint->mBindingPoint, bindingPoint->mSSBO.getHandle(), 0, dataSize);
+    }
+    else
+    {
+        // If the UniformBlock has been encountered before. We bind it to the same mBindingPoint of the previously
+        // created UniformBlockBufferBacking meaning the blocks share the GPU memory.
+        bindingPoint = &(*it);
+        bindingPoint->mInstances++;
+        bindingPoint->mSSBO.bind();
+    }
+
+    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderBufferBlock.mName);
+    pShaderBufferBlock.mBindingPoint = bindingPoint->mBindingPoint;
+
+    glShaderStorageBlockBinding(pShaderBufferBlock.mParentShaderHandle, pShaderBufferBlock.mBlockIndex, bindingPoint->mBindingPoint);
+    ZEPHYR_ASSERT_MSG(getErrorMessage());
+}
+
+void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const float& pValue)
+{
+    ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Float, "Attempting to set float data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+    static const auto size = sizeof(pValue);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, &pValue);
+}
+void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec2& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec2, "Attempting to set vec2 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec3& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec3, "Attempting to set vec3 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec4& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec4, "Attempting to set vec4 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::mat4& pValue)
+{
+	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat4, "Attempting to set mat4 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
+	static const auto size = sizeof(pValue);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+}
+
 
 void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const float& pValue)
 {
@@ -583,6 +650,14 @@ void GLState::setUniform(const GLData::UniformVariable& pVariable, const glm::ma
 	glUniformMatrix4fv(pVariable.mLocation, 1, GL_FALSE, glm::value_ptr(pValue));
 }
 
+int GLState::getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle) const
+{
+    GLint blockCount = 0;
+    glGetProgramInterfaceiv(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &blockCount);
+    ZEPHYR_ASSERT_MSG(getErrorMessage());
+    return blockCount;
+}
+
 int GLState::getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const
 {
     GLint blockCount = 0;
@@ -590,12 +665,12 @@ int GLState::getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle
     return blockCount;
 }
 
- int GLState::getActiveUniformCount(const unsigned int& pShaderProgramHandle) const
- {
-    GLint uniformCount = 0;
-    glGetProgramInterfaceiv(pShaderProgramHandle, GL_UNIFORM, GL_ACTIVE_RESOURCES, &uniformCount);
-    return uniformCount;
- }
+int GLState::getActiveUniformCount(const unsigned int& pShaderProgramHandle) const
+{
+   GLint uniformCount = 0;
+   glGetProgramInterfaceiv(pShaderProgramHandle, GL_UNIFORM, GL_ACTIVE_RESOURCES, &uniformCount);
+   return uniformCount;
+}
 
 GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const
 {
@@ -624,6 +699,34 @@ GLData::UniformVariable GLState::getUniformVariable(const unsigned int& pShaderP
     return uniformVariable;
 }
 
+GLData::ShaderStorageBlockVariable GLState::getShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockVariableIndex) const
+{
+    // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
+    // https://www.khronos.org/opengl/wiki/Program_Introspection
+
+    static const std::array<GLenum, 10> propertyQuery = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_BLOCK_INDEX, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR, GL_TOP_LEVEL_ARRAY_SIZE, GL_TOP_LEVEL_ARRAY_STRIDE};
+
+    std::array<GLint, propertyQuery.size()> propertyValues = {0};
+    glGetProgramResourceiv(pShaderProgramHandle, GL_BUFFER_VARIABLE, pShaderBufferBlockVariableIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(), static_cast<GLsizei>(propertyValues.size()), NULL, propertyValues.data());
+
+    GLData::ShaderStorageBlockVariable variable;
+    variable.mName.resize(propertyValues[0]);
+    glGetProgramResourceName(pShaderProgramHandle, GL_BUFFER_VARIABLE, pShaderBufferBlockVariableIndex, propertyValues[0], NULL, variable.mName.data());
+    ZEPHYR_ASSERT(!variable.mName.empty(), "Failed to get name of shader buffer block variable in shader with handle {}", pShaderProgramHandle);
+    variable.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+
+    variable.mType                = GLType::convert(propertyValues[1]);
+	variable.mOffset              = propertyValues[2];
+	variable.mBlockIndex          = propertyValues[3];
+	variable.mArraySize           = propertyValues[4];
+	variable.mArrayStride         = propertyValues[5];
+	variable.mMatrixStride        = propertyValues[6];
+	variable.mIsRowMajor          = propertyValues[7];
+	variable.mTopLevelArraySize   = propertyValues[8];
+	variable.mTopLevelArrayStride = propertyValues[9];
+    return variable;
+}
+
 GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const
 {
     static const std::array<GLenum, 4> propertyQuery = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
@@ -638,7 +741,7 @@ GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgram
         ZEPHYR_ASSERT(!uniformBlock.mName.empty(), "Failed to get name of uniform block in shader with handle {}", pShaderProgramHandle);
         uniformBlock.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
     }
-    uniformBlock.mBlockIndex           = glGetUniformBlockIndex(pShaderProgramHandle, uniformBlock.mName.c_str());
+    uniformBlock.mBlockIndex           = glGetProgramResourceIndex(pShaderProgramHandle, GL_UNIFORM_BLOCK, uniformBlock.mName.c_str());
     uniformBlock.mActiveVariablesCount = uniformBlockValues[1];
     uniformBlock.mBindingPoint         = static_cast<unsigned int>(uniformBlockValues[2]);
     uniformBlock.mBufferDataSize       = uniformBlockValues[3];
@@ -660,6 +763,43 @@ GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgram
 
     return uniformBlock;
 }
+
+GLData::ShaderStorageBlock GLState::getShaderStorageBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockIndex) const
+{
+    static const std::array<GLenum, 4> propertyQuery = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
+
+	std::array<GLint, propertyQuery.size()> bufferBlockValues = {0};
+    glGetProgramResourceiv(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, pShaderBufferBlockIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(),  static_cast<GLsizei>(bufferBlockValues.size()), NULL, bufferBlockValues.data());
+
+    GLData::ShaderStorageBlock shaderStorageBlock;
+    { // Get the name of the shader storage block
+        shaderStorageBlock.mName.resize(bufferBlockValues[0]);
+        glGetProgramResourceName(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, pShaderBufferBlockIndex, bufferBlockValues[0], NULL, shaderStorageBlock.mName.data());
+        ZEPHYR_ASSERT(!shaderStorageBlock.mName.empty(), "Failed to get name of shader storage block in shader with handle {}", pShaderProgramHandle);
+        shaderStorageBlock.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+    }
+
+    shaderStorageBlock.mBlockIndex           = glGetProgramResourceIndex(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, shaderStorageBlock.mName.c_str());
+    shaderStorageBlock.mActiveVariablesCount = bufferBlockValues[1];
+    shaderStorageBlock.mBindingPoint         = static_cast<unsigned int>(bufferBlockValues[2]);
+    shaderStorageBlock.mBufferDataSize       = bufferBlockValues[3];
+    shaderStorageBlock.mParentShaderHandle   = pShaderProgramHandle;
+
+    if (shaderStorageBlock.mActiveVariablesCount > 0)
+    {
+        // Get the array of active variable indices associated with the uniform block. (GL_ACTIVE_VARIABLES)
+        // The indices correspond in size to GL_NUM_ACTIVE_VARIABLES
+        shaderStorageBlock.mVariableIndices.resize(shaderStorageBlock.mActiveVariablesCount);
+        const GLenum activeUnifProp[1] = {GL_ACTIVE_VARIABLES};
+        glGetProgramResourceiv(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, shaderStorageBlock.mBlockIndex, 1, activeUnifProp, shaderStorageBlock.mActiveVariablesCount, NULL, shaderStorageBlock.mVariableIndices.data());
+
+        for (int i = 0; i < shaderStorageBlock.mActiveVariablesCount; i++)
+            shaderStorageBlock.mVariables.push_back(getShaderStorageBlockVariable(pShaderProgramHandle, shaderStorageBlock.mVariableIndices[i]));
+    }
+
+    return shaderStorageBlock;
+}
+
 
 void GLState::setViewport(const int& pWidth, const int& pHeight)
 {
@@ -738,7 +878,7 @@ namespace GLData
         glDeleteBuffers(1, &mHandle);
         mInitialised = false;
     }
-     void UBO::generate()
+    void UBO::generate()
     {
         ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated UBO")
         glGenBuffers(1, &mHandle);
@@ -755,13 +895,22 @@ namespace GLData
         glDeleteBuffers(1, &mHandle);
         mInitialised = false;
     }
-    void UBO::pushData(const int &pSize, const int &pUniformIndex)
+    void SSBO::generate()
     {
-        ZEPHYR_ASSERT(mInitialised, "UBO has not been generated before pushData, call generate before pushData");
-        // Reserve the memory for the data size with glBufferData then define the
-        // range of the buffer that links to a uniform binding point with glBindBufferRange
-        glBufferData(GL_UNIFORM_BUFFER, pSize, NULL, GL_STATIC_DRAW);
-        glBindBufferRange(GL_UNIFORM_BUFFER, pUniformIndex, mHandle, 0, pSize);
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated SSBO")
+        glGenBuffers(1, &mHandle);
+        mInitialised = true;
+    }
+    void SSBO::bind() const
+    {
+        ZEPHYR_ASSERT(mInitialised, "SSBO has not been generated before bind, call generate before bind");
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mHandle);
+    }
+    void SSBO::release()
+    {
+        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised SSBO");
+        glDeleteBuffers(1, &mHandle);
+        mInitialised = false;
     }
     void RBO::generate()
     {
@@ -1143,7 +1292,6 @@ namespace GLType
             case Function::LinkProgram :         return "LinkProgram";
             case Function::DeleteShader :        return "DeleteShader";
             case Function::UseProgram :          return "UseProgram";
-            case Function::GetUniformLocation :  return "GetUniformLocation";
             default:
                 ZEPHYR_ASSERT(false, "Unknown Function requested");
                 return "";
@@ -1370,7 +1518,7 @@ namespace GLType
     }
 }
 
-std::string GLState::getErrorMessage()
+std::string GLState::getErrorMessage() const
 {
     std::set<GLType::ErrorType> errors;
     GLenum glError(glGetError());
@@ -1398,7 +1546,7 @@ std::string GLState::getErrorMessage()
     return errorString;
 }
 
-std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction)
+std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction) const
 {
     const static std::array<std::unordered_map<GLType::ErrorType, std::vector<std::string>>, util::toIndex(GLType::Function::Count)> functionErrorTypeMapping =
     {{
@@ -1458,10 +1606,6 @@ std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction)
         { // UseProgram
             { GLType::ErrorType::InvalidValue,      { "Program is neither 0 nor a value generated by OpenGL." }},
             { GLType::ErrorType::InvalidOperation,  { "Program is not a program object.", "Program could not be made part of current state.", "Transform feedback mode is active." }}
-        },
-        { // GetUniformLocation
-            { GLType::ErrorType::InvalidValue,      { "program is not a value generated by OpenGL." }},
-            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object.", "Program has not been successfully linked." }}
         },
     }};
 
