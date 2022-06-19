@@ -3,6 +3,8 @@
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
 #include "glm/mat4x4.hpp" // mat4, dmat4
 
+#include <vector>
+
 class MeshManager;
 class TextureManager;
 class LightManager;
@@ -25,6 +27,7 @@ public:
 
 	virtual void preDraw() 											= 0;
 	virtual void draw(const DrawCall& pDrawCall) 					= 0;
+	virtual void draw(const std::vector<DrawCall>& pDrawCalls) 		= 0;
 	virtual void draw(const PointLight& pPointLight) 				= 0;
 	virtual void draw(const DirectionalLight& pDirectionalLight) 	= 0;
 	virtual void draw(const SpotLight& pSpotLight) 					= 0;

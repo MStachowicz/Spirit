@@ -206,6 +206,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 		draw(GLMesh);
 	}
 }
+void OpenGLAPI::draw(const std::vector<DrawCall>& pDrawCalls)
+{
+	for (const auto& drawCall : pDrawCalls)
+	{
+		draw(drawCall);
+	}
+}
 void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 {
 	if (pMesh.mDrawSize > 0)

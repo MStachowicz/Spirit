@@ -28,6 +28,7 @@ public:
 
 	void preDraw() 										 override;
 	void draw(const DrawCall& pDrawCall) 				 override;
+	void draw(const std::vector<DrawCall>& pDrawCalls) 	 override;
 	void draw(const PointLight& pPointLight) 			 override;
 	void draw(const DirectionalLight& pDirectionalLight) override;
 	void draw(const SpotLight& pSpotLight) 				 override;
