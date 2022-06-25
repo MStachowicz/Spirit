@@ -45,6 +45,21 @@ namespace util
             pArray[i] = dis(gen);
     }
 
+    // New-from-old combination function for hash values.
+    // Takes the previous seed value pSeed and hashes pValue onto it.
+    template <class T>
+    inline void HashCombine(std::size_t& pSeed, const T& pValue)
+    {
+        // The magic number "0x9e3779b9" is supposed to be 32 random bits, where each is equally likely to be 0 or 1, and with no simple correlation between the bits.
+        // Uses a common way to find a string of such bits using the binary expansion of an irrational number; in this case the reciprocal of the golden ratio:
+        // phi = (1 + sqrt(5)) / 2
+        // 2^32 / phi = 0x9e3779b9
+        // So including this number 'randomly' changes each bit of the seed; this means that consecutive values will be far apart. Including the shifted versions of the old seed makes sure that,
+        // even if hash_value() has a fairly small range of values, differences will soon be spread across all the bits.
+        std::hash<T> hasher;
+        pSeed ^= hasher(pValue) + 0x9e3779b9 + (pSeed << 6) + (pSeed >> 2);
+    }
+
     class File
     {
     public:
