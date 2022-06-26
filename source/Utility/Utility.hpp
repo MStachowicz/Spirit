@@ -5,6 +5,7 @@
 #include <string>
 #include <random>
 
+#include "glm/gtx/hash.hpp"
 #include "Logger.hpp"
 
 namespace util
