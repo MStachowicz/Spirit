@@ -27,7 +27,6 @@ public:
 
 	virtual void preDraw() 											= 0;
 	virtual void draw(const DrawCall& pDrawCall) 					= 0;
-	virtual void draw(const std::vector<DrawCall>& pDrawCalls) 		= 0;
 	virtual void draw(const PointLight& pPointLight) 				= 0;
 	virtual void draw(const DirectionalLight& pDirectionalLight) 	= 0;
 	virtual void draw(const SpotLight& pSpotLight) 					= 0;

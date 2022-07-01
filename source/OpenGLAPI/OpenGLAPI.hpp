@@ -28,7 +28,6 @@ public:
 
 	void preDraw() 										 override;
 	void draw(const DrawCall& pDrawCall) 				 override;
-	void draw(const std::vector<DrawCall>& pDrawCalls) 	 override;
 	void draw(const PointLight& pPointLight) 			 override;
 	void draw(const DirectionalLight& pDirectionalLight) override;
 	void draw(const SpotLight& pSpotLight) 				 override;
@@ -65,6 +64,8 @@ private:
 	// Get all the data required to draw this mesh in its default configuration.
 	const OpenGLMesh& getGLMesh(const MeshID& pMeshID) const;
 	const GLData::Texture& getTexture(const TextureID& pTextureID) const;
+	// Returns the shader needed to execute a particular DrawCall
+	Shader* getShader(const DrawCall& pDrawCall);
 	// Recursively draw the OpenGLMesh and all its children.
 	void draw(const OpenGLMesh& pMesh);
 

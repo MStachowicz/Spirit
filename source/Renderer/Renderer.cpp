@@ -173,7 +173,9 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 
 	onFrameStart(pTimeSinceLastDraw);
 	{ // Draw all meshes via DrawCalls
-		mOpenGLAPI->draw(mDrawCalls.Get());
+
+		for (const auto& drawCall : mDrawCalls.Get())
+			mOpenGLAPI->draw(drawCall);
 
 		if (mLightManager.mRenderLightPositions)
 		{

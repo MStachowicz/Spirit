@@ -103,116 +103,96 @@ void OpenGLAPI::preDraw()
 	mShaders[mLightMapIndex].setUniform(mGLState, "viewPosition", mViewPosition);
 }
 
-void OpenGLAPI::draw(const DrawCall& pDrawCall)
+Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 {
-	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh); // Grab the OpenGLMesh for the Zephyr Mesh requested in the DrawCall.
-
-	const Shader *shader = nullptr;
 	if (mBufferDrawType == GLType::BufferDrawType::Colour)
 	{
-		// #OPTIMIZATION: Future per component combination for entity
 		switch (pDrawCall.mDrawStyle)
 		{
 		case DrawStyle::Textured:
-			if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
-			{
-				shader = &mShaders[mTexture2ShaderIndex];
-				shader->use(mGLState);
-				shader->setUniform(mGLState, "mixFactor", pDrawCall.mMixFactor.value());
-			}
-			else
-			{
-				shader = &mShaders[mTexture1ShaderIndex];
-				shader->use(mGLState);
-			}
-			ZEPHYR_ASSERT(shader->getTexturesUnitsCount() > 0, "Shader selected for textured draw does not have any texture units.");
-
-			mGLState.setActiveTextureUnit(0);
-			if (pDrawCall.mTexture1.has_value())
-				getTexture(pDrawCall.mTexture1.value()).bind();
-			else
-				getTexture(mMissingTextureID).bind();
-
-			mGLState.setActiveTextureUnit(1);
-			if (pDrawCall.mTexture2.has_value())
-				getTexture(pDrawCall.mTexture2.value()).bind();
-			else
-				getTexture(mMissingTextureID).bind();
-
-			break;
+			if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value()) return &mShaders[mTexture2ShaderIndex];
+			else return &mShaders[mTexture1ShaderIndex];
 		case DrawStyle::UniformColour:
-			shader = &mShaders[mUniformShaderIndex];
-			shader->use(mGLState);
-			shader->setUniform(mGLState, "colour", pDrawCall.mColour.value());
-			break;
+			return &mShaders[mUniformShaderIndex];
 		case DrawStyle::LightMap:
-			ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[util::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lighting.")
-
-			shader = &mShaders[mLightMapIndex];
-			shader->use(mGLState);
-
-			mGLState.setActiveTextureUnit(0);
-			if (pDrawCall.mDiffuseTextureID.has_value())
-				getTexture(pDrawCall.mDiffuseTextureID.value()).bind();
-			else
-				getTexture(mMissingTextureID).bind();
-
-			mGLState.setActiveTextureUnit(1);
-			if (pDrawCall.mSpecularTextureID.has_value())
-				getTexture(pDrawCall.mSpecularTextureID.value()).bind();
-			else
-				getTexture(mMissingTextureID).bind();
-
-			shader->setUniform(mGLState, "shininess", pDrawCall.mShininess.value());
-
-			if (pDrawCall.mTextureRepeatFactor.has_value() && (pDrawCall.mDiffuseTextureID.has_value() || pDrawCall.mSpecularTextureID.has_value()))
-				shader->setUniform(mGLState, "textureRepeatFactor", pDrawCall.mTextureRepeatFactor.value());
-			else
-				shader->setUniform(mGLState, "textureRepeatFactor", 1.f);
-
-			break;
-		default:
-			break;
+			return &mShaders[mLightMapIndex];
 		}
 	}
 	else if (mBufferDrawType == GLType::BufferDrawType::Depth)
 	{
-		shader = &mShaders[mDepthViewerIndex];
-		shader->use(mGLState);
-	}
-	ZEPHYR_ASSERT(shader != nullptr, "Shader to draw with has not been set.")
-
-	glm::mat4 trans = glm::translate(glm::mat4(1.0f), pDrawCall.mPosition);
-	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.x), glm::vec3(1.0, 0.0, 0.0));
-	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.y), glm::vec3(0.0, 1.0, 0.0));
-	trans = glm::rotate(trans, glm::radians(pDrawCall.mRotation.z), glm::vec3(0.0, 0.0, 1.0));
-	trans = glm::scale(trans, pDrawCall.mScale);
-	shader->setUniform(mGLState, "model", trans);
-
-	switch (pDrawCall.mDrawMode)
-	{
-		case DrawMode::Fill: 	  mGLState.setPolygonMode(GLType::PolygonMode::Fill); break;
-		case DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); break;
-		default:
-   			ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLAPI draw.");
-			break;
+		return &mShaders[mDepthViewerIndex];
 	}
 
-	draw(GLMesh);
-
-	if (mVisualiseNormals)
-	{
-		mShaders[mVisualiseNormalIndex].setUniform(mGLState, "model", trans);
-		draw(GLMesh);
-	}
+	ZEPHYR_ASSERT(false, "Could not find a shader to execute this DrawCall with");
+	return nullptr;
 }
-void OpenGLAPI::draw(const std::vector<DrawCall>& pDrawCalls)
+
+void OpenGLAPI::draw(const DrawCall& pDrawCall)
 {
-	for (const auto& drawCall : pDrawCalls)
+	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh);
+
+	if (const Shader* shader = getShader(pDrawCall))
 	{
-		draw(drawCall);
+		shader->use(mGLState);
+
+		if (shader->getName() == "texture1")
+		{
+			ZEPHYR_ASSERT(pDrawCall.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture1 shader");
+			mGLState.setActiveTextureUnit(0);
+			getTexture(pDrawCall.mTexture1.value()).bind();
+		}
+		else if (shader->getName() == "texture2")
+		{
+			ZEPHYR_ASSERT(pDrawCall.mMixFactor.has_value(), "DrawCall must have mixFactor set to draw using texture2 shader");
+			ZEPHYR_ASSERT(pDrawCall.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture2 shader");
+			ZEPHYR_ASSERT(pDrawCall.mTexture2.has_value(), "DrawCall must have mTexture2 set to draw using texture2 shader");
+
+			shader->setUniform(mGLState, "mixFactor", pDrawCall.mMixFactor.value());
+			mGLState.setActiveTextureUnit(0);
+			getTexture(pDrawCall.mTexture1.value()).bind();
+			mGLState.setActiveTextureUnit(1);
+			getTexture(pDrawCall.mTexture2.value()).bind();
+		}
+		else if (shader->getName() == "uniformColour")
+		{
+			ZEPHYR_ASSERT(pDrawCall.mColour.has_value(), "DrawCall must have mColour set to draw using uniformColour shader");
+			shader->setUniform(mGLState, "colour", pDrawCall.mColour.value());
+		}
+		else if (shader->getName() == "lightMap")
+		{
+			ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[util::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lightMap shader.")
+			ZEPHYR_ASSERT(pDrawCall.mDiffuseTextureID.has_value(), "DrawCall must have mDiffuseTextureID set to draw using lightMap shader");
+			ZEPHYR_ASSERT(pDrawCall.mSpecularTextureID.has_value(), "DrawCall must have mSpecularTextureID set to draw using lightMap shader");
+			ZEPHYR_ASSERT(pDrawCall.mShininess.has_value(), "DrawCall must have mTexture2 set to draw using texture2");
+
+			mGLState.setActiveTextureUnit(0);
+			getTexture(pDrawCall.mDiffuseTextureID.value()).bind();
+			mGLState.setActiveTextureUnit(1);
+			getTexture(pDrawCall.mSpecularTextureID.value()).bind();
+			shader->setUniform(mGLState, "shininess", pDrawCall.mShininess.value());
+			shader->setUniform(mGLState, "textureRepeatFactor", pDrawCall.mTextureRepeatFactor.has_value() ? pDrawCall.mTextureRepeatFactor.value() : 1.f);
+		}
+		else
+			ZEPHYR_ASSERT(false, "No shader found to execute DrawCall with");
+
+		switch (pDrawCall.mDrawMode)
+		{
+		case DrawMode::Fill: mGLState.setPolygonMode(GLType::PolygonMode::Fill); 		 break;
+		case DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); 	 break;
+		default: ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLAPI draw."); break;
+		}
+
+		shader->setUniform(mGLState, "model", util::GetModelMatrix(pDrawCall.mPosition, pDrawCall.mRotation, pDrawCall.mScale));
+		draw(GLMesh);
+
+		if (mVisualiseNormals)
+		{
+			mShaders[mVisualiseNormalIndex].setUniform(mGLState, "model", util::GetModelMatrix(pDrawCall.mPosition, pDrawCall.mRotation, pDrawCall.mScale));
+			draw(GLMesh);
+		}
 	}
 }
+
 void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 {
 	if (pMesh.mDrawSize > 0)
