@@ -6,19 +6,22 @@
 #include "Logger.hpp"
 #include "Timer.hpp"
 
+#include "EntityManager.hpp"
+
 #include "cmath"
 #include "numeric"
 #include "chrono"
 
-Renderer::Renderer()
+Renderer::Renderer(ECS::EntityManager& pEntityManager)
 : mDrawCount(0)
 , mTargetFPS(60)
 , mTextureManager()
 , mMeshManager(mTextureManager)
-, mLightManager()
-, mOpenGLAPI(new OpenGLAPI(mLightManager))
+, mOpenGLAPI(new OpenGLAPI())
 , mCamera(glm::vec3(0.0f, 1.7f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1), std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1))
+, mEntityManager(pEntityManager)
 , mRenderImGui(true)
+, mRenderLightPositions(true)
 , mShowFPSPlot(false)
 , mUseRawPerformanceData(false)
 , mDataSmoothingFactor(0.1f)
@@ -38,6 +41,30 @@ Renderer::Renderer()
 	lightPosition.mColour		= glm::vec3(1.f);
 	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
 
+	{// Lights
+		{ // Point light
+			const std::array<glm::vec3, 4> pointLightPositions = {
+				glm::vec3(0.7f, 1.7f, 2.0f),
+				glm::vec3(0.0f, 1.0f, -3.0f),
+				glm::vec3(2.3f, 3.3f, -4.0f),
+				glm::vec3(-4.0f, 2.0f, -12.0f)};
+
+			for (const auto position : pointLightPositions)
+			{
+
+				Data::PointLight &pointLight = mEntityManager.mPointLights.Create(mEntityManager.CreateEntity());
+				pointLight.mPosition = position;
+			}
+		}
+
+		{ // Directional light
+			Data::DirectionalLight &directionalLight = mEntityManager.mDirectionalLights.Create(mEntityManager.CreateEntity());
+			directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
+		}
+		// Spotlight
+		Data::SpotLight &spotlight = mEntityManager.mSpotLights.Create(mEntityManager.CreateEntity());
+	}
+
 	{ // Cubes
 		std::array<glm::vec3, 10> cubePositions = {
 			glm::vec3(3.0f,   0.5f,  0.0f),
@@ -52,7 +79,7 @@ Renderer::Renderer()
 			glm::vec3(2.0f,   0.5f, -15.0f)};
 		for (size_t i = 0; i < cubePositions.size(); i++)
 		{
-			DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+			DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
 			drawCall.mPosition = cubePositions[i];
 			drawCall.mMesh = mMeshManager.getMeshID("3DCube");
 
@@ -64,7 +91,7 @@ Renderer::Renderer()
 	}
 	const float floorSize = 25.f;
 	{ // Floor
-		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+		DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
 		drawCall.mPosition;
 		drawCall.mRotation.x = -90.f;
 		drawCall.mScale = glm::vec3(floorSize);
@@ -76,7 +103,7 @@ Renderer::Renderer()
 		drawCall.mTextureRepeatFactor = 20.f;
 	}
 	{
-		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+		DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
 		drawCall.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
 		drawCall.mScale = glm::vec3(0.5f);
 		drawCall.mMesh = mMeshManager.getMeshID("backpack");
@@ -86,7 +113,7 @@ Renderer::Renderer()
 		drawCall.mShininess = 64.f;
 	}
 	{
-		DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+		DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
 		drawCall.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
 		drawCall.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
 		drawCall.mScale = glm::vec3(0.4f);
@@ -111,7 +138,7 @@ Renderer::Renderer()
 
 		for (const auto& position : vegetation)
 		{
-			DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+			DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
 			drawCall.mScale = glm::vec3(0.2f);
 			drawCall.mPosition = position;
 			drawCall.mPosition.y += drawCall.mScale.y;
@@ -132,7 +159,7 @@ Renderer::Renderer()
 
 		for (const auto& position : windowPositions)
 		{
-			DrawCall &drawCall = mDrawCalls.Create(ECS::CreateEntity());
+			DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
 			drawCall.mScale = glm::vec3(0.2f);
 			drawCall.mPosition = position;
 			drawCall.mPosition.y += drawCall.mScale.y;
@@ -161,9 +188,9 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 	mOpenGLAPI->preDraw();
 
 	{ // Setup lights in GraphicsAPI
-		mLightManager.getPointLights().ForEach([this](const PointLight& pPointLight) { mOpenGLAPI->draw(pPointLight); });
-		mLightManager.getDirectionalLights().ForEach([this](const DirectionalLight& pDirectionalLight) { mOpenGLAPI->draw(pDirectionalLight); });
-		mLightManager.getSpotlightsLights().ForEach([this](const SpotLight& pSpotLight) { mOpenGLAPI->draw(pSpotLight); });
+		mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight) { mOpenGLAPI->draw(pPointLight); });
+		mEntityManager.mDirectionalLights.ForEach([this](const Data::DirectionalLight& pDirectionalLight) { mOpenGLAPI->draw(pDirectionalLight); });
+		mEntityManager.mSpotLights.ForEach([this](const Data::SpotLight& pSpotLight) { mOpenGLAPI->draw(pSpotLight); });
 	}
 }
 
@@ -177,9 +204,9 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 		for (const auto& drawCall : mDrawCalls.Get())
 			mOpenGLAPI->draw(drawCall);
 
-		if (mLightManager.mRenderLightPositions)
+		if (mRenderLightPositions)
 		{
-			mLightManager.getPointLights().ForEach([&](const PointLight &pPointLight)
+			mEntityManager.mPointLights.ForEach([&](const Data::PointLight &pPointLight)
 			{
 				lightPosition.mPosition = pPointLight.mPosition;
 				lightPosition.mColour	= pPointLight.mColour;
@@ -212,7 +239,9 @@ void Renderer::renderImGui()
 	{
 		if (ImGui::Begin("Render options", nullptr))
 		{
-			ImGui::Checkbox("Render light positions", &mLightManager.mRenderLightPositions);
+			ImGui::Checkbox("Render light positions", &mRenderLightPositions);
+
+			mEntityManager.mSpotLights.ModifyForEach([&](Data::SpotLight& pSpotLight) { pSpotLight.DrawImGui(); });
 		}
 		ImGui::End();
 
@@ -374,7 +403,6 @@ void Renderer::renderImGui()
 		ImGui::ShowDemoWindow();
 		ImGui::ShowMetricsWindow();
 
-		mLightManager.renderImGui();
 		mOpenGLAPI->renderImGui();
 	}
 

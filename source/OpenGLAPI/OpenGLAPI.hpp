@@ -18,21 +18,27 @@
 struct GladGLContext;
 struct DrawCall;
 struct Mesh;
-enum class DrawMode;
+
+namespace Data
+{
+	struct PointLight;
+	struct DirectionalLight;
+	struct SpotLight;
+}
 
 class OpenGLAPI : public GraphicsAPI
 {
 public:
-	OpenGLAPI(const LightManager& pLightManager);
+	OpenGLAPI();
 	~OpenGLAPI();
 
-	void preDraw() 										 override;
-	void draw(const DrawCall& pDrawCall) 				 override;
-	void draw(const PointLight& pPointLight) 			 override;
-	void draw(const DirectionalLight& pDirectionalLight) override;
-	void draw(const SpotLight& pSpotLight) 				 override;
-	void postDraw() 									 override;
-	void endFrame() 									 override;
+	void preDraw() 										 		override;
+	void draw(const DrawCall& pDrawCall) 				 		override;
+	void draw(const Data::PointLight& pPointLight) 			    override;
+	void draw(const Data::DirectionalLight& pDirectionalLight)  override;
+	void draw(const Data::SpotLight& pSpotLight) 				override;
+	void postDraw() 									 		override;
+	void endFrame() 									 		override;
 
 	void newImGuiFrame()	override;
 	void renderImGuiFrame() override;

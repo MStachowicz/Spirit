@@ -8,15 +8,19 @@
 
 #include "Mesh.hpp"
 #include "Texture.hpp"
-#include "Light.hpp"
 
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 
 #include "imgui.h"
 
-OpenGLAPI::OpenGLAPI(const LightManager& pLightManager)
-	: GraphicsAPI(pLightManager)
+// Data
+#include "PointLight.hpp"
+#include "SpotLight.hpp"
+#include "DirectionalLight.hpp"
+
+OpenGLAPI::OpenGLAPI()
+	: GraphicsAPI()
 	, cOpenGLVersionMajor(4)
 	, cOpenGLVersionMinor(3)
 	, mLinearDepthView(false)
@@ -208,7 +212,7 @@ void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
 	for (const auto& childMesh : pMesh.mChildMeshes)
 		draw(childMesh);
 }
-void OpenGLAPI::draw(const PointLight& pPointLight)
+void OpenGLAPI::draw(const Data::PointLight& pPointLight)
 {
 	const std::string uniform = "Lights.mPointLights[" + std::to_string(pointLightDrawCount) + "]";
 	const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
@@ -224,7 +228,7 @@ void OpenGLAPI::draw(const PointLight& pPointLight)
 
 	pointLightDrawCount++;
 }
-void OpenGLAPI::draw(const DirectionalLight& pDirectionalLight)
+void OpenGLAPI::draw(const Data::DirectionalLight& pDirectionalLight)
 {
 	const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
@@ -236,7 +240,7 @@ void OpenGLAPI::draw(const DirectionalLight& pDirectionalLight)
 
 	directionalLightDrawCount++;
 }
-void OpenGLAPI::draw(const SpotLight& pSpotLight)
+void OpenGLAPI::draw(const Data::SpotLight& pSpotLight)
 {
 	const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;

@@ -32,8 +32,6 @@ source/Renderer/MeshManager.hpp
 source/Renderer/MeshManager.cpp
 source/Renderer/TextureManager.hpp
 source/Renderer/TextureManager.cpp
-source/Renderer/LightManager.hpp
-source/Renderer/LightManager.cpp
 source/Renderer/Camera.hpp
 source/Renderer/Camera.cpp
 source/Renderer/ImGuiConfig.hpp
@@ -143,18 +141,23 @@ INTERFACE Data
 # ------------------------ INTERFACE END ----------------------------
 
 # ------------------------ DATA ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Data interface")
-add_library(Data INTERFACE
+message(STATUS "\n[ZEPHYR] -- Adding Data library")
+add_library(Data
 source/Data/Mesh.hpp
 source/Data/Texture.hpp
-source/Data/Light.hpp
+source/Data/DirectionalLight.hpp
+source/Data/PointLight.hpp
+source/Data/SpotLight.hpp
+source/Data/SpotLight.cpp
+source/Data/Transform.hpp
 )
 target_include_directories(Data
-INTERFACE source/Data
-INTERFACE source/External/GLM
+PUBLIC source/Data
+PUBLIC source/External/GLM
 )
 target_link_libraries(Data
 INTERFACE Utility
+PRIVATE ImGui
 )
 # ------------------------ DATA END ----------------------------
 
@@ -162,10 +165,12 @@ INTERFACE Utility
 message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
 add_library(ECS INTERFACE
 source/ECS/Entity.hpp
+source/ECS/EntityManager.hpp
 source/ECS/ComponentManager.hpp
 )
 target_include_directories(ECS
 INTERFACE source/ECS
+INTERFACE source/External/GLM
 )
 target_link_libraries(ECS
 INTERFACE Logger # Can this be made Private by providing CPP files and making ECS a regular library?

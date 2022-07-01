@@ -5,6 +5,8 @@
 #include "Renderer.hpp"
 #include "Input.hpp"
 
+#include "ECS/EntityManager.hpp"
+
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
 {
@@ -14,6 +16,7 @@ public:
     void simulationLoop();
 
 private:
+    ECS::EntityManager mEntityManager;
     Renderer mRenderer;
     Input mInput;
 

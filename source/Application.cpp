@@ -1,11 +1,8 @@
 #include "Application.hpp"
 
-#include "Renderer.hpp"
-#include "Input.hpp"
-#include "Application.hpp"
-
 Application::Application()
-    : mRenderer()
+    : mEntityManager()
+    , mRenderer(mEntityManager)
     , mInput(mRenderer.getCamera())
 {}
 

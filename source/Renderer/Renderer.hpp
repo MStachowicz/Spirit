@@ -1,6 +1,5 @@
 #pragma once
 
-#include "LightManager.hpp"
 #include "TextureManager.hpp"
 #include "MeshManager.hpp"
 #include "Camera.hpp"
@@ -11,11 +10,16 @@
 
 class GraphicsAPI;
 
+namespace ECS
+{
+	class EntityManager;
+}
+
 // Submits DrawCalls to it's GraphicsAPI which itself implements the rendering pipeline being used.
 class Renderer
 {
 public:
-	Renderer();
+	Renderer(ECS::EntityManager& pEntityManager);
 	~Renderer();
 
 	void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -33,14 +37,15 @@ private:
 
 	TextureManager mTextureManager;
 	MeshManager mMeshManager;
-	LightManager mLightManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
 
 	DrawCall lightPosition;
+	ECS::EntityManager& mEntityManager;
 	ECS::ComponentManager<DrawCall> mDrawCalls;
 
 	bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.
+	bool mRenderLightPositions;
 	bool mShowFPSPlot; // Whether we are displaying the
 
 	bool mUseRawPerformanceData; // Whether the values displayed in Performance window will be averaged for smoother display.
