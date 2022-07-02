@@ -5,22 +5,25 @@
 #include "Camera.hpp"
 
 #include "DrawCall.hpp"
-
-#include "ComponentManager.hpp"
+#include <vector>
 
 class GraphicsAPI;
 
 namespace ECS
 {
 	class EntityManager;
+	class Entity;
 }
 
-// Submits DrawCalls to it's GraphicsAPI which itself implements the rendering pipeline being used.
+// Parses the Entity list into a list of DrawCalls to send to a GraphicsAPI to execute.
+// The combination of components an entity comprises of, defines how the entity will be rendered.
 class Renderer
 {
 public:
 	Renderer(ECS::EntityManager& pEntityManager);
 	~Renderer();
+
+	void parseEntity(const ECS::Entity& pEntity);
 
 	void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
 	void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -34,15 +37,14 @@ public:
 	Camera& getCamera() { return mCamera; }
 private:
 	// Order of initialisation is important here:
-
 	TextureManager mTextureManager;
 	MeshManager mMeshManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
+	ECS::EntityManager& mEntityManager;
 
 	DrawCall lightPosition;
-	ECS::EntityManager& mEntityManager;
-	ECS::ComponentManager<DrawCall> mDrawCalls;
+	std::vector<DrawCall> mDrawCalls; // Contains unique Data::MeshDraw's to be executed by the GraphicsAPI in all DrawCall::mModels orientations.
 
 	bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.
 	bool mRenderLightPositions;

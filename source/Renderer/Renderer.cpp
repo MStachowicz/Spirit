@@ -36,10 +36,12 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
 	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
 
-	lightPosition.mScale 		= glm::vec3(0.1f);
-	lightPosition.mMesh 		= mMeshManager.getMeshID("3DCube");
-	lightPosition.mColour		= glm::vec3(1.f);
-	lightPosition.mDrawStyle 	= DrawStyle::UniformColour;
+	lightPosition.mMesh.mID 		= mMeshManager.getMeshID("3DCube");
+	lightPosition.mMesh.mColour		= glm::vec3(1.f);
+	lightPosition.mMesh.mDrawStyle 	= Data::DrawStyle::UniformColour;
+
+	const float floorSize = 25.f;
+	const size_t grassCount = 10000;
 
 	{// Lights
 		{ // Point light
@@ -49,9 +51,8 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 				glm::vec3(2.3f, 3.3f, -4.0f),
 				glm::vec3(-4.0f, 2.0f, -12.0f)};
 
-			for (const auto position : pointLightPositions)
+			for (const auto& position : pointLightPositions)
 			{
-
 				Data::PointLight &pointLight = mEntityManager.mPointLights.Create(mEntityManager.CreateEntity());
 				pointLight.mPosition = position;
 			}
@@ -79,77 +80,92 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 			glm::vec3(2.0f,   0.5f, -15.0f)};
 		for (size_t i = 0; i < cubePositions.size(); i++)
 		{
-			DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
-			drawCall.mPosition = cubePositions[i];
-			drawCall.mMesh = mMeshManager.getMeshID("3DCube");
+			auto entity = mEntityManager.CreateEntity();
 
-			drawCall.mDrawStyle = DrawStyle::LightMap;
-			drawCall.mDiffuseTextureID = mTextureManager.getTextureID("metalContainerDiffuse");
-			drawCall.mSpecularTextureID = mTextureManager.getTextureID("metalContainerSpecular");
-			drawCall.mShininess = 64.f;
+			auto& transform = mEntityManager.mTransforms.Create(entity);
+			transform.mPosition = cubePositions[i];
+
+			auto& mesh = mEntityManager.mMeshes.Create(entity);
+			mesh.mID = mMeshManager.getMeshID("3DCube");
+			mesh.mName = "3DCube";
+			mesh.mDrawStyle = Data::DrawStyle::LightMap;
+			mesh.mDiffuseTextureID = mTextureManager.getTextureID("metalContainerDiffuse");
+			mesh.mSpecularTextureID = mTextureManager.getTextureID("metalContainerSpecular");
+			mesh.mShininess = 64.f;
 		}
 	}
-	const float floorSize = 25.f;
 	{ // Floor
-		DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
-		drawCall.mPosition;
-		drawCall.mRotation.x = -90.f;
-		drawCall.mScale = glm::vec3(floorSize);
-		drawCall.mMesh = mMeshManager.getMeshID("Quad");
-		drawCall.mDrawStyle = DrawStyle::LightMap;
-		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
-		drawCall.mSpecularTextureID = mTextureManager.getTextureID("black");
-		drawCall.mShininess = 128.f;
-		drawCall.mTextureRepeatFactor = 20.f;
-	}
-	{
-		DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
-		drawCall.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
-		drawCall.mScale = glm::vec3(0.5f);
-		drawCall.mMesh = mMeshManager.getMeshID("backpack");
-		drawCall.mDrawStyle = DrawStyle::LightMap;
-		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("diffuse");
-		drawCall.mSpecularTextureID = mTextureManager.getTextureID("specular");
-		drawCall.mShininess = 64.f;
-	}
-	{
-		DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
-		drawCall.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
-		drawCall.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
-		drawCall.mScale = glm::vec3(0.4f);
-		drawCall.mMesh = mMeshManager.getMeshID("xian");
-		drawCall.mDrawStyle = DrawStyle::LightMap;
-		drawCall.mDiffuseTextureID = mTextureManager.getTextureID("Base_Color");
-		drawCall.mSpecularTextureID = mTextureManager.getTextureID("black");
-		drawCall.mShininess = 64.f;
-	}
+		auto entity = mEntityManager.CreateEntity();
 
+		auto& transform = mEntityManager.mTransforms.Create(entity);
+		transform.mPosition;
+		transform.mRotation.x = -90.f;
+		transform.mScale = glm::vec3(floorSize);
+
+		auto& mesh = mEntityManager.mMeshes.Create(entity);
+		mesh.mID = mMeshManager.getMeshID("Quad");
+		mesh.mDrawStyle = Data::DrawStyle::LightMap;
+		mesh.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
+		mesh.mSpecularTextureID = mTextureManager.getTextureID("black");
+		mesh.mShininess = 128.f;
+		mesh.mTextureRepeatFactor = 20.f;
+	}
+	{ // Backpack
+		auto entity = mEntityManager.CreateEntity();
+
+		auto& transform = mEntityManager.mTransforms.Create(entity);
+		transform.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
+		transform.mScale = glm::vec3(0.5f);
+
+		auto& mesh = mEntityManager.mMeshes.Create(entity);
+		mesh.mID = mMeshManager.getMeshID("backpack");
+		mesh.mDrawStyle = Data::DrawStyle::LightMap;
+		mesh.mDiffuseTextureID = mTextureManager.getTextureID("diffuse");
+		mesh.mSpecularTextureID = mTextureManager.getTextureID("specular");
+		mesh.mShininess = 64.f;
+	}
+	{ // Xian
+		auto entity = mEntityManager.CreateEntity();
+
+		auto& transform = mEntityManager.mTransforms.Create(entity);
+		transform.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
+		transform.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
+		transform.mScale = glm::vec3(0.4f);
+
+		auto& mesh = mEntityManager.mMeshes.Create(entity);
+		mesh.mID = mMeshManager.getMeshID("xian");
+		mesh.mDrawStyle = Data::DrawStyle::LightMap;
+		mesh.mDiffuseTextureID = mTextureManager.getTextureID("Base_Color");
+		mesh.mSpecularTextureID = mTextureManager.getTextureID("black");
+		mesh.mShininess = 64.f;
+	}
 	{ // Billboard grass
-		const size_t grassCount = 10000;
-		std::array<glm::vec3, grassCount> vegetation;
+		std::array<glm::vec3, grassCount> grassPositions;
 		{
 			std::array<float, grassCount> randomX;
 			util::fillRandomNumbers(-floorSize, floorSize, randomX);
 			std::array<float, grassCount> randomZ;
 			util::fillRandomNumbers(-floorSize, floorSize, randomZ);
 			for (size_t i = 0; i < grassCount; i++)
-				vegetation[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
+				grassPositions[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
 		}
 
-		for (const auto& position : vegetation)
+		for (const auto& position : grassPositions)
 		{
-			DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
-			drawCall.mScale = glm::vec3(0.2f);
-			drawCall.mPosition = position;
-			drawCall.mPosition.y += drawCall.mScale.y;
+			auto entity = mEntityManager.CreateEntity();
 
-			drawCall.mMesh = mMeshManager.getMeshID("Quad");
-			drawCall.mDrawStyle = DrawStyle::Textured;
-			drawCall.mTexture1 = mTextureManager.getTextureID("grassBillboard");
+			auto& transform = mEntityManager.mTransforms.Create(entity);
+			transform.mScale = glm::vec3(0.2f);
+			transform.mPosition = position;
+			transform.mPosition.y += transform.mScale.y;
+
+			auto& mesh = mEntityManager.mMeshes.Create(entity);
+			mesh.mID = mMeshManager.getMeshID("Quad");
+			mesh.mDrawStyle = Data::DrawStyle::Textured;
+			mesh.mTexture1 = mTextureManager.getTextureID("grassBillboard");
 		}
 	}
-
-	{// Windows
+	{ // Windows
 		std::array<glm::vec3, 5> windowPositions = {
 			glm::vec3(-1.5f, 0.0f, 1.48f),
 			glm::vec3(1.5f, 0.0f, 1.51f),
@@ -159,22 +175,72 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 
 		for (const auto& position : windowPositions)
 		{
-			DrawCall &drawCall = mDrawCalls.Create(mEntityManager.CreateEntity());
-			drawCall.mScale = glm::vec3(0.2f);
-			drawCall.mPosition = position;
-			drawCall.mPosition.y += drawCall.mScale.y;
+			auto entity = mEntityManager.CreateEntity();
 
-			drawCall.mMesh = mMeshManager.getMeshID("Quad");
-			drawCall.mDrawStyle = DrawStyle::Textured;
-			drawCall.mTexture1 = mTextureManager.getTextureID("window");
+			auto& transform = mEntityManager.mTransforms.Create(entity);
+			transform.mScale = glm::vec3(0.2f);
+			transform.mPosition = position;
+			transform.mPosition.y += transform.mScale.y;
+
+			auto& mesh = mEntityManager.mMeshes.Create(entity);
+			mesh.mID = mMeshManager.getMeshID("Quad");
+			mesh.mDrawStyle = Data::DrawStyle::Textured;
+			mesh.mTexture1 = mTextureManager.getTextureID("window");
 		}
 	}
+
+	mEntityManager.ForEach([this](const ECS::Entity& pEntity){
+		parseEntity(pEntity);
+	});
+
 }
 
 Renderer::~Renderer()
 {
 	delete mOpenGLAPI;
 }
+
+void Renderer::parseEntity(const ECS::Entity& pEntity)
+{
+	// Grab all the entities with meshes to draw then confirm they also have a transform component to use as a model matrix.
+	const Data::MeshDraw* mesh = mEntityManager.mMeshes.GetComponent(pEntity);
+	if (mesh)
+	{
+		const Data::Transform* transform = mEntityManager.mTransforms.GetComponent(pEntity);
+		if (transform)
+		{
+			DrawCall drawCall;
+			drawCall.mMesh = *mesh;
+
+			auto it = std::find_if(mDrawCalls.begin(), mDrawCalls.end(), [&drawCall](const DrawCall& entry)
+			{
+				return entry.mMesh.mID              == drawCall.mMesh.mID
+				&& entry.mMesh.mDrawMode            == drawCall.mMesh.mDrawMode
+				&& entry.mMesh.mDrawStyle           == drawCall.mMesh.mDrawStyle
+				// Per DrawStyle values
+				&& entry.mMesh.mTexture1            == drawCall.mMesh.mTexture1
+				&& entry.mMesh.mTexture2            == drawCall.mMesh.mTexture2
+				&& entry.mMesh.mMixFactor           == drawCall.mMesh.mMixFactor
+				&& entry.mMesh.mColour              == drawCall.mMesh.mColour
+				&& entry.mMesh.mDiffuseTextureID    == drawCall.mMesh.mDiffuseTextureID
+				&& entry.mMesh.mSpecularTextureID   == drawCall.mMesh.mSpecularTextureID
+				&& entry.mMesh.mShininess           == drawCall.mMesh.mShininess
+				&& entry.mMesh.mTextureRepeatFactor == drawCall.mMesh.mTextureRepeatFactor;
+			});
+
+			if (it == mDrawCalls.end())
+			{
+				drawCall.mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
+				mDrawCalls.push_back(drawCall);
+			}
+			else
+			{
+				it->mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
+			}
+		}
+	}
+}
+
 
 void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
@@ -201,17 +267,20 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 	onFrameStart(pTimeSinceLastDraw);
 	{ // Draw all meshes via DrawCalls
 
-		for (const auto& drawCall : mDrawCalls.Get())
-			mOpenGLAPI->draw(drawCall);
+		for (const auto& drawCall : mDrawCalls)
+			if(!drawCall.mModels.empty())
+				mOpenGLAPI->draw(drawCall);
 
 		if (mRenderLightPositions)
 		{
-			mEntityManager.mPointLights.ForEach([&](const Data::PointLight &pPointLight)
+			lightPosition.mModels.clear();
+			mEntityManager.mPointLights.ForEach([&](const Data::PointLight& pPointLight)
 			{
-				lightPosition.mPosition = pPointLight.mPosition;
-				lightPosition.mColour	= pPointLight.mColour;
-				mOpenGLAPI->draw(lightPosition);
+				lightPosition.mMesh.mColour = pPointLight.mColour;
+				lightPosition.mModels.push_back(util::GetModelMatrix(pPointLight.mPosition, {}, glm::vec3(0.1f)));
 			});
+
+			mOpenGLAPI->draw(lightPosition);
 		}
 	}
 	postDraw();
@@ -230,18 +299,14 @@ void Renderer::postDraw()
 void Renderer::renderImGui()
 {
 	// Render all ImGui from here.
-	// Regardless of mRenderImGui, we call newImGuiFrame() and renderImGuiFrame() to allow showing performance window.
 	Stopwatch stopWatch;
 
 	mOpenGLAPI->newImGuiFrame();
-
 	if (mRenderImGui)
 	{
 		if (ImGui::Begin("Render options", nullptr))
 		{
 			ImGui::Checkbox("Render light positions", &mRenderLightPositions);
-
-			mEntityManager.mSpotLights.ModifyForEach([&](Data::SpotLight& pSpotLight) { pSpotLight.DrawImGui(); });
 		}
 		ImGui::End();
 
@@ -262,150 +327,14 @@ void Renderer::renderImGui()
 		}
 		ImGui::End();
 
-		if (ImGui::Begin("Entity draw options"))
-		{
-			size_t count = 0;
-
-			mDrawCalls.ModifyForEach([&](DrawCall& pDrawCall)
-									 {
-			count++;
-			const std::string title = "Draw call option " + std::to_string(count);
-
-			if(ImGui::TreeNode(title.c_str()))
-			{
-				ImGui::SliderFloat3("Position", &pDrawCall.mPosition.x, -50.f, 50.f);
-				ImGui::SliderFloat3("Rotation", &pDrawCall.mRotation.x, -360.f, 360.f);
-				ImGui::SliderFloat3("Scale", &pDrawCall.mScale.x, 0.1f, 10.f);
-
-				{ // Draw mode selection
-					if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))
-					{
-						for (size_t i = 0; i < drawModes.size(); i++)
-						{
-							if (ImGui::Selectable(drawModes[i].c_str()))
-								pDrawCall.mDrawMode = static_cast<DrawMode>(i);
-						}
-						ImGui::EndCombo();
-					}
-				}
-
-				{ // Draw style selection
-					if (ImGui::BeginCombo("Draw Style", convert(pDrawCall.mDrawStyle).c_str(), ImGuiComboFlags()))
-					{
-						for (size_t i = 0; i < drawStyles.size(); i++)
-						{
-							if (ImGui::Selectable(drawStyles[i].c_str()))
-								pDrawCall.mDrawStyle = static_cast<DrawStyle>(i);
-						}
-						ImGui::EndCombo();
-					}
-				}
-
-				ImGui::Separator();
-
-				switch (pDrawCall.mDrawStyle)
-				{
-				case DrawStyle::Textured:
-				{
-					{// Texture 1
-						const std::string currentTexture = pDrawCall.mTexture1.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture1.value()) : "Empty";
-						if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
-						{
-							mTextureManager.ForEach([&](const Texture &texture)
-							{
-								if (ImGui::Selectable(texture.mName.c_str()))
-								{
-									pDrawCall.mTexture1 = texture.getID();
-								}
-							});
-							ImGui::EndCombo();
-						}
-					}
-					if (pDrawCall.mTexture1.has_value())
-					{ // Texture 2
-						const std::string currentTexture = pDrawCall.mTexture2.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture2.value()) : "Empty";
-						if (ImGui::BeginCombo("Texture 2", currentTexture.c_str(), ImGuiComboFlags()))
-						{
-							if	(pDrawCall.mTexture2.has_value())
-								if (ImGui::Selectable("Empty"))
-									pDrawCall.mTexture2 = std::nullopt;
-
-							mTextureManager.ForEach([&](const Texture &texture)
-							{
-								if (ImGui::Selectable(texture.mName.c_str()))
-								{
-									pDrawCall.mTexture2 = texture.getID();
-								}
-							});
-							ImGui::EndCombo();
-						}
-					}
-					if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
-					{ // Only displayed if we have two texture slots set
-						if (!pDrawCall.mMixFactor.has_value())
-							pDrawCall.mMixFactor = 0.5f;
-
-						ImGui::SliderFloat("Texture mix factor", &pDrawCall.mMixFactor.value(), 0.f, 1.f);
-					}
-				}
-				break;
-				case DrawStyle::UniformColour:
-				{
-					if (!pDrawCall.mColour.has_value())
-						pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
-
-					ImGui::ColorEdit3("Colour",  &pDrawCall.mColour.value().x);
-				}
-				break;
-				case DrawStyle::LightMap:
-				{
-					ImGui::Text("Available texture slots");
-					{
-						const std::string currentTexture = pDrawCall.mDiffuseTextureID.has_value() ? mTextureManager.getTextureName(pDrawCall.mDiffuseTextureID.value()) : "No texture set";
-						if (ImGui::BeginCombo("Diffuse", currentTexture.c_str(), ImGuiComboFlags()))
-						{
-							mTextureManager.ForEach([&](const Texture &texture)
-							{
-								if (ImGui::Selectable(texture.mName.c_str()))
-									pDrawCall.mDiffuseTextureID = texture.getID();
-							});
-							ImGui::EndCombo();
-						}
-					}
-					{
-						const std::string currentTexture = pDrawCall.mSpecularTextureID.has_value() ? mTextureManager.getTextureName(pDrawCall.mSpecularTextureID.value()) : "No texture set";
-						if (ImGui::BeginCombo("Specular", currentTexture.c_str(), ImGuiComboFlags()))
-						{
-							mTextureManager.ForEach([&](const Texture &texture)
-							{
-								if (ImGui::Selectable(texture.mName.c_str()))
-									pDrawCall.mSpecularTextureID = texture.getID();
-							});
-							ImGui::EndCombo();
-						}
-					}
-					if (!pDrawCall.mShininess.has_value())
-						pDrawCall.mShininess = 64.f;
-					ImGui::SliderFloat("Shininess", &pDrawCall.mShininess.value(), 0.1f, 128.f);
-
-					if (!pDrawCall.mTextureRepeatFactor.has_value())
-						pDrawCall.mTextureRepeatFactor = 1.f;
-					ImGui::SliderFloat("Texture repeat factor", &pDrawCall.mTextureRepeatFactor.value(), 1.f, 128.f);
-				}
-				default:
-					break;
-				}
-				ImGui::TreePop();
-			} });
-		}
-		ImGui::End();
-
+		mEntityManager.DrawImGui();
 		ImGui::ShowDemoWindow();
 		ImGui::ShowMetricsWindow();
 
 		mOpenGLAPI->renderImGui();
 	}
 
+	// Regardless of mRenderImGui, we call newImGuiFrame() and renderImGuiFrame() to allow showing performance window.
 	if (ImGui::Begin("Performance"))
 	{
 		// This is showing the last frame's RenderTimeTaken since the update has to happen after renderImGuiFrame below.

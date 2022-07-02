@@ -150,6 +150,7 @@ source/Data/PointLight.hpp
 source/Data/SpotLight.hpp
 source/Data/SpotLight.cpp
 source/Data/Transform.hpp
+source/Data/Transform.cpp
 )
 target_include_directories(Data
 PUBLIC source/Data

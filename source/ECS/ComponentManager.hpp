@@ -51,9 +51,9 @@ namespace ECS
             }
         }
 
-        inline const Component *GetComponent(const Entity &entity)
+        inline const Component* GetComponent(const Entity& pEntity)
         {
-            auto it = lookup.find(entity);
+            auto it = lookup.find(pEntity.mID);
             if (it != lookup.end())
             {
                 return &components[it->second];
@@ -64,16 +64,16 @@ namespace ECS
 
         Component& Create(const Entity &entity)
         {
-            ZEPHYR_ASSERT(entity != INVALID_ENTITY, "Invalid entity not allowed to create components");
-            ZEPHYR_ASSERT(lookup.find(entity) == lookup.end(), "Only one of this component type is allowed per entity");
+            ZEPHYR_ASSERT(entity.mID != INVALID_ENTITY_ID, "Invalid entity not allowed to create components");
+            ZEPHYR_ASSERT(lookup.find(entity.mID) == lookup.end(), "Only one of this component type is allowed per entity");
             ZEPHYR_ASSERT(entities.size() == components.size() && lookup.size() == components.size(), "Entity count must always be the same as the number of components");
 
             // Update the entity lookup table:
-            lookup[entity] = components.size();
+            lookup[entity.mID] = components.size();
             // New components are always pushed to the end:
             components.push_back(Component());
             // Also push corresponding entity:
-            entities.push_back(entity);
+            entities.push_back(entity.mID);
 
             return components.back();
         }
@@ -106,7 +106,7 @@ namespace ECS
 
     private:
         std::vector<Component> components;
-        std::vector<Entity> entities;
-        std::unordered_map<Entity, size_t> lookup;
+        std::vector<EntityID> entities;
+        std::unordered_map<EntityID, size_t> lookup;
     };
 }

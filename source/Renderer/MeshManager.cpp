@@ -15,24 +15,24 @@ MeshID MeshManager::getMeshID(const std::string &pMeshName)
     return it->second;
 }
 
-void MeshManager::setID(Mesh& pMesh, const bool& pRootMesh)
+void MeshManager::setID(Data::Mesh& pMesh, const bool& pRootMesh)
 {
-    pMesh.mID = pRootMesh ? activeMeshes++ : activeMeshes - 1;
+    pMesh.setID(pRootMesh ? activeMeshes++ : activeMeshes - 1);
 
     for (auto& childMesh : pMesh.mChildMeshes)
         setID(childMesh, false);
 }
 
-void MeshManager::addMesh(Mesh& pMesh)
+void MeshManager::addMesh(Data::Mesh& pMesh)
 {
     setID(pMesh, true);
 
     ZEPHYR_ASSERT(isMeshValid(pMesh), "Adding invalid mesh");
-    ZEPHYR_ASSERT(mMeshes.find(pMesh.mID) == mMeshes.end(), "addMesh should only be called once per MeshID");
+    ZEPHYR_ASSERT(mMeshes.find(pMesh.getID()) == mMeshes.end(), "addMesh should only be called once per MeshID");
     ZEPHYR_ASSERT(mMeshNames.find(pMesh.mName) == mMeshNames.end(), "addMesh should only be called with unique mesh name");
 
-    mMeshes.emplace(std::make_pair(pMesh.mID, pMesh));
-    mMeshNames.emplace(std::make_pair(pMesh.mName, pMesh.mID));
+    mMeshes.emplace(std::make_pair(pMesh.getID(), pMesh));
+    mMeshNames.emplace(std::make_pair(pMesh.mName, pMesh.getID()));
 }
 
 MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
@@ -46,7 +46,7 @@ MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
         ZEPHYR_ASSERT(false, "Failed to load model using ASSIMP");
     }
 
-    Mesh rootMesh;
+    Data::Mesh rootMesh;
     rootMesh.mName      = pFilePath.stem().string();
     rootMesh.mFilePath  = pFilePath.parent_path().string();
     processNode(rootMesh, scene->mRootNode, scene);
@@ -56,7 +56,7 @@ MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
 }
 
 // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object
-void MeshManager::processNode(Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene)
+void MeshManager::processNode(Data::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene)
 {
     for (unsigned int i = 0; i < pNode->mNumMeshes; i++)
     {
@@ -66,8 +66,8 @@ void MeshManager::processNode(Mesh& pParentMesh, aiNode* pNode, const aiScene* p
 
     for (unsigned int i = 0; i < pNode->mNumChildren; i++)
     {
-        Mesh childMesh;
-        childMesh.mID = pParentMesh.mID; // Child meshes are not stored in the root mMeshes container, but they do repeat their parent mID for easier find.
+        Data::Mesh childMesh;
+        childMesh.setID(pParentMesh.getID()); // Child meshes are not stored in the root mMeshes container, but they do repeat their parent mID for easier find.
         childMesh.mName = pParentMesh.mName + "-child-" + std::to_string(i);
         childMesh.mFilePath = pParentMesh.mFilePath;
         processNode(childMesh, pNode->mChildren[i], pScene);
@@ -75,7 +75,7 @@ void MeshManager::processNode(Mesh& pParentMesh, aiNode* pNode, const aiScene* p
     }
 }
 
-void MeshManager::processData(Mesh& pMesh, const aiMesh *pAssimpMesh, const aiScene *pAssimpScene)
+void MeshManager::processData(Data::Mesh& pMesh, const aiMesh *pAssimpMesh, const aiScene *pAssimpScene)
 {
     for (unsigned int i = 0; i < pAssimpMesh->mNumVertices; i++)
     {
@@ -129,7 +129,7 @@ void MeshManager::processData(Mesh& pMesh, const aiMesh *pAssimpMesh, const aiSc
     }
 }
 
-void MeshManager::processTextures(Mesh& pMesh, aiMaterial* pMaterial, const Texture::Purpose& pPurpose)
+void MeshManager::processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Texture::Purpose& pPurpose)
 {
     aiTextureType type = aiTextureType::aiTextureType_UNKNOWN;
     switch (pPurpose)
@@ -153,7 +153,7 @@ void MeshManager::processTextures(Mesh& pMesh, aiMaterial* pMaterial, const Text
     }
 }
 
-bool MeshManager::isMeshValid(const Mesh& pMesh)
+bool MeshManager::isMeshValid(const Data::Mesh& pMesh)
 {
     ZEPHYR_ASSERT(!pMesh.mName.empty(), "Mesh name cannot be empty.");
 
@@ -175,7 +175,7 @@ bool MeshManager::isMeshValid(const Mesh& pMesh)
     {
         for (const auto& child : pMesh.mChildMeshes)
         {
-            ZEPHYR_ASSERT(pMesh.mID == child.mID, "Children should have the same mID as parents.");
+            ZEPHYR_ASSERT(pMesh.getID() == child.getID(), "Children should have the same mID as parents.");
 
             if (!isMeshValid(child))
                 return false;
@@ -191,7 +191,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
     loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/backpack/backpack.obj");
 
     { // 2D TRIANGLE
-        Mesh mesh;
+        Data::Mesh mesh;
         mesh.mName = "2DTriangle";
         mesh.mVertices = {
             -1.0f, -1.0f, 0.0f, // Left
@@ -209,7 +209,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
         addMesh(mesh);
     }
     { // SKYBOX
-        Mesh mesh;
+        Data::Mesh mesh;
         mesh.mName = "Skybox";
         mesh.mVertices = {
             -1.0f,  1.0f, -1.0f,
@@ -252,7 +252,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
         addMesh(mesh);
     }
     { // QUAD
-        Mesh mesh;
+        Data::Mesh mesh;
         mesh.mName = "Quad";
         mesh.mVertices = {
            -1.0f,  1.0f, 0.0f,  // Top-left
@@ -276,7 +276,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
         addMesh(mesh);
     }
     { // 3D CUBE (supported vertex attributes: Position, Texture coordinates(2D), Normal)
-        Mesh mesh;
+        Data::Mesh mesh;
         mesh.mName = "3DCube";
         mesh.mVertices = {
             // Back face

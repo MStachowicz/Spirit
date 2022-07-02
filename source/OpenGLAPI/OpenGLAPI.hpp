@@ -40,13 +40,13 @@ public:
 	void postDraw() 									 		override;
 	void endFrame() 									 		override;
 
-	void newImGuiFrame()	override;
-	void renderImGuiFrame() override;
-	void renderImGui()		override;
+	void newImGuiFrame()										override;
+	void renderImGuiFrame() 									override;
+	void renderImGui()											override;
 
-	void initialiseMesh(const Mesh& pMesh) 			 	   override;
-	void initialiseTexture(const Texture& pTexture)  	   override;
-	void initialiseCubeMap(const CubeMapTexture& pCubeMap) override;
+	void initialiseMesh(const Data::Mesh& pMesh) 			 	override;
+	void initialiseTexture(const Texture& pTexture)  	   		override;
+	void initialiseCubeMap(const CubeMapTexture& pCubeMap) 		override;
 
 private:
 	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
