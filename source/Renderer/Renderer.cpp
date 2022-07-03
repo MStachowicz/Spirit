@@ -43,29 +43,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	const float floorSize = 25.f;
 	const size_t grassCount = 10000;
 
-	{// Lights
-		{ // Point light
-			const std::array<glm::vec3, 4> pointLightPositions = {
-				glm::vec3(0.7f, 1.7f, 2.0f),
-				glm::vec3(0.0f, 1.0f, -3.0f),
-				glm::vec3(2.3f, 3.3f, -4.0f),
-				glm::vec3(-4.0f, 2.0f, -12.0f)};
-
-			for (const auto& position : pointLightPositions)
-			{
-				Data::PointLight &pointLight = mEntityManager.mPointLights.Create(mEntityManager.CreateEntity());
-				pointLight.mPosition = position;
-			}
-		}
-
-		{ // Directional light
-			Data::DirectionalLight &directionalLight = mEntityManager.mDirectionalLights.Create(mEntityManager.CreateEntity());
-			directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
-		}
-		// Spotlight
-		Data::SpotLight &spotlight = mEntityManager.mSpotLights.Create(mEntityManager.CreateEntity());
-	}
-
 	{ // Cubes
 		std::array<glm::vec3, 10> cubePositions = {
 			glm::vec3(3.0f,   0.5f,  0.0f),
@@ -187,6 +164,29 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 			mesh.mDrawStyle = Data::DrawStyle::Textured;
 			mesh.mTexture1 = mTextureManager.getTextureID("window");
 		}
+	}
+
+	{// Lights
+		{ // Point light
+			const std::array<glm::vec3, 4> pointLightPositions = {
+				glm::vec3(0.7f, 1.7f, 2.0f),
+				glm::vec3(0.0f, 1.0f, -3.0f),
+				glm::vec3(2.3f, 3.3f, -4.0f),
+				glm::vec3(-4.0f, 2.0f, -12.0f)};
+
+			for (const auto& position : pointLightPositions)
+			{
+				Data::PointLight &pointLight = mEntityManager.mPointLights.Create(mEntityManager.CreateEntity());
+				pointLight.mPosition = position;
+			}
+		}
+
+		{ // Directional light
+			Data::DirectionalLight &directionalLight = mEntityManager.mDirectionalLights.Create(mEntityManager.CreateEntity());
+			directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
+		}
+		// Spotlight
+		Data::SpotLight &spotlight = mEntityManager.mSpotLights.Create(mEntityManager.CreateEntity());
 	}
 
 	mEntityManager.ForEach([this](const ECS::Entity& pEntity){

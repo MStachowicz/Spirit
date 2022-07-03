@@ -146,7 +146,9 @@ add_library(Data
 source/Data/Mesh.hpp
 source/Data/Texture.hpp
 source/Data/DirectionalLight.hpp
+source/Data/DirectionalLight.cpp
 source/Data/PointLight.hpp
+source/Data/PointLight.cpp
 source/Data/SpotLight.hpp
 source/Data/SpotLight.cpp
 source/Data/Transform.hpp
@@ -164,9 +166,10 @@ PRIVATE ImGui
 
 # ------------------------ ECS ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
-add_library(ECS INTERFACE
+add_library(ECS
 source/ECS/Entity.hpp
 source/ECS/EntityManager.hpp
+source/ECS/EntityManager.cpp
 source/ECS/ComponentManager.hpp
 )
 target_include_directories(ECS
@@ -174,7 +177,9 @@ INTERFACE source/ECS
 INTERFACE source/External/GLM
 )
 target_link_libraries(ECS
-INTERFACE Logger # Can this be made Private by providing CPP files and making ECS a regular library?
+PRIVATE Logger # Can this be made Private by providing CPP files and making ECS a regular library?
+PRIVATE ImGui
+PUBLIC Data
 )
 # ------------------------ ECS END ----------------------------
 

@@ -61,6 +61,16 @@ namespace ECS
             else
                 return nullptr;
         }
+        inline Component* GetComponentModify(const Entity& pEntity)
+        {
+            auto it = lookup.find(pEntity.mID);
+            if (it != lookup.end())
+            {
+                return &components[it->second];
+            }
+            else
+                return nullptr;
+        }
 
         Component& Create(const Entity &entity)
         {

@@ -38,7 +38,7 @@ namespace ECS
         ComponentManager<Data::Transform>        mTransforms;
         ComponentManager<Data::MeshDraw>         mMeshes;
 
-        void DrawImGui() {};
+        void DrawImGui();
     private:
         std::vector<Entity> mEntities;
         EntityID mNextEntityID;
