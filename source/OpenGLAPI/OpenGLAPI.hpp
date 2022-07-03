@@ -82,7 +82,6 @@ private:
 	// By default, OpenGL projection uses non-linear depth values (they have a very high precision for small z-values and a low precision for large z-values).
 	// By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
 	bool mLinearDepthView;
-	GLType::BufferDrawType BufferDrawType;
 	bool mVisualiseNormals;
 	float mZNearPlane;
 	float mZFarPlane;
@@ -110,8 +109,13 @@ private:
 	int spotLightDrawCount;
 	int directionalLightDrawCount;
 
-	GLType::BufferDrawType mBufferDrawType;
-	GLData::FBO mMainScreenFBO;
+	enum BufferDrawType
+    {
+        Colour,
+        Depth,
+        Count
+    };
+	BufferDrawType mBufferDrawType;
 
 	struct PostProcessingOptions
 	{
@@ -124,6 +128,7 @@ private:
 	};
 	PostProcessingOptions mPostProcessingOptions;
 
+	GLData::FBO mMainScreenFBO;
 	std::vector<Shader> mShaders;
 	// Draw info is fetched every draw call.
 	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.

@@ -1,27 +1,17 @@
 #pragma once
 
-#include "Utility.hpp"
 #include "glm/fwd.hpp"
+#include "Logger.hpp"
 
-#include "string"
-#include "array"
-#include "unordered_map"
-#include "optional"
+#include <string>
+#include <array>
+#include <unordered_map>
+#include <optional>
 
 // Wraps all the GL types into enums and provides helper functions to extract the values or string representations.
 // All the enums come with a matching array to allow iterating over the enums in ImGui and converting to string by O(1) indexing.
 namespace GLType
 {
-    enum BufferDrawType
-    {
-        Colour,
-        Depth,
-        Count
-    };
-    static inline const std::array<std::string, util::toIndex(GLType::BufferDrawType::Count)> bufferDrawTypes{
-        "Colour",
-        "Depth"};
-
     enum class DataType
     {
         Float, Vec2, Vec3, Vec4,
@@ -59,42 +49,6 @@ namespace GLType
         Usampler2DRect,
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::DataType::Count)> dataTypes{
-        "Float", "vec2", "vec3", "vec4",
-        "Double", "DVec2", "DVec3", "DVec4",
-        "Int", "IVec2", "IVec3", "IVec4",
-        "UnsignedInt", "UVec2", "UVec3", "UVec4",
-        "Bool", "BVec2", "BVec3", "BVec4",
-        "Mat2", "Mat3", "Mat4",
-        "Mat2x3", "Mat2x4", "Mat3x2", "Mat3x4", "Mat4x2", "Mat4x3",
-        "Dmat2", "Dmat3", "Dmat4",
-        "Dmat2x3", "Dmat2x4", "Dmat3x2", "Dmat3x4", "Dmat4x2", "Dmat4x3",
-        "Sampler1D", "Sampler2D", "Sampler3D",
-        "SamplerCube",
-        "Sampler1DShadow", "Sampler2DShadow",
-        "Sampler1DArray", "Sampler2DArray",
-        "Sampler1DArrayShadow", "Sampler2DArrayShadow",
-        "Sampler2DMS", "Sampler2DMSArray",
-        "SamplerCubeShadow",
-        "SamplerBuffer",
-        "Sampler2DRect",
-        "Sampler2DRectShadow",
-        "Isampler1D", "Isampler2D", "Isampler3D",
-        "IsamplerCube",
-        "Isampler1DArray", "Isampler2DArray",
-        "Isampler2DMS",
-        "Isampler2DMSArray",
-        "IsamplerBuffer",
-        "Isampler2DRect",
-        "Usampler1D", "Usampler2D", "Usampler3D",
-        "UsamplerCube",
-        "Usampler2DArray",
-        "Usampler2DMS",
-        "Usampler2DMSArray",
-        "UsamplerBuffer",
-        "Usampler2DRect"
-    };
-
     enum class ShaderProgramType
     {
         Vertex,
@@ -102,10 +56,6 @@ namespace GLType
         Fragment,
         Count
     };
-    std::string toString(const ShaderProgramType& pShaderProgramType);
-    int convert(const ShaderProgramType& pShaderProgramType);
-
-
     enum class ShaderResourceType
     {
         Uniform,
@@ -128,26 +78,6 @@ namespace GLType
 
         Count
     };
-
-    static inline const std::array<std::string, util::toIndex(GLType::ShaderResourceType::Count)> shaderResourceTypes{
-        "Uniform",
-        "UniformBlock",
-        "ShaderStorageBlock",
-        "BufferVariable",
-        "Buffer",
-        "ProgramInput",
-        "ProgramOutput",
-        "AtomicCounterBuffer",
-        //"AtomicCounterShader",
-        "VertexSubroutineUniform",
-        "FragmentSubroutineUniform",
-        "GeometrySubroutineUniform",
-        "ComputeSubroutineUniform",
-        "TessControlSubroutineUniform",
-        "TessEvaluationSubroutineUniform",
-        "TransformFeedbackBuffer",
-        "TransformFeedbackVarying"};
-
     enum class ShaderResourceProperty
     {
         NameLength,
@@ -183,38 +113,6 @@ namespace GLType
 
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::ShaderResourceProperty::Count)> shaderResourceProperties{
-        "NameLength",
-        "Type",
-        "ArraySize",
-        "Offset",
-        "BlockIndex",
-        "ArrayStride",
-        "MatrixStride",
-        "IsRowMajor",
-        "AtomicCounterBufferIndex",
-        "TextureBuffer",
-        "BufferBinding",
-        "BufferDataSize",
-        "NumActiveVariables",
-        "ActiveVariables",
-        "ReferencedByVertexShader",
-        "ReferencedByTessControlShader",
-        "ReferencedByTessEvaluationShader",
-        "ReferencedByGeometryShader",
-        "ReferencedByFragmentShader",
-        "ReferencedByComputeShader",
-        "NumCompatibleSubroutines",
-        "CompatibleSubroutines",
-        "TopLevelArraySize",
-        "TopLevelArrayStride",
-        "Location",
-        "LocationIndex",
-        "IsPerPatch",
-        "LocationComponent",
-        "TransformFeedbackBufferIndex",
-        "TransformFeedbackBufferStride"};
-
     enum class DepthTestType
     {
         Always,
@@ -227,16 +125,6 @@ namespace GLType
         GreaterEqual,
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::DepthTestType::Count)> depthTestTypes{
-        "Always",
-        "Never",
-        "Less",
-        "Equal",
-        "Not equal",
-        "Greater than",
-        "Less than or equal",
-        "Greater than or equal"};
-
     enum class BlendFactorType
     {
         Zero,                      // Factor is equal to 0.
@@ -255,22 +143,6 @@ namespace GLType
         OneMinusConstantAlpha,     // Factor is equal to 1 minus alpha of the constant colour vector.
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::BlendFactorType::Count)> blendFactorTypes{{
-        "Zero",
-        "One",
-        "Source Colour",
-        "One Minus Source Colour",
-        "Destination Colour",
-        "One Minus Destination Colour",
-        "Source Alpha",
-        "One Minus Source Alpha",
-        "Destination Alpha",
-        "One Minus Destination Alpha",
-        "Constant Colour",
-        "One Minus Constant Colour",
-        "Constant Alpha",
-        "One Minus Constant Alpha"}};
-
     enum class CullFacesType
     {
         Back,          // Culls only the back faces (Default OpenGL setting).
@@ -278,21 +150,12 @@ namespace GLType
         FrontAndBack,  // Culls both the front and back faces.
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::CullFacesType::Count)> cullFaceTypes {
-        "Back",
-        "Front",
-        "Front and Back"};
-
     enum class FrontFaceOrientation
     {
         Clockwise,          // Clockwise polygons are identified as front-facing.
         CounterClockwise,   // Counter-clockwise polygons are identified as front-facing (Default OpenGL setting).
         Count
     };
-    static inline const std::array<std::string, util::toIndex(GLType::FrontFaceOrientation::Count)> frontFaceOrientationTypes {
-        "Clockwise",
-        "CounterClockwise"};
-
     // Polygon rasterization mode
     // Vertices are marked as boundary/non-boundary with an edge flag generated internally by OpenGL when it decomposes triangle stips and fans.
     enum class PolygonMode
@@ -302,11 +165,6 @@ namespace GLType
         Fill,  // The interior of the polygon is filled. Polygon attributes such as GL_POLYGON_SMOOTH control the rasterization of the polygon. (Default OpenGL setting).
         Count
     };
-    static inline const std::array<std::string, util::toIndex(PolygonMode::Count)> polygonModeTypes{
-        "Point",
-        "Line",
-        "Fill"};
-
     // Interpretation scheme used to determine what a stream of vertices represents when being rendered.
     enum class PrimitiveMode
     {
@@ -324,20 +182,6 @@ namespace GLType
         Patches,
         Count
     };
-    static inline const std::array<std::string, util::toIndex(PrimitiveMode::Count)> primitiveModeTypes{
-        "Points"
-        "LineStrip"
-        "LineLoop"
-        "Lines"
-        "LineStripAdjacency"
-        "LinesAdjacency"
-        "TriangleStrip"
-        "TriangleFan"
-        "Triangles"
-        "TriangleStripAdjacency"
-        "TrianglesAdjacency"
-        "Patches"};
-
     enum class FramebufferTarget
     {
         DrawFramebuffer,
@@ -345,11 +189,6 @@ namespace GLType
         Framebuffer,
         Count
     };
-    static inline const std::array<std::string, util::toIndex(FramebufferTarget::Count)> FrameBufferTargetTypes{
-        "DrawFramebuffer",
-        "ReadFramebuffer",
-        "Framebuffer"};
-
     enum class ErrorType
     {
         InvalidEnum,
@@ -378,35 +217,24 @@ namespace GLType
         UseProgram,
         Count
     };
+
     std::string toString(const Function& pFunction);
-
-    // Messages from https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetError.xhtml
-    static inline const std::array<std::string, util::toIndex(ErrorType::Count)> DefaultErrorMessages{
-        "GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag",
-        "GL_INVALID_VALUE: A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag",
-        "GL_INVALID_OPERATION: The specified operation is not allowed in the current state. The offending command is ignored and has no other side effect than to set the error flag",
-        "GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag",
-        "GL_OUT_OF_MEMORY: There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded",
-        "GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow",
-        "GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow"
-    };
-
-    inline std::string toString(const DataType& pDataType)                              { return dataTypes[util::toIndex(pDataType)]; }
-    inline std::string toString(const ShaderResourceType& pResourceType)                { return shaderResourceTypes[util::toIndex(pResourceType)]; }
-    inline std::string toString(const ShaderResourceProperty& pShaderResourceProperty)  { return shaderResourceProperties[util::toIndex(pShaderResourceProperty)]; }
-    inline std::string toString(const DepthTestType& pDepthTestType)                    { return depthTestTypes[util::toIndex(pDepthTestType)]; }
-    inline std::string toString(const BufferDrawType& pBufferDrawType)                  { return bufferDrawTypes[util::toIndex(pBufferDrawType)]; }
-    inline std::string toString(const BlendFactorType& pBlendFactorType)                { return blendFactorTypes[util::toIndex(pBlendFactorType)]; }
-    inline std::string toString(const CullFacesType& pCullFacesType)                    { return cullFaceTypes[util::toIndex(pCullFacesType)]; }
-    inline std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)      { return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)]; }
-    inline std::string toString(const PolygonMode& pPolygonMode)                        { return polygonModeTypes[util::toIndex(pPolygonMode)]; }
-    inline std::string toString(const PrimitiveMode& pPrimitiveMode)                    { return primitiveModeTypes[util::toIndex(pPrimitiveMode)]; }
-    inline std::string toString(const FramebufferTarget& pFramebufferTarget)            { return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)]; }
-    inline std::string toString(const ErrorType& pErrorType)                            { return DefaultErrorMessages[util::toIndex(pErrorType)]; }
-
+    std::string toString(const ShaderProgramType& pShaderProgramType);
+    std::string toString(const DataType &pDataType);
+    std::string toString(const ShaderResourceType &pResourceType);
+    std::string toString(const ShaderResourceProperty &pShaderResourceProperty);
+    std::string toString(const DepthTestType &pDepthTestType);
+    std::string toString(const BlendFactorType &pBlendFactorType);
+    std::string toString(const CullFacesType &pCullFacesType);
+    std::string toString(const FrontFaceOrientation &pFrontFaceOrientation);
+    std::string toString(const PolygonMode &pPolygonMode);
+    std::string toString(const PrimitiveMode &pPrimitiveMode);
+    std::string toString(const FramebufferTarget &pFramebufferTarget);
+    std::string toString(const ErrorType &pErrorType);
 
     DataType convert(const int& pDataType);
 
+    int convert(const ShaderProgramType& pShaderProgramType);
     int convert(const DataType& pDataType);
     int convert(const ShaderResourceType& pResourceType);
     int convert(const ShaderResourceProperty& pShaderResourceProperty);
@@ -808,7 +636,7 @@ public:
             }
         }
 
-        ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName)
+        ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName);
     }
 
     // #GLHelperFunction

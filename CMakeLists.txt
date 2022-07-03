@@ -184,10 +184,18 @@ PUBLIC Data
 # ------------------------ ECS END ----------------------------
 
 # ------------------------ UTILITY ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Utility interface")
-add_library(Utility INTERFACE)
+message(STATUS "\n[ZEPHYR] -- Adding Utility static library")
+add_library(Utility
+source/Utility/Utility.hpp
+source/Utility/Utility.cpp
+source/Utility/Timer.hpp
+)
 target_include_directories(Utility
-INTERFACE source/Utility
+PUBLIC source/Utility
+PUBLIC source/External/GLM
+)
+target_link_libraries(Utility
+PRIVATE Logger
 )
 # ------------------------ UTILITY END ----------------------------
 

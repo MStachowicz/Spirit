@@ -1,14 +1,15 @@
 #include "GLState.hpp"
 
-#include "Logger.hpp"
+#include "Utility.hpp"
 
+// External libs
+#include "Logger.hpp"
+#include "glm/mat4x4.hpp" // mat4, dmat4
+#include "glm/gtc/type_ptr.hpp" //  glm::value_ptr
 #include "glad/gl.h"
 #include "imgui.h"
 
-#include "glm/mat4x4.hpp" // mat4, dmat4
-#include "glm/gtc/type_ptr.hpp" //  glm::value_ptr
-
-#include "set"
+#include <set>
 
 GLState::GLState()
     : mDepthTest(true)
@@ -178,7 +179,7 @@ void GLState::renderImGui()
             {
                 for (size_t i = 0; i < util::toIndex(GLType::DepthTestType::Count); i++)
                 {
-                    if (ImGui::Selectable(GLType::depthTestTypes[i].c_str()))
+                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::DepthTestType>(i)).c_str()))
                         setDepthTestType(static_cast<GLType::DepthTestType>(i));
                 }
                 ImGui::EndCombo();
@@ -201,7 +202,7 @@ void GLState::renderImGui()
             {
                 for (size_t i = 0; i < util::toIndex(GLType::BlendFactorType::Count); i++)
                 {
-                    if (ImGui::Selectable(GLType::blendFactorTypes[i].c_str()))
+                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::BlendFactorType>(i)).c_str()))
                         setBlendFunction(static_cast<GLType::BlendFactorType>(i), mDestinationBlendFactor);
                 }
                 ImGui::EndCombo();
@@ -213,7 +214,7 @@ void GLState::renderImGui()
             {
                 for (size_t i = 0; i < util::toIndex(GLType::BlendFactorType::Count); i++)
                 {
-                    if (ImGui::Selectable(GLType::blendFactorTypes[i].c_str()))
+                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::BlendFactorType>(i)).c_str()))
                         setBlendFunction(mSourceBlendFactor, static_cast<GLType::BlendFactorType>(i));
                 }
                 ImGui::EndCombo();
@@ -232,7 +233,7 @@ void GLState::renderImGui()
             {
                 for (size_t i = 0; i < util::toIndex(GLType::CullFacesType::Count); i++)
                 {
-                    if (ImGui::Selectable(GLType::cullFaceTypes[i].c_str()))
+                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::CullFacesType>(i)).c_str()))
                         setCullFacesType(static_cast<GLType::CullFacesType>(i));
                 }
                 ImGui::EndCombo();
@@ -241,7 +242,7 @@ void GLState::renderImGui()
             {
                 for (size_t i = 0; i < util::toIndex(GLType::FrontFaceOrientation::Count); i++)
                 {
-                    if (ImGui::Selectable(GLType::frontFaceOrientationTypes[i].c_str()))
+                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::FrontFaceOrientation>(i)).c_str()))
                         setFrontFaceOrientation(static_cast<GLType::FrontFaceOrientation>(i));
                 }
                 ImGui::EndCombo();
@@ -1108,90 +1109,6 @@ namespace GLData
 
 namespace GLType
 {
-    int convert(const DataType& pDataType)
-    {
-        switch (pDataType)
-        {
-            case DataType::Float :                return GL_FLOAT;
-            case DataType::Vec2 :                 return GL_FLOAT_VEC2;
-            case DataType::Vec3 :                 return GL_FLOAT_VEC3;
-            case DataType::Vec4 :                 return GL_FLOAT_VEC4;
-            case DataType::Double :               return GL_DOUBLE;
-            case DataType::DVec2 :                return GL_DOUBLE_VEC2;
-            case DataType::DVec3 :                return GL_DOUBLE_VEC3;
-            case DataType::DVec4 :                return GL_DOUBLE_VEC4;
-            case DataType::Int :                  return GL_INT;
-            case DataType::IVec2 :                return GL_INT_VEC2;
-            case DataType::IVec3 :                return GL_INT_VEC3;
-            case DataType::IVec4 :                return GL_INT_VEC4;
-            case DataType::UnsignedInt :          return GL_UNSIGNED_INT;
-            case DataType::UVec2 :                return GL_UNSIGNED_INT_VEC2;
-            case DataType::UVec3 :                return GL_UNSIGNED_INT_VEC3;
-            case DataType::UVec4 :                return GL_UNSIGNED_INT_VEC4;
-            case DataType::Bool :                 return GL_BOOL;
-            case DataType::BVec2 :                return GL_BOOL_VEC2;
-            case DataType::BVec3 :                return GL_BOOL_VEC3;
-            case DataType::BVec4 :                return GL_BOOL_VEC4;
-            case DataType::Mat2 :                 return GL_FLOAT_MAT2;
-            case DataType::Mat3 :                 return GL_FLOAT_MAT3;
-            case DataType::Mat4 :                 return GL_FLOAT_MAT4;
-            case DataType::Mat2x3 :               return GL_FLOAT_MAT2x3;
-            case DataType::Mat2x4 :               return GL_FLOAT_MAT2x4;
-            case DataType::Mat3x2 :               return GL_FLOAT_MAT3x2;
-            case DataType::Mat3x4 :               return GL_FLOAT_MAT3x4;
-            case DataType::Mat4x2 :               return GL_FLOAT_MAT4x2;
-            case DataType::Mat4x3 :               return GL_FLOAT_MAT4x3;
-            case DataType::Dmat2 :                return GL_DOUBLE_MAT2;
-            case DataType::Dmat3 :                return GL_DOUBLE_MAT3;
-            case DataType::Dmat4 :                return GL_DOUBLE_MAT4;
-            case DataType::Dmat2x3 :              return GL_DOUBLE_MAT2x3;
-            case DataType::Dmat2x4 :              return GL_DOUBLE_MAT2x4;
-            case DataType::Dmat3x2 :              return GL_DOUBLE_MAT3x2;
-            case DataType::Dmat3x4 :              return GL_DOUBLE_MAT3x4;
-            case DataType::Dmat4x2 :              return GL_DOUBLE_MAT4x2;
-            case DataType::Dmat4x3 :              return GL_DOUBLE_MAT4x3;
-            case DataType::Sampler1D :            return GL_SAMPLER_1D;
-            case DataType::Sampler2D :            return GL_SAMPLER_2D;
-            case DataType::Sampler3D :            return GL_SAMPLER_3D;
-            case DataType::SamplerCube :          return GL_SAMPLER_CUBE;
-            case DataType::Sampler1DShadow :      return GL_SAMPLER_1D_SHADOW;
-            case DataType::Sampler2DShadow :      return GL_SAMPLER_2D_SHADOW;
-            case DataType::Sampler1DArray :       return GL_SAMPLER_1D_ARRAY;
-            case DataType::Sampler2DArray :       return GL_SAMPLER_2D_ARRAY;
-            case DataType::Sampler1DArrayShadow : return GL_SAMPLER_1D_ARRAY_SHADOW;
-            case DataType::Sampler2DArrayShadow : return GL_SAMPLER_2D_ARRAY_SHADOW;
-            case DataType::Sampler2DMS :          return GL_SAMPLER_2D_MULTISAMPLE;
-            case DataType::Sampler2DMSArray :     return GL_SAMPLER_2D_MULTISAMPLE_ARRAY;
-            case DataType::SamplerCubeShadow :    return GL_SAMPLER_CUBE_SHADOW;
-            case DataType::SamplerBuffer :        return GL_SAMPLER_BUFFER;
-            case DataType::Sampler2DRect :        return GL_SAMPLER_2D_RECT;
-            case DataType::Sampler2DRectShadow :  return GL_SAMPLER_2D_RECT_SHADOW;
-            case DataType::Isampler1D :           return GL_INT_SAMPLER_1D;
-            case DataType::Isampler2D :           return GL_INT_SAMPLER_2D;
-            case DataType::Isampler3D :           return GL_INT_SAMPLER_3D;
-            case DataType::IsamplerCube :         return GL_INT_SAMPLER_CUBE;
-            case DataType::Isampler1DArray :      return GL_INT_SAMPLER_1D_ARRAY;
-            case DataType::Isampler2DArray :      return GL_INT_SAMPLER_2D_ARRAY;
-            case DataType::Isampler2DMS :         return GL_INT_SAMPLER_2D_MULTISAMPLE;
-            case DataType::Isampler2DMSArray :    return GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
-            case DataType::IsamplerBuffer :       return GL_INT_SAMPLER_BUFFER;
-            case DataType::Isampler2DRect :       return GL_INT_SAMPLER_2D_RECT;
-            case DataType::Usampler1D :           return GL_UNSIGNED_INT_SAMPLER_1D;
-            case DataType::Usampler2D :           return GL_UNSIGNED_INT_SAMPLER_2D;
-            case DataType::Usampler3D :           return GL_UNSIGNED_INT_SAMPLER_3D;
-            case DataType::UsamplerCube :         return GL_UNSIGNED_INT_SAMPLER_CUBE;
-            case DataType::Usampler2DArray :      return GL_UNSIGNED_INT_SAMPLER_2D_ARRAY;
-            case DataType::Usampler2DMS :         return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE;
-            case DataType::Usampler2DMSArray :    return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
-            case DataType::UsamplerBuffer :       return GL_UNSIGNED_INT_SAMPLER_BUFFER;
-            case DataType::Usampler2DRect :       return GL_UNSIGNED_INT_SAMPLER_2D_RECT;
-            case DataType::Count:
-            default:
-                ZEPHYR_ASSERT(false, "Unknown DataType requested");
-                return 0;
-        }
-    }
-
     DataType convert(const int& pDataType)
     {
         switch (pDataType)
@@ -1297,7 +1214,6 @@ namespace GLType
                 return "";
         }
     }
-
     std::string toString(const ShaderProgramType& pShaderProgramType)
     {
         switch (pShaderProgramType)
@@ -1309,6 +1225,290 @@ namespace GLType
             default:
                 ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
                 return "";
+        }
+    }
+    std::string toString(const DataType& pDataType)
+    {
+        static const std::array<std::string, util::toIndex(GLType::DataType::Count)> dataTypes{
+        "Float", "vec2", "vec3", "vec4",
+        "Double", "DVec2", "DVec3", "DVec4",
+        "Int", "IVec2", "IVec3", "IVec4",
+        "UnsignedInt", "UVec2", "UVec3", "UVec4",
+        "Bool", "BVec2", "BVec3", "BVec4",
+        "Mat2", "Mat3", "Mat4",
+        "Mat2x3", "Mat2x4", "Mat3x2", "Mat3x4", "Mat4x2", "Mat4x3",
+        "Dmat2", "Dmat3", "Dmat4",
+        "Dmat2x3", "Dmat2x4", "Dmat3x2", "Dmat3x4", "Dmat4x2", "Dmat4x3",
+        "Sampler1D", "Sampler2D", "Sampler3D",
+        "SamplerCube",
+        "Sampler1DShadow", "Sampler2DShadow",
+        "Sampler1DArray", "Sampler2DArray",
+        "Sampler1DArrayShadow", "Sampler2DArrayShadow",
+        "Sampler2DMS", "Sampler2DMSArray",
+        "SamplerCubeShadow",
+        "SamplerBuffer",
+        "Sampler2DRect",
+        "Sampler2DRectShadow",
+        "Isampler1D", "Isampler2D", "Isampler3D",
+        "IsamplerCube",
+        "Isampler1DArray", "Isampler2DArray",
+        "Isampler2DMS",
+        "Isampler2DMSArray",
+        "IsamplerBuffer",
+        "Isampler2DRect",
+        "Usampler1D", "Usampler2D", "Usampler3D",
+        "UsamplerCube",
+        "Usampler2DArray",
+        "Usampler2DMS",
+        "Usampler2DMSArray",
+        "UsamplerBuffer",
+        "Usampler2DRect"
+        };
+
+        return dataTypes[util::toIndex(pDataType)];
+    }
+    std::string toString(const ShaderResourceType& pResourceType)
+    {
+        static const std::array<std::string, util::toIndex(GLType::ShaderResourceType::Count)> shaderResourceTypes{
+        "Uniform",
+        "UniformBlock",
+        "ShaderStorageBlock",
+        "BufferVariable",
+        "Buffer",
+        "ProgramInput",
+        "ProgramOutput",
+        "AtomicCounterBuffer",
+        //"AtomicCounterShader",
+        "VertexSubroutineUniform",
+        "FragmentSubroutineUniform",
+        "GeometrySubroutineUniform",
+        "ComputeSubroutineUniform",
+        "TessControlSubroutineUniform",
+        "TessEvaluationSubroutineUniform",
+        "TransformFeedbackBuffer",
+        "TransformFeedbackVarying"};
+
+        return shaderResourceTypes[util::toIndex(pResourceType)];
+    }
+    std::string toString(const ShaderResourceProperty &pShaderResourceProperty)
+    {
+        static const std::array<std::string, util::toIndex(GLType::ShaderResourceProperty::Count)> shaderResourceProperties{
+            "NameLength",
+            "Type",
+            "ArraySize",
+            "Offset",
+            "BlockIndex",
+            "ArrayStride",
+            "MatrixStride",
+            "IsRowMajor",
+            "AtomicCounterBufferIndex",
+            "TextureBuffer",
+            "BufferBinding",
+            "BufferDataSize",
+            "NumActiveVariables",
+            "ActiveVariables",
+            "ReferencedByVertexShader",
+            "ReferencedByTessControlShader",
+            "ReferencedByTessEvaluationShader",
+            "ReferencedByGeometryShader",
+            "ReferencedByFragmentShader",
+            "ReferencedByComputeShader",
+            "NumCompatibleSubroutines",
+            "CompatibleSubroutines",
+            "TopLevelArraySize",
+            "TopLevelArrayStride",
+            "Location",
+            "LocationIndex",
+            "IsPerPatch",
+            "LocationComponent",
+            "TransformFeedbackBufferIndex",
+            "TransformFeedbackBufferStride"};
+
+        return shaderResourceProperties[util::toIndex(pShaderResourceProperty)];
+    }
+    std::string toString(const DepthTestType& pDepthTestType)
+    {
+        static const std::array<std::string, util::toIndex(GLType::DepthTestType::Count)> depthTestTypes{
+            "Always",
+            "Never",
+            "Less",
+            "Equal",
+            "Not equal",
+            "Greater than",
+            "Less than or equal",
+            "Greater than or equal"};
+
+        return depthTestTypes[util::toIndex(pDepthTestType)];
+    }
+    std::string toString(const BlendFactorType &pBlendFactorType)
+    {
+        static const std::array<std::string, util::toIndex(GLType::BlendFactorType::Count)> blendFactorTypes{{
+            "Zero",
+            "One",
+            "Source Colour",
+            "One Minus Source Colour",
+            "Destination Colour",
+            "One Minus Destination Colour",
+            "Source Alpha",
+            "One Minus Source Alpha",
+            "Destination Alpha",
+            "One Minus Destination Alpha",
+            "Constant Colour",
+            "One Minus Constant Colour",
+            "Constant Alpha",
+            "One Minus Constant Alpha"}};
+
+        return blendFactorTypes[util::toIndex(pBlendFactorType)];
+    }
+    std::string toString(const CullFacesType &pCullFacesType)
+    {
+        static const std::array<std::string, util::toIndex(GLType::CullFacesType::Count)> cullFaceTypes{
+            "Back",
+            "Front",
+            "Front and Back"};
+
+        return cullFaceTypes[util::toIndex(pCullFacesType)];
+    }
+    std::string toString(const FrontFaceOrientation &pFrontFaceOrientation)
+    {
+        static const std::array<std::string, util::toIndex(GLType::FrontFaceOrientation::Count)> frontFaceOrientationTypes{
+            "Clockwise",
+            "CounterClockwise"};
+
+        return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)];
+    }
+    std::string toString(const PolygonMode &pPolygonMode)
+    {
+        static const std::array<std::string, util::toIndex(PolygonMode::Count)> polygonModeTypes{
+            "Point",
+            "Line",
+            "Fill"};
+
+        return polygonModeTypes[util::toIndex(pPolygonMode)];
+    }
+    std::string toString(const PrimitiveMode &pPrimitiveMode)
+    {
+        static const std::array<std::string, util::toIndex(PrimitiveMode::Count)> primitiveModeTypes{
+            "Points"
+            "LineStrip"
+            "LineLoop"
+            "Lines"
+            "LineStripAdjacency"
+            "LinesAdjacency"
+            "TriangleStrip"
+            "TriangleFan"
+            "Triangles"
+            "TriangleStripAdjacency"
+            "TrianglesAdjacency"
+            "Patches"};
+
+        return primitiveModeTypes[util::toIndex(pPrimitiveMode)];
+    }
+    std::string toString(const FramebufferTarget &pFramebufferTarget)
+    {
+        static const std::array<std::string, util::toIndex(FramebufferTarget::Count)> FrameBufferTargetTypes{
+            "DrawFramebuffer",
+            "ReadFramebuffer",
+            "Framebuffer"};
+
+        return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)];
+    }
+    std::string toString(const ErrorType &pErrorType)
+    {
+        // Messages from https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetError.xhtml
+        static const std::array<std::string, util::toIndex(ErrorType::Count)> DefaultErrorMessages{
+            "GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag",
+            "GL_INVALID_VALUE: A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag",
+            "GL_INVALID_OPERATION: The specified operation is not allowed in the current state. The offending command is ignored and has no other side effect than to set the error flag",
+            "GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag",
+            "GL_OUT_OF_MEMORY: There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded",
+            "GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow",
+            "GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow"};
+
+        return DefaultErrorMessages[util::toIndex(pErrorType)];
+    }
+
+    int convert(const DataType& pDataType)
+    {
+        switch (pDataType)
+        {
+            case DataType::Float :                return GL_FLOAT;
+            case DataType::Vec2 :                 return GL_FLOAT_VEC2;
+            case DataType::Vec3 :                 return GL_FLOAT_VEC3;
+            case DataType::Vec4 :                 return GL_FLOAT_VEC4;
+            case DataType::Double :               return GL_DOUBLE;
+            case DataType::DVec2 :                return GL_DOUBLE_VEC2;
+            case DataType::DVec3 :                return GL_DOUBLE_VEC3;
+            case DataType::DVec4 :                return GL_DOUBLE_VEC4;
+            case DataType::Int :                  return GL_INT;
+            case DataType::IVec2 :                return GL_INT_VEC2;
+            case DataType::IVec3 :                return GL_INT_VEC3;
+            case DataType::IVec4 :                return GL_INT_VEC4;
+            case DataType::UnsignedInt :          return GL_UNSIGNED_INT;
+            case DataType::UVec2 :                return GL_UNSIGNED_INT_VEC2;
+            case DataType::UVec3 :                return GL_UNSIGNED_INT_VEC3;
+            case DataType::UVec4 :                return GL_UNSIGNED_INT_VEC4;
+            case DataType::Bool :                 return GL_BOOL;
+            case DataType::BVec2 :                return GL_BOOL_VEC2;
+            case DataType::BVec3 :                return GL_BOOL_VEC3;
+            case DataType::BVec4 :                return GL_BOOL_VEC4;
+            case DataType::Mat2 :                 return GL_FLOAT_MAT2;
+            case DataType::Mat3 :                 return GL_FLOAT_MAT3;
+            case DataType::Mat4 :                 return GL_FLOAT_MAT4;
+            case DataType::Mat2x3 :               return GL_FLOAT_MAT2x3;
+            case DataType::Mat2x4 :               return GL_FLOAT_MAT2x4;
+            case DataType::Mat3x2 :               return GL_FLOAT_MAT3x2;
+            case DataType::Mat3x4 :               return GL_FLOAT_MAT3x4;
+            case DataType::Mat4x2 :               return GL_FLOAT_MAT4x2;
+            case DataType::Mat4x3 :               return GL_FLOAT_MAT4x3;
+            case DataType::Dmat2 :                return GL_DOUBLE_MAT2;
+            case DataType::Dmat3 :                return GL_DOUBLE_MAT3;
+            case DataType::Dmat4 :                return GL_DOUBLE_MAT4;
+            case DataType::Dmat2x3 :              return GL_DOUBLE_MAT2x3;
+            case DataType::Dmat2x4 :              return GL_DOUBLE_MAT2x4;
+            case DataType::Dmat3x2 :              return GL_DOUBLE_MAT3x2;
+            case DataType::Dmat3x4 :              return GL_DOUBLE_MAT3x4;
+            case DataType::Dmat4x2 :              return GL_DOUBLE_MAT4x2;
+            case DataType::Dmat4x3 :              return GL_DOUBLE_MAT4x3;
+            case DataType::Sampler1D :            return GL_SAMPLER_1D;
+            case DataType::Sampler2D :            return GL_SAMPLER_2D;
+            case DataType::Sampler3D :            return GL_SAMPLER_3D;
+            case DataType::SamplerCube :          return GL_SAMPLER_CUBE;
+            case DataType::Sampler1DShadow :      return GL_SAMPLER_1D_SHADOW;
+            case DataType::Sampler2DShadow :      return GL_SAMPLER_2D_SHADOW;
+            case DataType::Sampler1DArray :       return GL_SAMPLER_1D_ARRAY;
+            case DataType::Sampler2DArray :       return GL_SAMPLER_2D_ARRAY;
+            case DataType::Sampler1DArrayShadow : return GL_SAMPLER_1D_ARRAY_SHADOW;
+            case DataType::Sampler2DArrayShadow : return GL_SAMPLER_2D_ARRAY_SHADOW;
+            case DataType::Sampler2DMS :          return GL_SAMPLER_2D_MULTISAMPLE;
+            case DataType::Sampler2DMSArray :     return GL_SAMPLER_2D_MULTISAMPLE_ARRAY;
+            case DataType::SamplerCubeShadow :    return GL_SAMPLER_CUBE_SHADOW;
+            case DataType::SamplerBuffer :        return GL_SAMPLER_BUFFER;
+            case DataType::Sampler2DRect :        return GL_SAMPLER_2D_RECT;
+            case DataType::Sampler2DRectShadow :  return GL_SAMPLER_2D_RECT_SHADOW;
+            case DataType::Isampler1D :           return GL_INT_SAMPLER_1D;
+            case DataType::Isampler2D :           return GL_INT_SAMPLER_2D;
+            case DataType::Isampler3D :           return GL_INT_SAMPLER_3D;
+            case DataType::IsamplerCube :         return GL_INT_SAMPLER_CUBE;
+            case DataType::Isampler1DArray :      return GL_INT_SAMPLER_1D_ARRAY;
+            case DataType::Isampler2DArray :      return GL_INT_SAMPLER_2D_ARRAY;
+            case DataType::Isampler2DMS :         return GL_INT_SAMPLER_2D_MULTISAMPLE;
+            case DataType::Isampler2DMSArray :    return GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
+            case DataType::IsamplerBuffer :       return GL_INT_SAMPLER_BUFFER;
+            case DataType::Isampler2DRect :       return GL_INT_SAMPLER_2D_RECT;
+            case DataType::Usampler1D :           return GL_UNSIGNED_INT_SAMPLER_1D;
+            case DataType::Usampler2D :           return GL_UNSIGNED_INT_SAMPLER_2D;
+            case DataType::Usampler3D :           return GL_UNSIGNED_INT_SAMPLER_3D;
+            case DataType::UsamplerCube :         return GL_UNSIGNED_INT_SAMPLER_CUBE;
+            case DataType::Usampler2DArray :      return GL_UNSIGNED_INT_SAMPLER_2D_ARRAY;
+            case DataType::Usampler2DMS :         return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE;
+            case DataType::Usampler2DMSArray :    return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
+            case DataType::UsamplerBuffer :       return GL_UNSIGNED_INT_SAMPLER_BUFFER;
+            case DataType::Usampler2DRect :       return GL_UNSIGNED_INT_SAMPLER_2D_RECT;
+            case DataType::Count:
+            default:
+                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                return 0;
         }
     }
     int convert(const ShaderProgramType& pShaderProgramType)
@@ -1324,7 +1524,6 @@ namespace GLType
                 return 0;
         }
     }
-
     int convert(const ShaderResourceType& pResourceType)
     {
         switch (pResourceType)
@@ -1353,7 +1552,6 @@ namespace GLType
                 return 0;
         }
     }
-
     int convert(const ShaderResourceProperty& pShaderResourceProperty)
     {
         switch (pShaderResourceProperty)
@@ -1395,7 +1593,6 @@ namespace GLType
                 return 0;
         }
     }
-
     int convert(const DepthTestType& pDepthTestType)
     {
     	switch (pDepthTestType)
@@ -1502,7 +1699,6 @@ namespace GLType
                 return 0;
         }
     }
-
     int convert(const FramebufferTarget& pFramebufferTarget)
     {
         switch (pFramebufferTarget)
@@ -1545,7 +1741,6 @@ std::string GLState::getErrorMessage() const
 
     return errorString;
 }
-
 std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction) const
 {
     const static std::array<std::unordered_map<GLType::ErrorType, std::vector<std::string>>, util::toIndex(GLType::Function::Count)> functionErrorTypeMapping =

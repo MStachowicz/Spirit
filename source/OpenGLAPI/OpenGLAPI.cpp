@@ -46,7 +46,7 @@ OpenGLAPI::OpenGLAPI()
 	, pointLightDrawCount(0)
 	, spotLightDrawCount(0)
 	, directionalLightDrawCount(0)
-	, mBufferDrawType(GLType::BufferDrawType::Colour)
+	, mBufferDrawType(BufferDrawType::Colour)
 	, mPostProcessingOptions()
 	, mShaders{ Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("depthView", mGLState), Shader("screenTexture", mGLState), Shader("skybox", mGLState), Shader("visualiseNormal", mGLState) }
 {
@@ -84,7 +84,7 @@ void OpenGLAPI::preDraw()
 	mGLState.setUniformBlockVariable("ViewProperties.view", mViewMatrix);
 	mGLState.setUniformBlockVariable("ViewProperties.projection", mProjection);
 
-	if (mBufferDrawType == GLType::BufferDrawType::Depth)
+	if (mBufferDrawType == BufferDrawType::Depth)
 	{
 		mShaders[mDepthViewerIndex].use(mGLState);
 		mShaders[mDepthViewerIndex].setUniform(mGLState, "near", mZNearPlane);
@@ -109,7 +109,7 @@ void OpenGLAPI::preDraw()
 
 Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 {
-	if (mBufferDrawType == GLType::BufferDrawType::Colour)
+	if (mBufferDrawType == BufferDrawType::Colour)
 	{
 		switch (pDrawCall.mMesh.mDrawStyle)
 		{
@@ -122,7 +122,7 @@ Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 			return &mShaders[mLightMapIndex];
 		}
 	}
-	else if (mBufferDrawType == GLType::BufferDrawType::Depth)
+	else if (mBufferDrawType == BufferDrawType::Depth)
 	{
 		return &mShaders[mDepthViewerIndex];
 	}
@@ -337,17 +337,20 @@ void OpenGLAPI::renderImGui()
 		ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
 		ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
 
-		if (ImGui::BeginCombo("Buffer draw style", GLType::toString(mBufferDrawType).c_str(), ImGuiComboFlags()))
+		static const std::array<std::string, util::toIndex(BufferDrawType::Count)> bufferDrawTypes{
+			"Colour",
+			"Depth"};
+		if (ImGui::BeginCombo("Buffer draw style", bufferDrawTypes[static_cast<size_t>(mBufferDrawType)].c_str(), ImGuiComboFlags()))
     	{
-			for (size_t i = 0; i < GLType::bufferDrawTypes.size(); i++)
+			for (size_t i = 0; i < bufferDrawTypes.size(); i++)
     	    {
-    	        if (ImGui::Selectable(GLType::bufferDrawTypes[i].c_str()))
-    	            mBufferDrawType = static_cast<GLType::BufferDrawType>(i);
+    	        if (ImGui::Selectable(bufferDrawTypes[i].c_str()))
+    	            mBufferDrawType = static_cast<BufferDrawType>(i);
     	    }
     	    ImGui::EndCombo();
     	}
 
-    	if (mBufferDrawType == GLType::BufferDrawType::Depth)
+    	if (mBufferDrawType == BufferDrawType::Depth)
     	    ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
 
 		ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
