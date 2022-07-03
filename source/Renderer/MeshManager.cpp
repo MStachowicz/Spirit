@@ -1,6 +1,5 @@
 #include "MeshManager.hpp"
 
-#include "FileSystem.hpp"
 #include "TextureManager.hpp"
 #include "Logger.hpp"
 
@@ -8,31 +7,33 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-MeshID MeshManager::getMeshID(const std::string &pMeshName)
+#include <FileSystem.hpp>
+
+MeshID MeshManager::getMeshID(const std::string& pMeshName)
 {
     const auto it = mMeshNames.find(pMeshName);
-    ZEPHYR_ASSERT(it != mMeshNames.end(), "Searching for a mesh that does not exist in Mesh store.");
-    return it->second;
+    ZEPHYR_ASSERT(it != mMeshNames.end(), "Could not find mesh '{}' in Mesh data store.", pMeshName);
+    return mMeshes[it->second].mID;
 }
 
-void MeshManager::setID(Data::Mesh& pMesh, const bool& pRootMesh)
+void MeshManager::setIDRecursively(Data::Mesh& pMesh, const bool& pRootMesh)
 {
-    pMesh.setID(pRootMesh ? activeMeshes++ : activeMeshes - 1);
+    pMesh.mID.Set(mMeshes.size() - 1);
 
     for (auto& childMesh : pMesh.mChildMeshes)
-        setID(childMesh, false);
+        setIDRecursively(childMesh, false);
 }
 
 void MeshManager::addMesh(Data::Mesh& pMesh)
 {
-    setID(pMesh, true);
-
-    ZEPHYR_ASSERT(isMeshValid(pMesh), "Adding invalid mesh");
-    ZEPHYR_ASSERT(mMeshes.find(pMesh.getID()) == mMeshes.end(), "addMesh should only be called once per MeshID");
     ZEPHYR_ASSERT(mMeshNames.find(pMesh.mName) == mMeshNames.end(), "addMesh should only be called with unique mesh name");
 
-    mMeshes.emplace(std::make_pair(pMesh.getID(), pMesh));
-    mMeshNames.emplace(std::make_pair(pMesh.mName, pMesh.getID()));
+    mMeshes.push_back(pMesh);
+    Data::Mesh& newMesh = mMeshes.back();
+    setIDRecursively(newMesh, true);
+    mMeshNames.emplace(std::make_pair(newMesh.mName, newMesh.mID.Get()));
+
+    ZEPHYR_ASSERT(isMeshValid(newMesh), "Adding invalid mesh");
 }
 
 MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
@@ -52,7 +53,7 @@ MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
     processNode(rootMesh, scene->mRootNode, scene);
 
     addMesh(rootMesh); // Only addMesh on the root, all children are contained inside the root node in mMeshes
-    return rootMesh.getID();
+    return rootMesh.mID;
 }
 
 // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object
@@ -67,7 +68,6 @@ void MeshManager::processNode(Data::Mesh& pParentMesh, aiNode* pNode, const aiSc
     for (unsigned int i = 0; i < pNode->mNumChildren; i++)
     {
         Data::Mesh childMesh;
-        childMesh.setID(pParentMesh.getID()); // Child meshes are not stored in the root mMeshes container, but they do repeat their parent mID for easier find.
         childMesh.mName = pParentMesh.mName + "-child-" + std::to_string(i);
         childMesh.mFilePath = pParentMesh.mFilePath;
         processNode(childMesh, pNode->mChildren[i], pScene);
@@ -148,7 +148,7 @@ void MeshManager::processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, cons
         aiString fileName;
         pMaterial->GetTexture(type, i, &fileName);
         const std::string textureFilePath = pMesh.mFilePath + "/" + fileName.C_Str();
-        TextureID tex = mTextureManager.loadTexture(textureFilePath, pPurpose).getID();
+        TextureID tex = mTextureManager.loadTexture(textureFilePath, pPurpose).mID;
         pMesh.mTextures.push_back(tex);
     }
 }
@@ -175,7 +175,7 @@ bool MeshManager::isMeshValid(const Data::Mesh& pMesh)
     {
         for (const auto& child : pMesh.mChildMeshes)
         {
-            ZEPHYR_ASSERT(pMesh.getID() == child.getID(), "Children should have the same mID as parents.");
+            ZEPHYR_ASSERT(pMesh.mID.Get() == child.mID.Get(), "Children should have the same mID as parents.");
 
             if (!isMeshValid(child))
                 return false;

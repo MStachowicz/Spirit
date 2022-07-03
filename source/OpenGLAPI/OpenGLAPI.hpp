@@ -1,19 +1,20 @@
 #pragma once
 
-#include "GraphicsAPI.hpp"
-
 #include "OpenGLWindow.hpp"
 #include "GLState.hpp"
 #include "Shader.hpp"
 
+#include "GraphicsAPI.hpp"
+
 #include "Utility.hpp"
 #include "Types.hpp"
 
-#include "unordered_map"
-#include "optional"
-#include "array"
-#include "vector"
-#include "string"
+// STD
+#include <unordered_map>
+#include <optional>
+#include <array>
+#include <vector>
+#include <string>
 
 struct GladGLContext;
 struct DrawCall;
@@ -55,16 +56,19 @@ private:
 
 	struct OpenGLMesh
 	{
-		enum class DrawMethod { Indices, Array, Null };
+		MeshID mID;
 
 		GLType::PrimitiveMode mDrawMode = GLType::PrimitiveMode::Triangles;
 		int mDrawSize = -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
+		enum class DrawMethod { Indices, Array, Null };
 		DrawMethod mDrawMethod = DrawMethod::Null;
-		std::vector<OpenGLMesh> mChildMeshes;
 
 		GLData::VAO mVAO;
 		GLData::EBO mEBO;
 		std::array<std::optional<GLData::VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
+
+		// Composite mesh
+		std::vector<OpenGLMesh> mChildMeshes;
 	};
 
 	// Get all the data required to draw this mesh in its default configuration.
@@ -128,11 +132,10 @@ private:
 	};
 	PostProcessingOptions mPostProcessingOptions;
 
+	// OpenGL data
 	GLData::FBO mMainScreenFBO;
 	std::vector<Shader> mShaders;
-	// Draw info is fetched every draw call.
-	// @PERFORMANCE We should store OpenGLMesh on the stack for faster access.
-	std::unordered_map<MeshID, OpenGLMesh> mGLMeshes;
-	std::array<GLData::Texture, MAX_TEXTURES> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
+	std::vector<OpenGLMesh> mGLMeshes;
+	std::vector<GLData::Texture> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
 	std::vector<GLData::Texture> mCubeMaps;
 };

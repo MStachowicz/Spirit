@@ -4,8 +4,8 @@
 
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
 
-#include "unordered_map"
-#include "functional"
+#include <unordered_map>
+#include <functional>
 
 namespace std
 {
@@ -33,7 +33,7 @@ public:
     inline void ForEach(const std::function<void(const Data::Mesh&)>& pFunction) const
     {
         for (const auto& mesh : mMeshes)
-            pFunction(mesh.second);
+            pFunction(mesh);
     }
 
 	MeshID getMeshID(const std::string& pMeshName);
@@ -42,13 +42,13 @@ public:
     MeshID loadModel(const std::filesystem::path& pFilePath);
 
 private:
-    std::unordered_map<MeshID, Data::Mesh> mMeshes;
-    std::unordered_map<std::string, MeshID> mMeshNames;
+    std::vector<Data::Mesh> mMeshes;
+    std::unordered_map<std::string, size_t> mMeshNames;
+
     TextureManager& mTextureManager; // Owned by Renderer.
-    size_t activeMeshes = 0;
 
     // Set the mID of the mesh and its children recursively.
-    void setID(Data::Mesh& pMesh, const bool& pRootMesh);
+    void setIDRecursively(Data::Mesh& pMesh, const bool& pRootMesh);
 
     void addMesh(Data::Mesh& pMesh);
     void buildMeshes();
@@ -57,7 +57,7 @@ private:
     // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object.
     void processNode(Data::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene);
     // Load assimp mesh data into a Zephyr Mesh.
-    void processData(Data::Mesh& pMesh, const aiMesh *pAssimpMesh, const aiScene *pAssimpScene);
+    void processData(Data::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene);
     // Returns all the textures for this material and purpose.
-    void processTextures(Data::Mesh &pMesh, aiMaterial* pMaterial, const Texture::Purpose& pPurpose);
+    void processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Texture::Purpose& pPurpose);
 };

@@ -188,6 +188,7 @@ message(STATUS "\n[ZEPHYR] -- Adding Utility static library")
 add_library(Utility
 source/Utility/Utility.hpp
 source/Utility/Utility.cpp
+source/Utility/Types.hpp
 source/Utility/Timer.hpp
 )
 target_include_directories(Utility

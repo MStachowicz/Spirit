@@ -3,23 +3,22 @@
 
 #define STB_IMAGE_IMPLEMENTATION // This modifies the header such that it only contains the relevant definition source code
 #include "stb_image.h"
-#include "FileSystem.hpp"
 #include "Utility.hpp"
 
-#include "set"
+#include <FileSystem.hpp>
+#include <set>
 
-TextureID TextureManager::getTextureID(const std::string &pTextureName) const
+TextureID TextureManager::getTextureID(const std::string& pTextureName) const
 {
     const auto it = mNameLookup.find(pTextureName);
-    ZEPHYR_ASSERT(it != mNameLookup.end(), "Searching for a texture that does not exist in Texture store.");
+    ZEPHYR_ASSERT(it != mNameLookup.end(), "Searching for an unkown texture '{}' in TextureManager.", pTextureName);
 
-    return mTextures[it->second].getID();
+    return mTextures[it->second].mID;
 }
 
 std::string TextureManager::getTextureName(const TextureID& pTextureID) const
 {
-    ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Searching for a texture off the end of Texture container.");
-    return mTextures[pTextureID].mName;
+    return mTextures[pTextureID.Get()].mName;
 }
 
 TextureManager::TextureManager()
@@ -81,7 +80,7 @@ void TextureManager::loadCubeMaps(const std::filesystem::directory_entry& pCubeM
         ZEPHYR_ASSERT(channelCounts.size() == 1, "There are missmatched texture channel counts in the cubemap.");
 
         mCubeMaps.push_back(cubemap);
-        LOG_INFO("Zephyr::Cubemap '{}' loaded", cubemap.mName);
+        LOG_INFO("Data::CubemapTexture '{}' loaded", cubemap.mName);
     });
 }
 
@@ -102,23 +101,22 @@ Texture& TextureManager::loadTexture(const std::filesystem::path& pFilePath, con
     }
     else
     {
-        Texture& newTexture = mTextures[activeTextures];
+        mTextures.push_back({});
+        Texture& newTexture = mTextures.back();
+        newTexture.mID.Set(mTextures.size() - 1);
+
         newTexture.mData = stbi_load(pFilePath.string().c_str(), &newTexture.mWidth, &newTexture.mHeight, &newTexture.mNumberOfChannels, 0);
         ZEPHYR_ASSERT(newTexture.mData != nullptr, "Failed to load texture");
 
         newTexture.mName = pName.empty() ? pFilePath.stem().string() : pName;
         newTexture.mFilePath = pFilePath;
         newTexture.mPurpose = pPurpose;
-        newTexture.mID = activeTextures;
 
         ZEPHYR_ASSERT(mNameLookup.find(newTexture.mName) == mNameLookup.end(), "Name has to be unique");
-        mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID));
-        mFilePathLookup.insert(std::make_pair(newTexture.mFilePath.string(), newTexture.mID));
+        mNameLookup.insert(std::make_pair(newTexture.mName, newTexture.mID.Get()));
+        mFilePathLookup.insert(std::make_pair(newTexture.mFilePath.string(), newTexture.mID.Get()));
 
-        activeTextures++;
-        ZEPHYR_ASSERT(activeTextures == mNameLookup.size(), "NameLookup should have parity with mTextures size");
-        ZEPHYR_ASSERT(activeTextures == mFilePathLookup.size(), "FilePathLookup should have parity with mTextures size");
-        LOG_INFO("Zephyr::Texture '{}' loaded given TextureID {}", newTexture.mName, newTexture.mID);
+        LOG_INFO("Data::Texture '{}' loaded with ID '{}'", newTexture.mName, newTexture.mID.Get());
         return newTexture;
     }
 }

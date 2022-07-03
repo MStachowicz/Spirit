@@ -2,9 +2,9 @@
 
 #include "Texture.hpp"
 
-#include "array"
-#include "unordered_map"
-#include "functional"
+#include <array>
+#include <unordered_map>
+#include <functional>
 
 namespace std
 {
@@ -24,8 +24,8 @@ public:
 
     inline void ForEach(const std::function<void(const Texture&)>& pFunction) const
     {
-        for (size_t i = 0; i < activeTextures; i++)
-            pFunction(mTextures[i]);
+        for (const auto& Texture : mTextures)
+            pFunction(Texture);
     }
 
     inline void ForEachCubeMap(const std::function<void(const CubeMapTexture&)>& pFunction) const
@@ -40,11 +40,9 @@ public:
     // Loads all the cubemap textures. pCubeMapDirectory is the root of all the cubemaps individually storing 6 textures per folder.
     void loadCubeMaps(const std::filesystem::directory_entry& pCubeMapDirectory);
 private:
-    size_t activeTextures = 0;
-
-    std::array<Texture, MAX_TEXTURES> mTextures;
-    std::unordered_map<std::string, TextureID> mNameLookup;
-    std::unordered_map<std::string, TextureID> mFilePathLookup;
+    std::vector<Texture> mTextures;
+    std::unordered_map<std::string, size_t> mNameLookup;
+    std::unordered_map<std::string, size_t> mFilePathLookup;
 
     std::vector<CubeMapTexture> mCubeMaps;
 };

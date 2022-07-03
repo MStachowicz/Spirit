@@ -1,23 +1,22 @@
 #include "OpenGLAPI.hpp"
 
-#include "glad/gl.h"
-#include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
-
+// Interface
 #include "DrawCall.hpp"
-#include "Logger.hpp"
-
-#include "Mesh.hpp"
-#include "Texture.hpp"
-
-#include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
-#include "glm/gtc/type_ptr.hpp"
-
-#include "imgui.h"
 
 // Data
+#include "Mesh.hpp"
+#include "Texture.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
 #include "DirectionalLight.hpp"
+
+// External libs
+#include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
+#include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
+#include "Logger.hpp"
+#include "glad/gl.h"
+#include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 
 OpenGLAPI::OpenGLAPI()
 	: GraphicsAPI()
@@ -40,9 +39,9 @@ OpenGLAPI::OpenGLAPI()
 	, mScreenTextureIndex(7)
 	, mSkyBoxShaderIndex(8)
 	, mVisualiseNormalIndex(9)
-	, mScreenQuad(0)
-	, mSkyBoxMeshID(0)
-	, mMissingTextureID(0)
+	, mScreenQuad()
+	, mSkyBoxMeshID()
+	, mMissingTextureID()
 	, pointLightDrawCount(0)
 	, spotLightDrawCount(0)
 	, directionalLightDrawCount(0)
@@ -114,8 +113,10 @@ Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 		switch (pDrawCall.mMesh.mDrawStyle)
 		{
 		case Data::DrawStyle::Textured:
-			if (pDrawCall.mMesh.mTexture1.has_value() && pDrawCall.mMesh.mTexture2.has_value()) return &mShaders[mTexture2ShaderIndex];
-			else return &mShaders[mTexture1ShaderIndex];
+			if (pDrawCall.mMesh.mTexture1.has_value() && pDrawCall.mMesh.mTexture2.has_value())
+				return &mShaders[mTexture2ShaderIndex];
+			else
+				return &mShaders[mTexture1ShaderIndex];
 		case Data::DrawStyle::UniformColour:
 			return &mShaders[mUniformShaderIndex];
 		case Data::DrawStyle::LightMap:
@@ -378,35 +379,38 @@ void OpenGLAPI::renderImGui()
 
 const OpenGLAPI::OpenGLMesh& OpenGLAPI::getGLMesh(const MeshID& pMeshID) const
 {
-	const auto it = mGLMeshes.find(pMeshID);
-	ZEPHYR_ASSERT(it != mGLMeshes.end(), "No draw info found for this Mesh ID. Was the mesh correctly initialised?");
-	return it->second;
+	const auto it = std::find_if(mGLMeshes.begin(), mGLMeshes.end(), [&pMeshID](const OpenGLMesh &pGLMesh)
+		{ return pMeshID.Get() == pGLMesh.mID.Get(); });
+
+	ZEPHYR_ASSERT(it != mGLMeshes.end(), "No matching OpenGL::Mesh found for Data::Mesh with ID '{}'. Was the mesh correctly initialised?", pMeshID.Get());
+	return *it;
 }
 
 void OpenGLAPI::initialiseMesh(const Data::Mesh& pMesh)
 {
 	OpenGLMesh* newMesh = nullptr;
 	{
-		auto GLMeshLocation = mGLMeshes.find(pMesh.getID());
+	 	auto GLMeshLocation = std::find_if(mGLMeshes.begin(), mGLMeshes.end(), [&pMesh](const OpenGLMesh &pGLMesh) { return pMesh.mID.Get() == pGLMesh.mID.Get(); });
 
 		if (GLMeshLocation != mGLMeshes.end())
 		{
-			GLMeshLocation->second.mChildMeshes.push_back({});
-			newMesh = &GLMeshLocation->second.mChildMeshes.back();
+			GLMeshLocation->mChildMeshes.push_back({});
+			newMesh = &GLMeshLocation->mChildMeshes.back();
 		}
 		else
 		{
-			mGLMeshes.emplace(std::make_pair(pMesh.getID(), OpenGLMesh()));
-			newMesh = &mGLMeshes[pMesh.getID()];
+			mGLMeshes.push_back({});
+			newMesh = &mGLMeshes.back();
 
 			if (pMesh.mName == "Quad")
-				mScreenQuad = pMesh.getID();
+				mScreenQuad = pMesh.mID;
 			else if (pMesh.mName == "Skybox")
-				mSkyBoxMeshID = pMesh.getID();
+				mSkyBoxMeshID = pMesh.mID;
 		}
 	}
-	ZEPHYR_ASSERT(newMesh != nullptr, "newMesh not initialised successfully");
+	ZEPHYR_ASSERT(newMesh != nullptr, "Failed to initialise Data::Mesh with ID '{}'", pMesh.mID.Get());
 
+	newMesh->mID = pMesh.mID;
 	newMesh->mDrawMode = GLType::PrimitiveMode::Triangles; // OpenGLAPI only supports Triangles at this revision
 
 	if (!pMesh.mIndices.empty())
@@ -460,16 +464,17 @@ void OpenGLAPI::initialiseMesh(const Data::Mesh& pMesh)
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->pushData(pMesh.mTextureCoordinates, Shader::getAttributeLocation(Shader::Attribute::TextureCoordinate2D), Shader::getAttributeComponentCount(Shader::Attribute::TextureCoordinate2D));
 	}
 
-	LOG_INFO("OpenGL::Mesh: '{}' with MeshID: {} loaded into OpenGL with VAO: {}", pMesh.mName, pMesh.getID(), newMesh->mVAO.getHandle());
-
 	for (const auto& childMesh : pMesh.mChildMeshes)
 		initialiseMesh(childMesh);
+
+	ZEPHYR_ASSERT(mGLMeshes.size() == (newMesh->mID.Get() + 1), "OpenGL::Mesh::ID {} does not match index position in Mesh container.", newMesh->mID.Get());
+	ZEPHYR_ASSERT(pMesh.mID.Get() == newMesh->mID.Get(), "MeshID's do not match.");
+	LOG_INFO("Data::Mesh: '{} (ID: {})' loaded into OpenGL with ID: '{}' and VAO: {}", pMesh.mName, pMesh.mID.Get(), newMesh->mID.Get(), newMesh->mVAO.getHandle());
 }
 
 const GLData::Texture& OpenGLAPI::getTexture(const TextureID& pTextureID) const
 {
-	ZEPHYR_ASSERT(pTextureID < mTextures.size(), "Trying to access a texture off the end of OpenGL texture store.", pTextureID)
-	return mTextures[pTextureID];
+	return mTextures[pTextureID.Get()];
 }
 
 void OpenGLAPI::initialiseTexture(const Texture& pTexture)
@@ -478,21 +483,20 @@ void OpenGLAPI::initialiseTexture(const Texture& pTexture)
 	newTexture.generate();
 	newTexture.bind();
 	newTexture.pushData(pTexture.mWidth, pTexture.mHeight, pTexture.mNumberOfChannels, pTexture.getData());
-	mTextures[pTexture.getID()] = { newTexture };
 
 	// Cache the ID of the 'missing' texture.
 	if (pTexture.mName == "missing")
-		mMissingTextureID = pTexture.getID();
+		mMissingTextureID = pTexture.mID;
 
-    ZEPHYR_ASSERT(newTexture.getHandle() != -1, "Texture {} failed to load", pTexture.mName);
-	LOG_INFO("OpenGL::Texture '{}' loaded given VAO: {}", pTexture.mName, newTexture.getHandle());
+	ZEPHYR_ASSERT(mTextures.size() == pTexture.mID.Get(), "OpenGL::Texture does not match index position of Data::Texture::ID ({} != {})", mTextures.size(), pTexture.mID.Get());
+	mTextures.push_back({newTexture});
+	LOG_INFO("Data::Texture: '{} (ID: {})' loaded into OpenGL with VAO: {}", pTexture.mName, pTexture.mID.Get(), newTexture.getHandle());
 }
 
 void OpenGLAPI::initialiseCubeMap(const CubeMapTexture& pCubeMap)
 {
 	// OpenGL cubeMap texture objects store all 6 faces under 1 VAO hence only one generate and bind is used before 6 pushData calls
 	// Each face can be offset by index (last param of pushData) in the order Right (0), Left (1), Top(2), Bottom(3), Back(4), Front(5)
-
 	GLData::Texture newCubeMap = { GLData::Texture::Type::CubeMap };
 	newCubeMap.generate();
 	newCubeMap.bind();
@@ -505,7 +509,7 @@ void OpenGLAPI::initialiseCubeMap(const CubeMapTexture& pCubeMap)
 	newCubeMap.pushData(pCubeMap.mBack.mWidth, pCubeMap.mBack.mHeight, pCubeMap.mBack.mNumberOfChannels, pCubeMap.mBack.getData(), 5);
 
 	mCubeMaps.push_back(newCubeMap);
-	LOG_INFO("OpenGL::CubeMapTexture '{}' loaded given VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
+	LOG_INFO("Data::CubeMapTexture: '{}' loaded into OpenGL with VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
 }
 
 GladGLContext* OpenGLAPI::initialiseGLAD()

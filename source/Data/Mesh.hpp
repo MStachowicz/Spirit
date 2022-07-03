@@ -4,21 +4,20 @@
 
 #include "Utility.hpp"
 
-#include "vector"
-#include "string"
-#include "optional"
+#include <vector>
+#include <string>
+#include <optional>
 
 namespace Data
 {
-    enum class DrawStyle : size_t
+    enum class DrawStyle
     {
-        Textured = 0,
-        UniformColour = 1,
-        LightMap = 2,
+        Textured,
+        UniformColour,
+        LightMap,
 
         Count
     };
-
     enum class DrawMode
     {
         Fill,
@@ -27,17 +26,12 @@ namespace Data
         Count
     };
 
-    // Allows iterating over enum class DrawMode
-    static const std::array<std::string, util::toIndex(DrawMode::Count)> drawModes{"Fill", "Wireframe"};
-    static std::string convert(const DrawMode &pDrawMode) { return drawModes[util::toIndex(pDrawMode)]; }
-    // Allows iterating over enum class DrawStyle
-    static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles{"Textured", "Uniform Colour", "Light Map"};
-    static std::string convert(const DrawStyle &pDrawStyle) { return drawStyles[util::toIndex(pDrawStyle)]; }
-
     // Mesh stores all per-vertex data to represent a 3D object.
     struct Mesh
     {
+        MeshID mID;
         std::string mName;
+        std::string mFilePath;
 
         std::vector<float> mVertices;           // Per-vertex position attributes.
         std::vector<float> mNormals;            // Per-vertex normal attributes.
@@ -48,14 +42,6 @@ namespace Data
         // Composite mesh members:
         std::vector<TextureID> mTextures;
         std::vector<Mesh> mChildMeshes;
-        std::string mFilePath;
-
-        MeshID getID() const { return mID; }
-        void setID(const MeshID pID) { mID = pID; }
-
-    private:
-        MeshID mID; // Unique ID assigned by MeshManager when a mesh is constructed.
-        static inline MeshID nextMesh = 0;
     };
 
 
@@ -64,7 +50,7 @@ namespace Data
     // Used as a component for Entities without the data implications of storing all the per-vertex info.
     struct MeshDraw
     {
-        MeshID mID = 0;
+        MeshID mID;
         std::string mName;
         DrawMode mDrawMode      = Data::DrawMode::Fill;
         DrawStyle mDrawStyle    = Data::DrawStyle::Textured;
