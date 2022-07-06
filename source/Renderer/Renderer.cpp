@@ -57,64 +57,73 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 			glm::vec3(2.0f,   0.5f, -15.0f)};
 		for (size_t i = 0; i < cubePositions.size(); i++)
 		{
-			auto entity = mEntityManager.CreateEntity();
+			auto& entity = mEntityManager.CreateEntity();
 
-			auto& transform = mEntityManager.mTransforms.Create(entity);
+			Data::Transform transform;
 			transform.mPosition = cubePositions[i];
+			mEntityManager.mTransforms.Add(entity, transform);
 
-			auto& mesh = mEntityManager.mMeshes.Create(entity);
+			Data::MeshDraw mesh;
 			mesh.mID = mMeshManager.getMeshID("3DCube");
 			mesh.mName = "3DCube";
 			mesh.mDrawStyle = Data::DrawStyle::LightMap;
 			mesh.mDiffuseTextureID = mTextureManager.getTextureID("metalContainerDiffuse");
 			mesh.mSpecularTextureID = mTextureManager.getTextureID("metalContainerSpecular");
 			mesh.mShininess = 64.f;
+			mEntityManager.mMeshes.Add(entity, mesh);
 		}
 	}
 	{ // Floor
-		auto entity = mEntityManager.CreateEntity();
+		auto& entity = mEntityManager.CreateEntity();
 
-		auto& transform = mEntityManager.mTransforms.Create(entity);
+		Data::Transform transform;
 		transform.mPosition;
 		transform.mRotation.x = -90.f;
 		transform.mScale = glm::vec3(floorSize);
+		mEntityManager.mTransforms.Add(entity, transform);
 
-		auto& mesh = mEntityManager.mMeshes.Create(entity);
+		Data::MeshDraw mesh;
 		mesh.mID = mMeshManager.getMeshID("Quad");
 		mesh.mDrawStyle = Data::DrawStyle::LightMap;
 		mesh.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
 		mesh.mSpecularTextureID = mTextureManager.getTextureID("black");
 		mesh.mShininess = 128.f;
 		mesh.mTextureRepeatFactor = 20.f;
+		mEntityManager.mMeshes.Add(entity, mesh);
 	}
 	{ // Backpack
-		auto entity = mEntityManager.CreateEntity();
+		auto& entity = mEntityManager.CreateEntity();
 
-		auto& transform = mEntityManager.mTransforms.Create(entity);
+		Data::Transform transform;
 		transform.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
 		transform.mScale = glm::vec3(0.5f);
+		mEntityManager.mTransforms.Add(entity, transform);
 
-		auto& mesh = mEntityManager.mMeshes.Create(entity);
+		Data::MeshDraw mesh;
 		mesh.mID = mMeshManager.getMeshID("backpack");
 		mesh.mDrawStyle = Data::DrawStyle::LightMap;
 		mesh.mDiffuseTextureID = mTextureManager.getTextureID("diffuse");
 		mesh.mSpecularTextureID = mTextureManager.getTextureID("specular");
 		mesh.mShininess = 64.f;
+		mEntityManager.mMeshes.Add(entity, mesh);
+
 	}
 	{ // Xian
-		auto entity = mEntityManager.CreateEntity();
+		auto& entity = mEntityManager.CreateEntity();
 
-		auto& transform = mEntityManager.mTransforms.Create(entity);
+		Data::Transform transform;
 		transform.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
 		transform.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
 		transform.mScale = glm::vec3(0.4f);
+		mEntityManager.mTransforms.Add(entity, transform);
 
-		auto& mesh = mEntityManager.mMeshes.Create(entity);
+		Data::MeshDraw mesh;
 		mesh.mID = mMeshManager.getMeshID("xian");
 		mesh.mDrawStyle = Data::DrawStyle::LightMap;
 		mesh.mDiffuseTextureID = mTextureManager.getTextureID("Base_Color");
 		mesh.mSpecularTextureID = mTextureManager.getTextureID("black");
 		mesh.mShininess = 64.f;
+		mEntityManager.mMeshes.Add(entity, mesh);
 	}
 	{ // Billboard grass
 		std::array<glm::vec3, grassCount> grassPositions;
@@ -129,17 +138,19 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 
 		for (const auto& position : grassPositions)
 		{
-			auto entity = mEntityManager.CreateEntity();
+			auto& entity = mEntityManager.CreateEntity();
 
-			auto& transform = mEntityManager.mTransforms.Create(entity);
+			Data::Transform transform;
 			transform.mScale = glm::vec3(0.2f);
 			transform.mPosition = position;
 			transform.mPosition.y += transform.mScale.y;
+			mEntityManager.mTransforms.Add(entity, transform);
 
-			auto& mesh = mEntityManager.mMeshes.Create(entity);
+			Data::MeshDraw mesh;
 			mesh.mID = mMeshManager.getMeshID("Quad");
 			mesh.mDrawStyle = Data::DrawStyle::Textured;
 			mesh.mTexture1 = mTextureManager.getTextureID("grassBillboard");
+			mEntityManager.mMeshes.Add(entity, mesh);
 		}
 	}
 	{ // Windows
@@ -152,17 +163,20 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 
 		for (const auto& position : windowPositions)
 		{
-			auto entity = mEntityManager.CreateEntity();
+			auto& entity = mEntityManager.CreateEntity();
 
-			auto& transform = mEntityManager.mTransforms.Create(entity);
+
+			Data::Transform transform;
 			transform.mScale = glm::vec3(0.2f);
 			transform.mPosition = position;
 			transform.mPosition.y += transform.mScale.y;
+			mEntityManager.mTransforms.Add(entity, transform);
 
-			auto& mesh = mEntityManager.mMeshes.Create(entity);
+			Data::MeshDraw mesh;
 			mesh.mID = mMeshManager.getMeshID("Quad");
 			mesh.mDrawStyle = Data::DrawStyle::Textured;
 			mesh.mTexture1 = mTextureManager.getTextureID("window");
+			mEntityManager.mMeshes.Add(entity, mesh);
 		}
 	}
 
@@ -176,23 +190,22 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 
 			for (const auto& position : pointLightPositions)
 			{
-				Data::PointLight &pointLight = mEntityManager.mPointLights.Create(mEntityManager.CreateEntity());
+				Data::PointLight pointLight;
 				pointLight.mPosition = position;
+				mEntityManager.mPointLights.Add(mEntityManager.CreateEntity(), pointLight);
 			}
 		}
 
 		{ // Directional light
-			Data::DirectionalLight &directionalLight = mEntityManager.mDirectionalLights.Create(mEntityManager.CreateEntity());
+			Data::DirectionalLight directionalLight;
 			directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
+			mEntityManager.mDirectionalLights.Add(mEntityManager.CreateEntity(), directionalLight);
 		}
 		// Spotlight
-		Data::SpotLight &spotlight = mEntityManager.mSpotLights.Create(mEntityManager.CreateEntity());
+		mEntityManager.mSpotLights.Add(mEntityManager.CreateEntity(), {});
 	}
 
-	mEntityManager.ForEach([this](const ECS::Entity& pEntity){
-		parseEntity(pEntity);
-	});
-
+	mEntityManager.ForEach([this](const ECS::Entity &pEntity){ parseEntity(pEntity); });
 }
 
 Renderer::~Renderer()

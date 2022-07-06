@@ -12,31 +12,16 @@ namespace ECS
                 const std::string title = "Entity " + std::to_string(mEntities[i].mID);
                 if (ImGui::TreeNode(title.c_str()))
                 {
-                    if (auto* component = mTransforms.GetComponentModify(mEntities[i]))
-                    {
-                        component->DrawImGui();
+                    if (mTransforms.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
                         ImGui::Separator();
-                    }
-                    if (auto* component = mMeshes.GetComponentModify(mEntities[i]))
-                    {
-                        component->DrawImGui();
+                    if (mMeshes.Modify(mEntities[i],            [](auto& component){ component.DrawImGui(); }))
                         ImGui::Separator();
-                    }
-                    if (auto* component = mPointLights.GetComponentModify(mEntities[i]))
-                    {
-                        component->DrawImGui();
+                    if (mPointLights.Modify(mEntities[i],       [](auto& component){ component.DrawImGui(); }))
                         ImGui::Separator();
-                    }
-                    if (auto* component = mSpotLights.GetComponentModify(mEntities[i]))
-                    {
-                        component->DrawImGui();
+                    if (mSpotLights.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
                         ImGui::Separator();
-                    }
-                    if (auto* component = mDirectionalLights.GetComponentModify(mEntities[i]))
-                    {
-                        component->DrawImGui();
+                    if (mDirectionalLights.Modify(mEntities[i], [](auto& component){ component.DrawImGui(); }))
                         ImGui::Separator();
-                    }
 
                     ImGui::TreePop();
                 }

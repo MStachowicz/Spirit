@@ -10,6 +10,7 @@
 #include "Mesh.hpp"
 
 #include <vector>
+#include <functional>
 
 namespace ECS
 {
@@ -24,12 +25,11 @@ namespace ECS
             mEntities.push_back({++mNextEntityID});
             return mEntities.back();
         }
-        inline void ForEach(const std::function<void(const Entity& pEntity)>& pFunction) const
+
+        void ForEach(const std::function<void(const Entity& pEntity)>& pFunction) const
         {
-            for (size_t i = 0; i < mEntities.size(); i++)
-            {
-                pFunction(mEntities[i]);
-            }
+            for (const auto& entity : mEntities)
+                pFunction(entity);
         }
 
         ComponentManager<Data::PointLight>       mPointLights;

@@ -11,112 +11,86 @@ namespace ECS
     class ComponentManager
     {
     public:
-        inline bool Contains(const Entity &entity) const
+        bool Contains(const Entity& pEntity) const
         {
-            return lookup.find(entity) != lookup.end();
+            return mEntityComponentIndexLookup.find(entity) != mEntityComponentIndexLookup.end();
         }
-
-        inline size_t size() const
+        void ForEach(const std::function<void(const Component& pComponent)>& pFunction) const
         {
-            return components.size();
+            for (const Component& component : mComponents)
+                pFunction(component);
         }
-
-        inline Component &operator[](const size_t& index)
+        const Component* GetComponent(const Entity& pEntity) const
         {
-            return components[index];
-        }
-
-        inline Entity GetEntity(const size_t& index) const
-        {
-            return entities[index];
-        }
-
-        inline std::vector<Component> Get() const
-        {
-            return components;
-        }
-
-        inline void ForEach(const std::function<void(const Component& pComponent)>& pFunction) const
-        {
-            for (size_t i = 0; i < size(); i++)
+            auto it = mEntityComponentIndexLookup.find(pEntity.mID);
+            if (it != mEntityComponentIndexLookup.end())
             {
-                pFunction(components[i]);
-            }
-        }
-        inline void ModifyForEach(const std::function<void(Component& pComponent)>& pFunction)
-        {
-            for (size_t i = 0; i < size(); i++)
-            {
-                pFunction(components[i]);
-            }
-        }
-
-        inline const Component* GetComponent(const Entity& pEntity)
-        {
-            auto it = lookup.find(pEntity.mID);
-            if (it != lookup.end())
-            {
-                return &components[it->second];
-            }
-            else
-                return nullptr;
-        }
-        inline Component* GetComponentModify(const Entity& pEntity)
-        {
-            auto it = lookup.find(pEntity.mID);
-            if (it != lookup.end())
-            {
-                return &components[it->second];
+                return &mComponents[it->second];
             }
             else
                 return nullptr;
         }
 
-        Component& Create(const Entity &entity)
+        // Apply pFunction to every Component in the list.
+        void ModifyForEach(const std::function<void(Component& pComponent)>& pFunction)
         {
-            ZEPHYR_ASSERT(entity.mID != INVALID_ENTITY_ID, "Invalid entity not allowed to create components");
-            ZEPHYR_ASSERT(lookup.find(entity.mID) == lookup.end(), "Only one of this component type is allowed per entity");
-            ZEPHYR_ASSERT(entities.size() == components.size() && lookup.size() == components.size(), "Entity count must always be the same as the number of components");
-
-            // Update the entity lookup table:
-            lookup[entity.mID] = components.size();
-            // New components are always pushed to the end:
-            components.push_back(Component());
-            // Also push corresponding entity:
-            entities.push_back(entity.mID);
-
-            return components.back();
+            for (Component& component : mComponents)
+                pFunction(mComponents[i]);
+        }
+        // Apply pFunction to Component belonging to the pEntity. Returns true if a component for this entity existed and pFunction was executed.
+        bool Modify(const Entity& pEntity, const std::function<void(Component& pComponent)>& pFunction)
+        {
+            auto it = mEntityComponentIndexLookup.find(pEntity.mID);
+            if (it != mEntityComponentIndexLookup.end())
+            {
+                pFunction(mComponents[it->second]);
+                return true;
+            }
+            else
+                return false;
         }
 
-        void Remove(const Entity &entity)
+        void Add(const Entity& pEntity, const Component& pComponent)
         {
-            auto it = lookup.find(entity);
+            ZEPHYR_ASSERT(pEntity.mID != INVALID_ENTITY_ID, "Invalid entity not allowed to create components");
+            ZEPHYR_ASSERT(mEntityComponentIndexLookup.find(pEntity.mID) == mEntityComponentIndexLookup.end(), "Only one of this component type is allowed per entity");
+            ZEPHYR_ASSERT(mEntities.size() == mComponents.size() && mEntityComponentIndexLookup.size() == mComponents.size(), "Entity count must always be the same as the number of components");
+
+            // New components are always pushed to the end so entity lookup table receives end location
+            mEntityComponentIndexLookup[pEntity.mID] = mComponents.size();
+            mComponents.push_back(pComponent);
+            // Also push corresponding entity
+            mEntities.push_back(pEntity.mID);
+        }
+        void Remove(const Entity& pEntity)
+        {
+            auto it = lookup.find(pEntity);
             if (it != lookup.end())
             {
                 // Directly index into components and entities array:
                 const size_t index = it->second;
-                const Entity entity = entities[index];
+                const Entity entity = mEntities[index];
 
-                if (index < components.size() - 1)
+                if (index < mComponents.size() - 1)
                 {
                     // Swap out the dead element with the last one:
-                    components[index] = std::move(components.back()); // try to use move
-                    entities[index] = entities.back();
+                    mComponents[index] = std::move(mComponents.back()); // try to use move
+                    mEntities[index] = mEntities.back();
 
                     // Update the lookup table:
-                    lookup[entities[index]] = index;
+                    mEntityComponentIndexLookup[mEntities[index]] = index;
                 }
 
                 // Shrink the container:
-                components.pop_back();
-                entities.pop_back();
-                lookup.erase(entity);
+                mComponents.pop_back();
+                mEntities.pop_back();
+                mEntityComponentIndexLookup.erase(entity);
             }
         }
 
     private:
-        std::vector<Component> components;
-        std::vector<EntityID> entities;
-        std::unordered_map<EntityID, size_t> lookup;
+        std::vector<Component> mComponents;
+        std::vector<EntityID> mEntities;
+        std::unordered_map<EntityID, size_t> mEntityComponentIndexLookup;
     };
 }
