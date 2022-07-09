@@ -12,6 +12,15 @@ namespace Data
         float mDiffuseIntensity  = 0.15f;
         float mSpecularIntensity = 0.5f;
 
+        bool operator== (const DirectionalLight& pOther) const
+        {
+            return mDirection == pOther.mDirection &&
+                mColour == pOther.mColour &&
+                mAmbientIntensity == pOther.mAmbientIntensity &&
+                mDiffuseIntensity == pOther.mDiffuseIntensity &&
+                mSpecularIntensity == pOther.mSpecularIntensity;
+        };
+        bool operator != (const DirectionalLight& pOther) const { return !(*this == pOther); }
         void DrawImGui();
     };
 }

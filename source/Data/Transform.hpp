@@ -11,5 +11,12 @@ namespace Data
         glm::vec3 mScale    = glm::vec3(1.0f);
 
         void DrawImGui();
+        bool operator==(const Transform& pOther) const
+        {
+            return mPosition == pOther.mPosition &&
+                mRotation == pOther.mRotation &&
+                mScale == pOther.mScale;
+        }
+        bool operator != (const Transform& pOther) const { return !(*this == pOther); }
     };
 }

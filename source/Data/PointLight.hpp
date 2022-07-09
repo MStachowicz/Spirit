@@ -17,5 +17,17 @@ namespace Data
         float mQuadratic         = 0.032f;
 
         void DrawImGui();
+        bool operator== (const PointLight& pOther) const
+        {
+            return mPosition == pOther.mPosition &&
+                mColour == pOther.mColour &&
+                mAmbientIntensity == pOther.mAmbientIntensity &&
+                mDiffuseIntensity == pOther.mDiffuseIntensity &&
+                mSpecularIntensity == pOther.mSpecularIntensity &&
+                mConstant == pOther.mConstant &&
+                mLinear == pOther.mLinear &&
+                mQuadratic == pOther.mQuadratic;
+        }
+        bool operator != (const PointLight& pOther) const { return !(*this == pOther); }
     };
 }

@@ -70,6 +70,23 @@ namespace Data
 
         std::optional<float> mTextureRepeatFactor   = std::nullopt;
 
+        bool operator== (const MeshDraw& pOther) const
+        {
+            return mID == pOther.mID &&
+                mName == pOther.mName &&
+                mDrawMode == pOther.mDrawMode &&
+                mDrawStyle == pOther.mDrawStyle &&
+                mTexture1 == pOther.mTexture1 &&
+                mTexture2 == pOther.mTexture2 &&
+                mMixFactor == pOther.mMixFactor &&
+                mColour == pOther.mColour &&
+                mDiffuseTextureID == pOther.mDiffuseTextureID &&
+                mSpecularTextureID == pOther.mSpecularTextureID &&
+                mShininess == pOther.mShininess &&
+                mTextureRepeatFactor == pOther.mTextureRepeatFactor;
+        };
+        bool operator != (const MeshDraw& pOther) const { return !(*this == pOther); }
+
         void DrawImGui() {};
     };
 }

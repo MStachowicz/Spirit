@@ -22,5 +22,21 @@ namespace Data
         float mOuterCutOff        = glm::cos(glm::radians(15.0f));
 
         void DrawImGui();
+
+        bool operator== (const SpotLight& pOther) const
+        {
+            return mPosition == pOther.mPosition &&
+                mDirection == pOther.mDirection &&
+                mColour == pOther.mColour &&
+                mAmbientIntensity == pOther.mAmbientIntensity &&
+                mDiffuseIntensity == pOther.mDiffuseIntensity &&
+                mSpecularIntensity == pOther.mSpecularIntensity &&
+                mConstant == pOther.mConstant &&
+                mLinear == pOther.mLinear &&
+                mQuadratic == pOther.mQuadratic &&
+                mCutOff == pOther.mCutOff &&
+                mOuterCutOff == pOther.mOuterCutOff;
+        }
+        bool operator != (const SpotLight& pOther) const { return !(*this == pOther); }
     };
 }
