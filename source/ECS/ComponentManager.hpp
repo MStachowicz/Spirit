@@ -1,9 +1,12 @@
 #pragma once
 
+#include "Entity.hpp"
+
+#include "EventDispatcher.hpp"
+#include "Logger.hpp"
+
 #include <vector>
 #include <unordered_map>
-#include "Logger.hpp"
-#include "Entity.hpp"
 
 namespace ECS
 {
@@ -35,7 +38,13 @@ namespace ECS
         void ModifyForEach(const std::function<void(Component& pComponent)>& pFunction)
         {
             for (Component& component : mComponents)
-                pFunction(mComponents[i]);
+            {
+                const Component before = component;
+                pFunction(component);
+
+                if (before != component)
+                    mChangedComponentEvent.Dispatch(component);
+            }
         }
         // Apply pFunction to Component belonging to the pEntity. Returns true if a component for this entity existed and pFunction was executed.
         bool Modify(const Entity& pEntity, const std::function<void(Component& pComponent)>& pFunction)
@@ -43,7 +52,12 @@ namespace ECS
             auto it = mEntityComponentIndexLookup.find(pEntity.mID);
             if (it != mEntityComponentIndexLookup.end())
             {
+                const Component before = mComponents[it->second];
                 pFunction(mComponents[it->second]);
+
+                if (before != mComponents[it->second])
+                    mChangedComponentEvent.Dispatch(mComponents[it->second]);
+
                 return true;
             }
             else
@@ -88,6 +102,7 @@ namespace ECS
             }
         }
 
+        Utility::EventDispatcher<const Component&> mChangedComponentEvent;
     private:
         std::vector<Component> mComponents;
         std::vector<EntityID> mEntities;

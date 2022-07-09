@@ -159,7 +159,7 @@ PUBLIC source/Data
 PUBLIC source/External/GLM
 )
 target_link_libraries(Data
-INTERFACE Utility
+PUBLIC Utility
 PRIVATE ImGui
 )
 # ------------------------ DATA END ----------------------------
@@ -173,11 +173,11 @@ source/ECS/EntityManager.cpp
 source/ECS/ComponentManager.hpp
 )
 target_include_directories(ECS
-INTERFACE source/ECS
-INTERFACE source/External/GLM
+PUBLIC source/ECS
+PUBLIC source/External/GLM
 )
 target_link_libraries(ECS
-PRIVATE Logger # Can this be made Private by providing CPP files and making ECS a regular library?
+PRIVATE Logger
 PRIVATE ImGui
 PUBLIC Data
 )
@@ -190,6 +190,7 @@ source/Utility/Utility.hpp
 source/Utility/Utility.cpp
 source/Utility/Types.hpp
 source/Utility/Timer.hpp
+source/Utility/EventDispatcher.hpp
 )
 target_include_directories(Utility
 PUBLIC source/Utility
