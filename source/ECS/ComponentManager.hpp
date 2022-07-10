@@ -37,13 +37,13 @@ namespace ECS
         // Apply pFunction to every Component in the list.
         void ModifyForEach(const std::function<void(Component& pComponent)>& pFunction)
         {
-            for (Component& component : mComponents)
+            for (size_t i = 0; i < mComponents.size(); i++)
             {
-                const Component before = component;
-                pFunction(component);
+                const Component before = mComponents[i];
+                pFunction(mComponents[i]);
 
-                if (before != component)
-                    mChangedComponentEvent.Dispatch(component);
+                if (before != mComponents[i])
+                    mChangedComponentEvent.Dispatch(mEntities[i], mComponents[i]);
             }
         }
         // Apply pFunction to Component belonging to the pEntity. Returns true if a component for this entity existed and pFunction was executed.
@@ -56,7 +56,7 @@ namespace ECS
                 pFunction(mComponents[it->second]);
 
                 if (before != mComponents[it->second])
-                    mChangedComponentEvent.Dispatch(mComponents[it->second]);
+                    mChangedComponentEvent.Dispatch(pEntity.mID, mComponents[it->second]);
 
                 return true;
             }
@@ -102,7 +102,7 @@ namespace ECS
             }
         }
 
-        Utility::EventDispatcher<const Component&> mChangedComponentEvent;
+        Utility::EventDispatcher<const Entity&, const Component&> mChangedComponentEvent;
     private:
         std::vector<Component> mComponents;
         std::vector<EntityID> mEntities;
