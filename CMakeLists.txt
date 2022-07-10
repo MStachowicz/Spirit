@@ -137,6 +137,7 @@ INTERFACE source/Interface
 )
 target_link_libraries(ZephyrInterface
 INTERFACE Data
+INTERFACE ECS
 )
 # ------------------------ INTERFACE END ----------------------------
 

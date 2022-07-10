@@ -1,16 +1,17 @@
-#define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
-#include "imgui.h"
-
 #include "Renderer.hpp"
 #include "OpenGLAPI.hpp"
 #include "Logger.hpp"
 #include "Timer.hpp"
 
 #include "EntityManager.hpp"
+#include "EventDispatcher.hpp"
 
-#include "cmath"
-#include "numeric"
-#include "chrono"
+#define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
+#include "imgui.h"
+
+#include <cmath>
+#include <numeric>
+#include <chrono>
 
 Renderer::Renderer(ECS::EntityManager& pEntityManager)
 : mDrawCount(0)
@@ -206,6 +207,7 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	}
 
 	mEntityManager.ForEach([this](const ECS::Entity &pEntity){ parseEntity(pEntity); });
+	mEntityManager.mTransforms.mChangedComponentEvent.Subscribe(std::bind(&Renderer::onTransformComponentChange, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Renderer::~Renderer()
@@ -213,14 +215,26 @@ Renderer::~Renderer()
 	delete mOpenGLAPI;
 }
 
+void Renderer::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+{
+	// Find the DrawCall containing pEntity Transform data and update the model matrix for it.
+	for (auto& drawCall : mDrawCalls)
+	{
+		auto it = drawCall.mEntityModelIndexLookup.find(pEntity.mID);
+		if (it != drawCall.mEntityModelIndexLookup.end())
+		{
+			drawCall.mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+			return;
+		}
+	}
+}
+
 void Renderer::parseEntity(const ECS::Entity& pEntity)
 {
 	// Grab all the entities with meshes to draw then confirm they also have a transform component to use as a model matrix.
-	const Data::MeshDraw* mesh = mEntityManager.mMeshes.GetComponent(pEntity);
-	if (mesh)
+	if (const Data::MeshDraw* mesh = mEntityManager.mMeshes.GetComponent(pEntity))
 	{
-		const Data::Transform* transform = mEntityManager.mTransforms.GetComponent(pEntity);
-		if (transform)
+		if (const Data::Transform* transform = mEntityManager.mTransforms.GetComponent(pEntity))
 		{
 			DrawCall drawCall;
 			drawCall.mMesh = *mesh;
@@ -243,11 +257,13 @@ void Renderer::parseEntity(const ECS::Entity& pEntity)
 
 			if (it == mDrawCalls.end())
 			{
+				drawCall.mEntityModelIndexLookup[pEntity.mID] = drawCall.mModels.size();
 				drawCall.mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
 				mDrawCalls.push_back(drawCall);
 			}
 			else
 			{
+				it->mEntityModelIndexLookup[pEntity.mID] = it->mModels.size();
 				it->mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
 			}
 		}

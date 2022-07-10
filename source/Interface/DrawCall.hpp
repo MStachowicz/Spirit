@@ -1,20 +1,21 @@
 #pragma once
 
-#include "Utility.hpp"
-#include "Types.hpp"
-
 #include "Mesh.hpp"
 
-#include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
+#include "Entity.hpp"
+
 #include "glm/mat4x4.hpp"
 
-#include <optional>
-#include <array>
 #include <vector>
+#include <unordered_map>
 
 // A request to execute a specific draw using a GraphicsAPI.
 struct DrawCall
 {
-	std::vector<glm::mat4> mModels;
 	Data::MeshDraw mMesh;
+
+	// List of per-Entity transform matrices
+	std::vector<glm::mat4> mModels;
+	// Mapping of EntityID to index into mModels.
+	std::unordered_map<ECS::EntityID, size_t> mEntityModelIndexLookup;
 };
