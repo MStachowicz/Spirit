@@ -1,11 +1,12 @@
 #pragma once
 
 #include "glm/fwd.hpp"
+
 #include "Logger.hpp"
 
 #include <string>
 #include <array>
-#include <unordered_map>
+#include <vector>
 #include <optional>
 
 // Wraps all the GL types into enums and provides helper functions to extract the values or string representations.
@@ -48,6 +49,23 @@ namespace GLType
         UsamplerBuffer,
         Usampler2DRect,
         Count
+    };
+    enum class BufferType
+    {
+        ArrayBuffer,             // Vertex attributes
+        AtomicCounterBuffer,     // Atomic counter storage
+        CopyReadBuffer,          // Buffer copy source
+        CopyWriteBuffer,         // Buffer copy destination
+        DispatchIndirectBuffer,  // Indirect compute dispatch commands
+        DrawIndirectBuffer,      // Indirect command arguments
+        ElementArrayBuffer,      // Vertex array indices
+        PixelPackBuffer,         // Pixel read target
+        PixelUnpackBuffer,       // Texture data source
+        QueryBuffer,             // Query result buffer
+        ShaderStorageBuffer,     // Read-write storage for shaders
+        TextureBuffer,           // Texture data buffer
+        TransformFeedbackBuffer, // Transform feedback buffer
+        UniformBuffer            // Uniform block storage
     };
     enum class ShaderProgramType
     {
@@ -215,12 +233,15 @@ namespace GLType
         LinkProgram,
         DeleteShader,
         UseProgram,
+        BindBuffer,
+        DeleteBuffer,
         Count
     };
 
     std::string toString(const Function& pFunction);
     std::string toString(const ShaderProgramType& pShaderProgramType);
     std::string toString(const DataType &pDataType);
+    std::string toString(const BufferType& pBufferType);
     std::string toString(const ShaderResourceType &pResourceType);
     std::string toString(const ShaderResourceProperty &pShaderResourceProperty);
     std::string toString(const DepthTestType &pDepthTestType);
@@ -236,6 +257,7 @@ namespace GLType
 
     int convert(const ShaderProgramType& pShaderProgramType);
     int convert(const DataType& pDataType);
+    int convert(const BufferType& pBufferType);
     int convert(const ShaderResourceType& pResourceType);
     int convert(const ShaderResourceProperty& pShaderResourceProperty);
     int convert(const DepthTestType& pDepthTestType);
@@ -415,7 +437,7 @@ namespace GLData
     // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
     // Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
     // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Shader_storage_blocks
-    // Compares to UniformBlock's ShaderStorageBlock's can store more data, are writable atomically, can have variable storage (array of arbitrary length).
+    // Compared to UniformBlocks ShaderStorageBlocks can store more data, are writable atomically, can have variable storage (array of arbitrary length).
     // ShaderStorageBlock access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
     struct ShaderStorageBlock
     {
@@ -523,6 +545,13 @@ public:
     // Unbind any current framebuffer, this binds the default OpenGL framebuffer.
     void unbindFramebuffer();
     void checkFramebufferBufferComplete();
+
+    // Generates a Buffer object handle.
+    unsigned int GenBuffers() const;
+    // Bind a named buffer object.
+    void BindBuffer(const GLType::BufferType& pBufferType, const unsigned int& pBufferHandle) const;
+    // Delete named buffer objects.
+    void DeleteBuffer(const unsigned int& pBufferHandle) const;
 
     // Create a shader object.
     // Creates an empty shader object and returns a non-zero value by which it can be referenced. A shader object is used to maintain the source code strings that define a shader.

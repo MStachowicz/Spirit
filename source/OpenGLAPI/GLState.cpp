@@ -3,13 +3,15 @@
 #include "Utility.hpp"
 
 // External libs
-#include "Logger.hpp"
 #include "glm/mat4x4.hpp" // mat4, dmat4
 #include "glm/gtc/type_ptr.hpp" //  glm::value_ptr
 #include "glad/gl.h"
 #include "imgui.h"
 
 #include <set>
+#include <unordered_map>
+#include <algorithm>
+#include <iterator>
 
 GLState::GLState()
     : mDepthTest(true)
@@ -367,6 +369,25 @@ void GLState::checkFramebufferBufferComplete()
     ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 }
 
+unsigned int GLState::GenBuffers() const
+{
+    unsigned int bufferHandle;
+    glGenBuffers(1, &bufferHandle);
+    return bufferHandle;
+}
+
+void GLState::BindBuffer(const GLType::BufferType& pBufferType, const unsigned int& pBufferHandle) const
+{
+    glBindBuffer(convert(pBufferType), pBufferHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindBuffer));
+}
+
+void GLState::DeleteBuffer(const unsigned int &pBufferHandle) const
+{
+    glDeleteBuffers(1, &pBufferHandle);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteBuffer));
+}
+
 unsigned int GLState::CreateShader(const GLType::ShaderProgramType& pProgramType)
 {
     unsigned int shaderID = glCreateShader(GLType::convert(pProgramType));
@@ -515,15 +536,15 @@ void GLState::bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBl
 
         bindingPoint->mSSBO.generate();
         bindingPoint->mSSBO.bind();
-        // Reserve the size of the UniformBlock in the GPU memory
+        // Reserve the size of the ShaderStorageBlock in the GPU memory
         const auto dataSize = pShaderBufferBlock.mBufferDataSize;
         glBufferData(GL_SHADER_STORAGE_BUFFER, dataSize, NULL, GL_STATIC_DRAW);
         glBindBufferRange(GL_SHADER_STORAGE_BUFFER, bindingPoint->mBindingPoint, bindingPoint->mSSBO.getHandle(), 0, dataSize);
     }
     else
     {
-        // If the UniformBlock has been encountered before. We bind it to the same mBindingPoint of the previously
-        // created UniformBlockBufferBacking meaning the blocks share the GPU memory.
+        // If the StorageBlock has been encountered before. We bind it to the same mBindingPoint of the previously
+        // created ShaderStorageBlockBindingPoint meaning the blocks share the GPU memory.
         bindingPoint = &(*it);
         bindingPoint->mInstances++;
         bindingPoint->mSSBO.bind();
@@ -1209,6 +1230,8 @@ namespace GLType
             case Function::LinkProgram :         return "LinkProgram";
             case Function::DeleteShader :        return "DeleteShader";
             case Function::UseProgram :          return "UseProgram";
+            case Function::BindBuffer :          return "BindBuffer";
+            case Function::DeleteBuffer :        return "DeleteBuffer";
             default:
                 ZEPHYR_ASSERT(false, "Unknown Function requested");
                 return "";
@@ -1266,6 +1289,29 @@ namespace GLType
         };
 
         return dataTypes[util::toIndex(pDataType)];
+    }
+    std::string toString(const BufferType& pBufferType)
+    {
+        switch (pBufferType)
+        {
+            case BufferType::ArrayBuffer :            return "Array Buffer";
+            case BufferType::AtomicCounterBuffer :    return "Atomic Counter Buffer";
+            case BufferType::CopyReadBuffer :         return "Copy Read Buffer";
+            case BufferType::CopyWriteBuffer :        return "Copy Write Buffer";
+            case BufferType::DispatchIndirectBuffer : return "Dispatch Indirect Buffer";
+            case BufferType::DrawIndirectBuffer :     return "Draw Indirect Buffer";
+            case BufferType::ElementArrayBuffer :     return "Element Array Buffer";
+            case BufferType::PixelPackBuffer :        return "Pixel Pack Buffer";
+            case BufferType::PixelUnpackBuffer :      return "Pixel Unpack Buffer";
+            case BufferType::QueryBuffer :            return "Query Buffer";
+            case BufferType::ShaderStorageBuffer :    return "Shader Storage Buffer";
+            case BufferType::TextureBuffer :          return "Texture Buffer";
+            case BufferType::TransformFeedbackBuffer :return "Transform Feedback Buffer";
+            case BufferType::UniformBuffer :          return "Uniform Buffer";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown BufferType requested");
+                return 0;
+        }
     }
     std::string toString(const ShaderResourceType& pResourceType)
     {
@@ -1508,6 +1554,29 @@ namespace GLType
             case DataType::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                return 0;
+        }
+    }
+    int convert(const BufferType& pBufferType)
+    {
+        switch (pBufferType)
+        {
+            case BufferType::ArrayBuffer :            return GL_ARRAY_BUFFER;
+            case BufferType::AtomicCounterBuffer :    return GL_ATOMIC_COUNTER_BUFFER;
+            case BufferType::CopyReadBuffer :         return GL_COPY_READ_BUFFER;
+            case BufferType::CopyWriteBuffer :        return GL_COPY_WRITE_BUFFER;
+            case BufferType::DispatchIndirectBuffer : return GL_DISPATCH_INDIRECT_BUFFER;
+            case BufferType::DrawIndirectBuffer :     return GL_DRAW_INDIRECT_BUFFER;
+            case BufferType::ElementArrayBuffer :     return GL_ELEMENT_ARRAY_BUFFER;
+            case BufferType::PixelPackBuffer :        return GL_PIXEL_PACK_BUFFER;
+            case BufferType::PixelUnpackBuffer :      return GL_PIXEL_UNPACK_BUFFER;
+            case BufferType::QueryBuffer :            return GL_QUERY_BUFFER;
+            case BufferType::ShaderStorageBuffer :    return GL_SHADER_STORAGE_BUFFER;
+            case BufferType::TextureBuffer :          return GL_TEXTURE_BUFFER;
+            case BufferType::TransformFeedbackBuffer :return GL_TRANSFORM_FEEDBACK_BUFFER;
+            case BufferType::UniformBuffer :          return GL_UNIFORM_BUFFER;
+            default:
+                ZEPHYR_ASSERT(false, "Unknown BufferType requested");
                 return 0;
         }
     }
@@ -1772,11 +1841,11 @@ std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction) c
             }}
         },
         { // BindFramebuffer
-            { GLType::ErrorType::InvalidEnum,      { "Target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER" }},
-            { GLType::ErrorType::InvalidOperation, { "Framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers" }}
+            { GLType::ErrorType::InvalidEnum,       { "Target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER" }},
+            { GLType::ErrorType::InvalidOperation,  { "Framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers" }}
         },
         { // CreateShader
-            { GLType::ErrorType::InvalidEnum,      { "pShaderType is not an accepted value" }}
+            { GLType::ErrorType::InvalidEnum,       { "pShaderType is not an accepted value" }}
         },
         { // ShaderSource
             { GLType::ErrorType::InvalidValue,      { "pShader is not a value generated by OpenGL", "Count is less than 0" }},
@@ -1801,6 +1870,13 @@ std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction) c
         { // UseProgram
             { GLType::ErrorType::InvalidValue,      { "Program is neither 0 nor a value generated by OpenGL." }},
             { GLType::ErrorType::InvalidOperation,  { "Program is not a program object.", "Program could not be made part of current state.", "Transform feedback mode is active." }}
+        },
+        { // BindBuffer
+            { GLType::ErrorType::InvalidEnum,      { "Target is not one of the allowable values." }},
+            { GLType::ErrorType::InvalidValue,     { "Buffer is not a name previously returned from a call to glGenBuffers." }}
+        },
+        { // DeleteBuffer
+            { GLType::ErrorType::InvalidValue,     { "Generated if mHandle is negative." }}
         },
     }};
 
