@@ -48,7 +48,7 @@ namespace GLType
         Usampler2DMSArray,
         UsamplerBuffer,
         Usampler2DRect,
-        Count
+        Unknown
     };
     enum class BufferType
     {
@@ -71,8 +71,7 @@ namespace GLType
     {
         Vertex,
         Geometry,
-        Fragment,
-        Count
+        Fragment
     };
     enum class ShaderResourceType
     {
@@ -92,9 +91,7 @@ namespace GLType
         TessControlSubroutineUniform,
         TessEvaluationSubroutineUniform,
         TransformFeedbackBuffer,
-        TransformFeedbackVarying,
-
-        Count
+        TransformFeedbackVarying
     };
     enum class ShaderResourceProperty
     {
@@ -127,9 +124,7 @@ namespace GLType
         IsPerPatch,
         LocationComponent,
         TransformFeedbackBufferIndex,
-        TransformFeedbackBufferStride,
-
-        Count
+        TransformFeedbackBufferStride
     };
     enum class DepthTestType
     {
@@ -140,8 +135,7 @@ namespace GLType
         NotEqual,
         Greater,
         LessEqual,
-        GreaterEqual,
-        Count
+        GreaterEqual
     };
     enum class BlendFactorType
     {
@@ -159,20 +153,17 @@ namespace GLType
         OneMinusConstantColour,    // Factor is equal to 1 minus the constant colour vector.
         ConstantAlpha,             // Factor is equal to the alpha component of the constant colour vector.
         OneMinusConstantAlpha,     // Factor is equal to 1 minus alpha of the constant colour vector.
-        Count
     };
     enum class CullFacesType
     {
         Back,          // Culls only the back faces (Default OpenGL setting).
         Front,         // Culls only the front faces.
-        FrontAndBack,  // Culls both the front and back faces.
-        Count
+        FrontAndBack  // Culls both the front and back faces.
     };
     enum class FrontFaceOrientation
     {
         Clockwise,          // Clockwise polygons are identified as front-facing.
         CounterClockwise,   // Counter-clockwise polygons are identified as front-facing (Default OpenGL setting).
-        Count
     };
     // Polygon rasterization mode
     // Vertices are marked as boundary/non-boundary with an edge flag generated internally by OpenGL when it decomposes triangle stips and fans.
@@ -180,8 +171,7 @@ namespace GLType
     {
         Point, // Polygon vertices that are marked as the start of a boundary edge are drawn as points. Point attributes such as GL_POINT_SIZE and GL_POINT_SMOOTH control the rasterization of the points.
         Line,  // Boundary edges of the polygon are drawn as line segments. Line attributes such as GL_LINE_WIDTH and GL_LINE_SMOOTH control the rasterization of the lines.
-        Fill,  // The interior of the polygon is filled. Polygon attributes such as GL_POLYGON_SMOOTH control the rasterization of the polygon. (Default OpenGL setting).
-        Count
+        Fill  // The interior of the polygon is filled. Polygon attributes such as GL_POLYGON_SMOOTH control the rasterization of the polygon. (Default OpenGL setting).
     };
     // Interpretation scheme used to determine what a stream of vertices represents when being rendered.
     enum class PrimitiveMode
@@ -198,14 +188,12 @@ namespace GLType
         TriangleStripAdjacency,
         TrianglesAdjacency,
         Patches,
-        Count
     };
     enum class FramebufferTarget
     {
         DrawFramebuffer,
         ReadFramebuffer,
-        Framebuffer,
-        Count
+        Framebuffer
     };
     enum class ErrorType
     {
@@ -215,8 +203,7 @@ namespace GLType
         InvalidFramebufferOperation,
         OutOfMemory,
         StackUnderflow,
-        StackOverflow,
-        Count
+        StackOverflow
     };
     enum class Function
     {
@@ -382,7 +369,7 @@ namespace GLData
     struct UniformVariable
     {
         std::string mName      = "";
-        GLType::DataType mType = GLType::DataType::Count;
+        GLType::DataType mType = GLType::DataType::Unknown;
         int mOffset            = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
         int mLocation          = -1;
         int mBlockIndex        = -1;
@@ -412,7 +399,7 @@ namespace GLData
     struct ShaderStorageBlockVariable
     {
         std::string mName        = "";
-        GLType::DataType mType   = GLType::DataType::Count;
+        GLType::DataType mType   = GLType::DataType::Unknown;
         int mOffset              = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
         int mBlockIndex          = -1;
         int mArraySize           = -1;  // For elements that are aggregated into arrays, this is the number of elements in the array
@@ -747,6 +734,8 @@ private:
     void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue);
     void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue);
 
+
+    std::optional<std::vector<std::string>> GetErrorMessagesOverride(const GLType::Function& pCallingFunction, const GLType::ErrorType& pErrorType) const;
     std::string getErrorMessage() const;
     std::string getErrorMessage(const GLType::Function& pCallingFunction) const;
 };

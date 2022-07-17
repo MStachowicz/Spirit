@@ -179,11 +179,14 @@ void GLState::renderImGui()
             ImGui::SameLine();
             if (ImGui::BeginCombo("Depth test type", GLType::toString(mDepthTestType).c_str(), ImGuiComboFlags()))
             {
-                for (size_t i = 0; i < util::toIndex(GLType::DepthTestType::Count); i++)
+                static const size_t depthTestEnumCount = 8; // This has to match the number of enums in GLType::DepthTestType
+                for (size_t i = 0; i < depthTestEnumCount; i++)
                 {
-                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::DepthTestType>(i)).c_str()))
-                        setDepthTestType(static_cast<GLType::DepthTestType>(i));
+                    const auto depthTestType = static_cast<GLType::DepthTestType>(i);
+                    if (ImGui::Selectable(GLType::toString(depthTestType).c_str()))
+                        setDepthTestType(depthTestType);
                 }
+
                 ImGui::EndCombo();
             }
         }
@@ -197,16 +200,19 @@ void GLState::renderImGui()
         {
             ImGui::Text("Blend function:");
             ImGui::SameLine();
+            static const size_t blendFactorEnumCount = 14; // This has to match the number of enums in GLType::BlendFactorType
 
             const float width = ImGui::GetWindowWidth() * 0.25f;
             ImGui::SetNextItemWidth(width);
             if (ImGui::BeginCombo("Source", GLType::toString(mSourceBlendFactor).c_str()))
             {
-                for (size_t i = 0; i < util::toIndex(GLType::BlendFactorType::Count); i++)
+                for (size_t i = 0; i < blendFactorEnumCount; i++)
                 {
-                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::BlendFactorType>(i)).c_str()))
-                        setBlendFunction(static_cast<GLType::BlendFactorType>(i), mDestinationBlendFactor);
+                    const auto blendFactorType = static_cast<GLType::BlendFactorType>(i);
+                    if (ImGui::Selectable(GLType::toString(blendFactorType).c_str()))
+                        setBlendFunction(blendFactorType, mDestinationBlendFactor);
                 }
+
                 ImGui::EndCombo();
             }
 
@@ -214,15 +220,15 @@ void GLState::renderImGui()
             ImGui::SetNextItemWidth(width);
             if (ImGui::BeginCombo("Destination", GLType::toString(mDestinationBlendFactor).c_str(), ImGuiComboFlags()))
             {
-                for (size_t i = 0; i < util::toIndex(GLType::BlendFactorType::Count); i++)
+                for (size_t i = 0; i < blendFactorEnumCount; i++)
                 {
-                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::BlendFactorType>(i)).c_str()))
-                        setBlendFunction(mSourceBlendFactor, static_cast<GLType::BlendFactorType>(i));
+                    const auto blendFactorType = static_cast<GLType::BlendFactorType>(i);
+                    if (ImGui::Selectable(GLType::toString(blendFactorType).c_str()))
+                        setBlendFunction(mSourceBlendFactor, blendFactorType);
                 }
                 ImGui::EndCombo();
             }
         }
-
     }
 
     {// Cull face options
@@ -233,19 +239,23 @@ void GLState::renderImGui()
         {
             if (ImGui::BeginCombo("Mode", GLType::toString(mCullFacesType).c_str()))
             {
-                for (size_t i = 0; i < util::toIndex(GLType::CullFacesType::Count); i++)
+                static const size_t frontFaceEnumCount = 3; // This has to match the number of enums in GLType::FrontFaceOrientation
+                for (size_t i = 0; i < frontFaceEnumCount; i++)
                 {
-                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::CullFacesType>(i)).c_str()))
-                        setCullFacesType(static_cast<GLType::CullFacesType>(i));
+                    const auto cullFaceType = static_cast<GLType::CullFacesType>(i);
+                    if (ImGui::Selectable(GLType::toString(cullFaceType).c_str()))
+                        setCullFacesType(cullFaceType);
                 }
                 ImGui::EndCombo();
             }
             if (ImGui::BeginCombo("Front face orientation", GLType::toString(mFrontFaceOrientation).c_str()))
             {
-                for (size_t i = 0; i < util::toIndex(GLType::FrontFaceOrientation::Count); i++)
+                static const size_t frontFaceEnumCount = 2; // This has to match the number of enums in GLType::FrontFaceOrientation
+                for (size_t i = 0; i < frontFaceEnumCount; i++)
                 {
-                    if (ImGui::Selectable(GLType::toString(static_cast<GLType::FrontFaceOrientation>(i)).c_str()))
-                        setFrontFaceOrientation(static_cast<GLType::FrontFaceOrientation>(i));
+                    const auto frontFace = static_cast<GLType::FrontFaceOrientation>(i);
+                    if (ImGui::Selectable(GLType::toString(frontFace).c_str()))
+                        setFrontFaceOrientation(frontFace);
                 }
                 ImGui::EndCombo();
             }
@@ -1174,7 +1184,7 @@ namespace GLType
             case GL_UNSIGNED_INT_SAMPLER_2D_RECT :              return DataType::Usampler2DRect;
             default:
                 ZEPHYR_ASSERT(false, "Unknown DataType requested");
-                return DataType::Count;
+                return DataType::Unknown;
         }
     }
 
@@ -1206,10 +1216,9 @@ namespace GLType
     {
         switch (pShaderProgramType)
         {
-            case ShaderProgramType::Vertex:     return "VertexShader";
-            case ShaderProgramType::Geometry:   return "GeometryShader";
-            case ShaderProgramType::Fragment:   return "FragmentShader";
-            case ShaderProgramType::Count:
+            case ShaderProgramType::Vertex:   return "VertexShader";
+            case ShaderProgramType::Geometry: return "GeometryShader";
+            case ShaderProgramType::Fragment: return "FragmentShader";
             default:
                 ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
                 return "";
@@ -1217,43 +1226,86 @@ namespace GLType
     }
     std::string toString(const DataType& pDataType)
     {
-        static const std::array<std::string, util::toIndex(GLType::DataType::Count)> dataTypes{
-        "Float", "vec2", "vec3", "vec4",
-        "Double", "DVec2", "DVec3", "DVec4",
-        "Int", "IVec2", "IVec3", "IVec4",
-        "UnsignedInt", "UVec2", "UVec3", "UVec4",
-        "Bool", "BVec2", "BVec3", "BVec4",
-        "Mat2", "Mat3", "Mat4",
-        "Mat2x3", "Mat2x4", "Mat3x2", "Mat3x4", "Mat4x2", "Mat4x3",
-        "Dmat2", "Dmat3", "Dmat4",
-        "Dmat2x3", "Dmat2x4", "Dmat3x2", "Dmat3x4", "Dmat4x2", "Dmat4x3",
-        "Sampler1D", "Sampler2D", "Sampler3D",
-        "SamplerCube",
-        "Sampler1DShadow", "Sampler2DShadow",
-        "Sampler1DArray", "Sampler2DArray",
-        "Sampler1DArrayShadow", "Sampler2DArrayShadow",
-        "Sampler2DMS", "Sampler2DMSArray",
-        "SamplerCubeShadow",
-        "SamplerBuffer",
-        "Sampler2DRect",
-        "Sampler2DRectShadow",
-        "Isampler1D", "Isampler2D", "Isampler3D",
-        "IsamplerCube",
-        "Isampler1DArray", "Isampler2DArray",
-        "Isampler2DMS",
-        "Isampler2DMSArray",
-        "IsamplerBuffer",
-        "Isampler2DRect",
-        "Usampler1D", "Usampler2D", "Usampler3D",
-        "UsamplerCube",
-        "Usampler2DArray",
-        "Usampler2DMS",
-        "Usampler2DMSArray",
-        "UsamplerBuffer",
-        "Usampler2DRect"
-        };
-
-        return dataTypes[util::toIndex(pDataType)];
+        switch (pDataType)
+        {
+            case DataType::Float :                return "Float";
+            case DataType::Vec2 :                 return "vec2";
+            case DataType::Vec3 :                 return "vec3";
+            case DataType::Vec4 :                 return "vec4";
+            case DataType::Double :               return "Double";
+            case DataType::DVec2 :                return "DVec2";
+            case DataType::DVec3 :                return "DVec3";
+            case DataType::DVec4 :                return "DVec4";
+            case DataType::Int :                  return "Int";
+            case DataType::IVec2 :                return "IVec2";
+            case DataType::IVec3 :                return "IVec3";
+            case DataType::IVec4 :                return "IVec4";
+            case DataType::UnsignedInt :          return "UnsignedInt";
+            case DataType::UVec2 :                return "UVec2";
+            case DataType::UVec3 :                return "UVec3";
+            case DataType::UVec4 :                return "UVec4";
+            case DataType::Bool :                 return "Bool";
+            case DataType::BVec2 :                return "BVec2";
+            case DataType::BVec3 :                return "BVec3";
+            case DataType::BVec4 :                return "BVec4";
+            case DataType::Mat2 :                 return "Mat2";
+            case DataType::Mat3 :                 return "Mat3";
+            case DataType::Mat4 :                 return "Mat4";
+            case DataType::Mat2x3 :               return "Mat2x3";
+            case DataType::Mat2x4 :               return "Mat2x4";
+            case DataType::Mat3x2 :               return "Mat3x2";
+            case DataType::Mat3x4 :               return "Mat3x4";
+            case DataType::Mat4x2 :               return "Mat4x2";
+            case DataType::Mat4x3 :               return "Mat4x3";
+            case DataType::Dmat2 :                return "Dmat2";
+            case DataType::Dmat3 :                return "Dmat3";
+            case DataType::Dmat4 :                return "Dmat4";
+            case DataType::Dmat2x3 :              return "Dmat2x3";
+            case DataType::Dmat2x4 :              return "Dmat2x4";
+            case DataType::Dmat3x2 :              return "Dmat3x2";
+            case DataType::Dmat3x4 :              return "Dmat3x4";
+            case DataType::Dmat4x2 :              return "Dmat4x2";
+            case DataType::Dmat4x3 :              return "Dmat4x3";
+            case DataType::Sampler1D :            return "Sampler1D";
+            case DataType::Sampler2D :            return "Sampler2D";
+            case DataType::Sampler3D :            return "Sampler3D";
+            case DataType::SamplerCube :          return "SamplerCube";
+            case DataType::Sampler1DShadow :      return "Sampler1DShadow";
+            case DataType::Sampler2DShadow :      return "Sampler2DShadow";
+            case DataType::Sampler1DArray :       return "Sampler1DArray";
+            case DataType::Sampler2DArray :       return "Sampler2DArray";
+            case DataType::Sampler1DArrayShadow : return "Sampler1DArrayShadow";
+            case DataType::Sampler2DArrayShadow : return "Sampler2DArrayShadow";
+            case DataType::Sampler2DMS :          return "Sampler2DMS";
+            case DataType::Sampler2DMSArray :     return "Sampler2DMSArray";
+            case DataType::SamplerCubeShadow :    return "SamplerCubeShadow";
+            case DataType::SamplerBuffer :        return "SamplerBuffer";
+            case DataType::Sampler2DRect :        return "Sampler2DRect";
+            case DataType::Sampler2DRectShadow :  return "Sampler2DRectShadow";
+            case DataType::Isampler1D :           return "Isampler1D";
+            case DataType::Isampler2D :           return "Isampler2D";
+            case DataType::Isampler3D :           return "Isampler3D";
+            case DataType::IsamplerCube :         return "IsamplerCube";
+            case DataType::Isampler1DArray :      return "Isampler1DArray";
+            case DataType::Isampler2DArray :      return "Isampler2DArray";
+            case DataType::Isampler2DMS :         return "Isampler2DMS";
+            case DataType::Isampler2DMSArray :    return "Isampler2DMSArray";
+            case DataType::IsamplerBuffer :       return "IsamplerBuffer";
+            case DataType::Isampler2DRect :       return "Isampler2DRect";
+            case DataType::Usampler1D :           return "Usampler1D";
+            case DataType::Usampler2D :           return "Usampler2D";
+            case DataType::Usampler3D :           return "Usampler3D";
+            case DataType::UsamplerCube :         return "UsamplerCube";
+            case DataType::Usampler2DArray :      return "Usampler2DArray";
+            case DataType::Usampler2DMS :         return "Usampler2DMS";
+            case DataType::Usampler2DMSArray :    return "Usampler2DMSArray";
+            case DataType::UsamplerBuffer :       return "UsamplerBuffer";
+            case DataType::Usampler2DRect :       return "Usampler2DRect";
+            case DataType::Unknown :              return "Unknown";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                return "";
+        }
     }
     std::string toString(const BufferType& pBufferType)
     {
@@ -1275,168 +1327,198 @@ namespace GLType
             case BufferType::UniformBuffer :          return "Uniform Buffer";
             default:
                 ZEPHYR_ASSERT(false, "Unknown BufferType requested");
-                return 0;
+                return "";
         }
     }
     std::string toString(const ShaderResourceType& pResourceType)
     {
-        static const std::array<std::string, util::toIndex(GLType::ShaderResourceType::Count)> shaderResourceTypes{
-        "Uniform",
-        "UniformBlock",
-        "ShaderStorageBlock",
-        "BufferVariable",
-        "Buffer",
-        "ProgramInput",
-        "ProgramOutput",
-        "AtomicCounterBuffer",
-        //"AtomicCounterShader",
-        "VertexSubroutineUniform",
-        "FragmentSubroutineUniform",
-        "GeometrySubroutineUniform",
-        "ComputeSubroutineUniform",
-        "TessControlSubroutineUniform",
-        "TessEvaluationSubroutineUniform",
-        "TransformFeedbackBuffer",
-        "TransformFeedbackVarying"};
-
-        return shaderResourceTypes[util::toIndex(pResourceType)];
+        switch (pResourceType)
+        {
+            case ShaderResourceType::Uniform :                         return "Uniform";
+            case ShaderResourceType::UniformBlock :                    return "UniformBlock";
+            case ShaderResourceType::ShaderStorageBlock :              return "ShaderStorageBlock";
+            case ShaderResourceType::BufferVariable :                  return "BufferVariable";
+            case ShaderResourceType::Buffer :                          return "Buffer";
+            case ShaderResourceType::ProgramInput :                    return "ProgramInput";
+            case ShaderResourceType::ProgramOutput :                   return "ProgramOutput";
+            case ShaderResourceType::AtomicCounterBuffer :             return "AtomicCounterBuffer";
+            //case ShaderResourceType::AtomicCounterShader, :          return //"AtomicCounterShader";
+            case ShaderResourceType::VertexSubroutineUniform :         return "VertexSubroutineUniform";
+            case ShaderResourceType::FragmentSubroutineUniform :       return "FragmentSubroutineUniform";
+            case ShaderResourceType::GeometrySubroutineUniform :       return "GeometrySubroutineUniform";
+            case ShaderResourceType::ComputeSubroutineUniform :        return "ComputeSubroutineUniform";
+            case ShaderResourceType::TessControlSubroutineUniform :    return "TessControlSubroutineUniform";
+            case ShaderResourceType::TessEvaluationSubroutineUniform : return "TessEvaluationSubroutineUniform";
+            case ShaderResourceType::TransformFeedbackBuffer :         return "TransformFeedbackBuffer";
+            case ShaderResourceType::TransformFeedbackVarying :        return "TransformFeedbackVarying";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ShaderResourceType requested");
+                return "";
     }
-    std::string toString(const ShaderResourceProperty &pShaderResourceProperty)
+    }
+    std::string toString(const ShaderResourceProperty& pShaderResourceProperty)
     {
-        static const std::array<std::string, util::toIndex(GLType::ShaderResourceProperty::Count)> shaderResourceProperties{
-            "NameLength",
-            "Type",
-            "ArraySize",
-            "Offset",
-            "BlockIndex",
-            "ArrayStride",
-            "MatrixStride",
-            "IsRowMajor",
-            "AtomicCounterBufferIndex",
-            "TextureBuffer",
-            "BufferBinding",
-            "BufferDataSize",
-            "NumActiveVariables",
-            "ActiveVariables",
-            "ReferencedByVertexShader",
-            "ReferencedByTessControlShader",
-            "ReferencedByTessEvaluationShader",
-            "ReferencedByGeometryShader",
-            "ReferencedByFragmentShader",
-            "ReferencedByComputeShader",
-            "NumCompatibleSubroutines",
-            "CompatibleSubroutines",
-            "TopLevelArraySize",
-            "TopLevelArrayStride",
-            "Location",
-            "LocationIndex",
-            "IsPerPatch",
-            "LocationComponent",
-            "TransformFeedbackBufferIndex",
-            "TransformFeedbackBufferStride"};
-
-        return shaderResourceProperties[util::toIndex(pShaderResourceProperty)];
+        switch (pShaderResourceProperty)
+        {
+            case ShaderResourceProperty::NameLength :                       return "NameLength";
+            case ShaderResourceProperty::Type :                             return "Type";
+            case ShaderResourceProperty::ArraySize :                        return "ArraySize";
+            case ShaderResourceProperty::Offset :                           return "Offset";
+            case ShaderResourceProperty::BlockIndex :                       return "BlockIndex";
+            case ShaderResourceProperty::ArrayStride :                      return "ArrayStride";
+            case ShaderResourceProperty::MatrixStride :                     return "MatrixStride";
+            case ShaderResourceProperty::IsRowMajor :                       return "IsRowMajor";
+            case ShaderResourceProperty::AtomicCounterBufferIndex :         return "AtomicCounterBufferIndex";
+            case ShaderResourceProperty::TextureBuffer :                    return "TextureBuffer";
+            case ShaderResourceProperty::BufferBinding :                    return "BufferBinding";
+            case ShaderResourceProperty::BufferDataSize :                   return "BufferDataSize";
+            case ShaderResourceProperty::NumActiveVariables :               return "NumActiveVariables";
+            case ShaderResourceProperty::ActiveVariables :                  return "ActiveVariables";
+            case ShaderResourceProperty::ReferencedByVertexShader :         return "ReferencedByVertexShader";
+            case ShaderResourceProperty::ReferencedByTessControlShader :    return "ReferencedByTessControlShader";
+            case ShaderResourceProperty::ReferencedByTessEvaluationShader : return "ReferencedByTessEvaluationShader";
+            case ShaderResourceProperty::ReferencedByGeometryShader :       return "ReferencedByGeometryShader";
+            case ShaderResourceProperty::ReferencedByFragmentShader :       return "ReferencedByFragmentShader";
+            case ShaderResourceProperty::ReferencedByComputeShader :        return "ReferencedByComputeShader";
+            case ShaderResourceProperty::NumCompatibleSubroutines :         return "NumCompatibleSubroutines";
+            case ShaderResourceProperty::CompatibleSubroutines :            return "CompatibleSubroutines";
+            case ShaderResourceProperty::TopLevelArraySize :                return "TopLevelArraySize";
+            case ShaderResourceProperty::TopLevelArrayStride :              return "TopLevelArrayStride";
+            case ShaderResourceProperty::Location :                         return "Location";
+            case ShaderResourceProperty::LocationIndex :                    return "LocationIndex";
+            case ShaderResourceProperty::IsPerPatch :                       return "IsPerPatch";
+            case ShaderResourceProperty::LocationComponent :                return "LocationComponent";
+            case ShaderResourceProperty::TransformFeedbackBufferIndex :     return "TransformFeedbackBufferIndex";
+            case ShaderResourceProperty::TransformFeedbackBufferStride :    return "TransformFeedbackBufferStride";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ShaderResourceProperty requested");
+                return "";
+        }
     }
     std::string toString(const DepthTestType& pDepthTestType)
     {
-        static const std::array<std::string, util::toIndex(GLType::DepthTestType::Count)> depthTestTypes{
-            "Always",
-            "Never",
-            "Less",
-            "Equal",
-            "Not equal",
-            "Greater than",
-            "Less than or equal",
-            "Greater than or equal"};
-
-        return depthTestTypes[util::toIndex(pDepthTestType)];
+        switch (pDepthTestType)
+        {
+            case DepthTestType::Always :       return "Always";
+            case DepthTestType::Never :        return "Never";
+            case DepthTestType::Less :         return "Less";
+            case DepthTestType::Equal :        return "Equal";
+            case DepthTestType::NotEqual :     return "Not equal";
+            case DepthTestType::Greater :      return "Greater than";
+            case DepthTestType::LessEqual :    return "Less than or equal";
+            case DepthTestType::GreaterEqual : return "Greater than or equal";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown DepthTestType requested");
+                return "";
     }
-    std::string toString(const BlendFactorType &pBlendFactorType)
+    }
+    std::string toString(const BlendFactorType& pBlendFactorType)
     {
-        static const std::array<std::string, util::toIndex(GLType::BlendFactorType::Count)> blendFactorTypes{{
-            "Zero",
-            "One",
-            "Source Colour",
-            "One Minus Source Colour",
-            "Destination Colour",
-            "One Minus Destination Colour",
-            "Source Alpha",
-            "One Minus Source Alpha",
-            "Destination Alpha",
-            "One Minus Destination Alpha",
-            "Constant Colour",
-            "One Minus Constant Colour",
-            "Constant Alpha",
-            "One Minus Constant Alpha"}};
-
-        return blendFactorTypes[util::toIndex(pBlendFactorType)];
-    }
-    std::string toString(const CullFacesType &pCullFacesType)
+        switch (pBlendFactorType)
     {
-        static const std::array<std::string, util::toIndex(GLType::CullFacesType::Count)> cullFaceTypes{
-            "Back",
-            "Front",
-            "Front and Back"};
-
-        return cullFaceTypes[util::toIndex(pCullFacesType)];
+            case BlendFactorType::Zero :                      return "Zero";
+            case BlendFactorType::One :                       return "One";
+            case BlendFactorType::SourceColour :              return "Source Colour";
+            case BlendFactorType::OneMinusSourceColour :      return "One Minus Source Colour";
+            case BlendFactorType::DestinationColour :         return "Destination Colour";
+            case BlendFactorType::OneMinusDestinationColour : return "One Minus Destination Colour";
+            case BlendFactorType::SourceAlpha :               return "Source Alpha";
+            case BlendFactorType::OneMinusSourceAlpha :       return "One Minus Source Alpha";
+            case BlendFactorType::DestinationAlpha :          return "Destination Alpha";
+            case BlendFactorType::OneMinusDestinationAlpha :  return "One Minus Destination Alpha";
+            case BlendFactorType::ConstantColour :            return "Constant Colour";
+            case BlendFactorType::OneMinusConstantColour :    return "One Minus Constant Colour";
+            case BlendFactorType::ConstantAlpha :             return "Constant Alpha";
+            case BlendFactorType::OneMinusConstantAlpha :     return "One Minus Constant Alpha";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown BlendFactorType requested");
+                return "";
+        }
     }
-    std::string toString(const FrontFaceOrientation &pFrontFaceOrientation)
+    std::string toString(const CullFacesType& pCullFacesType)
     {
-        static const std::array<std::string, util::toIndex(GLType::FrontFaceOrientation::Count)> frontFaceOrientationTypes{
-            "Clockwise",
-            "CounterClockwise"};
-
-        return frontFaceOrientationTypes[util::toIndex(pFrontFaceOrientation)];
+        switch (pCullFacesType)
+        {
+            case CullFacesType::Back :         return "Back";
+            case CullFacesType::Front :        return "Front";
+            case CullFacesType::FrontAndBack : return "Front and Back";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown CullFacesType requested");
+                return "";
     }
-    std::string toString(const PolygonMode &pPolygonMode)
+    }
+    std::string toString(const FrontFaceOrientation& pFrontFaceOrientation)
     {
-        static const std::array<std::string, util::toIndex(PolygonMode::Count)> polygonModeTypes{
-            "Point",
-            "Line",
-            "Fill"};
-
-        return polygonModeTypes[util::toIndex(pPolygonMode)];
+        switch (pFrontFaceOrientation)
+        {
+            case FrontFaceOrientation::Clockwise :        return "Clockwise";
+            case FrontFaceOrientation::CounterClockwise : return "CounterClockwise";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown FrontFaceOrientation requested");
+                return "";
     }
-    std::string toString(const PrimitiveMode &pPrimitiveMode)
+    }
+    std::string toString(const PolygonMode& pPolygonMode)
     {
-        static const std::array<std::string, util::toIndex(PrimitiveMode::Count)> primitiveModeTypes{
-            "Points"
-            "LineStrip"
-            "LineLoop"
-            "Lines"
-            "LineStripAdjacency"
-            "LinesAdjacency"
-            "TriangleStrip"
-            "TriangleFan"
-            "Triangles"
-            "TriangleStripAdjacency"
-            "TrianglesAdjacency"
-            "Patches"};
-
-        return primitiveModeTypes[util::toIndex(pPrimitiveMode)];
+        switch (pPolygonMode)
+        {
+            case PolygonMode::Point : return "Point";
+            case PolygonMode::Line :  return "Line";
+            case PolygonMode::Fill :  return "Fill";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown PolygonMode requested");
+                return "";
     }
-    std::string toString(const FramebufferTarget &pFramebufferTarget)
+    }
+    std::string toString(const PrimitiveMode& pPrimitiveMode)
     {
-        static const std::array<std::string, util::toIndex(FramebufferTarget::Count)> FrameBufferTargetTypes{
-            "DrawFramebuffer",
-            "ReadFramebuffer",
-            "Framebuffer"};
-
-        return FrameBufferTargetTypes[util::toIndex(pFramebufferTarget)];
+        switch (pPrimitiveMode)
+        {;
+            case PrimitiveMode::Points:                 return "Points";
+            case PrimitiveMode::LineStrip:              return "LineStrip";
+            case PrimitiveMode::LineLoop:               return "LineLoop";
+            case PrimitiveMode::Lines:                  return "Lines";
+            case PrimitiveMode::LineStripAdjacency:     return "LineStripAdjacency";
+            case PrimitiveMode::LinesAdjacency:         return "LinesAdjacency";
+            case PrimitiveMode::TriangleStrip:          return "TriangleStrip";
+            case PrimitiveMode::TriangleFan:            return "TriangleFan";
+            case PrimitiveMode::Triangles:              return "Triangles";
+            case PrimitiveMode::TriangleStripAdjacency: return "TriangleStripAdjacency";
+            case PrimitiveMode::TrianglesAdjacency:     return "TrianglesAdjacency";
+            case PrimitiveMode::Patches:                return "Patches";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown PrimitiveMode requested");
+                return "";
+        }
     }
-    std::string toString(const ErrorType &pErrorType)
+    std::string toString(const FramebufferTarget& pFramebufferTarget)
+    {
+        switch (pFramebufferTarget)
+        {
+            case FramebufferTarget::DrawFramebuffer: return "DrawFramebuffer";
+            case FramebufferTarget::ReadFramebuffer: return "ReadFramebuffer";
+            case FramebufferTarget::Framebuffer:     return "Framebuffer";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown FramebufferTarget requested");
+                return "";
+    }
+    }
+    std::string ToDefaultErrorMessage(const ErrorType &pErrorType)
     {
         // Messages from https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetError.xhtml
-        static const std::array<std::string, util::toIndex(ErrorType::Count)> DefaultErrorMessages{
-            "GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag",
-            "GL_INVALID_VALUE: A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag",
-            "GL_INVALID_OPERATION: The specified operation is not allowed in the current state. The offending command is ignored and has no other side effect than to set the error flag",
-            "GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag",
-            "GL_OUT_OF_MEMORY: There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded",
-            "GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow",
-            "GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow"};
-
-        return DefaultErrorMessages[util::toIndex(pErrorType)];
+        switch (pErrorType)
+        {
+            case ErrorType::InvalidEnum:                 return "GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag";
+            case ErrorType::InvalidValue:                return "GL_INVALID_VALUE: A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag";
+            case ErrorType::InvalidOperation:            return "GL_INVALID_OPERATION: The specified operation is not allowed in the current state.The offending command is ignored andhas no other side effect than to set the error flag";
+            case ErrorType::InvalidFramebufferOperation: return "GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag";
+            case ErrorType::OutOfMemory:                 return "GL_OUT_OF_MEMORY: There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded";
+            case ErrorType::StackUnderflow:              return "GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow";
+            case ErrorType::StackOverflow:               return "GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown ErrorType requested");
+                return 0;
+        }
     }
 
     int convert(const DataType& pDataType)
@@ -1516,7 +1598,6 @@ namespace GLType
             case DataType::Usampler2DMSArray :    return GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY;
             case DataType::UsamplerBuffer :       return GL_UNSIGNED_INT_SAMPLER_BUFFER;
             case DataType::Usampler2DRect :       return GL_UNSIGNED_INT_SAMPLER_2D_RECT;
-            case DataType::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown DataType requested");
                 return 0;
@@ -1526,20 +1607,20 @@ namespace GLType
     {
         switch (pBufferType)
         {
-            case BufferType::ArrayBuffer :            return GL_ARRAY_BUFFER;
-            case BufferType::AtomicCounterBuffer :    return GL_ATOMIC_COUNTER_BUFFER;
-            case BufferType::CopyReadBuffer :         return GL_COPY_READ_BUFFER;
-            case BufferType::CopyWriteBuffer :        return GL_COPY_WRITE_BUFFER;
-            case BufferType::DispatchIndirectBuffer : return GL_DISPATCH_INDIRECT_BUFFER;
-            case BufferType::DrawIndirectBuffer :     return GL_DRAW_INDIRECT_BUFFER;
-            case BufferType::ElementArrayBuffer :     return GL_ELEMENT_ARRAY_BUFFER;
-            case BufferType::PixelPackBuffer :        return GL_PIXEL_PACK_BUFFER;
-            case BufferType::PixelUnpackBuffer :      return GL_PIXEL_UNPACK_BUFFER;
-            case BufferType::QueryBuffer :            return GL_QUERY_BUFFER;
-            case BufferType::ShaderStorageBuffer :    return GL_SHADER_STORAGE_BUFFER;
-            case BufferType::TextureBuffer :          return GL_TEXTURE_BUFFER;
-            case BufferType::TransformFeedbackBuffer :return GL_TRANSFORM_FEEDBACK_BUFFER;
-            case BufferType::UniformBuffer :          return GL_UNIFORM_BUFFER;
+            case BufferType::ArrayBuffer :             return GL_ARRAY_BUFFER;
+            case BufferType::AtomicCounterBuffer :     return GL_ATOMIC_COUNTER_BUFFER;
+            case BufferType::CopyReadBuffer :          return GL_COPY_READ_BUFFER;
+            case BufferType::CopyWriteBuffer :         return GL_COPY_WRITE_BUFFER;
+            case BufferType::DispatchIndirectBuffer :  return GL_DISPATCH_INDIRECT_BUFFER;
+            case BufferType::DrawIndirectBuffer :      return GL_DRAW_INDIRECT_BUFFER;
+            case BufferType::ElementArrayBuffer :      return GL_ELEMENT_ARRAY_BUFFER;
+            case BufferType::PixelPackBuffer :         return GL_PIXEL_PACK_BUFFER;
+            case BufferType::PixelUnpackBuffer :       return GL_PIXEL_UNPACK_BUFFER;
+            case BufferType::QueryBuffer :             return GL_QUERY_BUFFER;
+            case BufferType::ShaderStorageBuffer :     return GL_SHADER_STORAGE_BUFFER;
+            case BufferType::TextureBuffer :           return GL_TEXTURE_BUFFER;
+            case BufferType::TransformFeedbackBuffer : return GL_TRANSFORM_FEEDBACK_BUFFER;
+            case BufferType::UniformBuffer :           return GL_UNIFORM_BUFFER;
             default:
                 ZEPHYR_ASSERT(false, "Unknown BufferType requested");
                 return 0;
@@ -1549,10 +1630,9 @@ namespace GLType
     {
         switch (pShaderProgramType)
         {
-            case ShaderProgramType::Vertex:     return GL_VERTEX_SHADER;
-            case ShaderProgramType::Geometry:   return GL_GEOMETRY_SHADER;
-            case ShaderProgramType::Fragment:   return GL_FRAGMENT_SHADER;
-            case ShaderProgramType::Count:
+            case ShaderProgramType::Vertex:   return GL_VERTEX_SHADER;
+            case ShaderProgramType::Geometry: return GL_GEOMETRY_SHADER;
+            case ShaderProgramType::Fragment: return GL_FRAGMENT_SHADER;
             default:
                 ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
                 return 0;
@@ -1579,8 +1659,6 @@ namespace GLType
             case ShaderResourceType::TessEvaluationSubroutineUniform: return GL_TESS_EVALUATION_SUBROUTINE_UNIFORM;
             case ShaderResourceType::TransformFeedbackBuffer:         return GL_TRANSFORM_FEEDBACK_BUFFER;
             case ShaderResourceType::TransformFeedbackVarying:        return GL_TRANSFORM_FEEDBACK_VARYING;
-
-            case ShaderResourceType::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown ShaderResourceType requested");
                 return 0;
@@ -1620,8 +1698,6 @@ namespace GLType
             case ShaderResourceProperty::LocationComponent:                return GL_LOCATION_COMPONENT;
             case ShaderResourceProperty::TransformFeedbackBufferIndex:     return GL_TRANSFORM_FEEDBACK_BUFFER_INDEX;
             case ShaderResourceProperty::TransformFeedbackBufferStride:    return GL_TRANSFORM_FEEDBACK_BUFFER_STRIDE;
-
-            case ShaderResourceProperty::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown ShaderResourceProperty requested");
                 return 0;
@@ -1639,8 +1715,6 @@ namespace GLType
 	        case DepthTestType::Greater:	  return GL_GREATER;
 	        case DepthTestType::NotEqual:	  return GL_NOTEQUAL;
 	        case DepthTestType::GreaterEqual: return GL_GEQUAL;
-
-            case DepthTestType::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown DepthTestType requested");
                 return 0;
@@ -1664,8 +1738,6 @@ namespace GLType
     		case BlendFactorType::OneMinusConstantColour: 	 return GL_ONE_MINUS_CONSTANT_COLOR;
     		case BlendFactorType::ConstantAlpha:		 	 return GL_CONSTANT_ALPHA;
     		case BlendFactorType::OneMinusConstantAlpha: 	 return GL_ONE_MINUS_CONSTANT_ALPHA;
-
-            case BlendFactorType::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown BlendFactorType requested");
                 return 0;
@@ -1678,8 +1750,6 @@ namespace GLType
             case CullFacesType::Back:         return GL_BACK;
             case CullFacesType::Front:        return GL_FRONT;
             case CullFacesType::FrontAndBack: return GL_FRONT_AND_BACK;
-
-            case CullFacesType::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown CullFacesType requested");
                 return 0;
@@ -1691,8 +1761,6 @@ namespace GLType
         {
             case FrontFaceOrientation::Clockwise:        return GL_CW;
             case FrontFaceOrientation::CounterClockwise: return GL_CCW;
-
-            case FrontFaceOrientation::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown FrontFaceOrientation requested");
                 return 0;
@@ -1705,7 +1773,6 @@ namespace GLType
             case PolygonMode::Point: return GL_POINT;
             case PolygonMode::Line:  return GL_LINE;
             case PolygonMode::Fill:  return GL_FILL;
-            case PolygonMode::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown PolygonMode requested");
                 return 0;
@@ -1727,7 +1794,6 @@ namespace GLType
             case PrimitiveMode::TriangleStripAdjacency: return GL_TRIANGLE_STRIP_ADJACENCY;
             case PrimitiveMode::TrianglesAdjacency:     return GL_TRIANGLES_ADJACENCY;
             case PrimitiveMode::Patches:                return GL_PATCHES;
-            case PrimitiveMode::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown PrimitiveMode requested");
                 return 0;
@@ -1740,12 +1806,114 @@ namespace GLType
             case FramebufferTarget::DrawFramebuffer: return GL_DRAW_FRAMEBUFFER;
             case FramebufferTarget::ReadFramebuffer: return GL_READ_FRAMEBUFFER;
             case FramebufferTarget::Framebuffer:     return GL_FRAMEBUFFER;
-            case FramebufferTarget::Count:
             default:
                 ZEPHYR_ASSERT(false, "Unknown FramebufferTarget requested");
                 return 0;
         }
     }
+}
+
+std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const GLType::Function& pCallingFunction, const GLType::ErrorType& pErrorType) const
+{
+    const static std::unordered_map<GLType::Function, std::unordered_map<GLType::ErrorType, std::vector<std::string>>> functionErrorTypeMapping =
+    {{
+        {GLType::Function::UniformBlockBinding,
+            {
+                {GLType::ErrorType::InvalidValue, {"uniformBlockIndex is not an active uniform block index of program",
+                                                   "uniformBlockBinding is greater than or equal to the value of GL_MAX_UNIFORM_BUFFER_BINDINGS",
+                                                   "program is not the name of a program object generated by the GL"}}
+            }
+        },
+        {GLType::Function::Viewport,
+            {
+                {GLType::ErrorType::InvalidValue, {"Either width or height is negative"}}
+            }
+        },
+        {GLType::Function::DrawElements,
+            {
+                {GLType::ErrorType::InvalidEnum,     {"Mode is not an accepted value"}},
+                {GLType::ErrorType::InvalidValue,    {"Count is negative"}},
+                {GLType::ErrorType::InvalidOperation,{"Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object",
+                                                      "Non-zero buffer object name is bound to an enabled array or the element array and the buffer object's data store is currently mapped"}}
+            }
+        },
+        {GLType::Function::DrawArrays,
+            {
+                {GLType::ErrorType::InvalidEnum,      {"Mode is not an accepted value"}},
+                {GLType::ErrorType::InvalidValue,     {"Count is negative"}},
+                {GLType::ErrorType::InvalidOperation, {"Non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped",
+                                                       "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object"}}
+            }
+        },
+        {GLType::Function::BindFramebuffer,
+            {
+                {GLType::ErrorType::InvalidEnum,      {"Target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER"}},
+                {GLType::ErrorType::InvalidOperation, {"Framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers"}}
+            }
+        },
+        {GLType::Function::CreateShader,
+            {
+                { GLType::ErrorType::InvalidEnum, {"pShaderType is not an accepted value"}}
+            }
+        },
+        {GLType::Function::CreateShader,
+            {
+                { GLType::ErrorType::InvalidValue,     {"pShader is not a value generated by OpenGL", "Count is less than 0"}},
+                { GLType::ErrorType::InvalidOperation, {"pShader is not a shader object"}}
+            }
+        },
+        {GLType::Function::CompileShader,
+            {
+                { GLType::ErrorType::InvalidValue,     {"pShader is not a value generated by OpenGL"}},
+                { GLType::ErrorType::InvalidOperation, {"pShader is not a shader object"}}
+            }
+        },
+        {GLType::Function::AttachShader,
+            {
+                { GLType::ErrorType::InvalidValue,     {"Either program or shader is not a value generated by OpenGL"}},
+                { GLType::ErrorType::InvalidOperation, {"Program is not a program object", "Shader is not a shader object", "Shader is already attached to program"}}
+            }
+        },
+        {GLType::Function::LinkProgram,
+            {
+                { GLType::ErrorType::InvalidValue,     {"Program is not a value generated by OpenGL"}},
+                { GLType::ErrorType::InvalidOperation, {"Program is not a program object", "Program is the currently active program object and transform feedback mode is active"}}
+            }
+        },
+        {GLType::Function::DeleteShader,
+            {
+                { GLType::ErrorType::InvalidValue,     {"Shader is not a value generated by OpenGL"}}
+            }
+        },
+        {GLType::Function::UseProgram,
+            {
+                { GLType::ErrorType::InvalidValue,     {"Program is neither 0 nor a value generated by OpenGL."}},
+                { GLType::ErrorType::InvalidOperation, {"Program is not a program object.", "Program could not be made part of current state.", "Transform feedback mode is active."}}
+            }
+        },
+        {GLType::Function::BindBuffer,
+            {
+                { GLType::ErrorType::InvalidEnum,  {"Target is not one of the allowable values."}},
+                { GLType::ErrorType::InvalidValue, {"Buffer is not a name previously returned from a call to glGenBuffers."}}
+            }
+        },
+        {GLType::Function::DeleteBuffer,
+            {
+                { GLType::ErrorType::InvalidValue, {"Generated if mHandle is negative."}}
+            }
+        }
+    }};
+
+    auto functionIt = functionErrorTypeMapping.find(pCallingFunction);
+    if (functionIt != functionErrorTypeMapping.end())
+    {
+        auto functionErrorMessageIt = functionIt->second.find(pErrorType);
+        if (functionErrorMessageIt != functionIt->second.end())
+        {
+            return functionErrorMessageIt->second;
+        }
+    }
+    return std::nullopt;
 }
 
 std::string GLState::getErrorMessage() const
@@ -1756,11 +1924,11 @@ std::string GLState::getErrorMessage() const
     {
         switch (glError)
         {
-        case GL_INVALID_OPERATION:             errors.insert(GLType::ErrorType::InvalidOperation);             break;
-        case GL_INVALID_ENUM:                  errors.insert(GLType::ErrorType::InvalidEnum);                  break;
-        case GL_INVALID_VALUE:                 errors.insert(GLType::ErrorType::InvalidValue);                 break;
-        case GL_OUT_OF_MEMORY:                 errors.insert(GLType::ErrorType::OutOfMemory);                  break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION: errors.insert(GLType::ErrorType::InvalidFramebufferOperation);  break;
+            case GL_INVALID_OPERATION:             errors.insert(GLType::ErrorType::InvalidOperation);             break;
+            case GL_INVALID_ENUM:                  errors.insert(GLType::ErrorType::InvalidEnum);                  break;
+            case GL_INVALID_VALUE:                 errors.insert(GLType::ErrorType::InvalidValue);                 break;
+            case GL_OUT_OF_MEMORY:                 errors.insert(GLType::ErrorType::OutOfMemory);                  break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: errors.insert(GLType::ErrorType::InvalidFramebufferOperation);  break;
         }
 
         glError = glGetError();
@@ -1771,91 +1939,24 @@ std::string GLState::getErrorMessage() const
 
     std::string errorString = "Found OpenGL error(s):";
     for (const auto& error : errors)
-        errorString += "\n" + GLType::toString(error);
+        errorString += "\n" + GLType::ToDefaultErrorMessage(error);
 
     return errorString;
 }
+
 std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction) const
 {
-    const static std::array<std::unordered_map<GLType::ErrorType, std::vector<std::string>>, util::toIndex(GLType::Function::Count)> functionErrorTypeMapping =
-    {{
-        { // UniformBlockBinding
-            { GLType::ErrorType::InvalidValue, {
-                "uniformBlockIndex is not an active uniform block index of program"
-                , "uniformBlockBinding is greater than or equal to the value of GL_MAX_UNIFORM_BUFFER_BINDINGS"
-                , "program is not the name of a program object generated by the GL"
-            }}
-        },
-        { // Viewport
-            { GLType::ErrorType::InvalidValue,     { "Either width or height is negative" }}
-        },
-        { // DrawElements
-            { GLType::ErrorType::InvalidEnum,      {"Mode is not an accepted value"}},
-            { GLType::ErrorType::InvalidValue,     {"Count is negative"}},
-            { GLType::ErrorType::InvalidOperation, {
-                "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object",
-                "Non-zero buffer object name is bound to an enabled array or the element array and the buffer object's data store is currently mapped"
-            }}
-        },
-        { // DrawArrays
-            { GLType::ErrorType::InvalidEnum,      { "Mode is not an accepted value" }},
-            { GLType::ErrorType::InvalidValue,     {"Count is negative" }},
-            { GLType::ErrorType::InvalidOperation, {
-                "Non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped",
-                "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object"
-            }}
-        },
-        { // BindFramebuffer
-            { GLType::ErrorType::InvalidEnum,       { "Target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER" }},
-            { GLType::ErrorType::InvalidOperation,  { "Framebuffer is not zero or the name of a framebuffer previously returned from a call to glGenFramebuffers" }}
-        },
-        { // CreateShader
-            { GLType::ErrorType::InvalidEnum,       { "pShaderType is not an accepted value" }}
-        },
-        { // ShaderSource
-            { GLType::ErrorType::InvalidValue,      { "pShader is not a value generated by OpenGL", "Count is less than 0" }},
-            { GLType::ErrorType::InvalidOperation,  { "pShader is not a shader object" }}
-        },
-        { // CompileShader
-            { GLType::ErrorType::InvalidValue,      { "pShader is not a value generated by OpenGL" }},
-            { GLType::ErrorType::InvalidOperation,  { "pShader is not a shader object" }}
-        },
-        {}, // CreateProgram
-        { // AttachShader
-            { GLType::ErrorType::InvalidValue,      { "Either program or shader is not a value generated by OpenGL" }},
-            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object", "Shader is not a shader object", "Shader is already attached to program" }}
-        },
-        { // LinkProgram
-            { GLType::ErrorType::InvalidValue,      { "Program is not a value generated by OpenGL" }},
-            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object", "Program is the currently active program object and transform feedback mode is active" }}
-        },
-        { // DeleteShader
-            { GLType::ErrorType::InvalidValue,      { "Shader is not a value generated by OpenGL" }}
-        },
-        { // UseProgram
-            { GLType::ErrorType::InvalidValue,      { "Program is neither 0 nor a value generated by OpenGL." }},
-            { GLType::ErrorType::InvalidOperation,  { "Program is not a program object.", "Program could not be made part of current state.", "Transform feedback mode is active." }}
-        },
-        { // BindBuffer
-            { GLType::ErrorType::InvalidEnum,      { "Target is not one of the allowable values." }},
-            { GLType::ErrorType::InvalidValue,     { "Buffer is not a name previously returned from a call to glGenBuffers." }}
-        },
-        { // DeleteBuffer
-            { GLType::ErrorType::InvalidValue,     { "Generated if mHandle is negative." }}
-        },
-    }};
-
     std::set<GLType::ErrorType> errors;
     GLenum glError(glGetError());
     while (glError != GL_NO_ERROR)
     {
         switch (glError)
         {
-        case GL_INVALID_OPERATION:             errors.insert(GLType::ErrorType::InvalidOperation);             break;
-        case GL_INVALID_ENUM:                  errors.insert(GLType::ErrorType::InvalidEnum);                  break;
-        case GL_INVALID_VALUE:                 errors.insert(GLType::ErrorType::InvalidValue);                 break;
-        case GL_OUT_OF_MEMORY:                 errors.insert(GLType::ErrorType::OutOfMemory);                  break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION: errors.insert(GLType::ErrorType::InvalidFramebufferOperation);  break;
+            case GL_INVALID_OPERATION:             errors.insert(GLType::ErrorType::InvalidOperation);             break;
+            case GL_INVALID_ENUM:                  errors.insert(GLType::ErrorType::InvalidEnum);                  break;
+            case GL_INVALID_VALUE:                 errors.insert(GLType::ErrorType::InvalidValue);                 break;
+            case GL_OUT_OF_MEMORY:                 errors.insert(GLType::ErrorType::OutOfMemory);                  break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: errors.insert(GLType::ErrorType::InvalidFramebufferOperation);  break;
         }
 
         glError = glGetError();
@@ -1867,20 +1968,15 @@ std::string GLState::getErrorMessage(const GLType::Function& pCallingFunction) c
     std::string errorString = "Found OpenGL error(s) using function gl" + GLType::toString(pCallingFunction) + ":";
     for (const auto& error : errors)
     {
-        const auto& errorMessageOverrides = functionErrorTypeMapping[util::toIndex(pCallingFunction)];
-        const auto errorTypeIterator = errorMessageOverrides.find(error);
+        auto overrideMessages = GetErrorMessagesOverride(pCallingFunction, error);
 
-        if (errorTypeIterator != errorMessageOverrides.end())
+        if (overrideMessages.has_value())
         {
-            for (const auto &errorMessage : errorTypeIterator->second)
-            {
-                errorString += "\n" + errorMessage;
-            }
+            for (const auto& message : overrideMessages.value())
+                errorString += "\n" + message;
         }
         else
-        {// If functionErrorTypeMapping doesn't override the ErrorType, use the default toString
-            errorString += "\n" + GLType::toString(error);
-        }
+            errorString += "\n" + GLType::ToDefaultErrorMessage(error);
     }
     return errorString;
 }
