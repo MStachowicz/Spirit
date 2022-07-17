@@ -1,0 +1,25 @@
+﻿---
+BasedOnStyle: Google
+
+# Pointer designation always next to the type they pertain to.
+DerivePointerAlignment: 'false'
+PointerAlignment: Left
+
+# No limit on characters per line.
+ColumnLimit: '0'
+
+# Dont use tabs, use 4 spaces instead. Tabs vary across OS.
+UseTab: Never
+TabWidth: '1'
+IndentWidth: '4'
+SpacesBeforeTrailingComments: '1'
+
+# Always indent after braces.
+BreakBeforeBraces: Allman
+NamespaceIndentation: All
+
+AlignConsecutiveAssignments: 'true'
+BreakConstructorInitializers: BeforeComma
+AllowShortCaseLabelsOnASingleLine: 'true'
+
+...
