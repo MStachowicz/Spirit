@@ -471,7 +471,7 @@ void GLState::UseProgram(const unsigned int& pShaderProgramHandle)
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteShader));
 }
 
-void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
+void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
 {
     UniformBlockBindingPoint* bindingPoint = nullptr;
 
@@ -484,19 +484,15 @@ void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
         // If there is no binding point for this UniformBlock create it and its UBO.
         // This allows the uniform variables inside the block to be set using setUniformBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
-        mUniformBlockBindingPoints.push_back(UniformBlockBindingPoint());
+        mUniformBlockBindingPoints.push_back(UniformBlockBindingPoint(*this));
         bindingPoint = &mUniformBlockBindingPoints.back();
         bindingPoint->mInstances++;
         bindingPoint->mBindingPoint  = static_cast<unsigned int>(mUniformBlockBindingPoints.size() - 1);
         bindingPoint->mName          = pUniformBlock.mName;
         bindingPoint->mVariables     = pUniformBlock.mVariables;
 
-        bindingPoint->mUBO.generate();
-        bindingPoint->mUBO.bind();
-        // Reserve the size of the UniformBlock in the GPU memory
-        auto dataSize = pUniformBlock.mBufferDataSize;
-        glBufferData(GL_UNIFORM_BUFFER, dataSize, NULL, GL_STATIC_DRAW);
-        glBindBufferRange(GL_UNIFORM_BUFFER, bindingPoint->mBindingPoint, bindingPoint->mUBO.getHandle(), 0, dataSize);
+        bindingPoint->mUBO.Bind(*this);
+        bindingPoint->mUBO.PushData(*this, pUniformBlock.mBufferDataSize, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -504,17 +500,17 @@ void GLState::bindUniformBlock(GLData::UniformBlock& pUniformBlock)
         // created UniformBlockBufferBacking meaning the blocks share the GPU memory.
         bindingPoint = &(*it);
         bindingPoint->mInstances++;
-        bindingPoint->mUBO.bind();
+        bindingPoint->mUBO.Bind(*this);
     }
 
-    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for Uniform Block '{}'", pUniformBlock.mName);
+    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for GLSL Uniform Block '{}'", pUniformBlock.mName);
     pUniformBlock.mBindingPoint = bindingPoint->mBindingPoint;
 
     glUniformBlockBinding(pUniformBlock.mParentShaderHandle, pUniformBlock.mBlockIndex, bindingPoint->mBindingPoint);
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::UniformBlockBinding));
 }
 
-void GLState::bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock)
+void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock)
 {
     ShaderStorageBlockBindingPoint* bindingPoint = nullptr;
 
@@ -527,19 +523,16 @@ void GLState::bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBl
         // If there is no binding point for this ShaderBufferBlock create it and its UBO.
         // This allows the ShaderBufferBlockVariable's inside the block to be set using setShaderStorageBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
-        mShaderStorageBlockBindingPoints.push_back(ShaderStorageBlockBindingPoint());
+        mShaderStorageBlockBindingPoints.push_back(ShaderStorageBlockBindingPoint(*this));
         bindingPoint = &mShaderStorageBlockBindingPoints.back();
         bindingPoint->mInstances++;
         bindingPoint->mBindingPoint  = static_cast<unsigned int>(mShaderStorageBlockBindingPoints.size() - 1);
         bindingPoint->mName          = pShaderBufferBlock.mName;
         bindingPoint->mVariables     = pShaderBufferBlock.mVariables;
 
-        bindingPoint->mSSBO.generate();
-        bindingPoint->mSSBO.bind();
         // Reserve the size of the ShaderStorageBlock in the GPU memory
-        const auto dataSize = pShaderBufferBlock.mBufferDataSize;
-        glBufferData(GL_SHADER_STORAGE_BUFFER, dataSize, NULL, GL_STATIC_DRAW);
-        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, bindingPoint->mBindingPoint, bindingPoint->mSSBO.getHandle(), 0, dataSize);
+        bindingPoint->mSSBO.Bind(*this);
+        bindingPoint->mSSBO.PushData(*this, pShaderBufferBlock.mBufferDataSize, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -547,7 +540,7 @@ void GLState::bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBl
         // created ShaderStorageBlockBindingPoint meaning the blocks share the GPU memory.
         bindingPoint = &(*it);
         bindingPoint->mInstances++;
-        bindingPoint->mSSBO.bind();
+        bindingPoint->mSSBO.Bind(*this);
     }
 
     ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderBufferBlock.mName);
@@ -850,90 +843,62 @@ namespace GLData
         glDeleteVertexArrays(1, &mHandle);
         mInitialised = false;
     }
-    void VBO::generate()
-    {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VBO")
-        glGenBuffers(1, &mHandle);
-        mInitialised = true;
-    }
-    void VBO::bind() const
-    {
-        ZEPHYR_ASSERT(mInitialised, "VBO has not been generated before bind, call generate before bind");
-        glBindBuffer(GL_ARRAY_BUFFER, mHandle);
-    }
-    void VBO::release()
-    {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VBO");
-        glDeleteBuffers(1, &mHandle);
-        mInitialised = false;
-    }
-    void VBO::pushData(const std::vector<float>& pData, const int& attributeIndex, const int& attributeSize)
-    {
-        ZEPHYR_ASSERT(mInitialised, "Initialise VBO before calling pushData.");
 
+    Buffer::Buffer(const GLType::BufferType& pBufferType, const GLState& pGLState)
+        : mBufferType(pBufferType)
+        , mHandle(pGLState.GenBuffers())
+        , mSize(0)
+    {}
+
+    void Buffer::Bind(const GLState& pGLState) const
+    {
+        pGLState.BindBuffer(mBufferType, mHandle);
+    }
+
+    void Buffer::Free(const GLState& pGLState)
+    {
+        pGLState.DeleteBuffer(mHandle);
+    }
+
+    VBO::VBO(const GLState& pGLState) : Buffer(GLType::BufferType::ArrayBuffer, pGLState)
+    {
+    }
+    void VBO::PushData(const GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize)
+    {
         glBufferData(GL_ARRAY_BUFFER, pData.size() * sizeof(float), &pData.front(), GL_STATIC_DRAW);
+        glVertexAttribPointer(pAttributeIndex, pAttributeSize, GL_FLOAT, GL_FALSE, pAttributeSize * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(pAttributeIndex);
+    }
 
-        // const GLint attributeIndex = static_cast<GLint>(Shader::getAttributeLocation(pAttribute));
-        // const GLint attributeComponentCount = static_cast<GLint>(Shader::getAttributeComponentCount(pAttribute));
-        glVertexAttribPointer(attributeIndex, attributeSize, GL_FLOAT, GL_FALSE, attributeSize * sizeof(float), (void *)0);
-        glEnableVertexAttribArray(attributeIndex);
-    }
-    void EBO::generate()
+    EBO::EBO(const GLState& pGLState) : Buffer(GLType::BufferType::ElementArrayBuffer, pGLState)
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated EBO")
-        glGenBuffers(1, &mHandle);
-        mInitialised = true;
     }
-    void EBO::bind() const
+    void EBO::PushData(const GLState &pGLState, const std::vector<int>& pData)
     {
-        ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before bind, call generate before bind");
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pData.size() * sizeof(int), &pData.front(), GL_STATIC_DRAW);
     }
-    void EBO::pushData(const std::vector<int>& pIndexData)
+
+
+    UBO::UBO(const GLState& pGLState) : Buffer(GLType::BufferType::UniformBuffer, pGLState)
     {
-        ZEPHYR_ASSERT(mInitialised, "EBO has not been generated before pushData, call generate before pushData");
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndexData.size() * sizeof(int), &pIndexData.front(), GL_STATIC_DRAW);
     }
-    void EBO::release()
+    void UBO::PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised UBO");
-        glDeleteBuffers(1, &mHandle);
-        mInitialised = false;
+        // Reserve the size of the GLSL UniformBlock in the GPU memory using glBufferData supplied NULL
+        glBufferData(GL_UNIFORM_BUFFER, pBufferSizeBytes, NULL, GL_STATIC_DRAW);
+        glBindBufferRange(GL_UNIFORM_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
     }
-    void UBO::generate()
+
+
+    SSBO::SSBO(const GLState& pGLState) : Buffer(GLType::BufferType::ShaderStorageBuffer, pGLState)
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated UBO")
-        glGenBuffers(1, &mHandle);
-        mInitialised = true;
     }
-    void UBO::bind() const
+    void SSBO::PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-        ZEPHYR_ASSERT(mInitialised, "UBO has not been generated before bind, call generate before bind");
-        glBindBuffer(GL_UNIFORM_BUFFER, mHandle);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, pBufferSizeBytes, NULL, GL_STATIC_DRAW);
+        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
     }
-    void UBO::release()
-    {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised UBO");
-        glDeleteBuffers(1, &mHandle);
-        mInitialised = false;
-    }
-    void SSBO::generate()
-    {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated SSBO")
-        glGenBuffers(1, &mHandle);
-        mInitialised = true;
-    }
-    void SSBO::bind() const
-    {
-        ZEPHYR_ASSERT(mInitialised, "SSBO has not been generated before bind, call generate before bind");
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mHandle);
-    }
-    void SSBO::release()
-    {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised SSBO");
-        glDeleteBuffers(1, &mHandle);
-        mInitialised = false;
-    }
+
     void RBO::generate()
     {
         ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated RBO")

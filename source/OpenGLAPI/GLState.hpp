@@ -290,46 +290,46 @@ namespace GLData
 		bool mInitialised 		= false;
 		unsigned int mHandle 	= 0;
 	};
+
+    // Stores an array of memory allocated using OpenGL context on the GPU.
+    struct Buffer
+    {
+        void Bind(const GLState& pGLState) const;
+        void Free(const GLState& pGLState);
+
+        const GLType::BufferType mBufferType;
+        const unsigned int mHandle;
+
+    protected:
+        Buffer(const GLType::BufferType& pBufferType, const GLState& pGLState);
+    private:
+        size_t mSize; // The size of the buffer in Bytes
+    };
+
     // Vertex Buffer Object
     // Buffer storing per-vertex array data.
-    struct VBO
+    struct VBO : public Buffer
 	{
-		void generate();
-		void bind() const;
-        void pushData(const std::vector<float>& pData, const int& attributeIndex, const int& attributeSize);
-		void release();
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
+        VBO(const GLState& pGLState);
+        void PushData(const GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize);
 	};
     // Element Buffer Object
     // Buffer storing vertex index data defining which order to draw vertex data stored in a VBO.
     // EBO's are used only if a mesh uses Indexed drawing.
-	struct EBO
+	struct EBO : public Buffer
 	{
-		void generate();
-		void bind() const;
-		void release();
-        void pushData(const std::vector<int>& pIndexData);
-		unsigned int getHandle() { return mHandle; };
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
+        EBO(const GLState& pGLState);
+        void PushData(const GLState& pGLState, const std::vector<int>& pData);
 	};
     // Uniform Buffer Object
     // A Buffer Object that is used to store uniform data for a shader program. They can be used to share
     // uniforms between different programs, as well as quickly change between sets of uniforms for the same program object.
     // Used to provide buffer-backed storage for uniforms.
     // https://www.khronos.org/opengl/wiki/Uniform_Buffer_Object
-    struct UBO
+    struct UBO : public Buffer
     {
-		void generate();
-		void bind() const;
-		void release();
-		unsigned int getHandle() const { return mHandle; };
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
+        UBO(const GLState& pGLState);
+        void PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
     };
     // A Shader Storage block Object (SSBO)
     // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
@@ -340,16 +340,12 @@ namespace GLData
     // The actual size of the array, based on the range of the buffer bound, can be queried at runtime in the shader using the length function on the unbounded array variable.
     // SSBO access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
     // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
-    struct SSBO
+    struct SSBO : public Buffer
     {
-		void generate();
-		void bind() const;
-		void release();
-		unsigned int getHandle() const { return mHandle; };
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
+        SSBO(const GLState& pGLState);
+        void PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
     };
+
     // OpenGL Texture object.
     // Represents a texture pushed to the GPU.
     struct Texture
@@ -627,14 +623,14 @@ public:
     GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const;
     // Assign a binding point to a UniformBlock.
     // This makes the UniformBlock buffer-backed allowing UniformVariables belonging to the block to be set using setUniformBlockVariable.
-    void bindUniformBlock(GLData::UniformBlock& pUniformBlock);
+    void RegisterUniformBlock(GLData::UniformBlock& pUniformBlock);
 
     int getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle) const;
     GLData::ShaderStorageBlock getShaderStorageBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockIndex) const;
     GLData::ShaderStorageBlockVariable getShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockVariableIndex) const;
     // Assign a binding point to a ShaderStorageBlock
     // This makes the ShaderStorageBlock buffer-backed allowing variables belonging to the block to be set using setBufferBlockVariable.
-    void bindShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock);
+    void RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock);
 
     void setUniform(const GLData::UniformVariable& pVariable, const bool& pValue)      const;
     void setUniform(const GLData::UniformVariable& pVariable, const int& pValue)       const;
@@ -659,7 +655,7 @@ public:
 
             if (foundVariable != std::end(bindingPoint.mVariables))
             {
-                bindingPoint.mUBO.bind();
+                bindingPoint.mUBO.Bind(*this);
                 setBlockUniform(*foundVariable, pValue);
                 return;
             }
@@ -681,7 +677,7 @@ public:
 
             if (foundVariable != std::end(bindingPoint.mVariables))
             {
-                bindingPoint.mSSBO.bind();
+                bindingPoint.mSSBO.Bind(*this);
                 setShaderBlockVariable(*foundVariable, pValue);
                 return;
             }
@@ -717,6 +713,8 @@ private:
     // The remaining functions and members are helpers and not regular OpenGL parts
     struct UniformBlockBindingPoint
     {
+        UniformBlockBindingPoint(GLState &pGLState) : mUBO(pGLState), mName(""), mInstances(0), mBindingPoint(0) {}
+
         GLData::UBO mUBO;       // The buffer for all the data used by all the UniformBlocks bound to this point.
         std::string mName = ""; // Name of the UniformBlock instances sharing this buffer.
         size_t mInstances;      // The number of UniformBlock instances using this buffer.
@@ -727,8 +725,10 @@ private:
 
     struct ShaderStorageBlockBindingPoint
     {
-        GLData::SSBO mSSBO;      // The buffer for all the data used by all the ShaderStorageBlock bound to this point.
-        std::string mName = ""; // Name of the UniformBlock instances sharing this buffer.
+        ShaderStorageBlockBindingPoint(GLState &pGLState) : mSSBO(pGLState), mName(""), mInstances(0), mBindingPoint(0) {}
+
+        GLData::SSBO mSSBO;     // The buffer for all the data used by all the ShaderStorageBlock bound to this point.
+        std::string mName;      // Name of the UniformBlock instances sharing this buffer.
         size_t mInstances;      // The number of UniformBlock instances using this buffer.
         unsigned int mBindingPoint; // The location of this binding point in the parent mShaderStorageBlockBindingPoints vector.
         std::vector<GLData::ShaderStorageBlockVariable> mVariables;  // Copy of all the UniformVariables this buffer... buffers.

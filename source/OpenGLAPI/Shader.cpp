@@ -59,7 +59,7 @@
 			for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
 			{
 				mUniformBlocks.push_back(pGLState.getUniformBlock(mHandle, blockIndex));
-				pGLState.bindUniformBlock(mUniformBlocks.back());
+				pGLState.RegisterUniformBlock(mUniformBlocks.back());
 			}
 		}
 
@@ -81,7 +81,7 @@
 		for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
 		{
 			mShaderBufferBlocks.push_back(pGLState.getShaderStorageBlock(mHandle, blockIndex));
-			pGLState.bindShaderStorageBlock(mShaderBufferBlocks.back());
+			pGLState.RegisterShaderStorageBlock(mShaderBufferBlocks.back());
 		}
 	}
 

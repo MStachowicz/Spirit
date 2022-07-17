@@ -64,7 +64,7 @@ private:
 		DrawMethod mDrawMethod = DrawMethod::Null;
 
 		GLData::VAO mVAO;
-		GLData::EBO mEBO;
+		std::optional<GLData::EBO> mEBO;
 		std::array<std::optional<GLData::VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
 
 		// Composite mesh
