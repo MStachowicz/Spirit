@@ -860,51 +860,64 @@ namespace GLData
         mInitialised = false;
     }
 
-    Buffer::Buffer(const GLType::BufferType& pBufferType, const GLState& pGLState)
-        : mBufferType(pBufferType)
+    Buffer::Buffer(const GLState& pGLState, const GLType::BufferType& pType, const GLType::BufferUsage& pUsage)
+        : mType(pType)
+        , mUsage(pUsage)
         , mHandle(pGLState.GenBuffers())
-        , mSize(0)
+        , mReservedSize(0)
+        , mUsedSize(0)
     {}
 
     void Buffer::Bind(const GLState& pGLState) const
     {
-        pGLState.BindBuffer(mBufferType, mHandle);
+        pGLState.BindBuffer(mType, mHandle);
     }
-
-    void Buffer::Free(const GLState& pGLState)
+    void Buffer::Delete(const GLState& pGLState)
     {
         pGLState.DeleteBuffer(mHandle);
     }
+    void Buffer::Reserve(GLState& pGLState, const size_t& pBytesToReserve)
+    {
+        ZEPHYR_ASSERT(mReservedSize == 0, "Reserving buffer memory on an already reserved buffer.");
+        mReservedSize = pBytesToReserve;
+        pGLState.BufferData(mType, mReservedSize, NULL, mUsage); // Supplying NULL as Data to BufferData reserves the Bytes but does not assign to them.
+    }
 
-    void Buffer::PushData(GLState& pGLState, const GLType::BufferUsage& pBufferUsage, const std::vector<int>& pData)
+    void Buffer::PushData(GLState& pGLState, const std::vector<int>& pData)
     {
-        mSize = pData.size() * sizeof(int);
-        mBufferUsage = pBufferUsage;
-        pGLState.BufferData(mBufferType, mSize, &pData.front(), mBufferUsage);
+        mUsedSize += pData.size() * sizeof(int);
+        if (mReservedSize == 0)
+            mReservedSize = mUsedSize;
+
+        ZEPHYR_ASSERT(mUsedSize <= mReservedSize, "Attempting to push more bytes of data than allocated to the Buffer.");
+        pGLState.BufferData(mType, mUsedSize, &pData.front(), mUsage);
     }
-    void Buffer::PushData(GLState& pGLState, const GLType::BufferUsage& pBufferUsage, const std::vector<float>& pData)
+    void Buffer::PushData(GLState& pGLState, const std::vector<float>& pData)
     {
-        mSize = pData.size() * sizeof(float);
-        mBufferUsage = pBufferUsage;
-        pGLState.BufferData(mBufferType, mSize, &pData.front(), mBufferUsage);
+        mUsedSize += pData.size() * sizeof(float);
+        if (mReservedSize == 0)
+            mReservedSize = mUsedSize;
+
+        ZEPHYR_ASSERT(mUsedSize <= mReservedSize, "Attempting to push more bytes of data than allocated to the Buffer.");
+        pGLState.BufferData(mType, mUsedSize, &pData.front(), mUsage);
     }
+
     void VBO::PushVertexAttributeData(GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize)
     {
-        PushData(pGLState, GLType::BufferUsage::StaticDraw, pData);
+        PushData(pGLState, pData);
         glVertexAttribPointer(pAttributeIndex, pAttributeSize, GL_FLOAT, GL_FALSE, pAttributeSize * sizeof(float), (void *)0);
         glEnableVertexAttribArray(pAttributeIndex);
     }
 
     void UBO::PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-        // Reserve the size of the GLSL UniformBlock in the GPU memory using glBufferData supplied NULL
-        pGLState.BufferData(mBufferType, pBufferSizeBytes, NULL, GLType::BufferUsage::StaticDraw);
+        Reserve(pGLState, pBufferSizeBytes);
         glBindBufferRange(GL_UNIFORM_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
     }
 
     void SSBO::PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-        pGLState.BufferData(mBufferType, pBufferSizeBytes, NULL, GLType::BufferUsage::StaticDraw);
+        Reserve(pGLState, pBufferSizeBytes);
         glBindBufferRange(GL_SHADER_STORAGE_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
     }
 

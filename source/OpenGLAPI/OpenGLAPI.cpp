@@ -430,32 +430,32 @@ void OpenGLAPI::initialiseMesh(const Data::Mesh& pMesh)
 
 	if (!pMesh.mIndices.empty())
 	{
-		newMesh->mEBO.emplace(GLData::EBO(mGLState));
+		newMesh->mEBO.emplace(GLData::EBO(mGLState, GLType::BufferUsage::StaticDraw));
 		newMesh->mEBO->Bind(mGLState);
-		newMesh->mEBO->PushData(mGLState, GLType::BufferUsage::StaticDraw, pMesh.mIndices);
+		newMesh->mEBO->PushData(mGLState, pMesh.mIndices);
 	}
 
 	if (!pMesh.mVertices.empty())
 	{
-		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)].emplace(GLData::VBO(mGLState));
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->Bind(mGLState);
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->PushVertexAttributeData(mGLState, pMesh.mVertices, Shader::getAttributeLocation(Shader::Attribute::Position3D), Shader::getAttributeComponentCount(Shader::Attribute::Position3D));
 	}
 	if (!pMesh.mNormals.empty())
 	{
-		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)].emplace(GLData::VBO(mGLState));
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->Bind(mGLState);
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->PushVertexAttributeData(mGLState, pMesh.mNormals, Shader::getAttributeLocation(Shader::Attribute::Normal3D), Shader::getAttributeComponentCount(Shader::Attribute::Normal3D));
 	}
 	if (!pMesh.mColours.empty())
 	{
-		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)].emplace(GLData::VBO(mGLState));
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->Bind(mGLState);
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->PushVertexAttributeData(mGLState, pMesh.mColours, Shader::getAttributeLocation(Shader::Attribute::ColourRGB), Shader::getAttributeComponentCount(Shader::Attribute::ColourRGB));
 	}
 	if (!pMesh.mTextureCoordinates.empty())
 	{
-		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)].emplace(GLData::VBO(mGLState));
+		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->Bind(mGLState);
 		newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->PushVertexAttributeData(mGLState, pMesh.mTextureCoordinates, Shader::getAttributeLocation(Shader::Attribute::TextureCoordinate2D), Shader::getAttributeComponentCount(Shader::Attribute::TextureCoordinate2D));
 	}
