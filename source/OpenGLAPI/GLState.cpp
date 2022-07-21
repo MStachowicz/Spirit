@@ -834,6 +834,12 @@ void GLState::setViewport(const int& pWidth, const int& pHeight)
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::Viewport));
 }
 
+void GLState::BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void *pData, const GLType::BufferUsage& pBufferUsage)
+{
+    glBufferData(convert(pBufferType), pSizeInBytes, pData, convert(pBufferUsage));
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferData));
+}
+
 namespace GLData
 {
     void VAO::generate()
@@ -870,42 +876,35 @@ namespace GLData
         pGLState.DeleteBuffer(mHandle);
     }
 
-    VBO::VBO(const GLState& pGLState) : Buffer(GLType::BufferType::ArrayBuffer, pGLState)
+    void Buffer::PushData(GLState& pGLState, const GLType::BufferUsage& pBufferUsage, const std::vector<int>& pData)
     {
+        mSize = pData.size() * sizeof(int);
+        mBufferUsage = pBufferUsage;
+        pGLState.BufferData(mBufferType, mSize, &pData.front(), mBufferUsage);
     }
-    void VBO::PushData(const GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize)
+    void Buffer::PushData(GLState& pGLState, const GLType::BufferUsage& pBufferUsage, const std::vector<float>& pData)
     {
-        glBufferData(GL_ARRAY_BUFFER, pData.size() * sizeof(float), &pData.front(), GL_STATIC_DRAW);
+        mSize = pData.size() * sizeof(float);
+        mBufferUsage = pBufferUsage;
+        pGLState.BufferData(mBufferType, mSize, &pData.front(), mBufferUsage);
+    }
+    void VBO::PushVertexAttributeData(GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize)
+    {
+        PushData(pGLState, GLType::BufferUsage::StaticDraw, pData);
         glVertexAttribPointer(pAttributeIndex, pAttributeSize, GL_FLOAT, GL_FALSE, pAttributeSize * sizeof(float), (void *)0);
         glEnableVertexAttribArray(pAttributeIndex);
     }
 
-    EBO::EBO(const GLState& pGLState) : Buffer(GLType::BufferType::ElementArrayBuffer, pGLState)
-    {
-    }
-    void EBO::PushData(const GLState &pGLState, const std::vector<int>& pData)
-    {
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pData.size() * sizeof(int), &pData.front(), GL_STATIC_DRAW);
-    }
-
-
-    UBO::UBO(const GLState& pGLState) : Buffer(GLType::BufferType::UniformBuffer, pGLState)
-    {
-    }
-    void UBO::PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
+    void UBO::PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
         // Reserve the size of the GLSL UniformBlock in the GPU memory using glBufferData supplied NULL
-        glBufferData(GL_UNIFORM_BUFFER, pBufferSizeBytes, NULL, GL_STATIC_DRAW);
+        pGLState.BufferData(mBufferType, pBufferSizeBytes, NULL, GLType::BufferUsage::StaticDraw);
         glBindBufferRange(GL_UNIFORM_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
     }
 
-
-    SSBO::SSBO(const GLState& pGLState) : Buffer(GLType::BufferType::ShaderStorageBuffer, pGLState)
+    void SSBO::PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-    }
-    void SSBO::PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
-    {
-        glBufferData(GL_SHADER_STORAGE_BUFFER, pBufferSizeBytes, NULL, GL_STATIC_DRAW);
+        pGLState.BufferData(mBufferType, pBufferSizeBytes, NULL, GLType::BufferUsage::StaticDraw);
         glBindBufferRange(GL_SHADER_STORAGE_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
     }
 
@@ -1330,6 +1329,24 @@ namespace GLType
                 return "";
         }
     }
+    std::string toString(const BufferUsage& pBufferUsage)
+    {
+        switch (pBufferUsage)
+        {
+            case BufferUsage::StreamDraw:  return "Stream Draw";
+            case BufferUsage::StreamRead:  return "Stream Read";
+            case BufferUsage::StreamCopy:  return "Stream Copy";
+            case BufferUsage::StaticDraw:  return "Static Draw";
+            case BufferUsage::StaticRead:  return "Static Read";
+            case BufferUsage::StaticCopy:  return "Static Copy";
+            case BufferUsage::DynamicDraw: return "Dynamic Draw";
+            case BufferUsage::DynamicRead: return "Dynamic Read";
+            case BufferUsage::DynamicCopy: return "Dynamic Copy";
+            default:
+                ZEPHYR_ASSERT(false, "Unknown pBufferUsage requested");
+                return "";
+        }
+    }
     std::string toString(const ShaderResourceType& pResourceType)
     {
         switch (pResourceType)
@@ -1626,6 +1643,24 @@ namespace GLType
                 return 0;
         }
     }
+    int convert(const BufferUsage& pBufferUsage)
+    {
+        switch (pBufferUsage)
+        {
+            case BufferUsage::StreamDraw:  return GL_STREAM_DRAW;
+            case BufferUsage::StreamRead:  return GL_STREAM_READ;
+            case BufferUsage::StreamCopy:  return GL_STREAM_COPY;
+            case BufferUsage::StaticDraw:  return GL_STATIC_DRAW;
+            case BufferUsage::StaticRead:  return GL_STATIC_READ;
+            case BufferUsage::StaticCopy:  return GL_STATIC_COPY;
+            case BufferUsage::DynamicDraw: return GL_DYNAMIC_DRAW;
+            case BufferUsage::DynamicRead: return GL_DYNAMIC_READ;
+            case BufferUsage::DynamicCopy: return GL_DYNAMIC_COPY;
+            default:
+                ZEPHYR_ASSERT(false, "Unknown pBufferUsage requested");
+                return 0;
+        }
+    }
     int convert(const ShaderProgramType& pShaderProgramType)
     {
         switch (pShaderProgramType)
@@ -1900,6 +1935,14 @@ std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const 
         {GLType::Function::DeleteBuffer,
             {
                 { GLType::ErrorType::InvalidValue, {"Generated if mHandle is negative."}}
+            }
+        },
+        {GLType::Function::BufferData,
+            {
+                { GLType::ErrorType::InvalidEnum, {"Target is not one of the accepted buffer targets.", "Usage is not one of the accepted usage types"}},
+                { GLType::ErrorType::InvalidValue, {"Size is negative."}},
+                { GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE." }},
+                { GLType::ErrorType::OutOfMemory, {"GL is unable to create a data store with the specified size." }}
             }
         }
     }};

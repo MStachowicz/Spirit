@@ -67,6 +67,28 @@ namespace GLType
         TransformFeedbackBuffer, // Transform feedback buffer
         UniformBuffer            // Uniform block storage
     };
+    // Usage can be broken down into two parts:
+    // 1. The frequency of access (modification and usage). The frequency of access may be one of these:
+    //  1.a.    STREAM:  Modified once and used at most a few times.
+    //  1.b.    STATIC:  Modified once and used many times.
+    //  1.c.    DYNAMIC: Modified repeatedly and used many times.
+    // 2. The nature of that access. Can be one of these:
+    //  2.a.    DRAW: Modified by the application, and used as the source for GL drawing and image specification commands.
+    //  2.b.    READ: Modified by reading data from the GL, and used to return that data when queried by the application.
+    //  2.c.    COPY: Modified by reading data from the GL, and used as the source for GL drawing and image specification commands.
+    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
+    enum class BufferUsage
+    {
+        StreamDraw,
+        StreamRead,
+        StreamCopy,
+        StaticDraw,
+        StaticRead,
+        StaticCopy,
+        DynamicDraw,
+        DynamicRead,
+        DynamicCopy
+    };
     enum class ShaderProgramType
     {
         Vertex,
@@ -222,13 +244,14 @@ namespace GLType
         UseProgram,
         BindBuffer,
         DeleteBuffer,
-        Count
+        BufferData
     };
 
     std::string toString(const Function& pFunction);
     std::string toString(const ShaderProgramType& pShaderProgramType);
     std::string toString(const DataType &pDataType);
     std::string toString(const BufferType& pBufferType);
+    std::string toString(const BufferUsage& pBufferUsage);
     std::string toString(const ShaderResourceType &pResourceType);
     std::string toString(const ShaderResourceProperty &pShaderResourceProperty);
     std::string toString(const DepthTestType &pDepthTestType);
@@ -245,6 +268,7 @@ namespace GLType
     int convert(const ShaderProgramType& pShaderProgramType);
     int convert(const DataType& pDataType);
     int convert(const BufferType& pBufferType);
+    int convert(const BufferUsage& pBufferUsage);
     int convert(const ShaderResourceType& pResourceType);
     int convert(const ShaderResourceProperty& pShaderResourceProperty);
     int convert(const DepthTestType& pDepthTestType);
@@ -283,31 +307,33 @@ namespace GLData
     {
         void Bind(const GLState& pGLState) const;
         void Free(const GLState& pGLState);
+        void PushData(GLState& pGLState, const GLType::BufferUsage& pBufferUsage, const std::vector<int>& pData);
+        void PushData(GLState& pGLState, const GLType::BufferUsage& pBufferUsage, const std::vector<float>& pData);
 
         const GLType::BufferType mBufferType;
         const unsigned int mHandle;
 
     protected:
+        // Protected Buffer constructor turning Buffer into a pure interface.
         Buffer(const GLType::BufferType& pBufferType, const GLState& pGLState);
-    private:
         size_t mSize; // The size of the buffer in Bytes
+        GLType::BufferUsage mBufferUsage;
     };
 
     // Vertex Buffer Object
     // Buffer storing per-vertex array data.
     struct VBO : public Buffer
 	{
-        VBO(const GLState& pGLState);
-        void PushData(const GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize);
+        VBO(const GLState& pGLState) : Buffer(GLType::BufferType::ArrayBuffer, pGLState) {}
+        void PushVertexAttributeData(GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize);
 	};
     // Element Buffer Object
     // Buffer storing vertex index data defining which order to draw vertex data stored in a VBO.
     // EBO's are used only if a mesh uses Indexed drawing.
 	struct EBO : public Buffer
 	{
-        EBO(const GLState& pGLState);
-        void PushData(const GLState& pGLState, const std::vector<int>& pData);
-	};
+        EBO(const GLState& pGLState) : Buffer(GLType::BufferType::ElementArrayBuffer, pGLState) {}
+    };
     // Uniform Buffer Object
     // A Buffer Object that is used to store uniform data for a shader program. They can be used to share
     // uniforms between different programs, as well as quickly change between sets of uniforms for the same program object.
@@ -315,8 +341,8 @@ namespace GLData
     // https://www.khronos.org/opengl/wiki/Uniform_Buffer_Object
     struct UBO : public Buffer
     {
-        UBO(const GLState& pGLState);
-        void PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
+        UBO(const GLState& pGLState) : Buffer(GLType::BufferType::UniformBuffer, pGLState) {}
+        void PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
     };
     // A Shader Storage block Object (SSBO)
     // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
@@ -329,8 +355,8 @@ namespace GLData
     // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
     struct SSBO : public Buffer
     {
-        SSBO(const GLState& pGLState);
-        void PushData(const GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
+        SSBO(const GLState& pGLState) : Buffer(GLType::BufferType::ShaderStorageBuffer, pGLState) {}
+        void PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
     };
 
     // OpenGL Texture object.
@@ -599,6 +625,17 @@ public:
     // x w = x nd + 1 ⁢ width 2 + x
     // y w = y nd + 1 ⁢ height 2 + y
     void setViewport(const int& pWidth, const int& pHeight);
+
+    // Creates and initializes a buffer object's data store. The Buffer currently bound to target is used.
+    // While creating the new storage, any pre-existing data store is deleted. The new data store is created with the specified size in bytes and usage.
+    // If data is not NULL, the data store is initialized with data from this pointer. In its initial state, the new data store is not mapped, it has a NULL mapped pointer, and its mapped access is GL_READ_WRITE.
+    // pBufferUsage is a hint to the GL implementation as to how a buffer object's data store will be accessed. This enables the OpenGL to make more intelligent decisions that may significantly impact buffer performance.
+    // It does not, however, constrain the actual usage of the data store.
+    // If pData is NULL, a data store of the specified size is still created, but its contents remain uninitialized and thus undefined.
+    // Clients must align data elements consistently with the requirements of the client platform, with an additional base-level requirement:
+    // an offset within a buffer to a datum comprising N bytes be a multiple of N.
+    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
+    void BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void* pData, const GLType::BufferUsage& pBufferUsage);
 
     // Outputs the current GLState with options to change flags.
     void renderImGui();
