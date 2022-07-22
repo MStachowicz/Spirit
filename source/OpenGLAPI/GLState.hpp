@@ -229,7 +229,6 @@ namespace GLType
     };
     enum class Function
     {
-        UniformBlockBinding,
         Viewport,
         DrawElements,
         DrawArrays,
@@ -245,7 +244,9 @@ namespace GLType
         BindBuffer,
         DeleteBuffer,
         BufferData,
-        BindBufferRange
+        BindBufferRange,
+        UniformBlockBinding,
+        ShaderStorageBlockBinding
     };
 
     std::string toString(const Function& pFunction);
@@ -684,6 +685,9 @@ public:
     // BufferType must be one of UniformBuffer, ShaderStorageBuffer, AtomicCounterBuffer or TransformFeedbackBuffer
     // The range bound starts at pOffset
     void BindBufferRange(const GLType::BufferType& pType, const unsigned int& pBufferHandle, const unsigned int& pBindingPoint, const unsigned int& pOffset, const size_t& pBindSizeInBytes);
+
+    void UniformBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint);
+    void ShaderStorageBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint);
 
     // Outputs the current GLState with options to change flags.
     void renderImGui();
