@@ -244,6 +244,7 @@ namespace GLType
         BindBuffer,
         DeleteBuffer,
         BufferData,
+        BufferSubData,
         BindBufferRange,
         UniformBlockBinding,
         ShaderStorageBlockBinding
@@ -680,6 +681,11 @@ public:
     // an offset within a buffer to a datum comprising N bytes be a multiple of N.
     // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
     void BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void* pData, const GLType::BufferUsage& pBufferUsage);
+
+    // Update a subset of a Buffer object's data store.
+    // Data starting at byte pOffset offset and extending for size pSizeInBytes is copied to the data store from the memory pointed to by data.
+    // pOffset and pSizeInBytes must define a range lying entirely within the buffer object's data store.
+    void BufferSubData(const GLType::BufferType& pBufferType, const int& pOffset, const size_t& pSizeInBytes, const void* pData);
 
     // Bind a range within a buffer object to an indexed buffer target
     // BufferType must be one of UniformBuffer, ShaderStorageBuffer, AtomicCounterBuffer or TransformFeedbackBuffer

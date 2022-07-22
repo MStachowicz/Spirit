@@ -562,31 +562,31 @@ void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& p
 {
     ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Float, "Attempting to set float data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
     static const auto size = sizeof(pValue);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, &pValue);
+    BufferSubData(GLType::BufferType::ShaderStorageBuffer, pVariable.mOffset, size, &pValue);
 }
 void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec2& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec2, "Attempting to set vec2 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::ShaderStorageBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec3& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec3, "Attempting to set vec3 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::ShaderStorageBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec4& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec4, "Attempting to set vec4 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::ShaderStorageBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 void GLState::setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::mat4& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat4, "Attempting to set mat4 data to {} variable '{}' (shader block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::ShaderStorageBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 
 
@@ -594,31 +594,31 @@ void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const fl
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Float, "Attempting to set float data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, &pValue);
+	BufferSubData(GLType::BufferType::UniformBuffer, pVariable.mOffset, size, &pValue);
 }
 void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec2, "Attempting to set vec2 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::UniformBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec3, "Attempting to set vec3 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::UniformBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Vec4, "Attempting to set vec4 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::UniformBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 void GLState::setBlockUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue)
 {
 	ZEPHYR_ASSERT(pVariable.mType == GLType::DataType::Mat4, "Attempting to set mat4 data to {} variable '{}' (uniform block variable)", GLType::toString(pVariable.mType), pVariable.mName);
 	static const auto size = sizeof(pValue);
-	glBufferSubData(GL_UNIFORM_BUFFER, pVariable.mOffset, size, glm::value_ptr(pValue));
+	BufferSubData(GLType::BufferType::UniformBuffer, pVariable.mOffset, size, glm::value_ptr(pValue));
 }
 
 void GLState::setUniform(const GLData::UniformVariable& pVariable, const bool& pValue) const
@@ -832,12 +832,17 @@ void GLState::setViewport(const int& pWidth, const int& pHeight)
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::Viewport));
 }
 
-void GLState::BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void *pData, const GLType::BufferUsage& pBufferUsage)
+void GLState::BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void* pData, const GLType::BufferUsage& pBufferUsage)
 {
     glBufferData(convert(pBufferType), pSizeInBytes, pData, convert(pBufferUsage));
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferData));
 }
 
+void GLState::BufferSubData(const GLType::BufferType& pBufferType, const int& pOffset, const size_t& pSizeInBytes, const void* pData)
+{
+    glBufferSubData(convert(pBufferType), pOffset, pSizeInBytes, pData);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferSubData));
+}
 
 void GLState::BindBufferRange(const GLType::BufferType& pType, const unsigned int& pBufferHandle, const unsigned int& pBindingPoint, const unsigned int& pOffset, const size_t& pBindSizeInBytes)
 {
@@ -1219,21 +1224,25 @@ namespace GLType
     {
         switch (pFunction)
         {
-            case Function::UniformBlockBinding : return "UniformBlockBinding";
-            case Function::Viewport :            return "Viewport";
-            case Function::DrawElements :        return "DrawElements";
-            case Function::DrawArrays :          return "DrawArrays";
-            case Function::BindFramebuffer :     return "BindFramebuffer";
-            case Function::CreateShader :        return "CreateShader";
-            case Function::ShaderSource :        return "ShaderSource";
-            case Function::CompileShader :       return "CompileShader";
-            case Function::CreateProgram :       return "CreateProgram";
-            case Function::AttachShader :        return "AttachShader";
-            case Function::LinkProgram :         return "LinkProgram";
-            case Function::DeleteShader :        return "DeleteShader";
-            case Function::UseProgram :          return "UseProgram";
-            case Function::BindBuffer :          return "BindBuffer";
-            case Function::DeleteBuffer :        return "DeleteBuffer";
+            case Function::Viewport :                  return "Viewport";
+            case Function::DrawElements :              return "DrawElements";
+            case Function::DrawArrays :                return "DrawArrays";
+            case Function::BindFramebuffer :           return "BindFramebuffer";
+            case Function::CreateShader :              return "CreateShader";
+            case Function::ShaderSource :              return "ShaderSource";
+            case Function::CompileShader :             return "CompileShader";
+            case Function::CreateProgram :             return "CreateProgram";
+            case Function::AttachShader :              return "AttachShader";
+            case Function::LinkProgram :               return "LinkProgram";
+            case Function::DeleteShader :              return "DeleteShader";
+            case Function::UseProgram :                return "UseProgram";
+            case Function::BindBuffer :                return "BindBuffer";
+            case Function::DeleteBuffer :              return "DeleteBuffer";
+            case Function::BufferData :                return "BufferData";
+            case Function::BufferSubData :             return "BufferSubData";
+            case Function::BindBufferRange :           return "BindBufferRange";
+            case Function::UniformBlockBinding :       return "UniformBlockBinding";
+            case Function::ShaderStorageBlockBinding : return "ShaderStorageBlockBinding";
             default:
                 ZEPHYR_ASSERT(false, "Unknown Function requested");
                 return "";
@@ -1962,15 +1971,24 @@ std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const 
             {
                 {GLType::ErrorType::InvalidEnum, {"Target is not one of the accepted buffer targets.", "Usage is not one of the accepted usage types"}},
                 {GLType::ErrorType::InvalidValue, {"Size is negative."}},
-                {GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE." }},
+                {GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE."}},
                 {GLType::ErrorType::OutOfMemory, {"GL is unable to create a data store with the specified size." }}
+            }
+        },
+        {GLType::Function::BufferSubData,
+            {
+                {GLType::ErrorType::InvalidEnum, {"target is not one of the accepted buffer targets."}},
+                {GLType::ErrorType::InvalidOperation, {"zero is bound to target"
+                                                     , "any part of the specified range of the buffer object is mapped with glMapBufferRange or glMapBuffer, unless it was mapped with the GL_MAP_PERSISTENT_BIT bit set in the glMapBufferRange access flags."
+                                                     , "the value of the GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE and the value of GL_BUFFER_STORAGE_FLAGS for the buffer object does not have the GL_DYNAMIC_STORAGE_BIT bit set."}},
+                {GLType::ErrorType::InvalidValue, {"offset or size is negative, or offset + size is greater than the value of GL_BUFFER_SIZE for the specified buffer object."}},
             }
         },
         {GLType::Function::BindBufferRange,
             {
                 {GLType::ErrorType::InvalidEnum,      {"Target is not one of GL_ATOMIC_COUNTER_BUFFER, GL_TRANSFORM_FEEDBACK_BUFFER, GL_UNIFORM_BUFFER or GL_SHADER_STORAGE_BUFFER."}},
                 {GLType::ErrorType::InvalidValue,     {"Index is greater than or equal to the number of target-specific indexed binding points", "Size is less than or equal to zero, or if offset + size is greater than the value of GL_BUFFER_SIZE."}},
-                {GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE." }}
+                {GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE."}}
             }
         },
         {GLType::Function::UniformBlockBinding,
