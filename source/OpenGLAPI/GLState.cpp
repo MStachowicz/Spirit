@@ -478,15 +478,15 @@ void GLState::DeleteShader(const unsigned int& pShaderHandle)
 void GLState::UseProgram(const unsigned int& pShaderProgramHandle)
 {
     glUseProgram(pShaderProgramHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteShader));
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::UseProgram));
 }
 
 void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
 {
-    UniformBlockBindingPoint* bindingPoint = nullptr;
+    GLData::UniformBlockBindingPoint* bindingPoint = nullptr;
 
     // #C++20 Convert to std::contains on vector.
-    const auto it = std::find_if(mUniformBlockBindingPoints.begin(), mUniformBlockBindingPoints.end(), [&pUniformBlock](const UniformBlockBindingPoint& bindingPoint)
+    const auto it = std::find_if(mUniformBlockBindingPoints.begin(), mUniformBlockBindingPoints.end(), [&pUniformBlock](const GLData::UniformBlockBindingPoint& bindingPoint)
     { return bindingPoint.mName == pUniformBlock.mName; });
 
     if (it == mUniformBlockBindingPoints.end())
@@ -494,7 +494,7 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
         // If there is no binding point for this UniformBlock create it and its UBO.
         // This allows the uniform variables inside the block to be set using setUniformBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
-        mUniformBlockBindingPoints.push_back(UniformBlockBindingPoint(*this));
+        mUniformBlockBindingPoints.push_back(GLData::UniformBlockBindingPoint(*this));
         bindingPoint = &mUniformBlockBindingPoints.back();
         bindingPoint->mInstances++;
         bindingPoint->mBindingPoint  = static_cast<unsigned int>(mUniformBlockBindingPoints.size() - 1);
@@ -502,7 +502,8 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
         bindingPoint->mVariables     = pUniformBlock.mVariables;
 
         bindingPoint->mUBO.Bind(*this);
-        bindingPoint->mUBO.PushData(*this, pUniformBlock.mBufferDataSize, bindingPoint->mBindingPoint);
+        bindingPoint->mUBO.Reserve(*this, pUniformBlock.mBufferDataSize);
+        bindingPoint->mUBO.AssignBindingPoint(*this, pUniformBlock.mBufferDataSize, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -522,10 +523,10 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
 
 void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock)
 {
-    ShaderStorageBlockBindingPoint* bindingPoint = nullptr;
+    GLData::ShaderStorageBlockBindingPoint* bindingPoint = nullptr;
 
     // #C++20 Convert to std::contains on vector.
-    const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderBufferBlock](const ShaderStorageBlockBindingPoint& bindingPoint)
+    const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderBufferBlock](const GLData::ShaderStorageBlockBindingPoint& bindingPoint)
     { return bindingPoint.mName == pShaderBufferBlock.mName; });
 
     if (it == mShaderStorageBlockBindingPoints.end())
@@ -533,7 +534,7 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBuff
         // If there is no binding point for this ShaderBufferBlock create it and its UBO.
         // This allows the ShaderBufferBlockVariable's inside the block to be set using setShaderStorageBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
-        mShaderStorageBlockBindingPoints.push_back(ShaderStorageBlockBindingPoint(*this));
+        mShaderStorageBlockBindingPoints.push_back(GLData::ShaderStorageBlockBindingPoint(*this));
         bindingPoint = &mShaderStorageBlockBindingPoints.back();
         bindingPoint->mInstances++;
         bindingPoint->mBindingPoint  = static_cast<unsigned int>(mShaderStorageBlockBindingPoints.size() - 1);
@@ -542,7 +543,8 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBuff
 
         // Reserve the size of the ShaderStorageBlock in the GPU memory
         bindingPoint->mSSBO.Bind(*this);
-        bindingPoint->mSSBO.PushData(*this, pShaderBufferBlock.mBufferDataSize, bindingPoint->mBindingPoint);
+        bindingPoint->mSSBO.Reserve(*this, pShaderBufferBlock.mBufferDataSize);
+        bindingPoint->mSSBO.AssignBindingPoint(*this, pShaderBufferBlock.mBufferDataSize, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -840,6 +842,14 @@ void GLState::BufferData(const GLType::BufferType& pBufferType, const size_t& pS
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferData));
 }
 
+
+void GLState::BindBufferRange(const GLType::BufferType& pType, const unsigned int& pBufferHandle, const unsigned int& pBindingPoint, const unsigned int& pOffset, const size_t& pBindSizeInBytes)
+{
+    glBindBufferRange(convert(pType), pBindingPoint, pBufferHandle, pOffset, pBindSizeInBytes);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindBufferRange));
+}
+
+
 namespace GLData
 {
     void VAO::generate()
@@ -909,16 +919,14 @@ namespace GLData
         glEnableVertexAttribArray(pAttributeIndex);
     }
 
-    void UBO::PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
+    void UBO::AssignBindingPoint(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-        Reserve(pGLState, pBufferSizeBytes);
-        glBindBufferRange(GL_UNIFORM_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
+        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, pBufferSizeBytes);
     }
 
-    void SSBO::PushData(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
+    void SSBO::AssignBindingPoint(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
     {
-        Reserve(pGLState, pBufferSizeBytes);
-        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, pBindingPoint, mHandle, 0, pBufferSizeBytes);
+        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, pBufferSizeBytes);
     }
 
     void RBO::generate()
@@ -1956,6 +1964,13 @@ std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const 
                 { GLType::ErrorType::InvalidValue, {"Size is negative."}},
                 { GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE." }},
                 { GLType::ErrorType::OutOfMemory, {"GL is unable to create a data store with the specified size." }}
+            }
+        },
+        {GLType::Function::BindBufferRange,
+            {
+                { GLType::ErrorType::InvalidEnum,      {"Target is not one of GL_ATOMIC_COUNTER_BUFFER, GL_TRANSFORM_FEEDBACK_BUFFER, GL_UNIFORM_BUFFER or GL_SHADER_STORAGE_BUFFER."}},
+                { GLType::ErrorType::InvalidValue,     {"Index is greater than or equal to the number of target-specific indexed binding points", "Size is less than or equal to zero, or if offset + size is greater than the value of GL_BUFFER_SIZE."}},
+                { GLType::ErrorType::InvalidOperation, {"Reserved buffer object name 0 is bound to target", "The GL_BUFFER_IMMUTABLE_STORAGE flag of the buffer object is GL_TRUE." }}
             }
         }
     }};
