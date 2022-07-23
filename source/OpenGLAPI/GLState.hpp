@@ -354,7 +354,7 @@ namespace GLData
         UBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
             : Buffer(pGLState, GLType::BufferType::UniformBuffer, pUsage) {}
 
-        void AssignBindingPoint(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
+        void AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint);
     };
     // Represents an OpenGLWide index for attatching UBO objects to so their memory can be shared across Shader instances.
     struct UniformBlockBindingPoint
@@ -427,7 +427,8 @@ namespace GLData
         SSBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
         : Buffer(pGLState, GLType::BufferType::ShaderStorageBuffer, pUsage) {}
 
-        void AssignBindingPoint(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint);
+        void AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint);
+
     };
     struct ShaderStorageBlockBindingPoint
     {

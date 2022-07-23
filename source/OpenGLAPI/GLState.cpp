@@ -503,7 +503,7 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
 
         bindingPoint->mUBO.Bind(*this);
         bindingPoint->mUBO.Reserve(*this, pUniformBlock.mBufferDataSize);
-        bindingPoint->mUBO.AssignBindingPoint(*this, pUniformBlock.mBufferDataSize, bindingPoint->mBindingPoint);
+        bindingPoint->mUBO.AssignBindingPoint(*this, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -542,7 +542,7 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBuff
         // Reserve the size of the ShaderStorageBlock in the GPU memory
         bindingPoint->mSSBO.Bind(*this);
         bindingPoint->mSSBO.Reserve(*this, pShaderBufferBlock.mBufferDataSize);
-        bindingPoint->mSSBO.AssignBindingPoint(*this, pShaderBufferBlock.mBufferDataSize, bindingPoint->mBindingPoint);
+        bindingPoint->mSSBO.AssignBindingPoint(*this, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -931,14 +931,16 @@ namespace GLData
         glEnableVertexAttribArray(pAttributeIndex);
     }
 
-    void UBO::AssignBindingPoint(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
+    void UBO::AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint)
     {
-        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, pBufferSizeBytes);
+        // When binding buffer range, we use the reserved buffer size since we dont have any actual data pushed until buffer variables are set.
+        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, mReservedSize);
     }
 
-    void SSBO::AssignBindingPoint(GLState& pGLState, const int& pBufferSizeBytes, const unsigned int& pBindingPoint)
+    void SSBO::AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint)
     {
-        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, pBufferSizeBytes);
+        // When binding buffer range, we use the reserved buffer size since we dont have any actual data pushed until buffer variables are set.
+        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, mReservedSize);
     }
 
     void RBO::generate()
