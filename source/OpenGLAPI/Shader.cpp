@@ -67,7 +67,7 @@
 			const int uniformCount = pGLState.getActiveUniformCount(mHandle);
 			for (int uniformIndex = 0; uniformIndex < uniformCount; ++uniformIndex)
 			{
-				GLData::UniformVariable uniform = pGLState.getUniformVariable(mHandle, uniformIndex);
+				GLData::UniformVariable uniform = GLData::UniformVariable(mHandle, uniformIndex);
 
 				// Only add 'loose' uniforms, uniform block variables are handled in GLState::getUniformBlock
 				if (uniform.mBlockIndex == -1)
@@ -90,13 +90,13 @@
 		{
 			for (const auto &uniformBlockVariable : uniformBlock.mVariables)
 			{
-				if (uniformBlockVariable.mType == GLType::DataType::Sampler2D || uniformBlockVariable.mType == GLType::DataType::SamplerCube)
+				if (uniformBlockVariable.mDataType == GLType::DataType::Sampler2D || uniformBlockVariable.mDataType == GLType::DataType::SamplerCube)
 					mTextureUnits++;
 			}
 		}
 		for (const auto &uniformVariable : mUniformVariables)
 		{
-			if (uniformVariable.mType == GLType::DataType::Sampler2D || uniformVariable.mType == GLType::DataType::SamplerCube)
+			if (uniformVariable.mDataType == GLType::DataType::Sampler2D || uniformVariable.mDataType == GLType::DataType::SamplerCube)
 				mTextureUnits++;
 		}
 		ZEPHYR_ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
