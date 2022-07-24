@@ -31,15 +31,15 @@ public:
     void use(GLState& pGLState) const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
 
     template<class T>
-    void setUniform(GLState& pGLState, const std::string& pVariableName, const T& pValue) const
+    void setUniform(GLState& pGLState, const std::string& pVariableName, const T& pValue)
     {
-        const auto variable = std::find_if(std::begin(mUniformVariables), std::end(mUniformVariables),
-            [&pVariableName](const GLData::UniformVariable& pVariable) { return pVariable.mName == pVariableName; });
+        auto& variable = std::find_if(std::begin(mUniformVariables), std::end(mUniformVariables),
+            [&pVariableName](const GLData::UniformVariable& pVariable) { return pVariable.mName.value() == pVariableName; });
 
         if (variable != std::end(mUniformVariables))
         {
             use(pGLState); // #Optimisation - Only perform this use() once when setting a series of variables on one shader.
-            pGLState.setUniform(*variable, pValue);
+            variable->Set(pGLState, pValue);
             return;
         }
         else

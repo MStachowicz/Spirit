@@ -67,6 +67,12 @@ namespace GLType
         TransformFeedbackBuffer, // Transform feedback buffer
         UniformBuffer            // Uniform block storage
     };
+    enum class GLSLVariableType
+    {
+        Uniform,      // 'loose' uniform variables not part of any interface blocks. These are owned by a shader program and can be directly set without buffer backing.
+        UniformBlock, // UniformBlockVariable found inside a UniformBlock. Has to be backed by a UBO to be set. These can be global or exclusive to the shader depending on the UniformBlock layout definition.
+        BufferBlock   // ShaderStorageBlockVariable found inside a ShaderStorageBlock. Has to be backed by a SSBO to be set. These can be global or exclusive to the shader depending on the ShaderStorageBlock layout definition.
+    };
     // Usage can be broken down into two parts:
     // 1. The frequency of access (modification and usage). The frequency of access may be one of these:
     //  1.a.    STREAM:  Modified once and used at most a few times.
@@ -253,6 +259,7 @@ namespace GLType
     std::string toString(const Function& pFunction);
     std::string toString(const ShaderProgramType& pShaderProgramType);
     std::string toString(const DataType &pDataType);
+    std::string toString(const GLSLVariableType& pVariableType);
     std::string toString(const BufferType& pBufferType);
     std::string toString(const BufferUsage& pBufferUsage);
     std::string toString(const ShaderResourceType &pResourceType);
@@ -270,6 +277,7 @@ namespace GLType
 
     int convert(const ShaderProgramType& pShaderProgramType);
     int convert(const DataType& pDataType);
+    int convert(const GLSLVariableType& pVariableType);
     int convert(const BufferType& pBufferType);
     int convert(const BufferUsage& pBufferUsage);
     int convert(const ShaderResourceType& pResourceType);
@@ -310,23 +318,95 @@ namespace GLData
         size_t mUsedSize; // The number of Bytes actually pushed to the GPU memory occupied by the Buffer.
     };
 
+    // Represents a variable in GLSL offering an interface to set to its data. A GLSLVariable can be found in multiple configurations:
+    // A loose uniform belonging to a shader program without an interface block parent (mBlockIndex == -1).
+    // A UniformBlockVariable defined inside a UniformBlock.
+    // A ShaderStorageBlockVariable defined inside a ShaderStorageBlock interface.
+    struct GLSLVariable
+    {
+        GLType::GLSLVariableType mVariableType;
+        std::optional<GLType::DataType> mDataType;
+
+        std::optional<std::string> mName;
+        // Number of array elements. The size is in units of the type associated with the property mDataType. For variables not corresponding to an array of basic types, the value is 0.
+        std::optional<int> mArraySize;
+        // The offset of the variable relative to the base of the buffer range holding its value (UBO and SSBO variables)
+        std::optional<int> mOffset;
+        // The index of the interface block containing the variable.
+        // If the variable is not the member of an interface block, the value is -1.
+        std::optional<int> mBlockIndex;
+        // The stride between array elements.
+        // For variables declared an array of basic types, the value is the difference, in basic machine units, between the offsets of consecutive elements in an array.
+        // For variables not declared as an array of basic types, the value is 0.
+        // For variables not backed by a buffer object, the value is -1, regardless of the variable type.
+        std::optional<int> mArrayStride;
+        // The stride between columns of a column-major matrix or rows of a row-major matrix.
+        // For variables declared a single matrix or array of matrices, the value is the difference, in basic machine units, between the offsets of consecutive columns or rows in each matrix.
+        // For variables not declared as a matrix or array of matrices, the value is 0.
+        // For variables not backed by a buffer object, the value is -1, regardless of the variable type.
+        std::optional<int> mMatrixStride;
+        // Identifying whether a variable is a row-major matrix.
+        // For variables backed by a buffer object, declared as a single matrix or array of matrices, and stored in row-major order, the value is 1.
+        // For all other variables, the value is 0.
+        std::optional<int> mIsRowMajor;
+
+        // The index of the atomic counter buffer containing the variable.
+        // If the variable is not an atomic counter uniform, the value is -1.
+        // Uniform Only
+        std::optional<int> mAtomicCounterBufferIndex; // Uniform only
+        // The assigned location for a uniform, input, output, or subroutine uniform variable.
+        // For input, output, or uniform variables with locations specified by a layout qualifier, the specified location is used.
+        // For vertex shader input or fragment shader output variables without a layout qualifier, the location assigned when a program is linked.
+        // For all other input and output variables, the value is -1.
+        // For uniforms in uniform blocks, the value is -1.
+        // Uniform only
+        std::optional<int> mLocation;
+
+        // The number of array elements of the top-level shader storage block member containing to the variable.
+        // If the top-level block member is not declared as an array, the value is 1.
+        // If the top-level block member is an array with no declared size, the value is 0.
+        // Buffer block only
+        std::optional<int> mTopLevelArraySize;
+        // The stride between array elements of the top-level shader storage block member containing the variable.
+        // For top-level block members declared as arrays, the value is the difference, in basic machine units, between the offsets of the variable for consecutive elements in the top-level array.
+        // For top-level block members not declared as an array, the value is 0.
+        // Buffer block only
+        std::optional<int> mTopLevelArrayStride;
+
+        void Set(GLState& pGLState, const bool& pValue);
+        void Set(GLState& pGLState, const int& pValue);
+        void Set(GLState& pGLState, const float& pValue);
+        void Set(GLState& pGLState, const glm::vec2& pValue);
+        void Set(GLState& pGLState, const glm::vec3& pValue);
+        void Set(GLState& pGLState, const glm::vec4& pValue);
+        void Set(GLState& pGLState, const glm::mat2& pValue);
+        void Set(GLState& pGLState, const glm::mat3& pValue);
+        void Set(GLState& pGLState, const glm::mat4& pValue);
+
+       protected:
+        GLSLVariable(const GLType::GLSLVariableType& pType) : mVariableType(pType) {}
+    };
+
     // A shader-program global variable.
-    // Declared with the "uniform" storage qualifier in GLSL or inside a Uniform Buffer Object (UBO).
+    // Declared with the "uniform" storage qualifier in GLSL
     // Uniform variables don't change from one shader invocation to the next within a particular rendering call thus their value is uniform among all invocations. This makes them unlike shader stage inputs and outputs, which are often different for each invocation of a shader stage.
     // These act as parameters that the user of a shader program can pass to that program. Their values are stored in a program object.
     // https://www.khronos.org/opengl/wiki/Uniform_(GLSL)
-    struct UniformVariable
+    struct UniformVariable : public GLSLVariable
     {
-        std::string mName      = "";
-        GLType::DataType mType = GLType::DataType::Unknown;
-        int mOffset            = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
-        int mLocation          = -1;
-        int mBlockIndex        = -1;
-        int mArraySize         = -1;  // For elements that are aggregated into arrays, this is the number of elements in the array
-        int mArrayStride       = -1;  // For elements that are aggregated into arrays, this is the number of bytes from the start of one element to the start of the next one
-        int mMatrixStride      = -1;  // Number of bytes from the start of one column/row vector to the next column/row (depending on whether the matrix is laid out as column-major or row-major)
-        int mIsRowMajor        = -1;  // For matrix elements, the column/row-major ordering.
+        UniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
     };
+    // A GLSL variable that belongs to a UniformBlock
+    struct UniformBlockVariable : public GLSLVariable
+    {
+        UniformBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
+    };
+    // A GLSL variable that belongs to a ShaderStorageBlock
+    struct ShaderStorageBlockVariable: public GLSLVariable
+    {
+        ShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
+    };
+
     // UniformBlocks are GLSL interface blocks which group UniformVariable's.
     // UniformBlock's can be buffer-backed using UniformBufferObjects allowing data to be shared across shader-programs.
     // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
@@ -341,7 +421,7 @@ namespace GLData
         int mActiveVariablesCount   = -1; // The number of UniformVariables this block contains.
 
         std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding UniformBlockBindingPoint
-        std::vector<UniformVariable> mVariables;
+        std::vector<UniformBlockVariable> mVariables;
         std::vector<int> mVariableIndices;
     };
     // Uniform Buffer Object
@@ -370,29 +450,9 @@ namespace GLData
         std::string mName;          // Name of the GLSL::UniformBlock instances sharing this buffer.
         size_t mInstances;          // The number of UniformBlock instances using this buffer.
         unsigned int mBindingPoint; // The location of this binding point in the parent mUniformBlockBindingPoints vector.
-        std::vector<GLData::UniformVariable> mVariables;  // The individual variables that make up this UniformBlock and can be set to.
+        std::vector<GLData::UniformBlockVariable> mVariables;  // The individual variables that make up this UniformBlock and can be set.
     };
 
-
-    // A GLSL variable that belongs to a ShaderStorageBlock
-    struct ShaderStorageBlockVariable
-    {
-        std::string mName        = "";
-        GLType::DataType mType   = GLType::DataType::Unknown;
-        int mOffset              = -1;  // Number of bytes (basic machine units) from the beginning of the buffer to the memory location for this variable
-        int mBlockIndex          = -1;
-        int mArraySize           = -1;  // For elements that are aggregated into arrays, this is the number of elements in the array
-        int mArrayStride         = -1;  // For elements that are aggregated into arrays, this is the number of bytes from the start of one element to the start of the next one
-        int mMatrixStride        = -1;  // Number of bytes from the start of one column/row vector to the next column/row (depending on whether the matrix is laid out as column-major or row-major)
-        int mIsRowMajor          = -1;  // For matrix elements, the column/row-major ordering.
-        // The number of active array elements of the top-level shader storage block member.
-        // If the top-level block member is not declared as an array, the value is '1'. If the top-level block member is an array with no declared size, the value zero is written to params.
-        int mTopLevelArraySize   = -1;
-        // The stride between array elements of the top-level shader storage block member.
-        // For top-level block members declared as arrays, the value written is the difference, in basic machine units, between the offsets of the active variable for consecutive elements in the top-level array.
-        // For top-level block members not declared as an array, the value is '0'.
-        int mTopLevelArrayStride = -1;
-    };
     // ShaderStorageBlock's are GLSL interface blocks which group ShaderStorageBlockVariable's.
     // ShaderStorageBlock's can be buffer-backed using SSBO's allowing data to be shared across shader-programs.
     // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
@@ -703,70 +763,58 @@ public:
     int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
     int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const;
     GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;
-    GLData::UniformVariable getUniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformVariableIndex) const;
     // Assign a binding point to a UniformBlock.
     // This makes the UniformBlock buffer-backed allowing UniformVariables belonging to the block to be set using setUniformBlockVariable.
     void RegisterUniformBlock(GLData::UniformBlock& pUniformBlock);
 
     int getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle) const;
     GLData::ShaderStorageBlock getShaderStorageBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockIndex) const;
-    GLData::ShaderStorageBlockVariable getShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockVariableIndex) const;
     // Assign a binding point to a ShaderStorageBlock
     // This makes the ShaderStorageBlock buffer-backed allowing variables belonging to the block to be set using setBufferBlockVariable.
     void RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock);
-
-    void setUniform(const GLData::UniformVariable& pVariable, const bool& pValue)      const;
-    void setUniform(const GLData::UniformVariable& pVariable, const int& pValue)       const;
-    void setUniform(const GLData::UniformVariable& pVariable, const float& pValue)     const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat2& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat3& pValue) const;
-    void setUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue) const;
 
     // #GLHelperFunction
     template<class T>
     void setUniformBlockVariable(const std::string& pName, const T& pValue)
     {
-        for (auto& bindingPoint : mUniformBlockBindingPoints)
-        {
-            const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::UniformVariable& pVariable)
-            {
-                return pVariable.mName == pName;
-            });
+       for (auto& bindingPoint : mUniformBlockBindingPoints)
+       {
+           const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::UniformBlockVariable& pVariable)
+           {
+               return pVariable.mName == pName;
+           });
 
-            if (foundVariable != std::end(bindingPoint.mVariables))
-            {
-                bindingPoint.mUBO.Bind(*this);
-                setBlockUniform(*foundVariable, pValue);
-                return;
-            }
-        }
+           if (foundVariable != std::end(bindingPoint.mVariables))
+           {
+               bindingPoint.mUBO.Bind(*this);
+               (*foundVariable).Set(*this, pValue);
+               return;
+           }
+       }
 
-        ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName);
+       ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName);
     }
 
     // #GLHelperFunction
     template<class T>
     void setShaderStorageBlockVariable(const std::string& pName, const T& pValue)
     {
-        for (auto& bindingPoint : mShaderStorageBlockBindingPoints)
-        {
-            const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::ShaderStorageBlockVariable& pVariable)
-            {
-                return pVariable.mName == pName;
-            });
+       for (auto& bindingPoint : mShaderStorageBlockBindingPoints)
+       {
+           const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::ShaderStorageBlockVariable& pVariable)
+           {
+               return pVariable.mName == pName;
+           });
 
-            if (foundVariable != std::end(bindingPoint.mVariables))
-            {
-                bindingPoint.mSSBO.Bind(*this);
-                setShaderBlockVariable(*foundVariable, pValue);
-                return;
-            }
-        }
+           if (foundVariable != std::end(bindingPoint.mVariables))
+           {
+               bindingPoint.mSSBO.Bind(*this);
+               (*foundVariable).Set(*this, pValue);
+               return;
+           }
+       }
 
-        ZEPHYR_ASSERT(false, "No shader storage block variable found with name '{}'", pName)
+       ZEPHYR_ASSERT(false, "No shader storage block variable found with name '{}'", pName)
     }
 private:
 	bool mDepthTest;
@@ -795,17 +843,6 @@ private:
 
     std::vector<GLData::UniformBlockBindingPoint> mUniformBlockBindingPoints;
     std::vector<GLData::ShaderStorageBlockBindingPoint> mShaderStorageBlockBindingPoints;
-    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const float& pValue);
-    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec2& pValue);
-    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec3& pValue);
-    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::vec4& pValue);
-    void setShaderBlockVariable(const GLData::ShaderStorageBlockVariable& pVariable, const glm::mat4& pValue);
-    void setBlockUniform(const GLData::UniformVariable& pVariable, const float& pValue);
-    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec2& pValue);
-    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec3& pValue);
-    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::vec4& pValue);
-    void setBlockUniform(const GLData::UniformVariable& pVariable, const glm::mat4& pValue);
-
 
     std::optional<std::vector<std::string>> GetErrorMessagesOverride(const GLType::Function& pCallingFunction, const GLType::ErrorType& pErrorType) const;
     std::string getErrorMessage() const;

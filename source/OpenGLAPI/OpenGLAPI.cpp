@@ -135,8 +135,7 @@ Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
 {
 	const OpenGLMesh& GLMesh = getGLMesh(pDrawCall.mMesh.mID);
-
-	if (const Shader* shader = getShader(pDrawCall))
+	if (Shader* shader = getShader(pDrawCall))
 	{
 		shader->use(mGLState);
 
@@ -180,7 +179,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 		else if (shader->getName() == "depthView")
 		{}
 		else
-			ZEPHYR_ASSERT(false, "No shader found to execute DrawCall with");
+			ZEPHYR_ASSERT(false, "Shader {} not found in conditionals to prepare draw. Do you need to add a new shader to the above list?");
 
 		switch (pDrawCall.mMesh.mDrawMode)
 		{
