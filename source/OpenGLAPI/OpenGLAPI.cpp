@@ -275,7 +275,9 @@ void OpenGLAPI::postDraw()
 		mShaders[mSkyBoxShaderIndex].setUniform(mGLState, "viewNoTranslation", view);
 		mShaders[mSkyBoxShaderIndex].setUniform(mGLState, "projection", mProjection);
 
-		GLState previousState = mGLState;
+
+		const bool depthTestBefore = mGLState.getDepthTest();
+		const GLType::DepthTestType depthTestTypeBefore = mGLState.getDepthTestType();
 		mGLState.toggleDepthTest(true);
 		mGLState.setDepthTestType(GLType::DepthTestType::LessEqual);
 
@@ -283,7 +285,8 @@ void OpenGLAPI::postDraw()
 		mCubeMaps.front().bind();
 		draw(getGLMesh(mSkyBoxMeshID));
 
-		mGLState = previousState;
+		mGLState.toggleDepthTest(depthTestBefore);
+		mGLState.setDepthTestType(depthTestTypeBefore);
 	}
 
 	// Unbind after completing draw to ensure all subsequent actions apply to the default FBO.
@@ -292,7 +295,8 @@ void OpenGLAPI::postDraw()
 	{ // Draw the colour output to the screen.
 		// Disable culling and depth testing to draw a quad in normalised screen coordinates
 		// using the mMainScreenFBO colour-buffer filled in the Draw functions in the last frame.
-		GLState previousState = mGLState;
+		const bool depthTestBefore = mGLState.getDepthTest();
+		const bool cullFacesBefore = mGLState.getCullFaces();
 		mGLState.toggleCullFaces(false);
 		mGLState.toggleDepthTest(false);
 
@@ -301,7 +305,8 @@ void OpenGLAPI::postDraw()
 		mMainScreenFBO.getColourTexture().bind();
 		draw(getGLMesh(mScreenQuad));
 
-		mGLState = previousState;
+		mGLState.toggleCullFaces(cullFacesBefore);
+		mGLState.toggleDepthTest(depthTestBefore);
 	}
 
 	ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");

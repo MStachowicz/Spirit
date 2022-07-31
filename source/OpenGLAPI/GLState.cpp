@@ -54,43 +54,6 @@ GLState::GLState()
     ZEPHYR_ASSERT(validateState(), "GLState is inconsistant with actual OpenGL state.");
 }
 
-GLState& GLState::operator=(const GLState& pOther)
-{
-    if (mDepthTest != pOther.mDepthTest)
-        toggleDepthTest(pOther.mDepthTest);
-    if (mDepthTestType != pOther.mDepthTestType)
-        setDepthTestType(pOther.mDepthTestType);
-
-    if (mBlend != pOther.mBlend)
-        toggleBlending(pOther.mBlend);
-    if (mSourceBlendFactor != pOther.mSourceBlendFactor)
-        setBlendFunction(pOther.mSourceBlendFactor, mDestinationBlendFactor);
-    if (mDestinationBlendFactor != pOther.mDestinationBlendFactor)
-        setBlendFunction(mSourceBlendFactor, pOther.mDestinationBlendFactor);
-
-    if (mCullFaces != pOther.mCullFaces)
-        toggleCullFaces(pOther.mCullFaces);
-    if (mCullFacesType != pOther.mCullFacesType)
-        setCullFacesType(pOther.mCullFacesType);
-    if (mFrontFaceOrientation != pOther.mFrontFaceOrientation)
-        setFrontFaceOrientation(pOther.mFrontFaceOrientation);
-
-    if (mWindowClearColour != pOther.mWindowClearColour)
-        setClearColour(pOther.mWindowClearColour);
-
-    if (mPolygonMode != pOther.mPolygonMode)
-        setPolygonMode(pOther.mPolygonMode);
-
-    if (mActiveTextureUnit != pOther.mActiveTextureUnit)
-        setActiveTextureUnit(pOther.mActiveTextureUnit);
-
-    if (mViewport != pOther.mViewport)
-        setViewport(pOther.mViewport[0], pOther.mViewport[1]);
-
-    ZEPHYR_ASSERT(validateState(), "Copying GLState failed, there are inconsistencies between OpenGL state.");
-    return *this;
-}
-
 bool GLState::validateState()
 {
     { // Check depth test flags
@@ -494,24 +457,20 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
         // If there is no binding point for this UniformBlock create it and its UBO.
         // This allows the uniform variables inside the block to be set using setUniformBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
-        mUniformBlockBindingPoints.push_back(GLData::UniformBlockBindingPoint(*this));
+        mUniformBlockBindingPoints.push_back(GLData::UniformBlockBindingPoint(*this, pUniformBlock, static_cast<unsigned int>(mUniformBlockBindingPoints.size())));
         bindingPoint = &mUniformBlockBindingPoints.back();
-        bindingPoint->mInstances++;
-        bindingPoint->mBindingPoint  = static_cast<unsigned int>(mUniformBlockBindingPoints.size() - 1);
-        bindingPoint->mName          = pUniformBlock.mName;
-        bindingPoint->mVariables     = pUniformBlock.mVariables;
 
-        bindingPoint->mUBO.Bind(*this);
-        bindingPoint->mUBO.Reserve(*this, pUniformBlock.mBufferDataSize);
-        bindingPoint->mUBO.AssignBindingPoint(*this, bindingPoint->mBindingPoint);
+        bindingPoint->mUBO->Bind(*this);
+        bindingPoint->mUBO->Reserve(*this, pUniformBlock.mBufferDataSize);
+        bindingPoint->mUBO->AssignBindingPoint(*this, bindingPoint->mBindingPoint);
     }
     else
     {
         // If the UniformBlock has been encountered before. We bind it to the same mBindingPoint of the previously
         // created UniformBlockBufferBacking meaning the blocks share the GPU memory.
         bindingPoint = &(*it);
-        bindingPoint->mInstances++;
-        bindingPoint->mUBO.Bind(*this);
+        bindingPoint->BindUniformBlock(pUniformBlock);
+        bindingPoint->mUBO->Bind(*this);
     }
 
     ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for GLSL Uniform Block '{}'", pUniformBlock.mName);
@@ -519,30 +478,26 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
     UniformBlockBinding(pUniformBlock.mParentShaderHandle, pUniformBlock.mBlockIndex, bindingPoint->mBindingPoint);
 }
 
-void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBufferBlock)
+void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderStorageBlock)
 {
     GLData::ShaderStorageBlockBindingPoint* bindingPoint = nullptr;
 
     // #C++20 Convert to std::contains on vector.
-    const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderBufferBlock](const GLData::ShaderStorageBlockBindingPoint& bindingPoint)
-    { return bindingPoint.mName == pShaderBufferBlock.mName; });
+    const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderStorageBlock](const GLData::ShaderStorageBlockBindingPoint& bindingPoint)
+    { return bindingPoint.mName == pShaderStorageBlock.mName; });
 
     if (it == mShaderStorageBlockBindingPoints.end())
     {
         // If there is no binding point for this ShaderBufferBlock create it and its UBO.
         // This allows the ShaderBufferBlockVariable's inside the block to be set using setShaderStorageBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
-        mShaderStorageBlockBindingPoints.push_back(GLData::ShaderStorageBlockBindingPoint(*this));
+        mShaderStorageBlockBindingPoints.push_back(GLData::ShaderStorageBlockBindingPoint(*this, pShaderStorageBlock, static_cast<unsigned int>(mShaderStorageBlockBindingPoints.size())));
         bindingPoint = &mShaderStorageBlockBindingPoints.back();
-        bindingPoint->mInstances++;
-        bindingPoint->mBindingPoint  = static_cast<unsigned int>(mShaderStorageBlockBindingPoints.size() - 1);
-        bindingPoint->mName          = pShaderBufferBlock.mName;
-        bindingPoint->mVariables     = pShaderBufferBlock.mVariables;
 
         // Reserve the size of the ShaderStorageBlock in the GPU memory
-        bindingPoint->mSSBO.Bind(*this);
-        bindingPoint->mSSBO.Reserve(*this, pShaderBufferBlock.mBufferDataSize);
-        bindingPoint->mSSBO.AssignBindingPoint(*this, bindingPoint->mBindingPoint);
+        bindingPoint->mSSBO->Bind(*this);
+        bindingPoint->mSSBO->Reserve(*this, pShaderStorageBlock.mBufferDataSize);
+        bindingPoint->mSSBO->AssignBindingPoint(*this, bindingPoint->mBindingPoint);
     }
     else
     {
@@ -550,12 +505,12 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderBuff
         // created ShaderStorageBlockBindingPoint meaning the blocks share the GPU memory.
         bindingPoint = &(*it);
         bindingPoint->mInstances++;
-        bindingPoint->mSSBO.Bind(*this);
+        bindingPoint->mSSBO->Bind(*this);
     }
 
-    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderBufferBlock.mName);
-    pShaderBufferBlock.mBindingPoint = bindingPoint->mBindingPoint;
-    ShaderStorageBlockBinding(pShaderBufferBlock.mParentShaderHandle, pShaderBufferBlock.mBlockIndex, bindingPoint->mBindingPoint);
+    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderStorageBlock.mName);
+    pShaderStorageBlock.mBindingPoint = bindingPoint->mBindingPoint;
+    ShaderStorageBlockBinding(pShaderStorageBlock.mParentShaderHandle, pShaderStorageBlock.mBlockIndex, bindingPoint->mBindingPoint);
 }
 
 int GLState::getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle) const
@@ -832,7 +787,7 @@ namespace GLData
         mTopLevelArrayStride = propertyValues[9];
     }
 
-    void GLSLVariable::Set(GLState& pGLState, const bool& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -858,7 +813,7 @@ namespace GLData
         }
     }
 
-    void GLSLVariable::Set(GLState& pGLState, const int& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         // Setting texture sampler types uses int to set their bound texture unit.
         // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
@@ -881,14 +836,15 @@ namespace GLData
             }
             case GLType::GLSLVariableType::BufferBlock :
             {
-                ZEPHYR_ASSERT(false, "Not implemented setting int data on {}s", GLType::toString(mVariableType));
+                static const auto size = sizeof(pValue);
+                pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
                 return;
             }
             default:
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
     }
-    void GLSLVariable::Set(GLState& pGLState, const float& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -916,7 +872,7 @@ namespace GLData
         }
 
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::vec2& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -943,7 +899,7 @@ namespace GLData
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::vec3& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -970,7 +926,7 @@ namespace GLData
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::vec4& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -997,7 +953,7 @@ namespace GLData
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::mat2& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -1022,7 +978,7 @@ namespace GLData
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::mat3& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -1047,7 +1003,7 @@ namespace GLData
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::mat4& pValue)
+    void GLSLVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/* = 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
@@ -1067,12 +1023,38 @@ namespace GLData
             case GLType::GLSLVariableType::BufferBlock :
             {
                 static const auto size = sizeof(pValue);
-	            pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+	            pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, pArrayIndex == 0 ? mOffset.value() : mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex)), size, glm::value_ptr(pValue));
                 return;
             }
             default:
                 ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
         }
+    }
+
+    UniformBlockBindingPoint::UniformBlockBindingPoint(GLState& pGLState, UniformBlock& pUniformBlock, const unsigned int& pIndex)
+        : mUBO(pGLState.CreateUBO(GLType::BufferUsage::StaticDraw))
+        , mBindingPoint(pIndex)
+        , mName(pUniformBlock.mName)
+        , mInstances(0)
+        , mVariables(pUniformBlock.mVariables)
+    {
+        for (auto& variable : mVariables)
+            variable.mBufferBacking = mUBO;
+
+        BindUniformBlock(pUniformBlock);
+    }
+
+    ShaderStorageBlockBindingPoint::ShaderStorageBlockBindingPoint(GLState& pGLState, ShaderStorageBlock& pStorageBlock, const unsigned int pIndex)
+        : mSSBO(pGLState.CreateSSBO(GLType::BufferUsage::StaticDraw))
+        , mBindingPoint(pIndex)
+        , mName(pStorageBlock.mName)
+        , mInstances(0)
+        , mVariables(pStorageBlock.mVariables)
+    {
+        for (auto& variable : mVariables)
+            variable.mBufferBacking = mSSBO;
+
+        BindStorageBlock(pStorageBlock);
     }
 
     void VBO::PushVertexAttributeData(GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize)
