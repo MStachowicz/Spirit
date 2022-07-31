@@ -385,38 +385,15 @@ namespace GLData
         // For all other variables, the value is 0.
         std::optional<int> mIsRowMajor;
 
-        // The index of the atomic counter buffer containing the variable.
-        // If the variable is not an atomic counter uniform, the value is -1.
-        // Uniform Only
-        std::optional<int> mAtomicCounterBufferIndex; // Uniform only
-        // The assigned location for a uniform, input, output, or subroutine uniform variable.
-        // For input, output, or uniform variables with locations specified by a layout qualifier, the specified location is used.
-        // For vertex shader input or fragment shader output variables without a layout qualifier, the location assigned when a program is linked.
-        // For all other input and output variables, the value is -1.
-        // For uniforms in uniform blocks, the value is -1.
-        // Uniform only
-        std::optional<int> mLocation;
-
-        // The number of array elements of the top-level shader storage block member containing to the variable.
-        // If the top-level block member is not declared as an array, the value is 1.
-        // If the top-level block member is an array with no declared size, the value is 0.
-        // Buffer block only
-        std::optional<int> mTopLevelArraySize;
-        // The stride between array elements of the top-level shader storage block member containing the variable.
-        // For top-level block members declared as arrays, the value is the difference, in basic machine units, between the offsets of the variable for consecutive elements in the top-level array.
-        // For top-level block members not declared as an array, the value is 0.
-        // Buffer block only
-        std::optional<int> mTopLevelArrayStride;
-
-        void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0);
-        void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0);
+        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0)      = 0;
+        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0)       = 0;
+        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0)     = 0;
+        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) = 0;
+        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) = 0;
+        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) = 0;
+        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) = 0;
+        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) = 0;
+        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) = 0;
 
        protected:
         GLSLVariable(const GLType::GLSLVariableType& pType) : mVariableType(pType) {}
@@ -429,19 +406,72 @@ namespace GLData
     // https://www.khronos.org/opengl/wiki/Uniform_(GLSL)
     struct UniformVariable : public GLSLVariable
     {
+        // The index of the atomic counter buffer containing the variable.
+        // If the variable is not an atomic counter uniform, the value is -1.
+        // Uniform Only
+        std::optional<int> mAtomicCounterBufferIndex;
+        // The assigned location for a uniform, input, output, or subroutine uniform variable.
+        // For input, output, or uniform variables with locations specified by a layout qualifier, the specified location is used.
+        // For vertex shader input or fragment shader output variables without a layout qualifier, the location assigned when a program is linked.
+        // For all other input and output variables, the value is -1.
+        // For uniforms in uniform blocks, the value is -1.
+        // Uniform only
+        std::optional<int> mLocation;
+
         UniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
+
+        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) override;
     };
     // A GLSL variable that belongs to a UniformBlock
     struct UniformBlockVariable : public GLSLVariable
     {
         UniformBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
-        Buffer* mBufferBacking = nullptr;
+        UBO* mBufferBacking = nullptr;
+
+        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) override;
     };
     // A GLSL variable that belongs to a ShaderStorageBlock
     struct ShaderStorageBlockVariable: public GLSLVariable
     {
+        // The number of array elements of the top-level shader storage block member containing to the variable.
+        // If the top-level block member is not declared as an array, the value is 1.
+        // If the top-level block member is an array with no declared size, the value is 0.
+        // Buffer block only
+        std::optional<int> mTopLevelArraySize;
+        // The stride between array elements of the top-level shader storage block member containing the variable.
+        // For top-level block members declared as arrays, the value is the difference, in basic machine units, between the offsets of the variable for consecutive elements in the top-level array.
+        // For top-level block members not declared as an array, the value is 0.
+        // Buffer block only
+        std::optional<int> mTopLevelArrayStride;
+
         ShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
-        Buffer* mBufferBacking = nullptr;
+        SSBO* mBufferBacking = nullptr;
+
+        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) override;
+        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) override;
     };
 
     // UniformBlocks are GLSL interface blocks which group UniformVariable's.

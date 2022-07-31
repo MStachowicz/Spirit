@@ -739,7 +739,7 @@ namespace GLData
     {
         // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
         // https://www.khronos.org/opengl/wiki/Program_Introspection
-        static const std::array<GLenum, 9> propertyQuery = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_LOCATION, GL_BLOCK_INDEX, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR};
+        static const std::array<GLenum, 8> propertyQuery = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_BLOCK_INDEX, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR};
         std::array<GLint, propertyQuery.size()> propertyValues = {0};
         glGetProgramResourceiv(pShaderProgramHandle, GL_UNIFORM, pVariableIndex, static_cast<GLsizei>(propertyQuery.size()), propertyQuery.data(), static_cast<GLsizei>(propertyValues.size()), NULL, propertyValues.data());
 
@@ -751,12 +751,11 @@ namespace GLData
 
         mDataType     = GLType::convert(propertyValues[1]);
         mOffset       = propertyValues[2];
-        mLocation     = propertyValues[3];
-        mBlockIndex   = propertyValues[4];
-        mArraySize    = propertyValues[5];
-        mArrayStride  = propertyValues[6];
-        mMatrixStride = propertyValues[7];
-        mIsRowMajor   = propertyValues[8];
+        mBlockIndex   = propertyValues[3];
+        mArraySize    = propertyValues[4];
+        mArrayStride  = propertyValues[5];
+        mMatrixStride = propertyValues[6];
+        mIsRowMajor   = propertyValues[7];
     }
 
     ShaderStorageBlockVariable::ShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex)
@@ -787,33 +786,35 @@ namespace GLData
         mTopLevelArrayStride = propertyValues[9];
     }
 
-    void GLSLVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniform1i(mLocation.value(), (GLint)pValue); // Setting a boolean is treated as integer
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting bool data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting bool data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        glUniform1i(mLocation.value(), (GLint)pValue); // Setting a boolean is treated as integer
+    }
+    void UniformBlockVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, &pValue);
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
     }
 
-    void GLSLVariable::Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformVariable::Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        // Setting texture sampler types uses int to set their bound texture unit.
+        // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Int
+                   || mDataType.value() == GLType::DataType::Sampler2D
+                   || mDataType.value() == GLType::DataType::SamplerCube
+                   , "Attempting to set int data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        glUniform1i(mLocation.value(), (GLint)pValue);
+    }
+    void UniformBlockVariable::Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         // Setting texture sampler types uses int to set their bound texture unit.
         // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
@@ -822,213 +823,150 @@ namespace GLData
                    || mDataType.value() == GLType::DataType::SamplerCube
                    , "Attempting to set int data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
 
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniform1i(mLocation.value(), (GLint)pValue);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting int data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, &pValue);
     }
-    void GLSLVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/* = 0*/)
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        // Setting texture sampler types uses int to set their bound texture unit.
+        // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Int
+                   || mDataType.value() == GLType::DataType::Sampler2D
+                   || mDataType.value() == GLType::DataType::SamplerCube
+                   , "Attempting to set int data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniform1f(mLocation.value(), pValue);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                static const auto size = sizeof(pValue);
-	            pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, &pValue);
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
-
+        glUniform1f(mLocation.value(), pValue);
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformBlockVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, &pValue);
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniform2fv(mLocation.value(), 1, &pValue[0]);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        glUniform2fv(mLocation.value(), 1, &pValue[0]);
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformBlockVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniform3fv(mLocation.value(), 1, &pValue[0]);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        glUniform3fv(mLocation.value(), 1, &pValue[0]);
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformBlockVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniform4fv(mLocation.value(), 1, &pValue[0]);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        glUniform4fv(mLocation.value(), 1, &pValue[0]);
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformBlockVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniformMatrix2fv(mLocation.value(), 1, GL_FALSE, &pValue[0][0]);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting mat2 data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting mat2 data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        glUniformMatrix2fv(mLocation.value(), 1, GL_FALSE, &pValue[0][0]);
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformBlockVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniformMatrix3fv(mLocation.value(), 1, GL_FALSE, &pValue[0][0]);
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting mat3 data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                ZEPHYR_ASSERT(false, "Not implemented setting mat3 data on {}s", GLType::toString(mVariableType));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        glUniformMatrix3fv(mLocation.value(), 1, GL_FALSE, &pValue[0][0]);
     }
-    void GLSLVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/* = 0*/)
+    void UniformBlockVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+
+    void UniformVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        glUniformMatrix4fv(mLocation.value(), 1, GL_FALSE, glm::value_ptr(pValue));
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+    }
+    void UniformBlockVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
-
-        switch (mVariableType)
-        {
-            case GLType::GLSLVariableType::Uniform :
-            {
-                glUniformMatrix4fv(mLocation.value(), 1, GL_FALSE, glm::value_ptr(pValue));
-                return;
-            }
-            case GLType::GLSLVariableType::UniformBlock :
-            {
-                static const auto size = sizeof(pValue);
-                pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
-                return;
-            }
-            case GLType::GLSLVariableType::BufferBlock :
-            {
-                static const auto size = sizeof(pValue);
-	            pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, pArrayIndex == 0 ? mOffset.value() : mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex)), size, glm::value_ptr(pValue));
-                return;
-            }
-            default:
-                ZEPHYR_ASSERT(false, "Unkown variable type {}", GLType::toString(mVariableType));
-        }
+        static const auto size = sizeof(pValue);
+        pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
+    }
+    void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/*= 0*/)
+    {
+        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        static const auto size = sizeof(pValue);
+        //if (mVariableArray && (mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex))) >)
+        //{
+        //}
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, pArrayIndex == 0 ? mOffset.value() : mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex)), size, glm::value_ptr(pValue));
     }
 
     UniformBlockBindingPoint::UniformBlockBindingPoint(GLState& pGLState, UniformBlock& pUniformBlock, const unsigned int& pIndex)
