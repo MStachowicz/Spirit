@@ -254,7 +254,8 @@ namespace GLType
         BufferSubData,
         BindBufferRange,
         UniformBlockBinding,
-        ShaderStorageBlockBinding
+        ShaderStorageBlockBinding,
+        CopyBufferSubData
     };
 
     std::string toString(const Function& pFunction);
@@ -803,6 +804,12 @@ public:
     // Data starting at byte pOffset offset and extending for size pSizeInBytes is copied to the data store from the memory pointed to by data.
     // pOffset and pSizeInBytes must define a range lying entirely within the buffer object's data store.
     void BufferSubData(const GLType::BufferType& pBufferType, const int& pOffset, const size_t& pSizeInBytes, const void* pData);
+
+    // Copy all or part of the data store of a buffer object to the data store of another buffer object.
+    // pSize is copied from the source buffer at pSourceOffset to the destination buffer at pDestinationOffset. pSourceOffset, pDestinationOffset and pSize are in terms of basic machine units.
+    // Any of the BufferType targets may be used, but the targets CopyReadBuffer and CopyWriteBuffer are provided specifically to allow copies between buffers without disturbing other GL state.
+    // If the source and destination are the same buffer object, then the source and destination ranges must not overlap.
+    void CopyBufferSubData(const GLType::BufferType& pSourceTarget, const GLType::BufferType& pDestinationTarget, const long long int& pSourceOffset, const long long int& pDestinationOffset, const long long int& pSize);
 
     // Bind a range within a buffer object to an indexed buffer target
     // BufferType must be one of UniformBuffer, ShaderStorageBuffer, AtomicCounterBuffer or TransformFeedbackBuffer

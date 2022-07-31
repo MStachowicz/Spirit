@@ -629,6 +629,12 @@ void GLState::BufferSubData(const GLType::BufferType& pBufferType, const int& pO
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferSubData));
 }
 
+void GLState::CopyBufferSubData(const GLType::BufferType& pSourceTarget, const GLType::BufferType& pDestinationTarget, const long long int& pSourceOffset, const long long int& pDestinationOffset, const long long int& pSize)
+{
+    glCopyBufferSubData(GLType::convert(pSourceTarget), GLType::convert(pDestinationTarget), pSourceOffset, pDestinationOffset, pSize);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::CopyBufferSubData));
+}
+
 void GLState::BindBufferRange(const GLType::BufferType& pType, const unsigned int& pBufferHandle, const unsigned int& pBindingPoint, const unsigned int& pOffset, const size_t& pBindSizeInBytes)
 {
     glBindBufferRange(convert(pType), pBindingPoint, pBufferHandle, pOffset, pBindSizeInBytes);
@@ -1329,6 +1335,7 @@ namespace GLType
             case Function::BindBufferRange :           return "BindBufferRange";
             case Function::UniformBlockBinding :       return "UniformBlockBinding";
             case Function::ShaderStorageBlockBinding : return "ShaderStorageBlockBinding";
+            case Function::CopyBufferSubData :         return "CopyBufferSubData";
             default:
                 ZEPHYR_ASSERT(false, "Unknown Function requested");
                 return "";
@@ -2111,6 +2118,13 @@ std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const 
             {
                 {GLType::ErrorType::InvalidValue,     {"program is not the name of either a program or shader object", "storageBlockIndex is not an active shader storage block index in program", "storageBlockBinding is greater than or equal to the value of MAX_SHADER_STORAGE_BUFFER_BINDINGS."}},
                 {GLType::ErrorType::InvalidOperation, {"program is the name of a shader object." }}
+            }
+        },
+        {GLType::Function::CopyBufferSubData,
+            {
+                {GLType::ErrorType::InvalidEnum,      {"readTarget or writeTarget is not one of the buffer binding targets listed above."}},
+                {GLType::ErrorType::InvalidValue,     {"readOffset, writeOffset or size is negative", "readOffset + size is greater than the size of the source buffer object (its value of GL_BUFFER_SIZE)", "writeOffset + size is greater than the size of the destination buffer object.", "the source and destination are the same buffer object, and the ranges [readOffset, readOffset + size) and [writeOffset, writeOffset + size) overlap."}},
+                {GLType::ErrorType::InvalidOperation, {"zero is bound to readTarget or writeTarget.", "either the source or destination buffer object is mapped with glMapBufferRange or glMapBuffer, unless they were mapped with the GL_MAP_PERSISTENT bit set in the glMapBufferRange access flags." }}
             }
         },
     }};
