@@ -312,6 +312,7 @@ namespace GLData
         const GLType::BufferUsage mUsage;
         const unsigned int mHandle;
 
+        size_t GetReservedSize() const { return mReservedSize; };
     protected:
         // Protected Buffer constructor turning Buffer into a pure interface.
         Buffer(const GLState& pGLState, const GLType::BufferType& pType, const GLType::BufferUsage& pUsage);
@@ -347,10 +348,16 @@ namespace GLData
         friend class GLState;
 
         void AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint);
-
+        // Double the size of this SSBO in GPU memory.
+        // This is a costly operation, where possible call a Buffer::Resize to the predicted size that will be required.
+        // SSBOs are extended when a variable-sized-array ShaderStorageBlockVariable is being set and its offset index passes the end of the SSBO backing it.
+        // All data set before the Extend is lost.
+        void Extend(GLState& pGLState);
        private:
         SSBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
         : Buffer(pGLState, GLType::BufferType::ShaderStorageBuffer, pUsage) {}
+
+        std::optional<unsigned int> mBindingPoint;
     };
 
     // Represents a variable in GLSL offering an interface to set to its data. A GLSLVariable can be found in multiple configurations:
@@ -363,7 +370,8 @@ namespace GLData
         std::optional<GLType::DataType> mDataType;
 
         std::optional<std::string> mName;
-        // Number of array elements. The size is in units of the type associated with the property mDataType. For variables not corresponding to an array of basic types, the value is 0.
+        // Number of array elements. The size is in units of the type associated with the property mDataType.
+        // For variables not corresponding to an array of basic types, the value is 0.
         std::optional<int> mArraySize;
         // The offset of the variable relative to the base of the buffer range holding its value (UBO and SSBO variables)
         std::optional<int> mOffset;
@@ -459,6 +467,8 @@ namespace GLData
         // For top-level block members not declared as an array, the value is 0.
         // Buffer block only
         std::optional<int> mTopLevelArrayStride;
+
+        bool mIsVariableArray = false; // Is this variable declared as an Array with no size constraint.
 
         ShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
         SSBO* mBufferBacking = nullptr;

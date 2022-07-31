@@ -685,11 +685,10 @@ namespace GLData
     }
     void Buffer::Reserve(GLState& pGLState, const size_t& pBytesToReserve)
     {
-        ZEPHYR_ASSERT(mReservedSize == 0, "Reserving buffer memory on an already reserved buffer.");
+        ZEPHYR_ASSERT(mType == GLType::BufferType::ShaderStorageBuffer || mReservedSize == 0, "Reserving buffer memory on an already reserved buffer.");
         mReservedSize = pBytesToReserve;
         pGLState.BufferData(mType, mReservedSize, NULL, mUsage); // Supplying NULL as Data to BufferData reserves the Bytes but does not assign to them.
     }
-
     void Buffer::PushData(GLState& pGLState, const std::vector<int>& pData)
     {
         mUsedSize += pData.size() * sizeof(int);
@@ -784,6 +783,9 @@ namespace GLData
         mIsRowMajor          = propertyValues[7];
         mTopLevelArraySize   = propertyValues[8];
         mTopLevelArrayStride = propertyValues[9];
+
+        if (mArrayStride > 0 && mArraySize == 0)
+            mIsVariableArray = true;
     }
 
     void UniformVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
@@ -963,9 +965,11 @@ namespace GLData
     {
         ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
-        //if (mVariableArray && (mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex))) >)
-        //{
-        //}
+        mBufferBacking->Bind(pGLState);
+
+        if(mIsVariableArray && static_cast<size_t>(mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex))) >= mBufferBacking->GetReservedSize())
+            mBufferBacking->Extend(pGLState);
+
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, pArrayIndex == 0 ? mOffset.value() : mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex)), size, glm::value_ptr(pValue));
     }
 
@@ -1010,8 +1014,17 @@ namespace GLData
 
     void SSBO::AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint)
     {
+        mBindingPoint = pBindingPoint;
         // When binding buffer range, we use the reserved buffer size since we dont have any actual data pushed until buffer variables are set.
-        pGLState.BindBufferRange(mType, mHandle, pBindingPoint, 0, mReservedSize);
+        pGLState.BindBufferRange(mType, mHandle, mBindingPoint.value() , 0, mReservedSize);
+    }
+    void SSBO::Extend(GLState& pGLState)
+    {
+        Reserve(pGLState, mReservedSize * 2);
+
+        // Re-assigning the data to the binding point after a resize
+        if (mBindingPoint.has_value())
+            AssignBindingPoint(pGLState, mBindingPoint.value());
     }
 
     void RBO::generate()
