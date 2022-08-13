@@ -22,7 +22,7 @@ private:
 #define LOG_ERROR(...)      Logger::GetLogger()->error(__VA_ARGS__)
 #define LOG_CRITICAL(...)   Logger::GetLogger()->critical(__VA_ARGS__)
 #define ZEPHYR_ASSERT(x, ...) if ((x)) {} else { ZephyrAssertImplementation(#x, __FILE__, __LINE__, __VA_ARGS__); }
-#define ZEPHYR_ASSERT_MSG(message) const std::string errorMessage = message; if ((errorMessage.empty())) {} else { ZephyrAssertMessageImplementation(errorMessage, __FILE__, __LINE__); }
+#define ZEPHYR_ASSERT_MSG(message) { const std::string errorMessage = message; if ((errorMessage.empty())) {} else { ZephyrAssertMessageImplementation(errorMessage, __FILE__, __LINE__); } }
 
 template <typename ...Args>
 void ZephyrAssertImplementation(const std::string& pCondition, const char* pFile, const int& pLine, Args&& ...pArgs)
