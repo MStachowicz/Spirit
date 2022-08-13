@@ -41,12 +41,12 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	lightPosition.mMesh.mColour		= glm::vec3(1.f);
 	lightPosition.mMesh.mDrawStyle 	= Data::DrawStyle::UniformColour;
 
-	const float floorSize = 25.f;
-	const size_t grassCount = 10000;
+	const float floorSize = 50.f;
+	const size_t grassCount = 40000;
 
 	{ // Cubes
 		std::array<glm::vec3, 10> cubePositions = {
-			glm::vec3(3.0f,   0.5f,  0.0f),
+			glm::vec3(3.0f,   0.5f, -3.0f),
 			glm::vec3(-1.3f,  0.5f, -1.5f),
 			glm::vec3(1.5f,	  0.5f, -2.5f),
 			glm::vec3(-1.5f,  0.5f, -2.5f),
@@ -129,21 +129,48 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	{ // Billboard grass
 		std::array<glm::vec3, grassCount> grassPositions;
 		{
-			std::array<float, grassCount> randomX;
-			util::fillRandomNumbers(-floorSize, floorSize, randomX);
-			std::array<float, grassCount> randomZ;
-			util::fillRandomNumbers(-floorSize, floorSize, randomZ);
-			for (size_t i = 0; i < grassCount; i++)
-				grassPositions[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
+			static const bool randomGrassPlacement = false;
+
+			if (randomGrassPlacement)
+			{
+				std::array<float, grassCount> randomX;
+				util::fillRandomNumbers(-floorSize, floorSize, randomX);
+				std::array<float, grassCount> randomZ;
+				util::fillRandomNumbers(-floorSize, floorSize, randomZ);
+				for (size_t i = 0; i < grassCount; i++)
+					grassPositions[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
+			}
+			else
+			{
+				const float distance = 1.f;
+				float x = -1;
+				float z = 0;
+				for (size_t i = 0; i < grassCount; i++)
+				{
+					x += distance;
+					if (x > floorSize)
+					{
+						x = -floorSize;
+
+						z += distance;
+						if (z > floorSize)
+							z = -floorSize;
+					}
+
+					grassPositions[i] = glm::vec3(x, 0.f, z);
+				}
+			}
 		}
 
-		for (const auto& position : grassPositions)
+  		std::array<float, grassCount> randomY;
+  		util::fillRandomNumbers(0.2f, 0.6f, randomY);
+		for (size_t i = 0; i < grassCount; i++)
 		{
 			auto& entity = mEntityManager.CreateEntity();
 
 			Data::Transform transform;
-			transform.mScale = glm::vec3(0.2f);
-			transform.mPosition = position;
+			transform.mScale = glm::vec3(0.2f, randomY[i], 0.2f);
+			transform.mPosition = grassPositions[i];
 			transform.mPosition.y += transform.mScale.y;
 			mEntityManager.mTransforms.Add(entity, transform);
 
