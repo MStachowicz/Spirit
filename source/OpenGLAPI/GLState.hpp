@@ -311,12 +311,12 @@ namespace GLData
 
         const GLType::BufferType mType;
         const GLType::BufferUsage mUsage;
-        const unsigned int mHandle;
-
+        unsigned int getHandle() { return mHandle; };
         size_t GetReservedSize() const { return mReservedSize; };
     protected:
         // Protected Buffer constructor turning Buffer into a pure interface.
         Buffer(const GLState& pGLState, const GLType::BufferType& pType, const GLType::BufferUsage& pUsage);
+        unsigned int mHandle; // The handle/name of this Buffer in OpenGL. This value can change when a Buffer is extended.
         size_t mReservedSize; // The number of Bytes this Buffer occupies in GPU memory.
         size_t mUsedSize; // The number of Bytes actually pushed to the GPU memory occupied by the Buffer.
     };
@@ -803,12 +803,13 @@ public:
     // Update a subset of a Buffer object's data store.
     // Data starting at byte pOffset offset and extending for size pSizeInBytes is copied to the data store from the memory pointed to by data.
     // pOffset and pSizeInBytes must define a range lying entirely within the buffer object's data store.
-    void BufferSubData(const GLType::BufferType& pBufferType, const int& pOffset, const size_t& pSizeInBytes, const void* pData);
+    void BufferSubData(const GLType::BufferType& pBufferType, const size_t& pOffset, const size_t& pSizeInBytes, const void* pData);
 
     // Copy all or part of the data store of a buffer object to the data store of another buffer object.
     // pSize is copied from the source buffer at pSourceOffset to the destination buffer at pDestinationOffset. pSourceOffset, pDestinationOffset and pSize are in terms of basic machine units.
     // Any of the BufferType targets may be used, but the targets CopyReadBuffer and CopyWriteBuffer are provided specifically to allow copies between buffers without disturbing other GL state.
     // If the source and destination are the same buffer object, then the source and destination ranges must not overlap.
+    // OpenGL 4.6 - Replace with bindless
     void CopyBufferSubData(const GLType::BufferType& pSourceTarget, const GLType::BufferType& pDestinationTarget, const long long int& pSourceOffset, const long long int& pDestinationOffset, const long long int& pSize);
 
     // Bind a range within a buffer object to an indexed buffer target

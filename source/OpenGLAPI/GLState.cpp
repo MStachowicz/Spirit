@@ -355,7 +355,7 @@ void GLState::BindBuffer(const GLType::BufferType& pBufferType, const unsigned i
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindBuffer));
 }
 
-void GLState::DeleteBuffer(const unsigned int &pBufferHandle) const
+void GLState::DeleteBuffer(const unsigned int& pBufferHandle) const
 {
     glDeleteBuffers(1, &pBufferHandle);
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteBuffer));
@@ -623,7 +623,7 @@ void GLState::BufferData(const GLType::BufferType& pBufferType, const size_t& pS
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferData));
 }
 
-void GLState::BufferSubData(const GLType::BufferType& pBufferType, const int& pOffset, const size_t& pSizeInBytes, const void* pData)
+void GLState::BufferSubData(const GLType::BufferType& pBufferType, const size_t& pOffset, const size_t& pSizeInBytes, const void* pData)
 {
     glBufferSubData(convert(pBufferType), pOffset, pSizeInBytes, pData);
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferSubData));
@@ -973,10 +973,15 @@ namespace GLData
         static const auto size = sizeof(pValue);
         mBufferBacking->Bind(pGLState);
 
-        if(mIsVariableArray && static_cast<size_t>(mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex))) >= mBufferBacking->GetReservedSize())
+        const size_t variableOffset = static_cast<size_t>(mOffset.value() + (static_cast<size_t>(mArrayStride.value()) * pArrayIndex));
+        if(mIsVariableArray && variableOffset >= mBufferBacking->GetReservedSize())
+        {
             mBufferBacking->Extend(pGLState);
+            ZEPHYR_ASSERT(!(variableOffset >= mBufferBacking->GetReservedSize()),
+                          "Extending SSBO didn't reserve enough space to set variable. Extend should take a minimum extend size instead of only doubling already reserved size.");
+        }
 
-        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, pArrayIndex == 0 ? mOffset.value() : mOffset.value() + (mArrayStride.value() * static_cast<int>(pArrayIndex)), size, glm::value_ptr(pValue));
+        pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, variableOffset, size, glm::value_ptr(pValue));
     }
 
     UniformBlockBindingPoint::UniformBlockBindingPoint(GLState& pGLState, UniformBlock& pUniformBlock, const unsigned int& pIndex)
@@ -1026,11 +1031,26 @@ namespace GLData
     }
     void SSBO::Extend(GLState& pGLState)
     {
-        Reserve(pGLState, mReservedSize * 2);
+        // Creates a new Buffer of extended size then copies the current data into the new buffer.
+        // The original buffer is then deleted and the new buffer is assigned as this Buffer.
 
-        // Re-assigning the data to the binding point after a resize
+        const size_t previousSize = mReservedSize;
+        const size_t newSize = mReservedSize == 0 ? 1 : mReservedSize * 2;
+
+        auto newSSBOHandle = pGLState.GenBuffers();
+        pGLState.BindBuffer(GLType::BufferType::CopyWriteBuffer, newSSBOHandle);
+        pGLState.BufferData(GLType::BufferType::CopyWriteBuffer, newSize, NULL, GLType::BufferUsage::StreamCopy);
+        pGLState.BindBuffer(GLType::BufferType::CopyReadBuffer, mHandle);
+        pGLState.CopyBufferSubData(GLType::BufferType::CopyReadBuffer, GLType::BufferType::CopyWriteBuffer, 0, 0, mReservedSize);
+        pGLState.DeleteBuffer(mHandle);
+
+        mHandle = newSSBOHandle;
+        pGLState.BindBuffer(GLType::BufferType::ShaderStorageBuffer, mHandle);
+        mReservedSize = newSize;
         if (mBindingPoint.has_value())
             AssignBindingPoint(pGLState, mBindingPoint.value());
+
+        ZEPHYR_ASSERT(mReservedSize == newSize, "Failed to resize the current buffer.");
     }
 
     void RBO::generate()
