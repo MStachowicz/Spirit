@@ -72,6 +72,12 @@ OpenGLAPI::~OpenGLAPI()
 		OpenGLInstances.erase(it);
 }
 
+void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+{
+	// The derived OpenGLAPI extends GraphicsAPI::onTransformComponentChange by also applying changes to the GLData relevent to the DrawCall.
+	GraphicsAPI::onTransformComponentChange(pEntity, pTransform);
+}
+
 void OpenGLAPI::preDraw()
 {
 	mMainScreenFBO.bind(mGLState);

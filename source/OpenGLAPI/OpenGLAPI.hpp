@@ -49,6 +49,8 @@ public:
 	void initialiseTexture(const Texture& pTexture)  	   		override;
 	void initialiseCubeMap(const CubeMapTexture& pCubeMap) 		override;
 
+	void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) override;
+
 private:
 	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
 	inline static std::vector<OpenGLAPI*> OpenGLInstances;

@@ -33,10 +33,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 , mImGuiRenderTimeTakenMS(0)
 , mDrawTimeTakenMS(0)
 {
-	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
-	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
-	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
-
 	lightPosition.mMesh.mID 		= mMeshManager.getMeshID("3DCube");
 	lightPosition.mMesh.mColour		= glm::vec3(1.f);
 	lightPosition.mMesh.mDrawStyle 	= Data::DrawStyle::UniformColour;
@@ -207,8 +203,7 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 			mEntityManager.mMeshes.Add(entity, mesh);
 		}
 	}
-
-	{// Lights
+	{ // Lights
 		{ // Point light
 			const std::array<glm::vec3, 4> pointLightPositions = {
 				glm::vec3(0.7f, 1.7f, 2.0f),
@@ -233,70 +228,17 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 		mEntityManager.mSpotLights.Add(mEntityManager.CreateEntity(), {});
 	}
 
-	mEntityManager.ForEach([this](const ECS::Entity &pEntity){ parseEntity(pEntity); });
-	mEntityManager.mTransforms.mChangedComponentEvent.Subscribe(std::bind(&Renderer::onTransformComponentChange, this, std::placeholders::_1, std::placeholders::_2));
+	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
+	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
+	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
+	mEntityManager.ForEach([this](const ECS::Entity &pEntity){ mOpenGLAPI->onEntityAdded(pEntity, mEntityManager); });
+	mEntityManager.mTransforms.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onTransformComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
 }
 
 Renderer::~Renderer()
 {
 	delete mOpenGLAPI;
 }
-
-void Renderer::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
-{
-	// Find the DrawCall containing pEntity Transform data and update the model matrix for it.
-	for (auto& drawCall : mDrawCalls)
-	{
-		auto it = drawCall.mEntityModelIndexLookup.find(pEntity.mID);
-		if (it != drawCall.mEntityModelIndexLookup.end())
-		{
-			drawCall.mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
-			return;
-		}
-	}
-}
-
-void Renderer::parseEntity(const ECS::Entity& pEntity)
-{
-	// Grab all the entities with meshes to draw then confirm they also have a transform component to use as a model matrix.
-	if (const Data::MeshDraw* mesh = mEntityManager.mMeshes.GetComponent(pEntity))
-	{
-		if (const Data::Transform* transform = mEntityManager.mTransforms.GetComponent(pEntity))
-		{
-			DrawCall drawCall;
-			drawCall.mMesh = *mesh;
-
-			auto it = std::find_if(mDrawCalls.begin(), mDrawCalls.end(), [&drawCall](const DrawCall& entry)
-			{
-				return entry.mMesh.mID              == drawCall.mMesh.mID
-				&& entry.mMesh.mDrawMode            == drawCall.mMesh.mDrawMode
-				&& entry.mMesh.mDrawStyle           == drawCall.mMesh.mDrawStyle
-				// Per DrawStyle values
-				&& entry.mMesh.mTexture1            == drawCall.mMesh.mTexture1
-				&& entry.mMesh.mTexture2            == drawCall.mMesh.mTexture2
-				&& entry.mMesh.mMixFactor           == drawCall.mMesh.mMixFactor
-				&& entry.mMesh.mColour              == drawCall.mMesh.mColour
-				&& entry.mMesh.mDiffuseTextureID    == drawCall.mMesh.mDiffuseTextureID
-				&& entry.mMesh.mSpecularTextureID   == drawCall.mMesh.mSpecularTextureID
-				&& entry.mMesh.mShininess           == drawCall.mMesh.mShininess
-				&& entry.mMesh.mTextureRepeatFactor == drawCall.mMesh.mTextureRepeatFactor;
-			});
-
-			if (it == mDrawCalls.end())
-			{
-				drawCall.mEntityModelIndexLookup[pEntity.mID] = drawCall.mModels.size();
-				drawCall.mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
-				mDrawCalls.push_back(drawCall);
-			}
-			else
-			{
-				it->mEntityModelIndexLookup[pEntity.mID] = it->mModels.size();
-				it->mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
-			}
-		}
-	}
-}
-
 
 void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
@@ -322,10 +264,7 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 
 	onFrameStart(pTimeSinceLastDraw);
 	{ // Draw all meshes via DrawCalls
-
-		for (const auto& drawCall : mDrawCalls)
-			if(!drawCall.mModels.empty())
-				mOpenGLAPI->draw(drawCall);
+		mOpenGLAPI->draw();
 
 		if (mRenderLightPositions)
 		{

@@ -67,6 +67,7 @@ source/OpenGLAPI/Shader.cpp
 )
 target_include_directories(OpenGLAPI
 PUBLIC source/OpenGLAPI
+PUBLIC source/External/GLM
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(OpenGLAPI
@@ -127,17 +128,18 @@ PRIVATE Logger
 
 # ------------------------ INTERFACE ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Zephyr GraphicsAPI + InputAPI Interfaces")
-add_library(ZephyrInterface INTERFACE
+add_library(ZephyrInterface
 source/Interface/DrawCall.hpp
 source/Interface/GraphicsAPI.hpp
+source/Interface/GraphicsAPI.cpp
 source/Interface/InputAPI.hpp
 )
-target_include_directories(ZephyrInterface INTERFACE
-INTERFACE source/Interface
+target_include_directories(ZephyrInterface
+PUBLIC source/Interface
 )
 target_link_libraries(ZephyrInterface
-INTERFACE Data
-INTERFACE ECS
+PUBLIC ECS
+PRIVATE Utility
 )
 # ------------------------ INTERFACE END ----------------------------
 
@@ -198,7 +200,7 @@ PUBLIC source/Utility
 PUBLIC source/External/GLM
 )
 target_link_libraries(Utility
-PRIVATE Logger
+PUBLIC Logger
 )
 # ------------------------ UTILITY END ----------------------------
 

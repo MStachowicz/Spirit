@@ -5,6 +5,7 @@
 #include "Camera.hpp"
 
 #include "DrawCall.hpp"
+
 #include <vector>
 
 class GraphicsAPI;
@@ -14,21 +15,14 @@ namespace ECS
 	class EntityManager;
 	class Entity;
 }
-namespace Data
-{
-	struct Transform;
-}
 
-// Parses the Entity list into a list of DrawCalls to send to a GraphicsAPI to execute.
-// The combination of components an entity comprises of, defines how the entity will be rendered.
+// Mediates the ECS and derived graphics classes.
+// Responsible for owning and calling the Draw functions of GraphicsAPI's.
 class Renderer
 {
 public:
 	Renderer(ECS::EntityManager& pEntityManager);
 	~Renderer();
-
-	void parseEntity(const ECS::Entity& pEntity);
-	void onTransformComponentChange(const ECS::Entity& pEntityID, const Data::Transform& pTransform);
 
 	void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
 	void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -49,7 +43,6 @@ private:
 	ECS::EntityManager& mEntityManager;
 
 	DrawCall lightPosition;
-	std::vector<DrawCall> mDrawCalls; // Contains unique Data::MeshDraw's to be executed by the GraphicsAPI in all DrawCall::mModels orientations.
 
 	bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.
 	bool mRenderLightPositions;

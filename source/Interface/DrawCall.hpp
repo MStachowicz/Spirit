@@ -1,15 +1,21 @@
 #pragma once
 
+// Data
 #include "Mesh.hpp"
 
+// ECS
 #include "Entity.hpp"
 
+// GLM
 #include "glm/mat4x4.hpp"
 
+// STD
 #include <vector>
 #include <unordered_map>
 
-// A request to execute a specific draw using a GraphicsAPI.
+// A request to execute a specific MeshDraw at a number of locations using a GraphicsAPI.
+// DrawCall's purpose is to group together the same MeshDraw's differentiating them only by the Model matrices found inside mModels.
+// For the above reason DrawCalls are a Zephyr::Renderer construct as they are fed to GraphicsAPI's in this more parsable format for instancing.
 struct DrawCall
 {
 	Data::MeshDraw mMesh;
