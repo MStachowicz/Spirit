@@ -239,6 +239,8 @@ namespace GLType
         Viewport,
         DrawElements,
         DrawArrays,
+        DrawElementsInstanced,
+        DrawArraysInstanced,
         BindFramebuffer,
         CreateShader,
         ShaderSource,
@@ -699,18 +701,24 @@ public:
     // Selects active texture unit subsequent texture state calls will affect. The number of texture units an implementation supports is implementation dependent, but must be at least 80.
     void setActiveTextureUnit(const int& pUnitPosition);
 
-    // Render primitives from array data
-    // pPrimitiveMode: What kind of primitives to render.
-    // pCount: Number of elements to be rendered.
-    // Specifies multiple geometric primitives with very few subroutine calls.
-    // Instead of passing each individual vertex, normal, texture coordinate... you can pre-specify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
-    void drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount);
-    // Render primitives from array data
-    // pPrimitiveMode: What kind of primitives to render.
-    // pCount: Number of indices to be rendered.
-    // Specifies multiple geometric primitives with very few subroutine calls.
-    // Instead of passing each individual vertex, normal, texture coordinate... you can pre-specify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
-    void drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount);
+    // Render primitives from array data.
+    // drawArrays specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL procedure to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and colors and use them to construct a sequence of primitives with a single call to glDrawArrays.
+    // When drawArrays is called, it uses pArraySize sequential elements from each enabled array to construct a sequence of geometric primitives, beginning with element first. pPrimitiveMode specifies what kind of primitives are constructed and how the array elements construct those primitives.
+    // Vertex attributes that are modified by drawArrays have an unspecified value after drawArrays returns. Attributes that aren't modified remain well defined.
+    void drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize);
+    // Draw multiple instances of a range of elements
+    // drawArraysInstanced behaves identically to drawArrays except that pInstanceCount instances of the range of elements are executed and the value of the internal counter instanceID advances for each iteration.
+    // instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
+    void drawArraysInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize, const int& pInstanceCount);
+    // Render primitives from array data.
+    // drawElements specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL function to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
+    // When drawElements is called, it uses pElementSize sequential elements from an enabled array, starting at indices to construct a sequence of geometric primitives. pPrimitiveMode specifies what kind of primitives are constructed and how the array elements construct these primitives. If more than one array is enabled, each is used.
+    // Vertex attributes that are modified by drawElements have an unspecified value after drawElements returns. Attributes that aren't modified maintain their previous values.
+    void drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize);
+    // Draw multiple instances of a set of elements.
+    // drawElementsInstanced behaves identically to drawElements except that pInstanceCount of the set of elements are executed and the value of the internal counter instanceID advances for each iteration.
+    // instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
+    void drawElementsInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize, const int& pInstanceCount);
 
     // Bind a FBO to a framebuffer target
     void bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle);

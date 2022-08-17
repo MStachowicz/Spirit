@@ -314,15 +314,25 @@ void GLState::setActiveTextureUnit(const int& pTextureUnitPosition)
     // GL_INVALID_ENUM is generated if texture is not one of GL_TEXTUREi, where i ranges from zero to the value of GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS minus one.
 }
 
-void GLState::drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)
+void GLState::drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize)
 {
-    glDrawElements(convert(pPrimitiveMode), pCount, GL_UNSIGNED_INT, 0);
+    glDrawArrays(convert(pPrimitiveMode), 0, pArraySize);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawArrays));
+}
+void GLState::drawArraysInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize, const int& pInstanceCount)
+{
+	glDrawArraysInstanced(GLType::convert(pPrimitiveMode), 0, pArraySize, pInstanceCount);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawArraysInstanced));
+}
+void GLState::drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize)
+{
+    glDrawElements(GLType::convert(pPrimitiveMode), pElementsSize, GL_UNSIGNED_INT, 0);
     ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawElements));
 }
-void GLState::drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pCount)
+void GLState::drawElementsInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize, const int& pInstanceCount)
 {
-    glDrawArrays(convert(pPrimitiveMode), 0, pCount);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawArrays));
+	glDrawElementsInstanced(GLType::convert(pPrimitiveMode), pElementsSize, GL_UNSIGNED_INT, 0, pInstanceCount);
+    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawElementsInstanced));
 }
 
 void GLState::bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle)
@@ -1337,8 +1347,10 @@ namespace GLType
         switch (pFunction)
         {
             case Function::Viewport :                  return "Viewport";
-            case Function::DrawElements :              return "DrawElements";
             case Function::DrawArrays :                return "DrawArrays";
+            case Function::DrawArraysInstanced :       return "DrawArraysInstanced";
+            case Function::DrawElements :              return "DrawElements";
+            case Function::DrawElementsInstanced :     return "DrawElementsInstanced";
             case Function::BindFramebuffer :           return "BindFramebuffer";
             case Function::CreateShader :              return "CreateShader";
             case Function::ShaderSource :              return "ShaderSource";
@@ -2032,6 +2044,22 @@ std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const 
                 {GLType::ErrorType::InvalidValue, {"Either width or height is negative"}}
             }
         },
+        {GLType::Function::DrawArrays,
+            {
+                {GLType::ErrorType::InvalidEnum,      {"Mode is not an accepted value"}},
+                {GLType::ErrorType::InvalidValue,     {"Count is negative"}},
+                {GLType::ErrorType::InvalidOperation, {"Non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped",
+                                                       "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object"}}
+            }
+        },
+        {GLType::Function::DrawArraysInstanced,
+            {
+                {GLType::ErrorType::InvalidEnum,      {"mode is not one of GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES GL_LINES_ADJACENCY, GL_LINE_STRIP_ADJACENCY, GL_TRIANGLES_ADJACENCY, GL_TRIANGLE_STRIP_ADJACENCY or GL_PATCHES"}},
+                {GLType::ErrorType::InvalidValue,     {"count or instancecount is negative."}},
+                {GLType::ErrorType::InvalidOperation, {"geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.",
+                                                       "a non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped"}}
+            }
+        },
         {GLType::Function::DrawElements,
             {
                 {GLType::ErrorType::InvalidEnum,     {"Mode is not an accepted value"}},
@@ -2040,12 +2068,12 @@ std::optional<std::vector<std::string>> GLState::GetErrorMessagesOverride(const 
                                                       "Non-zero buffer object name is bound to an enabled array or the element array and the buffer object's data store is currently mapped"}}
             }
         },
-        {GLType::Function::DrawArrays,
+        {GLType::Function::DrawElementsInstanced,
             {
-                {GLType::ErrorType::InvalidEnum,      {"Mode is not an accepted value"}},
-                {GLType::ErrorType::InvalidValue,     {"Count is negative"}},
-                {GLType::ErrorType::InvalidOperation, {"Non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped",
-                                                       "Geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object"}}
+                {GLType::ErrorType::InvalidEnum,     {"mode is not one of GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, or GL_TRIANGLES."}},
+                {GLType::ErrorType::InvalidValue,    {"count or instancecount is negative"}},
+                {GLType::ErrorType::InvalidOperation,{"a geometry shader is active and mode is incompatible with the input primitive type of the geometry shader in the currently installed program object.",
+                                                      "a non-zero buffer object name is bound to an enabled array and the buffer object's data store is currently mapped"}}
             }
         },
         {GLType::Function::BindFramebuffer,
