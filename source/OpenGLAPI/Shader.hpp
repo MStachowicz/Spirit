@@ -2,8 +2,9 @@
 
 #include "GLState.hpp"
 
-#include "string"
-#include "set"
+#include <string>
+#include <set>
+#include <algorithm>
 
 // Handles the loading of GLSL shaders from file.
 // Provides functions to set GLSL uniform variables.
@@ -46,6 +47,21 @@ public:
             ZEPHYR_ASSERT(false, "Uniform variable '{}' not found in shader '{}'", pVariableName, mName);
     }
 
+    GLData::ShaderStorageBlockVariable* getShaderBlockVariable(const std::string& pVariableName)
+    {
+        for (auto& shaderBlock : mShaderBufferBlocks)
+        {
+            auto& variable = std::find_if(std::begin(shaderBlock.mVariables), std::end(shaderBlock.mVariables),
+                [&pVariableName](const GLData::ShaderStorageBlockVariable& pVariable) { return pVariable.mName.value() == pVariableName; });
+
+            if (variable != shaderBlock.mVariables.end())
+                return &(*variable);
+        }
+
+        ZEPHYR_ASSERT(false, "ShaderStorageBlockVariable '{}' not found in shader '{}'", pVariableName, mName);
+        return nullptr;
+    }
+
     // Returns the number of components the specified attribute consists of.
     // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)
     static int getAttributeComponentCount(const Attribute& pAttribute);
@@ -71,6 +87,5 @@ private:
     std::vector<GLData::ShaderStorageBlock> mShaderBufferBlocks;
 
     static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
-
     static std::string getAttributeName(const Attribute &pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
 };
