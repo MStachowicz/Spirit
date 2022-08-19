@@ -109,12 +109,7 @@ private:
 	size_t mUniformShaderIndex;
 	size_t mMaterialShaderIndex;
 	size_t mLightMapIndex;
-	size_t mDepthViewerIndex;
-	size_t mScreenTextureIndex;
-	size_t mSkyBoxShaderIndex;
-	size_t mVisualiseNormalIndex;
-	MeshID mScreenQuad;
-	MeshID mSkyBoxMeshID;
+	size_t mTexture1InstancedShaderIndex;
 	TextureID mMissingTextureID;
 	int pointLightDrawCount;
 	int spotLightDrawCount;
@@ -139,10 +134,20 @@ private:
 	};
 	PostProcessingOptions mPostProcessingOptions;
 
-	// OpenGL data
 	GLData::FBO mMainScreenFBO;
-	std::vector<Shader> mShaders;
+	MeshID mScreenQuad;
+	Shader mScreenTextureShader;
+
+	MeshID mSkyBoxMeshID;
+	Shader mSkyBoxShader;
+
+	Shader mDepthViewerShader;
+	Shader mVisualiseNormalShader;
+
+	std::vector<Shader> mShaders; // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
+
 	std::vector<OpenGLMesh> mGLMeshes;
-	std::vector<GLData::Texture> mTextures; // Mapping of Zephyr::Texture to OpenGL::Texture.
-	std::vector<GLData::Texture> mCubeMaps;
+	std::vector<GLData::Texture> mTextures; // Mapping of Data::Texture to OpenGL::Texture.
+	std::vector<GLData::Texture> mCubeMaps; // Mapping of Data::CubeMapTexture to OpenGL::Texture.
+
 };

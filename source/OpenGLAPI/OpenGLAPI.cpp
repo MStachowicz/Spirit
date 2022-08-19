@@ -41,19 +41,26 @@ OpenGLAPI::OpenGLAPI()
 	, mMaterialShaderIndex(2)
 	, mUniformShaderIndex(4)
 	, mLightMapIndex(5)
-	, mDepthViewerIndex(6)
-	, mScreenTextureIndex(7)
-	, mSkyBoxShaderIndex(8)
-	, mVisualiseNormalIndex(9)
-	, mScreenQuad()
-	, mSkyBoxMeshID()
+	, mTexture1InstancedShaderIndex(6)
 	, mMissingTextureID()
 	, pointLightDrawCount(0)
 	, spotLightDrawCount(0)
 	, directionalLightDrawCount(0)
 	, mBufferDrawType(BufferDrawType::Colour)
 	, mPostProcessingOptions()
-	, mShaders{ Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("depthView", mGLState), Shader("screenTexture", mGLState), Shader("skybox", mGLState), Shader("visualiseNormal", mGLState), Shader("texture1Instanced", mGLState) }
+	, mScreenQuad()
+	, mScreenTextureShader("screenTexture", mGLState)
+	, mSkyBoxMeshID()
+	, mSkyBoxShader("skybox", mGLState)
+	, mDepthViewerShader("depthView", mGLState)
+	, mVisualiseNormalShader("visualiseNormal", mGLState)
+	, mShaders{ Shader("texture1", mGLState)
+			  , Shader("texture2", mGLState)
+			  , Shader("material", mGLState)
+			  , Shader("colour", mGLState)
+			  , Shader("uniformColour", mGLState)
+			  , Shader("lightMap", mGLState)
+			  , Shader("texture1Instanced", mGLState) }
 {
     glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
@@ -188,20 +195,20 @@ void OpenGLAPI::preDraw()
 
 	if (mBufferDrawType == BufferDrawType::Depth)
 	{
-		mShaders[mDepthViewerIndex].use(mGLState);
-		mShaders[mDepthViewerIndex].setUniform(mGLState, "near", mZNearPlane);
-		mShaders[mDepthViewerIndex].setUniform(mGLState, "far",  mZFarPlane);
-		mShaders[mDepthViewerIndex].setUniform(mGLState, "linearDepthView",  mLinearDepthView);
+		mDepthViewerShader.use(mGLState);
+		mDepthViewerShader.setUniform(mGLState, "near", mZNearPlane);
+		mDepthViewerShader.setUniform(mGLState, "far",  mZFarPlane);
+		mDepthViewerShader.setUniform(mGLState, "linearDepthView",  mLinearDepthView);
 	}
 
 	{ // PostProcessing setters
-		mShaders[mScreenTextureIndex].use(mGLState);
-		mShaders[mScreenTextureIndex].setUniform(mGLState, "invertColours", mPostProcessingOptions.mInvertColours);
-		mShaders[mScreenTextureIndex].setUniform(mGLState, "grayScale", mPostProcessingOptions.mGrayScale);
-		mShaders[mScreenTextureIndex].setUniform(mGLState, "sharpen", mPostProcessingOptions.mSharpen);
-		mShaders[mScreenTextureIndex].setUniform(mGLState, "blur", mPostProcessingOptions.mBlur);
-		mShaders[mScreenTextureIndex].setUniform(mGLState, "edgeDetection", mPostProcessingOptions.mEdgeDetection);
-		mShaders[mScreenTextureIndex].setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
+		mScreenTextureShader.use(mGLState);
+		mScreenTextureShader.setUniform(mGLState, "invertColours", mPostProcessingOptions.mInvertColours);
+		mScreenTextureShader.setUniform(mGLState, "grayScale", mPostProcessingOptions.mGrayScale);
+		mScreenTextureShader.setUniform(mGLState, "sharpen", mPostProcessingOptions.mSharpen);
+		mScreenTextureShader.setUniform(mGLState, "blur", mPostProcessingOptions.mBlur);
+		mScreenTextureShader.setUniform(mGLState, "edgeDetection", mPostProcessingOptions.mEdgeDetection);
+		mScreenTextureShader.setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
 	}
 
 	// TODO: Set this for all shaders that use viewPosition.
@@ -232,14 +239,14 @@ Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 		}
 	}
 	else if (mBufferDrawType == BufferDrawType::Depth)
-		shader = &mShaders[mDepthViewerIndex];
+		shader = &mDepthViewerShader;
 
 	ZEPHYR_ASSERT(shader, "Could not find a shader to execute this DrawCall with");
 
 	if (mUseInstancedDraw && pDrawCall.mModels.size() >= mInstancingCountThreshold)
 	{
-		if (shader->getName() == "texture1") // TODO: If shader is an instanced one
-        	shader = &mShaders.back();
+		if (shader->getName() == "texture1") // TODO: If shader has an instanced version
+        	shader = &mShaders.back(); // TODO: Get the instanced version
  	}
 
 	return shader;
@@ -314,7 +321,7 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 				draw(GLMesh);
 				if (mVisualiseNormals)
 				{
-					mShaders[mVisualiseNormalIndex].setUniform(mGLState, "model", model);
+					mVisualiseNormalShader.setUniform(mGLState, "model", model);
 					draw(GLMesh);
 				}
 			}
@@ -399,10 +406,10 @@ void OpenGLAPI::postDraw()
 	{ // Skybox render
 		// Skybox is drawn in postDraw to maximise depth test culling of the textures in the cubemap which will always pass otherwise.
 		// Depth testing must be set to GL_LEQUAL because the depth values of skybox's are equal to depth buffer contents.
-		mShaders[mSkyBoxShaderIndex].use(mGLState);
+		mSkyBoxShader.use(mGLState);
 		const glm::mat4 view = glm::mat4(glm::mat3(mViewMatrix)); // remove translation from the view matrix
-		mShaders[mSkyBoxShaderIndex].setUniform(mGLState, "viewNoTranslation", view);
-		mShaders[mSkyBoxShaderIndex].setUniform(mGLState, "projection", mProjection);
+		mSkyBoxShader.setUniform(mGLState, "viewNoTranslation", view);
+		mSkyBoxShader.setUniform(mGLState, "projection", mProjection);
 
 
 		const bool depthTestBefore = mGLState.getDepthTest();
@@ -429,7 +436,7 @@ void OpenGLAPI::postDraw()
 		mGLState.toggleCullFaces(false);
 		mGLState.toggleDepthTest(false);
 
-		mShaders[mScreenTextureIndex].use(mGLState);
+		mScreenTextureShader.use(mGLState);
 		mGLState.setActiveTextureUnit(0);
 		mMainScreenFBO.getColourTexture().bind();
 		draw(getGLMesh(mScreenQuad));
@@ -491,9 +498,10 @@ void OpenGLAPI::renderImGui()
 		if (ImGui::Checkbox("Use instanced rendering", &mUseInstancedDraw))
 			onInstancedDrawToggled();
 
-		ImGui::SliderInt("Instanced rendering threshold", &mInstancingCountThreshold, 1, 1000);
+		if (mUseInstancedDraw)
+      		ImGui::SliderInt("Instanced rendering threshold", &mInstancingCountThreshold, 1, 1000);
 
-		ImGui::Separator();
+  		ImGui::Separator();
 		mGLState.renderImGui();
 
     	ImGui::Separator();
