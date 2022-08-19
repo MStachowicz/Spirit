@@ -54,7 +54,7 @@ public:
 	void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 
 	virtual void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform);
-	void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
+	virtual void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
 
 protected:
 	std::vector<DrawCall> mDrawCalls; // GraphicsAPI Executes all these DrawCalls using the draw function.

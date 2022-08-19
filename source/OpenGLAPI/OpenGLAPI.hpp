@@ -50,6 +50,7 @@ public:
 	void initialiseCubeMap(const CubeMapTexture& pCubeMap) 		override;
 
 	void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) override;
+	void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)			   override;
 
 private:
 	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
@@ -79,7 +80,9 @@ private:
 	// Returns the shader needed to execute a particular DrawCall
 	Shader* getShader(const DrawCall& pDrawCall);
 	// Recursively draw the OpenGLMesh and all its children.
-	void draw(const OpenGLMesh& pMesh);
+	void draw(const OpenGLMesh& pMesh, const size_t& pInstancedCount = 0);
+	// Called whenever mUseInstancedDraw changes.
+	void onInstancedDrawToggled();
 
 	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
@@ -89,6 +92,8 @@ private:
 	// By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
 	bool mLinearDepthView;
 	bool mVisualiseNormals;
+	bool mUseInstancedDraw; // When possible this renderer will use DrawInstanced to more efficiently render lots of the same objects.
+	int mInstancingCountThreshold; // When a DrawCall is repeated this many times, it is marked as a candidate for instanced rendering. To qualify, the DrawCall must also have an instanced compatible shader retrieved by getShader.
 	float mZNearPlane;
 	float mZFarPlane;
 	float mFOV;

@@ -3,8 +3,12 @@
 // Interface
 #include "DrawCall.hpp"
 
+// ECS
+#include "EntityManager.hpp"
+
 // Data
 #include "Mesh.hpp"
+#include "Transform.hpp"
 #include "Texture.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
@@ -24,6 +28,8 @@ OpenGLAPI::OpenGLAPI()
 	, cOpenGLVersionMinor(3)
 	, mLinearDepthView(false)
 	, mVisualiseNormals(false)
+	, mUseInstancedDraw(true)
+	, mInstancingCountThreshold(20)
 	, mZNearPlane(0.1f)
 	, mZFarPlane (100.0f)
 	, mFOV(45.f)
@@ -72,10 +78,101 @@ OpenGLAPI::~OpenGLAPI()
 		OpenGLInstances.erase(it);
 }
 
+void OpenGLAPI::onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
+{
+    // If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
+    // If the MeshDraw variation already exists in a DrawCall, append just the Transform data to the mModels.
+    if (const Data::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
+    {
+        if (const Data::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
+        {
+            auto drawCallIt = std::find_if(mDrawCalls.begin(), mDrawCalls.end(), [mesh](const DrawCall& entry)
+            {
+                return entry.mMesh.mID == mesh->mID
+                && entry.mMesh.mDrawMode == mesh->mDrawMode
+                && entry.mMesh.mDrawStyle == mesh->mDrawStyle
+                // Per DrawStyle values
+                && entry.mMesh.mTexture1 == mesh->mTexture1
+                && entry.mMesh.mTexture2 == mesh->mTexture2
+                && entry.mMesh.mMixFactor == mesh->mMixFactor
+                && entry.mMesh.mColour == mesh->mColour
+                && entry.mMesh.mDiffuseTextureID == mesh->mDiffuseTextureID
+                && entry.mMesh.mSpecularTextureID == mesh->mSpecularTextureID
+                && entry.mMesh.mShininess == mesh->mShininess
+                && entry.mMesh.mTextureRepeatFactor == mesh->mTextureRepeatFactor; });
+
+            if (drawCallIt == mDrawCalls.end())
+            {
+                DrawCall drawCall;
+                drawCall.mMesh = *mesh;
+                mDrawCalls.push_back(drawCall);
+				drawCallIt = mDrawCalls.end() - 1;
+            }
+
+            drawCallIt->mEntityModelIndexLookup[pEntity.mID] = drawCallIt->mModels.size();
+            drawCallIt->mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
+
+            auto shader = getShader(*drawCallIt);
+            if (shader->getName() == "texture1Instanced")  // TODO: If shader is an instanced one
+            {
+                auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
+
+                // If this model mat4 add takes the DrawCall to the mInstancingCountThreshold, add all the previous models to instanceModelsArray before appending this index.
+                if (drawCallIt->mModels.size() == mInstancingCountThreshold)
+                {
+					for	(size_t i = 0; i < drawCallIt->mModels.size(); i++)
+         				instanceModelsArray->Set(mGLState, drawCallIt->mModels[i], i);
+                }
+				else
+         			instanceModelsArray->Set(mGLState, drawCallIt->mModels.back(), drawCallIt->mModels.size() - 1);
+            }
+        }
+    }
+}
+
 void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
 {
-	// The derived OpenGLAPI extends GraphicsAPI::onTransformComponentChange by also applying changes to the GLData relevent to the DrawCall.
-	GraphicsAPI::onTransformComponentChange(pEntity, pTransform);
+	// Find the DrawCall containing pEntity Transform data and update the model matrix for it.
+    for (size_t i = 0; i < mDrawCalls.size(); i++)
+    {
+        auto it = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
+        if (it != mDrawCalls[i].mEntityModelIndexLookup.end())
+        {
+            mDrawCalls[i].mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+
+			auto shader = getShader(mDrawCalls[i]);
+			if (shader->getName() == "texture1Instanced") // TODO: If shader is an instanced one
+   			{
+   			    auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
+				instanceModelsArray->Set(mGLState, mDrawCalls[i].mModels[it->second], it->second);
+   			}
+            return;
+        }
+    }
+}
+
+void OpenGLAPI::onInstancedDrawToggled()
+{
+	// If we have toggled instancing on, we have to check if any DrawCalls which are over the threshold for instancing need their data updated
+	// in the relevent buffer. Updates to the buffer only happen in onTransformComponentChange if mUseInstancedDraw = true via getShader, hence
+	// this 'forced' update has to happen.
+	// This can be optimised by:
+	// 1. Only updating the Buffer variables which have actually changed since the last onInstancedDrawToggled (requires storing a data structure of all changed DrawCalls + model indexes).
+	// 2. Always update the buffer variables inside onTransformComponentChange (wasted work if we dont turn back on).
+	if (mUseInstancedDraw)
+	{
+		for (size_t i = 0; i < mDrawCalls.size(); i++)
+    	{
+			auto shader = getShader(mDrawCalls[i]);
+			if (shader->getName() == "texture1Instanced") // TODO: If shader is an instanced one
+   			{
+   			    auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
+
+				for	(size_t j = 0; j < mDrawCalls[i].mModels.size(); j++)
+        			instanceModelsArray->Set(mGLState, mDrawCalls[i].mModels[j], j);
+			}
+		}
+	}
 }
 
 void OpenGLAPI::preDraw()
@@ -114,28 +211,38 @@ void OpenGLAPI::preDraw()
 
 Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall)
 {
+	Shader* shader = nullptr;
+
 	if (mBufferDrawType == BufferDrawType::Colour)
 	{
 		switch (pDrawCall.mMesh.mDrawStyle)
 		{
 		case Data::DrawStyle::Textured:
 			if (pDrawCall.mMesh.mTexture1.has_value() && pDrawCall.mMesh.mTexture2.has_value())
-				return &mShaders[mTexture2ShaderIndex];
+				shader = &mShaders[mTexture2ShaderIndex];
 			else
-				return &mShaders[mTexture1ShaderIndex];
+    			shader = &mShaders[mTexture1ShaderIndex];
+			break;
 		case Data::DrawStyle::UniformColour:
-			return &mShaders[mUniformShaderIndex];
+			shader = &mShaders[mUniformShaderIndex];
+			break;
 		case Data::DrawStyle::LightMap:
-			return &mShaders[mLightMapIndex];
+			shader = &mShaders[mLightMapIndex];
+			break;
 		}
 	}
 	else if (mBufferDrawType == BufferDrawType::Depth)
-	{
-		return &mShaders[mDepthViewerIndex];
-	}
+		shader = &mShaders[mDepthViewerIndex];
 
-	ZEPHYR_ASSERT(false, "Could not find a shader to execute this DrawCall with");
-	return nullptr;
+	ZEPHYR_ASSERT(shader, "Could not find a shader to execute this DrawCall with");
+
+	if (mUseInstancedDraw && pDrawCall.mModels.size() >= mInstancingCountThreshold)
+	{
+		if (shader->getName() == "texture1") // TODO: If shader is an instanced one
+        	shader = &mShaders.back();
+ 	}
+
+	return shader;
 }
 
 void OpenGLAPI::draw(const DrawCall& pDrawCall)
@@ -145,13 +252,13 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 	{
 		shader->use(mGLState);
 
-		if (shader->getName() == "texture1")
+		if (shader->getName() == "texture1" || shader->getName() == "texture1Instanced")
 		{
 			ZEPHYR_ASSERT(pDrawCall.mMesh.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture1 shader");
 			mGLState.setActiveTextureUnit(0);
 			getTexture(pDrawCall.mMesh.mTexture1.value()).bind();
-		}
-		else if (shader->getName() == "texture2")
+ 		}
+ 		else if (shader->getName() == "texture2")
 		{
 			ZEPHYR_ASSERT(pDrawCall.mMesh.mMixFactor.has_value(), "DrawCall must have mixFactor set to draw using texture2 shader");
 			ZEPHYR_ASSERT(pDrawCall.mMesh.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture2 shader");
@@ -189,36 +296,52 @@ void OpenGLAPI::draw(const DrawCall& pDrawCall)
 
 		switch (pDrawCall.mMesh.mDrawMode)
 		{
-		case Data::DrawMode::Fill: 		mGLState.setPolygonMode(GLType::PolygonMode::Fill); 		 break;
-		case Data::DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); 	 break;
-		default: ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLAPI draw."); break;
+			case Data::DrawMode::Fill: 		mGLState.setPolygonMode(GLType::PolygonMode::Fill); 		 break;
+			case Data::DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); 	 break;
+			default: ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLAPI draw."); break;
 		}
 
-		for (const auto& model : pDrawCall.mModels)
+		// Instanced shaders set their models in buffers so dont need to set the model matrix here, just call draw.
+		if (shader->getName() == "texture1Instanced") // TODO: If shader is an instanced one
 		{
-			shader->setUniform(mGLState, "model", model);
-			draw(GLMesh);
-
-			if (mVisualiseNormals)
+			draw(GLMesh, pDrawCall.mModels.size());
+		}
+		else
+		{
+			for (const auto& model : pDrawCall.mModels)
 			{
-				// call Use() on VisualiseNormal shader before calling setUniform
-				mShaders[mVisualiseNormalIndex].setUniform(mGLState, "model", model);
+				shader->setUniform(mGLState, "model", model);
 				draw(GLMesh);
+				if (mVisualiseNormals)
+				{
+					mShaders[mVisualiseNormalIndex].setUniform(mGLState, "model", model);
+					draw(GLMesh);
+				}
 			}
 		}
 	}
 }
 
-void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh)
+void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh, const size_t& pInstancedCount/* = 0*/)
 {
 	if (pMesh.mDrawSize > 0)
 	{
 		pMesh.mVAO.bind();
 
-		if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Indices)
-			mGLState.drawElements(pMesh.mDrawMode, pMesh.mDrawSize);
-		else if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Array)
-			mGLState.drawArrays(pMesh.mDrawMode, pMesh.mDrawSize);
+		if (pInstancedCount > 0)
+		{
+			if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Indices)
+				mGLState.drawElementsInstanced(pMesh.mDrawMode, pMesh.mDrawSize, static_cast<int>(pInstancedCount));
+			else if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Array)
+				mGLState.drawArraysInstanced(pMesh.mDrawMode, pMesh.mDrawSize, static_cast<int>(pInstancedCount));
+		}
+		else
+		{
+			if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Indices)
+				mGLState.drawElements(pMesh.mDrawMode, pMesh.mDrawSize);
+			else if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Array)
+				mGLState.drawArrays(pMesh.mDrawMode, pMesh.mDrawSize);
+		}
 	}
 
 	for (const auto& childMesh : pMesh.mChildMeshes)
@@ -365,6 +488,10 @@ void OpenGLAPI::renderImGui()
     	    ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
 
 		ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
+		if (ImGui::Checkbox("Use instanced rendering", &mUseInstancedDraw))
+			onInstancedDrawToggled();
+
+		ImGui::SliderInt("Instanced rendering threshold", &mInstancingCountThreshold, 1, 1000);
 
 		ImGui::Separator();
 		mGLState.renderImGui();
