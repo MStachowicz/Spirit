@@ -4,21 +4,22 @@
 #include "Utility.hpp"
 #include "Logger.hpp"
 
+#include <sstream>
+
  Shader::Shader(const std::string& pName, GLState& pGLState)
 	: mName(pName)
 	, mSourcePath(File::GLSLShaderDirectory)
 	, mTextureUnits(0)
 {
-
 	unsigned int vertexShader;
+ 	const std::string vertexShaderPath = mSourcePath + mName + ".vert";
+	ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
+ 	std::string vertexSource = File::readFromFile(vertexShaderPath);
 	{
-		const std::string vertexShaderPath = mSourcePath + mName + ".vert";
-		ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
 		vertexShader = pGLState.CreateShader(GLType::ShaderProgramType::Vertex);
-		std::string source = File::readFromFile(vertexShaderPath);
-		pGLState.ShaderSource(vertexShader, source);
+		pGLState.ShaderSource(vertexShader, vertexSource);
 		pGLState.CompileShader(vertexShader);
-		scanForAttributes(source);
+		scanForAttributes(vertexSource);
 	}
 
 	unsigned int fragmentShader;
@@ -81,6 +82,7 @@
 		for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
 		{
 			mShaderBufferBlocks.push_back(pGLState.getShaderStorageBlock(mHandle, blockIndex));
+			mShaderBufferBlocks.back().mShared = isBufferShared(mShaderBufferBlocks.back().mName, vertexSource);
 			pGLState.RegisterShaderStorageBlock(mShaderBufferBlocks.back());
 		}
 	}
@@ -128,7 +130,7 @@
 void Shader::scanForAttributes(const std::string& pSourceCode)
 {
 	if (mAttributes.find(Attribute::Position3D) == mAttributes.end())
-		if(pSourceCode.find(getAttributeName(Attribute::Position3D)) != std::string::npos)
+		if (pSourceCode.find(getAttributeName(Attribute::Position3D)) != std::string::npos)
 			mAttributes.insert(Attribute::Position3D);
 
 	if (mAttributes.find(Attribute::Normal3D) == mAttributes.end())
@@ -195,4 +197,23 @@ std::string Shader::getAttributeName(const Attribute& pAttribute)
 	else
 		ZEPHYR_ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", pAttribute);
 		return "";
+}
+
+bool Shader::isBufferShared(const std::string& pShaderStorageBlockName, const std::string& pSourceCode)
+{
+	std::istringstream ss(pSourceCode);
+    std::string line;
+
+    while (std::getline(ss, line))
+	{
+		auto find = line.find(pShaderStorageBlockName);
+		if (find != std::string::npos)
+		{
+			if (line.find("layout(shared)") != std::string::npos)
+				return true;
+			break;
+		}
+    }
+
+ 	return false;
 }

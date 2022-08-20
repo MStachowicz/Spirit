@@ -539,6 +539,7 @@ namespace GLData
         int mBufferDataSize         = -1; // Size of the block in bytes.
         int mActiveVariablesCount   = -1; // The number of ShaderStorageBlockVariables this block contains.
 
+        bool mShared = false; // Whether the block should be bound to a ShaderStorageBlockBindingPoint matching.
         std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding ShaderStorageBlockBindingPoint
         std::vector<ShaderStorageBlockVariable> mVariables;
         std::vector<int> mVariableIndices;

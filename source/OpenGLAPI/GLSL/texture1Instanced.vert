@@ -9,7 +9,7 @@ layout(shared) uniform ViewProperties
     mat4 projection;
 } viewProperties;
 
-layout(shared) buffer InstancedData
+buffer InstancedData
 {
     mat4 models[];
 } instancedData;

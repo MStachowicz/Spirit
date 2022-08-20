@@ -492,13 +492,24 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderStor
 {
     GLData::ShaderStorageBlockBindingPoint* bindingPoint = nullptr;
 
-    // #C++20 Convert to std::contains on vector.
-    const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderStorageBlock](const GLData::ShaderStorageBlockBindingPoint& bindingPoint)
-    { return bindingPoint.mName == pShaderStorageBlock.mName; });
-
-    if (it == mShaderStorageBlockBindingPoints.end())
+    if (pShaderStorageBlock.mShared)
     {
-        // If there is no binding point for this ShaderBufferBlock create it and its UBO.
+        const auto it = std::find_if(mShaderStorageBlockBindingPoints.begin(), mShaderStorageBlockBindingPoints.end(), [&pShaderStorageBlock](const GLData::ShaderStorageBlockBindingPoint& pBindingPoint)
+        { return pBindingPoint.mName == pShaderStorageBlock.mName; });
+
+        if (it != mShaderStorageBlockBindingPoints.end())
+        {
+            // If the StorageBlock has been encountered before. We bind it to the same mBindingPoint of the previously
+            // created ShaderStorageBlockBindingPoint meaning the blocks share the GPU memory.
+            bindingPoint = &(*it);
+            bindingPoint->mInstances++;
+            bindingPoint->mSSBO->Bind(*this);
+        }
+    }
+
+    if (!bindingPoint)
+    {
+        // If there is no binding point for this ShaderBufferBlock create it and its SSBO.
         // This allows the ShaderBufferBlockVariable's inside the block to be set using setShaderStorageBlockVariable()
         // This makes the uniform block share resource with all other matching blocks as long as they use the same mBindingPoint and have matching interfaces.
         mShaderStorageBlockBindingPoints.push_back(GLData::ShaderStorageBlockBindingPoint(*this, pShaderStorageBlock, static_cast<unsigned int>(mShaderStorageBlockBindingPoints.size())));
@@ -508,14 +519,6 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderStor
         bindingPoint->mSSBO->Bind(*this);
         bindingPoint->mSSBO->Reserve(*this, pShaderStorageBlock.mBufferDataSize);
         bindingPoint->mSSBO->AssignBindingPoint(*this, bindingPoint->mBindingPoint);
-    }
-    else
-    {
-        // If the StorageBlock has been encountered before. We bind it to the same mBindingPoint of the previously
-        // created ShaderStorageBlockBindingPoint meaning the blocks share the GPU memory.
-        bindingPoint = &(*it);
-        bindingPoint->mInstances++;
-        bindingPoint->mSSBO->Bind(*this);
     }
 
     ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderStorageBlock.mName);

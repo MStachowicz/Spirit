@@ -86,6 +86,7 @@ private:
     std::vector<GLData::UniformVariable> mUniformVariables;
     std::vector<GLData::ShaderStorageBlock> mShaderBufferBlocks;
 
+    static bool isBufferShared(const std::string& pShaderStorageBlockName, const std::string& pSourceCode);
     static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
     static std::string getAttributeName(const Attribute &pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
 };
