@@ -5,7 +5,6 @@
 
 #include "DrawCall.hpp"
 
-struct DrawCall;
 struct Texture;
 struct CubeMapTexture;
 
@@ -34,8 +33,7 @@ public:
 	virtual ~GraphicsAPI() {}; // GraphicsAPI is a pure virtual interface used polymorphically.
 
 	virtual void preDraw() 											   = 0;
-	virtual void draw();
-	virtual void draw(const DrawCall& pDrawCall) 					   = 0;
+	virtual void draw()												   = 0;
 	virtual void draw(const Data::PointLight& pPointLight) 			   = 0;
 	virtual void draw(const Data::DirectionalLight& pDirectionalLight) = 0;
 	virtual void draw(const Data::SpotLight& pSpotLight) 			   = 0;

@@ -34,7 +34,7 @@ public:
 	~OpenGLAPI();
 
 	void preDraw() 										 		override;
-	void draw(const DrawCall& pDrawCall) 				 		override;
+	void draw()							 				 		override;
 	void draw(const Data::PointLight& pPointLight) 			    override;
 	void draw(const Data::DirectionalLight& pDirectionalLight)  override;
 	void draw(const Data::SpotLight& pSpotLight) 				override;
@@ -78,11 +78,16 @@ private:
 	const OpenGLMesh& getGLMesh(const MeshID& pMeshID) const;
 	const GLData::Texture& getTexture(const TextureID& pTextureID) const;
 	// Returns the shader needed to execute a particular DrawCall
-	Shader* getShader(const DrawCall& pDrawCall);
+	Shader* getShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex);
+	// Checks if the current Shader assigned to pDrawCall is correct, assigns a new shader is it's not.
+	// updateShader is called whenever data changes that might require a Shader change e.g.
+	// Transform components added/removed/changed.
+	// Instanced ImGUI flags change.
+	bool updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex);
 	// Recursively draw the OpenGLMesh and all its children.
 	void draw(const OpenGLMesh& pMesh, const size_t& pInstancedCount = 0);
 	// Called whenever mUseInstancedDraw changes.
-	void onInstancedDrawToggled();
+	void onInstancedOptionChanged();
 
 	static GladGLContext* initialiseGLAD(); // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
 	static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.
@@ -144,7 +149,8 @@ private:
 	Shader mDepthViewerShader;
 	Shader mVisualiseNormalShader;
 
-	std::vector<Shader> mShaders; // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
+	std::vector<Shader> mAvailableShaders; // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
+	std::vector<std::optional<Shader>> mDrawCallToShader; // 1-1 mapping of mDrawCalls to Shader they are using to render.
 
 	std::vector<OpenGLMesh> mGLMeshes;
 	std::vector<GLData::Texture> mTextures; // Mapping of Data::Texture to OpenGL::Texture.

@@ -266,17 +266,17 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 	{ // Draw all meshes via DrawCalls
 		mOpenGLAPI->draw();
 
-		if (mRenderLightPositions)
-		{
-			lightPosition.mModels.clear();
-			mEntityManager.mPointLights.ForEach([&](const Data::PointLight& pPointLight)
-			{
-				lightPosition.mMesh.mColour = pPointLight.mColour;
-				lightPosition.mModels.push_back(util::GetModelMatrix(pPointLight.mPosition, {}, glm::vec3(0.1f)));
-			});
-
-			mOpenGLAPI->draw(lightPosition);
-		}
+		//if (mRenderLightPositions)
+		//{
+		//	lightPosition.mModels.clear();
+		//	mEntityManager.mPointLights.ForEach([&](const Data::PointLight& pPointLight)
+		//	{
+		//		lightPosition.mMesh.mColour = pPointLight.mColour;
+		//		lightPosition.mModels.push_back(util::GetModelMatrix(pPointLight.mPosition, {}, glm::vec3(0.1f)));
+		//	});
+		//
+		//	//mOpenGLAPI->draw(lightPosition);
+		//}
 	}
 	postDraw();
 

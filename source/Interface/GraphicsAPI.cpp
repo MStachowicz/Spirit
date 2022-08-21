@@ -8,13 +8,6 @@
 // Utilities
 #include "Utility.hpp"
 
-void GraphicsAPI::draw()
-{
-    for (const auto& drawCall : mDrawCalls)
-        if (!drawCall.mModels.empty())
-            draw(drawCall);
-}
-
 void GraphicsAPI::onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
 {
     // If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
