@@ -126,7 +126,7 @@ void OpenGLAPI::onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManag
 				// If updateShader doesnt assign a new shader to the DrawCall, it does not update the buffer data, we manually update the buffer for the
 				// newly pushed back model matrix of Transform component.
 				auto shader = getShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
-           	 	if (shader->getName() == "texture1Instanced")  // TODO: If shader is instanced
+           	 	if (shader->isInstanced())
            		{
            	    	auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
          			instanceModelsArray->Set(mGLState, drawCallIt->mModels.back(), drawCallIt->mModels.size() - 1);
@@ -157,10 +157,13 @@ bool OpenGLAPI::updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallI
  	        shaderToUse = &mAvailableShaders[mLightMapIndex];
  	        break;
  	}
-
- 	if (mUseInstancedDraw && pDrawCall.mModels.size() >= mInstancingCountThreshold && shaderToUse->getName() == "texture1") // TODO: If shader has an instanced version
-		shaderToUse = &mAvailableShaders[mTexture1InstancedShaderIndex]; // TODO: Get the instanced version
 	ZEPHYR_ASSERT(shaderToUse != nullptr, "Couldn't identify a shader to render this DrawCall.");
+
+ 	if (mUseInstancedDraw && pDrawCall.mModels.size() >= mInstancingCountThreshold)
+		if (auto* shader = getInstancedShader(*shaderToUse))
+			shaderToUse = shader;
+		else
+			LOG_INFO("DrawCall reached the instanced threshold but no instanced shader was present to use. Add an instanced version of Shader '{}'", shaderToUse->getName());
 
  	if (mDrawCallToShader[pDrawCallIndex].has_value() && mDrawCallToShader[pDrawCallIndex].value().getName() == shaderToUse->getName())
     	return false; // Already using the correct shader.
@@ -170,7 +173,7 @@ bool OpenGLAPI::updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallI
   	    mDrawCallToShader[pDrawCallIndex] = Shader(shaderToUse->getName(), mGLState);
 
 	    // If the newly assigned shader is an instanced one, update all the model data.
-  	    if (mDrawCallToShader[pDrawCallIndex]->getName() == "texture1Instanced")
+  	    if (mDrawCallToShader[pDrawCallIndex]->isInstanced())
   	    {
             auto instanceModelsArray = mDrawCallToShader[pDrawCallIndex]->getShaderBlockVariable("InstancedData.models[0]");
             for (size_t i = 0; i < pDrawCall.mModels.size(); i++)
@@ -191,7 +194,7 @@ void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Dat
             mDrawCalls[i].mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
 
 			auto shader = getShader(mDrawCalls[i], i);
-			if (shader->getName() == "texture1Instanced") // TODO: If shader is an instanced one
+			if (shader->isInstanced())
    			{
    			    auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
 				instanceModelsArray->Set(mGLState, mDrawCalls[i].mModels[it->second], it->second);
@@ -251,6 +254,18 @@ Shader* OpenGLAPI::getShader(const DrawCall& pDrawCall, const size_t& pDrawCallI
 {
 	ZEPHYR_ASSERT(pDrawCallIndex < mDrawCallToShader.size() && mDrawCallToShader[pDrawCallIndex].has_value(), "Could not find a shader to execute this DrawCall with");
 	return &mDrawCallToShader[pDrawCallIndex].value();
+}
+
+Shader* OpenGLAPI::getInstancedShader(const Shader& pShader)
+{
+	ZEPHYR_ASSERT(!pShader.isInstanced(), "Trying to find an instanced version of an already instanced shader.")
+
+	for (size_t i = 0; i < mAvailableShaders.size(); i++)
+	{
+		if (mAvailableShaders[i].getName() == pShader.getName() + "Instanced")
+			return &mAvailableShaders[i];
+	}
+	return nullptr;
 }
 
 void OpenGLAPI::draw()
@@ -314,7 +329,7 @@ void OpenGLAPI::draw()
 			}
 
 			// Instanced shaders set their models in buffers so dont need to set the model matrix here, just call draw.
-			if (shader->getName() == "texture1Instanced") // TODO: If shader is an instanced one
+			if (shader->isInstanced())
 			{
 				draw(GLMesh, mDrawCalls[i].mModels.size());
 			}

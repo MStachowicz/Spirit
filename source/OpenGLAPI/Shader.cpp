@@ -9,6 +9,7 @@
  Shader::Shader(const std::string& pName, GLState& pGLState)
 	: mName(pName)
 	, mSourcePath(File::GLSLShaderDirectory)
+	, mIsInstanced(false)
 	, mTextureUnits(0)
 {
 	unsigned int vertexShader;
@@ -102,6 +103,24 @@
 				mTextureUnits++;
 		}
 		ZEPHYR_ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
+	}
+
+	if (vertexSource.find(".models[gl_InstanceID]") != std::string::npos)
+	{
+		for (auto& shaderBlock : mShaderBufferBlocks)
+		{
+
+    	    {
+    	        auto& variable = std::find_if(std::begin(shaderBlock.mVariables), std::end(shaderBlock.mVariables), [](const auto& pVariable)
+					{ return pVariable.mName.value() == "InstancedData.models[0]"; });
+
+    	        if (variable != shaderBlock.mVariables.end())
+    	        {
+					mIsInstanced = true;
+					break;
+				}
+    	    }
+		}
 	}
 
 	{ // Setup the available texture units.

@@ -27,6 +27,7 @@ public:
     }; // The possible vertex attributes supported by OpenGLAPI GLSL shaders.
 
     const std::string& getName()       const { return mName; };
+    bool isInstanced() const { return mIsInstanced; };
     const int& getTexturesUnitsCount() const { return mTextureUnits; };
 
     void use(GLState& pGLState) const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
@@ -76,6 +77,7 @@ private:
     std::string mName;
     std::string mSourcePath;
     unsigned int mHandle;
+    bool mIsInstanced;
     int mTextureUnits; // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
     std::set<Shader::Attribute> mAttributes; // The vertex attributes the shader requires to execute a draw call.
     // TODO: make this an array of size GL_MAX_X_UNIFORM_BLOCKS + (X = Split the uniform blocks per shader stage)

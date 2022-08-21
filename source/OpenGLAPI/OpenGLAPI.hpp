@@ -77,8 +77,12 @@ private:
 	// Get all the data required to draw this mesh in its default configuration.
 	const OpenGLMesh& getGLMesh(const MeshID& pMeshID) const;
 	const GLData::Texture& getTexture(const TextureID& pTextureID) const;
-	// Returns the shader needed to execute a particular DrawCall
+	// Returns the shader assigned to the DrawCall.
+	// This can be overridden in the Draw function if mBufferDrawType is set to something other than BufferDrawType::Colour.
 	Shader* getShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex);
+	// Returns the instanced version of pShader.
+	Shader* getInstancedShader(const Shader& pShader);
+
 	// Checks if the current Shader assigned to pDrawCall is correct, assigns a new shader is it's not.
 	// updateShader is called whenever data changes that might require a Shader change e.g.
 	// Transform components added/removed/changed.
