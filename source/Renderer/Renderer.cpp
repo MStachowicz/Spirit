@@ -37,9 +37,28 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	lightPosition.mMesh.mColour		= glm::vec3(1.f);
 	lightPosition.mMesh.mDrawStyle 	= Data::DrawStyle::UniformColour;
 
-	const float floorSize = 50.f;
-	const size_t grassCount = 40000;
+	static const float floorSize = 50.f;
+	static const size_t grassCount = 500;
+	static const bool randomGrassPlacement = false;
 
+	{ // Floor
+		auto& entity = mEntityManager.CreateEntity();
+
+		Data::Transform transform;
+		transform.mPosition;
+		transform.mRotation.x = -90.f;
+		transform.mScale = glm::vec3(floorSize);
+		mEntityManager.mTransforms.Add(entity, transform);
+
+		Data::MeshDraw mesh;
+		mesh.mID = mMeshManager.getMeshID("Quad");
+		mesh.mDrawStyle = Data::DrawStyle::LightMap;
+		mesh.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
+		mesh.mSpecularTextureID = mTextureManager.getTextureID("black");
+		mesh.mShininess = 128.f;
+		mesh.mTextureRepeatFactor = 20.f;
+		mEntityManager.mMeshes.Add(entity, mesh);
+	}
 	{ // Cubes
 		std::array<glm::vec3, 10> cubePositions = {
 			glm::vec3(3.0f,   0.5f, -3.0f),
@@ -69,24 +88,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 			mesh.mShininess = 64.f;
 			mEntityManager.mMeshes.Add(entity, mesh);
 		}
-	}
-	{ // Floor
-		auto& entity = mEntityManager.CreateEntity();
-
-		Data::Transform transform;
-		transform.mPosition;
-		transform.mRotation.x = -90.f;
-		transform.mScale = glm::vec3(floorSize);
-		mEntityManager.mTransforms.Add(entity, transform);
-
-		Data::MeshDraw mesh;
-		mesh.mID = mMeshManager.getMeshID("Quad");
-		mesh.mDrawStyle = Data::DrawStyle::LightMap;
-		mesh.mDiffuseTextureID = mTextureManager.getTextureID("grassTile");
-		mesh.mSpecularTextureID = mTextureManager.getTextureID("black");
-		mesh.mShininess = 128.f;
-		mesh.mTextureRepeatFactor = 20.f;
-		mEntityManager.mMeshes.Add(entity, mesh);
 	}
 	{ // Backpack
 		auto& entity = mEntityManager.CreateEntity();
@@ -125,8 +126,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	{ // Billboard grass
 		std::array<glm::vec3, grassCount> grassPositions;
 		{
-			static const bool randomGrassPlacement = false;
-
 			if (randomGrassPlacement)
 			{
 				std::array<float, grassCount> randomX;
