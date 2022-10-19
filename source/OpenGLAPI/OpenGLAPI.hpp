@@ -49,8 +49,10 @@ public:
 	void initialiseTexture(const Texture& pTexture)  	   		override;
 	void initialiseCubeMap(const CubeMapTexture& pCubeMap) 		override;
 
-	void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) override;
-	void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)			   override;
+	void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)			   		override;
+	void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) 		override;
+	void onPointLightComponentChange(const ECS::Entity& pEntity, const Data::PointLight& pPointLight) 	override;
+	void onSpotLightComponentChange(const ECS::Entity& pEntity, const Data::SpotLight& pSpotLight) 		override;
 
 private:
 	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.

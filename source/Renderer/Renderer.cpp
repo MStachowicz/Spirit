@@ -189,7 +189,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 		{
 			auto& entity = mEntityManager.CreateEntity();
 
-
 			Data::Transform transform;
 			transform.mScale = glm::vec3(0.2f);
 			transform.mPosition = position;
@@ -231,8 +230,11 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
 	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
 	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
-	mEntityManager.ForEach([this](const ECS::Entity &pEntity){ mOpenGLAPI->onEntityAdded(pEntity, mEntityManager); });
+	mEntityManager.ForEach([this](const ECS::Entity& pEntity){ mOpenGLAPI->onEntityAdded(pEntity, mEntityManager); });
+
 	mEntityManager.mTransforms.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onTransformComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mPointLights.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onPointLightComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mSpotLights.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onSpotLightComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
 }
 
 Renderer::~Renderer()

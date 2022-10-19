@@ -24,7 +24,7 @@ namespace Data
 
 // GraphicsAPI implements behaviour all derived GraphicsAPI's depend on.
 // Namely it enforces an interface used by Zephyr::Renderer for executing DrawCalls.
-// It is also a listener of ECS data changes to relevant component to DrawCalls (Transform + MeshDraw).
+// It is also a listener to ECS data changes to relevant components to DrawCalls.
 class GraphicsAPI
 {
 public:
@@ -51,8 +51,11 @@ public:
 	void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
 	void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 
-	virtual void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform);
-	virtual void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
+	virtual void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager) {};
+
+	virtual void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) {};
+	virtual void onPointLightComponentChange(const ECS::Entity& pEntity, const Data::PointLight& pPointLight) {};
+	virtual void onSpotLightComponentChange(const ECS::Entity& pEntity, const Data::SpotLight& pSpotLight) {};
 
 protected:
 	std::vector<DrawCall> mDrawCalls; // GraphicsAPI Executes all these DrawCalls using the draw function.

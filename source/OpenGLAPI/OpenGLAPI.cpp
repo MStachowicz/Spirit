@@ -136,6 +136,37 @@ void OpenGLAPI::onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManag
     }
 }
 
+void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+{
+	// Find the DrawCall containing pEntity Transform data and update the model matrix for it.
+    for (size_t i = 0; i < mDrawCalls.size(); i++)
+    {
+        auto it = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
+        if (it != mDrawCalls[i].mEntityModelIndexLookup.end())
+        {
+            mDrawCalls[i].mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+
+			auto shader = getShader(mDrawCalls[i], i);
+			if (shader->isInstanced())
+   			{
+   			    auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
+				instanceModelsArray->Set(mGLState, mDrawCalls[i].mModels[it->second], it->second);
+   			}
+            return;
+        }
+    }
+}
+
+void OpenGLAPI::onPointLightComponentChange(const ECS::Entity& pEntity, const Data::PointLight& pPointLight)
+{
+
+}
+
+void OpenGLAPI::onSpotLightComponentChange(const ECS::Entity& pEntity, const Data::SpotLight& pSpotLight)
+{
+
+}
+
 
 bool OpenGLAPI::updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex)
 {
@@ -183,26 +214,6 @@ bool OpenGLAPI::updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallI
 	}
 }
 
-void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
-{
-	// Find the DrawCall containing pEntity Transform data and update the model matrix for it.
-    for (size_t i = 0; i < mDrawCalls.size(); i++)
-    {
-        auto it = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
-        if (it != mDrawCalls[i].mEntityModelIndexLookup.end())
-        {
-            mDrawCalls[i].mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
-
-			auto shader = getShader(mDrawCalls[i], i);
-			if (shader->isInstanced())
-   			{
-   			    auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
-				instanceModelsArray->Set(mGLState, mDrawCalls[i].mModels[it->second], it->second);
-   			}
-            return;
-        }
-    }
-}
 
 void OpenGLAPI::onInstancedOptionChanged()
 {
@@ -478,7 +489,6 @@ void OpenGLAPI::endFrame()
 {
 	mWindow.swapBuffers();
 }
-
 void OpenGLAPI::newImGuiFrame()
 {
 	mWindow.startImGuiFrame();
