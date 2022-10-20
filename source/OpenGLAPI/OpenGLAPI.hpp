@@ -20,6 +20,10 @@ struct GladGLContext;
 struct DrawCall;
 struct Mesh;
 
+namespace ECS
+{
+	class EntityManager;
+}
 namespace Data
 {
 	struct PointLight;
@@ -30,7 +34,7 @@ namespace Data
 class OpenGLAPI : public GraphicsAPI
 {
 public:
-	OpenGLAPI();
+	OpenGLAPI(const ECS::EntityManager& pEntityManager);
 	~OpenGLAPI();
 
 	void preDraw() 										 		override;
@@ -49,12 +53,17 @@ public:
 	void initialiseTexture(const Texture& pTexture)  	   		override;
 	void initialiseCubeMap(const CubeMapTexture& pCubeMap) 		override;
 
-	void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)			   		override;
-	void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) 		override;
-	void onPointLightComponentChange(const ECS::Entity& pEntity, const Data::PointLight& pPointLight) 	override;
-	void onSpotLightComponentChange(const ECS::Entity& pEntity, const Data::SpotLight& pSpotLight) 		override;
+
+	// Listeners
+	void onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityManager& pManager) 			override;
+	void onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform) 	override;
+	void onTransformComponentChanged(const ECS::Entity& pEntity, const Data::Transform& pTransform) override;
+	void onMeshComponentAdded(const ECS::Entity& pEntity, const Data::MeshDraw& pMesh) 				override;
 
 private:
+	// Using the mesh and tranform component assigned to an Entity, construct a DrawCall for it.
+	void addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh);
+
 	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
 	inline static std::vector<OpenGLAPI*> OpenGLInstances;
 	void onResize(const int pWidth, const int pHeight);
@@ -115,6 +124,8 @@ private:
 	GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
 	GLState mGLState;
 
+	const ECS::EntityManager& mEntityManager;
+
 	size_t mTexture1ShaderIndex;
 	size_t mTexture2ShaderIndex;
 	size_t mUniformShaderIndex;
@@ -161,5 +172,4 @@ private:
 	std::vector<OpenGLMesh> mGLMeshes;
 	std::vector<GLData::Texture> mTextures; // Mapping of Data::Texture to OpenGL::Texture.
 	std::vector<GLData::Texture> mCubeMaps; // Mapping of Data::CubeMapTexture to OpenGL::Texture.
-
 };

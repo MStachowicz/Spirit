@@ -22,7 +22,7 @@
 #include "glad/gl.h"
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 
-OpenGLAPI::OpenGLAPI()
+OpenGLAPI::OpenGLAPI(const ECS::EntityManager& pEntityManager)
 	: GraphicsAPI()
 	, cOpenGLVersionMajor(4)
 	, cOpenGLVersionMinor(3)
@@ -36,6 +36,7 @@ OpenGLAPI::OpenGLAPI()
 	, mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
 	, mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLAPI construction (OpenGLInstances.size() == 1)
 	, mGLState()
+	, mEntityManager(pEntityManager)
 	, mTexture1ShaderIndex(0)
 	, mTexture2ShaderIndex(1)
 	, mMaterialShaderIndex(2)
@@ -85,58 +86,66 @@ OpenGLAPI::~OpenGLAPI()
 		OpenGLInstances.erase(it);
 }
 
-void OpenGLAPI::onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
+void OpenGLAPI::addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh)
 {
-    // If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
+	// If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
     // If the MeshDraw variation already exists in a DrawCall, append just the Transform data to the mModels.
-    if (const Data::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
-    {
-        if (const Data::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
-        {
-            auto drawCallIt = std::find_if(mDrawCalls.begin(), mDrawCalls.end(), [mesh](const DrawCall& entry)
-            {
-                return entry.mMesh.mID == mesh->mID
-                && entry.mMesh.mDrawMode == mesh->mDrawMode
-                && entry.mMesh.mDrawStyle == mesh->mDrawStyle
-                // Per DrawStyle values
-                && entry.mMesh.mTexture1 == mesh->mTexture1
-                && entry.mMesh.mTexture2 == mesh->mTexture2
-                && entry.mMesh.mMixFactor == mesh->mMixFactor
-                && entry.mMesh.mColour == mesh->mColour
-                && entry.mMesh.mDiffuseTextureID == mesh->mDiffuseTextureID
-                && entry.mMesh.mSpecularTextureID == mesh->mSpecularTextureID
-                && entry.mMesh.mShininess == mesh->mShininess
-                && entry.mMesh.mTextureRepeatFactor == mesh->mTextureRepeatFactor; });
+	// We store a copy of MeshDraw in a single DrawCall so while the data is copied here, it only exists once for each unique mesh.
 
-            if (drawCallIt == mDrawCalls.end())
-            {
-                DrawCall drawCall;
-                drawCall.mMesh = *mesh;
-                mDrawCalls.push_back(drawCall);
-				mDrawCallToShader.push_back(std::nullopt);
-				drawCallIt = mDrawCalls.end() - 1;
-            }
+	auto drawCallIt = std::find_if(mDrawCalls.begin(), mDrawCalls.end(), [pMesh](const DrawCall& entry)
+	{
+		return entry.mMesh.mID == pMesh.mID
+		&& entry.mMesh.mDrawMode == pMesh.mDrawMode
+		&& entry.mMesh.mDrawStyle == pMesh.mDrawStyle
+		// Per DrawStyle values
+		&& entry.mMesh.mTexture1 == pMesh.mTexture1
+		&& entry.mMesh.mTexture2 == pMesh.mTexture2
+		&& entry.mMesh.mMixFactor == pMesh.mMixFactor
+		&& entry.mMesh.mColour == pMesh.mColour
+		&& entry.mMesh.mDiffuseTextureID == pMesh.mDiffuseTextureID
+		&& entry.mMesh.mSpecularTextureID == pMesh.mSpecularTextureID
+		&& entry.mMesh.mShininess == pMesh.mShininess
+		&& entry.mMesh.mTextureRepeatFactor == pMesh.mTextureRepeatFactor; });
 
-            drawCallIt->mEntityModelIndexLookup[pEntity.mID] = drawCallIt->mModels.size();
-            drawCallIt->mModels.push_back(util::GetModelMatrix(transform->mPosition, transform->mRotation, transform->mScale));
-			const bool updated = updateShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
+	if (drawCallIt == mDrawCalls.end())
+	{
+		DrawCall drawCall;
+		drawCall.mMesh = pMesh;
+		mDrawCalls.push_back(drawCall);
+		mDrawCallToShader.push_back(std::nullopt);
+		drawCallIt = mDrawCalls.end() - 1;
+	}
 
-			if (!updated)
-			{
-				// If updateShader doesnt assign a new shader to the DrawCall, it does not update the buffer data, we manually update the buffer for the
-				// newly pushed back model matrix of Transform component.
-				auto shader = getShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
-           	 	if (shader->isInstanced())
-           		{
-           	    	auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
-         			instanceModelsArray->Set(mGLState, drawCallIt->mModels.back(), drawCallIt->mModels.size() - 1);
-           	 	}
-			}
-        }
-    }
+	drawCallIt->mEntityModelIndexLookup[pEntity.mID] = drawCallIt->mModels.size();
+	drawCallIt->mModels.push_back(util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale));
+	const bool updated = updateShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
+
+	if (!updated)
+	{
+		// If updateShader doesnt assign a new shader to the DrawCall, it does not update the buffer data, we manually update the buffer for the
+		// newly pushed back model matrix of Transform component.
+		auto shader = getShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
+		if (shader->isInstanced())
+		{
+			auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
+			instanceModelsArray->Set(mGLState, drawCallIt->mModels.back(), drawCallIt->mModels.size() - 1);
+		}
+	}
 }
 
-void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+void OpenGLAPI::onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
+{
+    if (const Data::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
+        if (const Data::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
+			addEntityDrawCall(pEntity, *transform, *mesh);
+}
+
+void OpenGLAPI::onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+{
+	if (const auto mesh = mEntityManager.mMeshes.GetComponent(pEntity))
+		addEntityDrawCall(pEntity, pTransform, *mesh);
+}
+void OpenGLAPI::onTransformComponentChanged(const ECS::Entity& pEntity, const Data::Transform& pTransform)
 {
 	// Find the DrawCall containing pEntity Transform data and update the model matrix for it.
     for (size_t i = 0; i < mDrawCalls.size(); i++)
@@ -146,6 +155,7 @@ void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Dat
         {
             mDrawCalls[i].mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
 
+			// If the shader is instanced, we have to update the instance data array directly at the corresponding index.
 			auto shader = getShader(mDrawCalls[i], i);
 			if (shader->isInstanced())
    			{
@@ -157,16 +167,11 @@ void OpenGLAPI::onTransformComponentChange(const ECS::Entity& pEntity, const Dat
     }
 }
 
-void OpenGLAPI::onPointLightComponentChange(const ECS::Entity& pEntity, const Data::PointLight& pPointLight)
+void OpenGLAPI::onMeshComponentAdded(const ECS::Entity& pEntity, const Data::MeshDraw& pMesh)
 {
-
+	if (const auto transform = mEntityManager.mTransforms.GetComponent(pEntity))
+		addEntityDrawCall(pEntity, *transform, pMesh);
 }
-
-void OpenGLAPI::onSpotLightComponentChange(const ECS::Entity& pEntity, const Data::SpotLight& pSpotLight)
-{
-
-}
-
 
 bool OpenGLAPI::updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex)
 {

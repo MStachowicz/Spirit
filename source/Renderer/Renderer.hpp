@@ -38,9 +38,9 @@ private:
 	// Order of initialisation is important here:
 	TextureManager mTextureManager;
 	MeshManager mMeshManager;
+	ECS::EntityManager& mEntityManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
-	ECS::EntityManager& mEntityManager;
 
 	DrawCall lightPosition;
 

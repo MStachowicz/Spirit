@@ -51,11 +51,14 @@ public:
 	void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
 	void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 
-	virtual void onEntityAdded(const ECS::Entity& pEntity, const ECS::EntityManager& pManager) {};
-
-	virtual void onTransformComponentChange(const ECS::Entity& pEntity, const Data::Transform& pTransform) {};
-	virtual void onPointLightComponentChange(const ECS::Entity& pEntity, const Data::PointLight& pPointLight) {};
-	virtual void onSpotLightComponentChange(const ECS::Entity& pEntity, const Data::SpotLight& pSpotLight) {};
+	virtual void onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
+	virtual void onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
+	virtual void onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform);
+	virtual void onTransformComponentChanged(const ECS::Entity& pEntity, const Data::Transform& pTransform);
+	virtual void onTransformComponentRemoved(const ECS::Entity& pEntity);
+	virtual void onMeshComponentAdded(const ECS::Entity& pEntity, const Data::MeshDraw& pMeshDraw);
+	virtual void onMeshComponentChanged(const ECS::Entity& pEntity, const Data::MeshDraw& pMeshDraw);
+	virtual void onMeshComponentRemoved(const ECS::Entity& pEntity);
 
 protected:
 	std::vector<DrawCall> mDrawCalls; // GraphicsAPI Executes all these DrawCalls using the draw function.

@@ -18,9 +18,9 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 , mTargetFPS(60)
 , mTextureManager()
 , mMeshManager(mTextureManager)
-, mOpenGLAPI(new OpenGLAPI())
-, mCamera(glm::vec3(0.0f, 1.7f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1), std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1))
 , mEntityManager(pEntityManager)
+, mOpenGLAPI(new OpenGLAPI(mEntityManager))
+, mCamera(glm::vec3(0.0f, 1.7f, 7.0f), std::bind(&GraphicsAPI::setView, mOpenGLAPI, std::placeholders::_1), std::bind(&GraphicsAPI::setViewPosition, mOpenGLAPI, std::placeholders::_1))
 , mRenderImGui(true)
 , mRenderLightPositions(true)
 , mShowFPSPlot(false)
@@ -37,10 +37,26 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 	lightPosition.mMesh.mColour		= glm::vec3(1.f);
 	lightPosition.mMesh.mDrawStyle 	= Data::DrawStyle::UniformColour;
 
+	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
+	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
+	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
+
+	// Subscribe the listeners here as opposed to inside the OpenGLAPI constructor to maintain the const& qualifier.
+	// OpenGLAPI is a listener and shouldnt have the option to edit the data layer.
+	mEntityManager.mEntityCreatedEvent.Subscribe(std::bind(&GraphicsAPI::onEntityCreated, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mEntityRemovedEvent.Subscribe(std::bind(&GraphicsAPI::onEntityRemoved, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+
+	mEntityManager.mTransforms.mComponentAddedEvent.Subscribe(std::bind(&GraphicsAPI::onTransformComponentAdded, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mTransforms.mComponentChangedEvent.Subscribe(std::bind(&GraphicsAPI::onTransformComponentChanged, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mTransforms.mComponentRemovedEvent.Subscribe(std::bind(&GraphicsAPI::onTransformComponentRemoved, mOpenGLAPI, std::placeholders::_1));
+
+	mEntityManager.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&GraphicsAPI::onMeshComponentAdded, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&GraphicsAPI::onMeshComponentChanged, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
+	mEntityManager.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&GraphicsAPI::onMeshComponentRemoved, mOpenGLAPI, std::placeholders::_1));
+
 	static const float floorSize = 50.f;
 	static const size_t grassCount = 500;
 	static const bool randomGrassPlacement = false;
-
 	{ // Floor
 		auto& entity = mEntityManager.CreateEntity();
 
@@ -225,15 +241,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 		// Spotlight
 		mEntityManager.mSpotLights.Add(mEntityManager.CreateEntity(), {});
 	}
-
-	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
-	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
-	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });
-	mEntityManager.ForEach([this](const ECS::Entity& pEntity){ mOpenGLAPI->onEntityAdded(pEntity, mEntityManager); });
-
-	mEntityManager.mTransforms.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onTransformComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
-	mEntityManager.mPointLights.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onPointLightComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
-	mEntityManager.mSpotLights.mChangedComponentEvent.Subscribe(std::bind(&GraphicsAPI::onSpotLightComponentChange, mOpenGLAPI, std::placeholders::_1, std::placeholders::_2));
 }
 
 Renderer::~Renderer()
