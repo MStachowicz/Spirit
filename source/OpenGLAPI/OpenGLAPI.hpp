@@ -39,11 +39,10 @@ public:
 
 	void preDraw() 										 		override;
 	void draw()							 				 		override;
-	void draw(const Data::PointLight& pPointLight) 			    override;
-	void draw(const Data::DirectionalLight& pDirectionalLight)  override;
-	void draw(const Data::SpotLight& pSpotLight) 				override;
 	void postDraw() 									 		override;
 	void endFrame() 									 		override;
+
+	void setupLights(const bool& pRenderLightPositions) 		override;
 
 	void newImGuiFrame()										override;
 	void renderImGuiFrame() 									override;
@@ -64,7 +63,11 @@ private:
 	// Using the mesh and tranform component assigned to an Entity, construct a DrawCall for it.
 	void addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh);
 
-	// Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
+	void setShaderVariables(const Data::PointLight& pPointLight);
+	void setShaderVariables(const Data::DirectionalLight& pDirectionalLight);
+	void setShaderVariables(const Data::SpotLight& pSpotLight);
+
+ // Holds all the constructed instances of OpenGLAPI to allow calling non-static member functions.
 	inline static std::vector<OpenGLAPI*> OpenGLInstances;
 	void onResize(const int pWidth, const int pHeight);
 
@@ -165,6 +168,9 @@ private:
 
 	Shader mDepthViewerShader;
 	Shader mVisualiseNormalShader;
+
+	MeshID m3DCubeID;
+	Shader mLightEmitterShader;
 
 	std::vector<Shader> mAvailableShaders; // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
 	std::vector<std::optional<Shader>> mDrawCallToShader; // 1-1 mapping of mDrawCalls to Shader they are using to render.

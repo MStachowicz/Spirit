@@ -224,11 +224,17 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 				glm::vec3(0.0f, 1.0f, -3.0f),
 				glm::vec3(2.3f, 3.3f, -4.0f),
 				glm::vec3(-4.0f, 2.0f, -12.0f)};
+			const std::array<glm::vec3, 4> pointLightColours = {
+				glm::vec3(0.f,0.f,1.f),
+				glm::vec3(1.f),
+				glm::vec3(1.f),
+				glm::vec3(1.f)};
 
-			for (const auto& position : pointLightPositions)
+			for (size_t i = 0; i < pointLightPositions.size(); i++)
 			{
 				Data::PointLight pointLight;
-				pointLight.mPosition = position;
+				pointLight.mPosition = pointLightPositions[i];
+				pointLight.mColour = pointLightColours[i];
 				mEntityManager.mPointLights.Add(mEntityManager.CreateEntity(), pointLight);
 			}
 		}
@@ -257,13 +263,6 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 	else
 		mCurrentFPS = (mDataSmoothingFactor * (1.0f / (static_cast<float>((pTimeSinceLastDraw.count()) / 1000000.0f)))) + (1.0f - mDataSmoothingFactor) * mCurrentFPS;
 
-	mOpenGLAPI->preDraw();
-
-	{ // Setup lights in GraphicsAPI
-		mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight) { mOpenGLAPI->draw(pPointLight); });
-		mEntityManager.mDirectionalLights.ForEach([this](const Data::DirectionalLight& pDirectionalLight) { mOpenGLAPI->draw(pDirectionalLight); });
-		mEntityManager.mSpotLights.ForEach([this](const Data::SpotLight& pSpotLight) { mOpenGLAPI->draw(pSpotLight); });
-	}
 }
 
 void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
@@ -271,32 +270,16 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 	Stopwatch stopwatch;
 
 	onFrameStart(pTimeSinceLastDraw);
-	{ // Draw all meshes via DrawCalls
+ 	mOpenGLAPI->preDraw();
+ 	mOpenGLAPI->setupLights(mRenderLightPositions);
 		mOpenGLAPI->draw();
+	mOpenGLAPI->postDraw();
 
-		//if (mRenderLightPositions)
-		//{
-		//	lightPosition.mModels.clear();
-		//	mEntityManager.mPointLights.ForEach([&](const Data::PointLight& pPointLight)
-		//	{
-		//		lightPosition.mMesh.mColour = pPointLight.mColour;
-		//		lightPosition.mModels.push_back(util::GetModelMatrix(pPointLight.mPosition, {}, glm::vec3(0.1f)));
-		//	});
-		//
-		//	//mOpenGLAPI->draw(lightPosition);
-		//}
-	}
-	postDraw();
+	renderImGui(); // Render ImGui after all GraphicsAPI draw calls are finished before endFrame
+	mOpenGLAPI->endFrame();
 
 	mDrawCount++;
 	mDrawTimeTakenMS = stopwatch.getTime<std::milli, float>();
-}
-
-void Renderer::postDraw()
-{
-	mOpenGLAPI->postDraw();
-	renderImGui(); // Render ImGui after all GraphicsAPI draw calls are finished before endFrame
-	mOpenGLAPI->endFrame();
 }
 
 void Renderer::renderImGui()

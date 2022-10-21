@@ -34,11 +34,10 @@ public:
 
 	virtual void preDraw() 											   = 0;
 	virtual void draw()												   = 0;
-	virtual void draw(const Data::PointLight& pPointLight) 			   = 0;
-	virtual void draw(const Data::DirectionalLight& pDirectionalLight) = 0;
-	virtual void draw(const Data::SpotLight& pSpotLight) 			   = 0;
 	virtual void postDraw() 										   = 0;
 	virtual void endFrame()											   = 0;
+
+	virtual void setupLights(const bool& pRenderLightPositions)		   = 0;
 
 	virtual void newImGuiFrame() 									   = 0;
 	virtual void renderImGuiFrame() 								   = 0;

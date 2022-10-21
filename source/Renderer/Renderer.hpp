@@ -26,7 +26,6 @@ public:
 
 	void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
 	void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
-	void postDraw();
 
 	void renderImGui();
 	void plotFPSTimes();

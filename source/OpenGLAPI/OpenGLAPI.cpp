@@ -53,6 +53,8 @@ OpenGLAPI::OpenGLAPI(const ECS::EntityManager& pEntityManager)
 	, mScreenTextureShader("screenTexture", mGLState)
 	, mSkyBoxMeshID()
 	, mSkyBoxShader("skybox", mGLState)
+	, m3DCubeID()
+	, mLightEmitterShader("uniformColour", mGLState)
 	, mDepthViewerShader("depthView", mGLState)
 	, mVisualiseNormalShader("visualiseNormal", mGLState)
 	, mAvailableShaders{ Shader("texture1", mGLState)
@@ -391,7 +393,26 @@ void OpenGLAPI::draw(const OpenGLAPI::OpenGLMesh& pMesh, const size_t& pInstance
 	for (const auto& childMesh : pMesh.mChildMeshes)
 		draw(childMesh);
 }
-void OpenGLAPI::draw(const Data::PointLight& pPointLight)
+
+void OpenGLAPI::setupLights(const bool& pRenderLightPositions)
+{
+	mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight) 				  { setShaderVariables(pPointLight); });
+	mEntityManager.mDirectionalLights.ForEach([this](const Data::DirectionalLight& pDirectionalLight) { setShaderVariables(pDirectionalLight); });
+	mEntityManager.mSpotLights.ForEach([this](const Data::SpotLight& pSpotLight) 					  { setShaderVariables(pSpotLight); });
+
+	if (pRenderLightPositions)
+	{
+		mLightEmitterShader.use(mGLState);
+		mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight)
+		{
+			mLightEmitterShader.setUniform(mGLState, "model", util::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
+			mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
+   			draw(getGLMesh(m3DCubeID));
+		});
+	}
+}
+
+void OpenGLAPI::setShaderVariables(const Data::PointLight& pPointLight)
 {
 	const std::string uniform = "Lights.mPointLights[" + std::to_string(pointLightDrawCount) + "]";
 	const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
@@ -407,7 +428,8 @@ void OpenGLAPI::draw(const Data::PointLight& pPointLight)
 
 	pointLightDrawCount++;
 }
-void OpenGLAPI::draw(const Data::DirectionalLight& pDirectionalLight)
+
+void OpenGLAPI::setShaderVariables(const Data::DirectionalLight& pDirectionalLight)
 {
 	const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
@@ -419,7 +441,7 @@ void OpenGLAPI::draw(const Data::DirectionalLight& pDirectionalLight)
 
 	directionalLightDrawCount++;
 }
-void OpenGLAPI::draw(const Data::SpotLight& pSpotLight)
+void OpenGLAPI::setShaderVariables(const Data::SpotLight& pSpotLight)
 {
 	const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
 	const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
@@ -593,6 +615,9 @@ void OpenGLAPI::initialiseMesh(const Data::Mesh& pMesh)
 				mScreenQuad = pMesh.mID;
 			else if (pMesh.mName == "Skybox")
 				mSkyBoxMeshID = pMesh.mID;
+			else if (pMesh.mName == "3DCube")
+				m3DCubeID = pMesh.mID;
+
 		}
 	}
 	ZEPHYR_ASSERT(newMesh != nullptr, "Failed to initialise Data::Mesh with ID '{}'", pMesh.mID.Get());
