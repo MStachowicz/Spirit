@@ -1,11 +1,16 @@
 #include "Mesh.hpp"
 
-//#include "Utility.hpp"
+#include "imgui.h"
 
 namespace Data
 {
     void MeshDraw::DrawImGui()
     {
+        if(ImGui::TreeNode(mName.empty() ? "Mesh" : (mName + "mesh").c_str()))
+        {
+            ImGui::TreePop();
+        }
+
         // static const std::array<std::string, util::toIndex(DrawMode::Count)> drawModes{"Fill", "Wireframe"};
         // static std::string convert(const DrawMode &pDrawMode) { return drawModes[util::toIndex(pDrawMode)]; }
         // static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles{"Textured", "Uniform Colour", "Light Map"};

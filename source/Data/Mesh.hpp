@@ -87,6 +87,6 @@ namespace Data
         };
         bool operator != (const MeshDraw& pOther) const { return !(*this == pOther); }
 
-        void DrawImGui() {};
+        void DrawImGui();
     };
 }
