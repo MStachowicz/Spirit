@@ -34,43 +34,42 @@ namespace ECS
         }
         void Add(const Entity& pEntity, const Component& pComponent)
         {
-            ZEPHYR_ASSERT(pEntity.mID != INVALID_ENTITY_ID, "Invalid entity not allowed to create components");
             ZEPHYR_ASSERT(mEntityComponentIndexLookup.find(pEntity.mID) == mEntityComponentIndexLookup.end(), "Only one of this component type is allowed per entity");
             ZEPHYR_ASSERT(mEntities.size() == mComponents.size() && mEntityComponentIndexLookup.size() == mComponents.size(), "Entity count must always be the same as the number of components");
 
             // New components are always pushed to the end so entity lookup table receives end location
             mEntityComponentIndexLookup[pEntity.mID] = mComponents.size();
             mComponents.push_back(pComponent);
-            // Also push corresponding entity
             mEntities.push_back(pEntity.mID);
             mComponentAddedEvent.Dispatch(pEntity, mComponents.back());
         }
         void Remove(const Entity& pEntity)
         {
-            auto it = lookup.find(pEntity);
-            if (it != lookup.end())
+            // Find the index of the entity we are removing and swap it with the last entity then pop back.
+            // We std::move the data of the back component/entity into the entityBeingRemovedIndex and then delete the duplicate off the end.
+            auto it = mEntityComponentIndexLookup.find(pEntity.mID);
+            if (it != mEntityComponentIndexLookup.end())
             {
-                // Directly index into components and entities array:
-                const size_t index = it->second;
-                const Entity entity = mEntities[index];
+                const size_t entityBeingRemovedIndex = it->second;
+                ZEPHYR_ASSERT(mEntities[entityBeingRemovedIndex] == pEntity.mID, "Entity ID should match")
 
-                if (index < mComponents.size() - 1)
+                mEntityComponentIndexLookup.erase(it);
+                if (entityBeingRemovedIndex < mComponents.size() - 1)
                 {
-                    // Swap out the dead element with the last one:
-                    mComponents[index] = std::move(mComponents.back()); // try to use move
-                    mEntities[index] = mEntities.back();
-
-                    // Update the lookup table:
-                    mEntityComponentIndexLookup[mEntities[index]] = index;
+                    mEntityComponentIndexLookup[mEntities.back()] = entityBeingRemovedIndex;
+                    mComponents[entityBeingRemovedIndex] = std::move(mComponents.back()); // Move the back entity data into the removed index.
+                    mEntities[entityBeingRemovedIndex] = mEntities.back();
                 }
 
-                // Shrink the container:
                 mComponents.pop_back();
                 mEntities.pop_back();
-                mEntityComponentIndexLookup.erase(entity);
-                mComponentRemovedEvent.Dispatch(entity);
+                mComponentRemovedEvent.Dispatch(pEntity);
             }
+
+            ZEPHYR_ASSERT(mEntityComponentIndexLookup.find(pEntity.mID) == mEntityComponentIndexLookup.end(), "Component still exists after remove.");
+            ZEPHYR_ASSERT(mEntities.size() == mComponents.size() && mEntityComponentIndexLookup.size() == mComponents.size(), "Entity count must always be the same as the number of components");
         }
+
         // Apply pFunction to every Component in the list.
         void ModifyForEach(const std::function<void(Component& pComponent)>& pFunction)
         {
@@ -107,6 +106,6 @@ namespace ECS
     private:
         std::vector<Component> mComponents;
         std::vector<EntityID> mEntities;
-        std::unordered_map<EntityID, size_t> mEntityComponentIndexLookup;
+        std::unordered_map<EntityID, size_t> mEntityComponentIndexLookup; // Maps EntityID to the index into mComponents and mEntities.
     };
 }

@@ -9,21 +9,27 @@ namespace ECS
         {
             for (size_t i = 0; i < mEntities.size(); i++)
             {
-                const std::string title = "Entity " + std::to_string(mEntities[i].mID);
-                if (ImGui::TreeNode(title.c_str()))
+                if (mEntities[i].mActive)
                 {
-                    if (mTransforms.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
-                        ImGui::Separator();
-                    if (mMeshes.Modify(mEntities[i],            [](auto& component){ component.DrawImGui(); }))
-                        ImGui::Separator();
-                    if (mPointLights.Modify(mEntities[i],       [](auto& component){ component.DrawImGui(); }))
-                        ImGui::Separator();
-                    if (mSpotLights.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
-                        ImGui::Separator();
-                    if (mDirectionalLights.Modify(mEntities[i], [](auto& component){ component.DrawImGui(); }))
-                        ImGui::Separator();
+                    const std::string title = "Entity " + std::to_string(mEntities[i].mID);
+                    if (ImGui::TreeNode(title.c_str()))
+                    {
+                        if (mTransforms.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
+                        if (mMeshes.Modify(mEntities[i],            [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
+                        if (mPointLights.Modify(mEntities[i],       [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
+                        if (mSpotLights.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
+                        if (mDirectionalLights.Modify(mEntities[i], [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
 
-                    ImGui::TreePop();
+                        if (ImGui::Button("Delete"))
+                            removeEntity(mEntities[i].mID);
+
+                        ImGui::TreePop();
+                    }
                 }
             };
         }

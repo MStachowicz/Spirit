@@ -11,10 +11,10 @@ namespace ECS
     public:
         Entity(const EntityID pID)
             : mID(pID)
+            , mActive(true)
         {}
 
         const EntityID mID;
+        bool mActive;
     };
-
-    static const EntityID INVALID_ENTITY_ID = 0;
 }
