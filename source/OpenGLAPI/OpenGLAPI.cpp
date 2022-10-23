@@ -88,6 +88,43 @@ OpenGLAPI::~OpenGLAPI()
 		OpenGLInstances.erase(it);
 }
 
+void OpenGLAPI::removeEntityDrawCall(const ECS::Entity& pEntity)
+{
+	// Find the DrawCall containing pEntity data and remove it.
+	// Move the last model into the to-be-deleted position and pop the back.
+	// Finally, update the mEntityModelIndexLookup of the moved entity data to point to the position of the removed data.
+    for (size_t i = 0; i < mDrawCalls.size(); i++)
+    {
+        auto entityIndexToRemove = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
+        if (entityIndexToRemove != mDrawCalls[i].mEntityModelIndexLookup.end())
+        {
+			const size_t removedEntityModelsIndex = entityIndexToRemove->second;
+			mDrawCalls[i].mEntityModelIndexLookup.erase(entityIndexToRemove);
+
+			if (removedEntityModelsIndex < mDrawCalls[i].mModels.size())
+			{
+				mDrawCalls[i].mModels[removedEntityModelsIndex] = std::move(mDrawCalls[i].mModels.back());
+
+				// Reverse find the moved entity in mEntityModelIndexLookup by searching the map for the final index.
+				// If this becomes a performance problem, on add, we can cache the last element EntityID and perform a
+				// regular map search.
+				const size_t movedEntityIndex = mDrawCalls[i].mModels.size() - 1;
+				for (auto& entityIndex : mDrawCalls[i].mEntityModelIndexLookup)
+				{
+					if (entityIndex.second == movedEntityIndex)
+					{
+						entityIndex.second = removedEntityModelsIndex;
+						break;
+					}
+				}
+			}
+
+			mDrawCalls[i].mModels.pop_back();
+			return;
+		}
+	}
+}
+
 void OpenGLAPI::addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh)
 {
 	// If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
@@ -140,6 +177,19 @@ void OpenGLAPI::onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityMan
     if (const Data::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
         if (const Data::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
 			addEntityDrawCall(pEntity, *transform, *mesh);
+}
+
+void OpenGLAPI::onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
+{
+	removeEntityDrawCall(pEntity);
+}
+void OpenGLAPI::onTransformComponentRemoved(const ECS::Entity& pEntity)
+{
+	removeEntityDrawCall(pEntity);
+}
+void OpenGLAPI::onMeshComponentRemoved(const ECS::Entity& pEntity)
+{
+	removeEntityDrawCall(pEntity);
 }
 
 void OpenGLAPI::onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform)

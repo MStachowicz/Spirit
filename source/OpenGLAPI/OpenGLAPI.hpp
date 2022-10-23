@@ -55,13 +55,19 @@ public:
 
 	// Listeners
 	void onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityManager& pManager) 			override;
+	void onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)			override;
+
 	void onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform) 	override;
 	void onTransformComponentChanged(const ECS::Entity& pEntity, const Data::Transform& pTransform) override;
+	void onTransformComponentRemoved(const ECS::Entity& pEntity)									override;
+
 	void onMeshComponentAdded(const ECS::Entity& pEntity, const Data::MeshDraw& pMesh) 				override;
+	void onMeshComponentRemoved(const ECS::Entity& pEntity) 										override;
 
 private:
 	// Using the mesh and tranform component assigned to an Entity, construct a DrawCall for it.
 	void addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh);
+	void removeEntityDrawCall(const ECS::Entity& pEntity);
 
 	void setShaderVariables(const Data::PointLight& pPointLight);
 	void setShaderVariables(const Data::DirectionalLight& pDirectionalLight);
