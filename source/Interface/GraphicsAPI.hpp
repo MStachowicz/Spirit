@@ -22,9 +22,7 @@ namespace Data
 	struct SpotLight;
 }
 
-// GraphicsAPI implements behaviour all derived GraphicsAPI's depend on.
-// Namely it enforces an interface used by Zephyr::Renderer for executing DrawCalls.
-// It is also a listener to ECS data changes to relevant components to DrawCalls.
+// GraphicsAPI is an interface used by Zephyr::Renderer for rendering the current state of the ECS.
 class GraphicsAPI
 {
 public:
