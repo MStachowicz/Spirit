@@ -31,6 +31,8 @@ namespace Data
 	struct SpotLight;
 }
 
+// OpenGLAPI uses Transform, MeshDraw, Pointlight, DirectionalLight and SpotLight components in the ECS to execute OpenGL draw commands.
+// Transform and MeshDraw components are cached into a more parsable format in mDrawcalls. In Listener functions DrawCalls are updated.
 class OpenGLAPI : public GraphicsAPI
 {
 public:
