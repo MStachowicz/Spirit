@@ -8,6 +8,7 @@
 #include "DirectionalLight.hpp"
 #include "Transform.hpp"
 #include "Mesh.hpp"
+#include "Collider.hpp"
 
 #include <vector>
 #include <functional>
@@ -66,6 +67,7 @@ namespace ECS
         ComponentManager<Data::DirectionalLight> mDirectionalLights;
         ComponentManager<Data::Transform>        mTransforms;
         ComponentManager<Data::MeshDraw>         mMeshes;
+        ComponentManager<Data::Collider>         mColliders;
 
         void DrawImGui();
     private:

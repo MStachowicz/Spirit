@@ -18,6 +18,8 @@ namespace ECS
                             ImGui::Separator();
                         if (mMeshes.Modify(mEntities[i],            [](auto& component){ component.DrawImGui(); }))
                             ImGui::Separator();
+                        if (mColliders.Modify(mEntities[i],         [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
                         if (mPointLights.Modify(mEntities[i],       [](auto& component){ component.DrawImGui(); }))
                             ImGui::Separator();
                         if (mSpotLights.Modify(mEntities[i],        [](auto& component){ component.DrawImGui(); }))
@@ -27,6 +29,8 @@ namespace ECS
 
                         if (ImGui::Button("Delete"))
                             removeEntity(mEntities[i].mID);
+                        ImGui::Separator();
+                        ImGui::Separator();
 
                         ImGui::TreePop();
                     }
