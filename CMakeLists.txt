@@ -148,6 +148,8 @@ message(STATUS "\n[ZEPHYR] -- Adding Data library")
 add_library(Data
 source/Data/Mesh.hpp
 source/Data/Mesh.cpp
+source/Data/Collider.hpp
+source/Data/Collider.cpp
 source/Data/Texture.hpp
 source/Data/DirectionalLight.hpp
 source/Data/DirectionalLight.cpp
