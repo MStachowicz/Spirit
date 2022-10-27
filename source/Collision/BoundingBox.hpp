@@ -2,9 +2,6 @@
 
 namespace Collision
 {
-    // Return a bounding box encompassing both bounding boxes.
-    BoundingBox unite(const BoundingBox& pBoundingBox, const BoundingBox& pBoundingBox2);
-
     struct BoundingBox
     {
         double mLowX;
@@ -48,5 +45,8 @@ namespace Collision
                 mHighZ == pOther.mHighZ;
         };
         bool operator != (const BoundingBox& pOther) const { return !(*this == pOther); }
+
+        // Return a bounding box encompassing both bounding boxes.
+        BoundingBox unite(const BoundingBox& pBoundingBox, const BoundingBox& pBoundingBox2);
     };
 }// namespace Collision
