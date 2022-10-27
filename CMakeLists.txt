@@ -23,6 +23,21 @@ PRIVATE Input
 )
 # ------------------------ ZEPHYR END ----------------------------
 
+# ------------------------ COLLISION ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Collision static library")
+add_library(Collision
+source/Collision/BoundingBox.hpp
+source/Collision/BoundingBox.cpp
+)
+target_include_directories(Collision
+PUBLIC source/Collision
+PRIVATE source/ECS
+)
+target_link_libraries(Collision
+PRIVATE ECS
+)
+# ------------------------ COLLISION END ----------------------------
+
 # ------------------------ RENDERER ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
@@ -163,9 +178,11 @@ source/Data/Transform.cpp
 target_include_directories(Data
 PUBLIC source/Data
 PUBLIC source/External/GLM
+PUBLIC source/Collision
 )
 target_link_libraries(Data
 PUBLIC Utility
+PUBLIC Collision
 PRIVATE ImGui
 )
 # ------------------------ DATA END ----------------------------

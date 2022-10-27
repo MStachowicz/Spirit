@@ -8,11 +8,13 @@ namespace Data
     {
         if(ImGui::TreeNode("Collider"))
         {
-            ImGui::InputDouble("Top",    &mBoundingBox.mTop);
-            ImGui::InputDouble("Bottom", &mBoundingBox.mBottom);
-            ImGui::InputDouble("Left",   &mBoundingBox.mLeft);
-            ImGui::InputDouble("Right",  &mBoundingBox.mRight);
-            ImGui::TreePop();
+           ImGui::InputDouble("Low X",  &mBoundingBox.mLowX);
+           ImGui::InputDouble("High X", &mBoundingBox.mHighX);
+           ImGui::InputDouble("Low Y",  &mBoundingBox.mLowY);
+           ImGui::InputDouble("High Y", &mBoundingBox.mHighY);
+           ImGui::InputDouble("Low Z",  &mBoundingBox.mLowZ);
+           ImGui::InputDouble("High Z", &mBoundingBox.mHighZ);
+           ImGui::TreePop();
         }
     }
 }
