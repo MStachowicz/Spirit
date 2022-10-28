@@ -189,6 +189,7 @@ void MeshManager::buildMeshes() // Populates mMeshes with some commonly used sha
 {
     loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/xian/xian.obj");
     loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/backpack/backpack.obj");
+    loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/cube/cube.obj");
 
     { // 2D TRIANGLE
         Data::Mesh mesh;
