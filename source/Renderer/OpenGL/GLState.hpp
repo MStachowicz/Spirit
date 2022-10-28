@@ -936,7 +936,7 @@ private:
     std::vector<GLData::ShaderStorageBlockBindingPoint> mShaderStorageBlockBindingPoints;
 
 
-    // Buffers are referened in many areas of GLState and OpenGLAPI, therefore they must exist in a permanent memory location to not break these references.
+    // Buffers are referened in many areas of GLState and OpenGLRenderer, therefore they must exist in a permanent memory location to not break these references.
     std::vector<std::unique_ptr<GLData::UBO>> mUBOs;
     std::vector<std::unique_ptr<GLData::SSBO>> mSSBOs;
 

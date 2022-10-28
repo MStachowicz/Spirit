@@ -62,7 +62,7 @@ PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Renderer
 PUBLIC ECS
-PRIVATE OpenGLAPI
+PUBLIC OpenGL
 PRIVATE FileSystem
 PRIVATE Logger
 PRIVATE ImGui
@@ -70,32 +70,35 @@ PRIVATE assimp
 )
 # ------------------------ RENDERER END ----------------------------
 
-# ------------------------ OPENGLAPI ---------------------------
-# This library implements a Zephyr renderer using GLAD OpenGL as well as an Input handler using GLFW
-add_library(OpenGLAPI
-source/OpenGLAPI/OpenGLAPI.hpp
-source/OpenGLAPI/OpenGLAPI.cpp
-source/OpenGLAPI/GLState.hpp
-source/OpenGLAPI/GLState.cpp
-source/OpenGLAPI/OpenGLWindow.hpp
-source/OpenGLAPI/OpenGLWindow.cpp
-source/OpenGLAPI/Shader.hpp
-source/OpenGLAPI/Shader.cpp
+# ------------------------ OpenGL ---------------------------
+add_library(OpenGL
+source/Renderer/OpenGL/OpenGLRenderer.hpp
+source/Renderer/OpenGL/OpenGLRenderer.cpp
+source/Renderer/OpenGL/GLState.hpp
+source/Renderer/OpenGL/GLState.cpp
+source/Renderer/OpenGL/OpenGLWindow.hpp
+source/Renderer/OpenGL/OpenGLWindow.cpp
+source/Renderer/OpenGL/Shader.hpp
+source/Renderer/OpenGL/Shader.cpp
 )
-target_include_directories(OpenGLAPI
-PUBLIC source/OpenGLAPI
+target_include_directories(OpenGL
+PUBLIC source/Renderer/OpenGL
 PUBLIC source/External/GLM
+PUBLIC source/ECS
+PUBLIC source/Data
 PRIVATE source/External/GLFW/include
 )
-target_link_libraries(OpenGLAPI
-PUBLIC ZephyrInterface # Implements the InputAPI and GraphicsAPI interface
+target_link_libraries(OpenGL
+PUBLIC Utility
+PUBLIC ECS
+PUBLIC Data
 PRIVATE glad_GL
 PRIVATE glfw
 PRIVATE ImGui
 PRIVATE FileSystem
 PRIVATE Logger
 )
-# ------------------------ OPENGLAPI END ----------------------------
+# ------------------------ OPENGL END ----------------------------
 
 # ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")
@@ -112,7 +115,7 @@ PRIVATE source/External/GLFW/include
 )
 target_link_libraries(Input
 PRIVATE glfw
-PRIVATE OpenGLAPI # Zephyr input creates an instance of GLFWInput provided by OpenGLAPI
+PRIVATE OpenGL # Zephyr input creates an instance of GLFWInput provided by OpenGLRenderer
 PRIVATE Renderer # Included to manipulate Renderer::Camera
 PRIVATE ImGui
 PRIVATE Logger
@@ -147,22 +150,6 @@ target_link_libraries(JobSystem
 PRIVATE Logger
 )
 # ------------------------ JOBSYSTEM END ----------------------------
-
-# ------------------------ INTERFACE ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Zephyr GraphicsAPI + InputAPI Interfaces")
-add_library(ZephyrInterface
-source/Interface/DrawCall.hpp
-source/Interface/GraphicsAPI.hpp
-source/Interface/GraphicsAPI.cpp
-)
-target_include_directories(ZephyrInterface
-PUBLIC source/Interface
-)
-target_link_libraries(ZephyrInterface
-PUBLIC ECS
-PRIVATE Utility
-)
-# ------------------------ INTERFACE END ----------------------------
 
 # ------------------------ DATA ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Data library")

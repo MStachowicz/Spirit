@@ -1,7 +1,7 @@
 #include "GLFWInput.hpp"
 #include "GLFW/glfw3.h"
-#include "OpenGLWindow.hpp"
 #include "Logger.hpp"
+#include "OpenGLWindow.hpp"
 
 GLFWInput::GLFWInput(
     std::function<void(const InputAPI::Key&)> pOnKeyPressCallback
@@ -10,11 +10,11 @@ GLFWInput::GLFWInput(
 : InputHandler(pOnKeyPressCallback, pOnMousePressCallback, pOnMouseMoveCallback)
 , mCloseRequested(false)
 {
-    glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    glfwSetKeyCallback(OpenGLWindow::getActiveWindowHandle(), keyCallback);
-    glfwSetWindowCloseCallback(OpenGLWindow::getActiveWindowHandle(), windowCloseRequestCallback);
-    glfwSetCursorPosCallback(OpenGLWindow::getActiveWindowHandle(), mouseMoveCallback);
-    glfwSetMouseButtonCallback(OpenGLWindow::getActiveWindowHandle(), mouseButtonCallback);
+    glfwSetInputMode(OpenGL::OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetKeyCallback(OpenGL::OpenGLWindow::getActiveWindowHandle(), keyCallback);
+    glfwSetWindowCloseCallback(OpenGL::OpenGLWindow::getActiveWindowHandle(), windowCloseRequestCallback);
+    glfwSetCursorPosCallback(OpenGL::OpenGLWindow::getActiveWindowHandle(), mouseMoveCallback);
+    glfwSetMouseButtonCallback(OpenGL::OpenGLWindow::getActiveWindowHandle(), mouseButtonCallback);
     currentActiveInputHandler = this;
 };
 
@@ -38,13 +38,13 @@ void GLFWInput::setCursorMode(const InputAPI::CursorMode& pCursorMode)
     switch (pCursorMode)
     {
     case InputAPI::CursorMode::NORMAL:
-        glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetInputMode(OpenGL::OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         break;
     case InputAPI::CursorMode::HIDDEN:
-        glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetInputMode(OpenGL::OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
         break;
     case InputAPI::CursorMode::CAPTURED:
-        glfwSetInputMode(OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(OpenGL::OpenGLWindow::getActiveWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         break;
     case InputAPI::CursorMode::UNKNOWN:
     default:

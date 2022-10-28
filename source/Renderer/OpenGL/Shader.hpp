@@ -24,7 +24,7 @@ public:
         ColourRGB               = 2,
         TextureCoordinate2D     = 3,
         Count
-    }; // The possible vertex attributes supported by OpenGLAPI GLSL shaders.
+    }; // The possible vertex attributes supported by OpenGLRenderer GLSL shaders.
 
     const std::string& getName()       const { return mName; };
     bool isInstanced() const { return mIsInstanced; };

@@ -72,7 +72,7 @@ namespace util
             rootDirectory = exectuablePathStr.substr(0, found + 6); // offset substr by length of "Zephyr"
             ZEPHYR_ASSERT(util::File::exists(rootDirectory), "Could not find the rootDirectory path")
 
-            GLSLShaderDirectory = rootDirectory.string() + "/source/OpenGLAPI/GLSL/";
+            GLSLShaderDirectory = rootDirectory.string() + "/source/Renderer/OpenGL/GLSL/";
             ZEPHYR_ASSERT(util::File::exists(GLSLShaderDirectory), "Could not find the GLSL shader directory")
 
             textureDirectory = rootDirectory.string() + "/source/Resources/Textures/";
