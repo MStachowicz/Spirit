@@ -79,8 +79,6 @@ source/OpenGLAPI/GLState.hpp
 source/OpenGLAPI/GLState.cpp
 source/OpenGLAPI/OpenGLWindow.hpp
 source/OpenGLAPI/OpenGLWindow.cpp
-source/OpenGLAPI/GLFWInput.hpp
-source/OpenGLAPI/GLFWInput.cpp
 source/OpenGLAPI/Shader.hpp
 source/OpenGLAPI/Shader.cpp
 )
@@ -104,11 +102,16 @@ message(STATUS "\n[ZEPHYR] -- Adding Input static library")
 add_library(Input
 source/Input/Input.hpp
 source/Input/Input.cpp
+source/Input/InputAPI.hpp
+source/Input/GLFWInput.hpp
+source/Input/GLFWInput.cpp
 )
 target_include_directories(Zephyr
 PUBLIC source/Input
+PRIVATE source/External/GLFW/include
 )
 target_link_libraries(Input
+PRIVATE glfw
 PRIVATE OpenGLAPI # Zephyr input creates an instance of GLFWInput provided by OpenGLAPI
 PRIVATE Renderer # Included to manipulate Renderer::Camera
 PRIVATE ImGui
@@ -151,7 +154,6 @@ add_library(ZephyrInterface
 source/Interface/DrawCall.hpp
 source/Interface/GraphicsAPI.hpp
 source/Interface/GraphicsAPI.cpp
-source/Interface/InputAPI.hpp
 )
 target_include_directories(ZephyrInterface
 PUBLIC source/Interface
