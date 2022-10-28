@@ -28,6 +28,10 @@ message(STATUS "\n[ZEPHYR] -- Adding Collision static library")
 add_library(Collision
 source/Collision/BoundingBox.hpp
 source/Collision/BoundingBox.cpp
+source/Collision/BoundingBoxTree.hpp
+source/Collision/BoundingBoxTree.cpp
+source/Collision/CollisionSystem.hpp
+source/Collision/CollisionSystem.cpp
 )
 target_include_directories(Collision
 PUBLIC source/Collision

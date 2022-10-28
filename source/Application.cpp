@@ -4,6 +4,7 @@ Application::Application()
     : mEntityManager()
     , mRenderer(mEntityManager)
     , mInput(mRenderer.getCamera())
+    , mCollisionSystem(mEntityManager.mColliders)
 {}
 
 void Application::simulationLoop()

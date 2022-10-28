@@ -6,8 +6,9 @@
 
 namespace Data
 {
-    struct Collider
+    class Collider
     {
+       public:
         Collision::BoundingBox mBoundingBox;
 
         bool operator== (const Collider& pOther)  const { return mBoundingBox == pOther.mBoundingBox; };

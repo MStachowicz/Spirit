@@ -4,6 +4,7 @@
 #include "Logger.hpp"
 #include "Renderer.hpp"
 #include "Input.hpp"
+#include "CollisionSystem.hpp"
 
 #include "ECS/EntityManager.hpp"
 
@@ -18,6 +19,7 @@ public:
 private:
     ECS::EntityManager mEntityManager;
     Renderer mRenderer;
+    Collision::CollisionSystem mCollisionSystem;
     Input mInput;
 
     bool    mPhysicsTimeStepChanged     = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
