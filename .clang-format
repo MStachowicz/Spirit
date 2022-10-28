@@ -14,7 +14,7 @@ TabWidth: '1'
 IndentWidth: '4'
 SpacesBeforeTrailingComments: '1'
 
-# Access modifiers public, private stay left-alligned.
+# Access modifiers stay left-alligned (public, private...
 AccessModifierOffset: -4
 
 # Always indent after braces.
