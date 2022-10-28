@@ -33,10 +33,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
 , mImGuiRenderTimeTakenMS(0)
 , mDrawTimeTakenMS(0)
 {
-	lightPosition.mMesh.mID 		= mMeshManager.getMeshID("3DCube");
-	lightPosition.mMesh.mColour		= glm::vec3(1.f);
-	lightPosition.mMesh.mDrawStyle 	= Data::DrawStyle::UniformColour;
-
 	mMeshManager.ForEach([this](const auto& mesh) { mOpenGLAPI->initialiseMesh(mesh); }); // Depends on mShaders being initialised.
 	mTextureManager.ForEach([this](const auto& texture) { mOpenGLAPI->initialiseTexture(texture); });
 	mTextureManager.ForEachCubeMap([this](const auto& cubeMap) { mOpenGLAPI->initialiseCubeMap(cubeMap); });

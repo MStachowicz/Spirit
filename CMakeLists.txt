@@ -58,7 +58,7 @@ PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Renderer
 PUBLIC ECS
-PUBLIC OpenGLAPI
+PRIVATE OpenGLAPI
 PRIVATE FileSystem
 PRIVATE Logger
 PRIVATE ImGui

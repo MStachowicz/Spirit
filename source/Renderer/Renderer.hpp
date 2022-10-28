@@ -4,8 +4,6 @@
 #include "MeshManager.hpp"
 #include "Camera.hpp"
 
-#include "DrawCall.hpp"
-
 #include <vector>
 
 class GraphicsAPI;
@@ -40,8 +38,6 @@ private:
 	ECS::EntityManager& mEntityManager;
 	GraphicsAPI *mOpenGLAPI;
 	Camera mCamera;
-
-	DrawCall lightPosition;
 
 	bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.
 	bool mRenderLightPositions;
