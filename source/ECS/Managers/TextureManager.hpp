@@ -2,9 +2,9 @@
 
 #include "Texture.hpp"
 
-#include <array>
 #include <functional>
 #include <unordered_map>
+#include <vector>
 
 namespace std
 {
