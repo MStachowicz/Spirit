@@ -34,8 +34,8 @@ public:
 
 private:
     // Order of initialisation is important here:
-    TextureManager mTextureManager;
-    MeshManager mMeshManager;
+    Manager::TextureManager mTextureManager;
+    Manager::MeshManager mMeshManager;
     ECS::EntityManager& mEntityManager;
     OpenGL::OpenGLRenderer mOpenGLRenderer;
     Camera mCamera;

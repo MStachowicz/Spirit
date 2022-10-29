@@ -2,10 +2,10 @@
 
 #include "Mesh.hpp"
 
-#include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
+#include "glm/vec3.hpp" // vec3, bvec3, dvec3, ivec3 and uvec3
 
-#include <unordered_map>
 #include <functional>
+#include <unordered_map>
 
 namespace std
 {
@@ -13,51 +13,55 @@ namespace std
     {
         class path;
     }
-}
+} // namespace std
 
 struct aiNode;
 struct aiScene;
 struct aiMesh;
 struct aiMaterial;
-class TextureManager;
 
-class MeshManager
+namespace Manager
 {
-public:
-    MeshManager(TextureManager& pTextureManager)
-    : mTextureManager(pTextureManager)
+    class TextureManager;
+
+    class MeshManager
     {
-        buildMeshes();
-    }
+    public:
+        MeshManager(TextureManager& pTextureManager)
+            : mTextureManager(pTextureManager)
+        {
+            buildMeshes();
+        }
 
-    inline void ForEach(const std::function<void(const Data::Mesh&)>& pFunction) const
-    {
-        for (const auto& mesh : mMeshes)
-            pFunction(mesh);
-    }
+        inline void ForEach(const std::function<void(const Data::Mesh&)>& pFunction) const
+        {
+            for (const auto& mesh : mMeshes)
+                pFunction(mesh);
+        }
 
-	MeshID getMeshID(const std::string& pMeshName);
+        MeshID getMeshID(const std::string& pMeshName);
 
-    // Loads model data using ASSIMP from pFilePath.
-    MeshID loadModel(const std::filesystem::path& pFilePath);
+        // Loads model data using ASSIMP from pFilePath.
+        MeshID loadModel(const std::filesystem::path& pFilePath);
 
-private:
-    std::vector<Data::Mesh> mMeshes;
-    std::unordered_map<std::string, size_t> mMeshNames;
+    private:
+        std::vector<Data::Mesh> mMeshes;
+        std::unordered_map<std::string, size_t> mMeshNames;
 
-    TextureManager& mTextureManager; // Owned by Renderer.
+        Manager::TextureManager& mTextureManager; // Owned by Renderer.
 
-    // Set the mID of the mesh and its children recursively.
-    void setIDRecursively(Data::Mesh& pMesh, const bool& pRootMesh);
+        // Set the mID of the mesh and its children recursively.
+        void setIDRecursively(Data::Mesh& pMesh, const bool& pRootMesh);
 
-    void addMesh(Data::Mesh& pMesh);
-    void buildMeshes();
-    bool isMeshValid(const Data::Mesh& pMesh);
+        void addMesh(Data::Mesh& pMesh);
+        void buildMeshes();
+        bool isMeshValid(const Data::Mesh& pMesh);
 
-    // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object.
-    void processNode(Data::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene);
-    // Load assimp mesh data into a Zephyr Mesh.
-    void processData(Data::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene);
-    // Returns all the textures for this material and purpose.
-    void processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Texture::Purpose& pPurpose);
-};
+        // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object.
+        void processNode(Data::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene);
+        // Load assimp mesh data into a Zephyr Mesh.
+        void processData(Data::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene);
+        // Returns all the textures for this material and purpose.
+        void processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Data::Texture::Purpose& pPurpose);
+    };
+} // namespace Manager

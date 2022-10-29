@@ -739,7 +739,7 @@ namespace OpenGL
         return mTextures[pTextureID.Get()];
     }
 
-    void OpenGLRenderer::initialiseTexture(const Texture& pTexture)
+    void OpenGLRenderer::initialiseTexture(const Data::Texture& pTexture)
     {
         GLData::Texture newTexture = {GLData::Texture::Type::Texture2D};
         newTexture.generate();
@@ -755,7 +755,7 @@ namespace OpenGL
         LOG_INFO("Data::Texture: '{} (ID: {})' loaded into OpenGL with VAO: {}", pTexture.mName, pTexture.mID.Get(), newTexture.getHandle());
     }
 
-    void OpenGLRenderer::initialiseCubeMap(const CubeMapTexture& pCubeMap)
+    void OpenGLRenderer::initialiseCubeMap(const Data::CubeMapTexture& pCubeMap)
     {
         // OpenGL cubeMap texture objects store all 6 faces under 1 VAO hence only one generate and bind is used before 6 pushData calls
         // Each face can be offset by index (last param of pushData) in the order Right (0), Left (1), Top(2), Bottom(3), Back(4), Front(5)

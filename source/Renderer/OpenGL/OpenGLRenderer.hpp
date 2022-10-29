@@ -168,8 +168,8 @@ namespace OpenGL
         void renderImGui();
 
         void initialiseMesh(const Data::Mesh& pMesh);
-        void initialiseTexture(const Texture& pTexture);
-        void initialiseCubeMap(const CubeMapTexture& pCubeMap);
+        void initialiseTexture(const Data::Texture& pTexture);
+        void initialiseCubeMap(const Data::CubeMapTexture& pCubeMap);
         void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
         void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 
