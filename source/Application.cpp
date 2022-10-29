@@ -1,8 +1,10 @@
 #include "Application.hpp"
 
 Application::Application()
-    : mEntityManager()
-    , mRenderer(mEntityManager)
+    : mTextureManager()
+    , mMeshManager(mTextureManager)
+    , mEntityManager()
+    , mRenderer(mEntityManager, mTextureManager, mMeshManager)
     , mInput(mRenderer.getCamera())
     , mCollisionSystem(mEntityManager.mColliders)
 {}

@@ -24,8 +24,14 @@ namespace Manager
 {
     class TextureManager;
 
+    // MeshManager is a container of the raw Mesh data.
     class MeshManager
     {
+    private:
+        std::vector<Data::Mesh> mMeshes;
+        std::unordered_map<std::string, size_t> mMeshNames;
+        Manager::TextureManager& mTextureManager;
+
     public:
         MeshManager(TextureManager& pTextureManager)
             : mTextureManager(pTextureManager)
@@ -39,17 +45,12 @@ namespace Manager
                 pFunction(mesh);
         }
 
-        MeshID getMeshID(const std::string& pMeshName);
+        MeshID getMeshID(const std::string& pMeshName) const;
 
         // Loads model data using ASSIMP from pFilePath.
         MeshID loadModel(const std::filesystem::path& pFilePath);
 
     private:
-        std::vector<Data::Mesh> mMeshes;
-        std::unordered_map<std::string, size_t> mMeshNames;
-
-        Manager::TextureManager& mTextureManager; // Owned by Renderer.
-
         // Set the mID of the mesh and its children recursively.
         void setIDRecursively(Data::Mesh& pMesh, const bool& pRootMesh);
 

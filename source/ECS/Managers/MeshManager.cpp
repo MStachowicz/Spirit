@@ -11,7 +11,7 @@
 
 namespace Manager
 {
-    MeshID MeshManager::getMeshID(const std::string& pMeshName)
+    MeshID MeshManager::getMeshID(const std::string& pMeshName) const
     {
         const auto it = mMeshNames.find(pMeshName);
         ZEPHYR_ASSERT(it != mMeshNames.end(), "Could not find mesh '{}' in Mesh data store.", pMeshName);
@@ -77,61 +77,61 @@ namespace Manager
         }
     }
 
-        void MeshManager::processData(Data::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene)
+    void MeshManager::processData(Data::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene)
+{
+    for (unsigned int i = 0; i < pAssimpMesh->mNumVertices; i++)
     {
-        for (unsigned int i = 0; i < pAssimpMesh->mNumVertices; i++)
+        pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].x);
+        pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].y);
+        pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].z);
+
+        if (pAssimpMesh->HasNormals())
         {
-            pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].x);
-            pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].y);
-            pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].z);
-
-            if (pAssimpMesh->HasNormals())
-            {
-                pMesh.mNormals.push_back(pAssimpMesh->mNormals[i].x);
-                pMesh.mNormals.push_back(pAssimpMesh->mNormals[i].y);
-                pMesh.mNormals.push_back(pAssimpMesh->mNormals[i].z);
-            }
-            if (pAssimpMesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-            {
-                // A vertex can contain up to 8 different texture coordinates. We thus make the
-                // assumption that we won't use models where a vertex can have multiple
-                // texture coordinates so we always take the first set (0).
-
-                // Texture coords
-                ZEPHYR_ASSERT(pAssimpMesh->mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
-
-                pMesh.mTextureCoordinates.push_back(pAssimpMesh->mTextureCoords[0][i].x);
-                pMesh.mTextureCoordinates.push_back(pAssimpMesh->mTextureCoords[0][i].y);
-                //// Tangent
-                // pMesh.mTangents.push_back(pAssimpMesh->mTangents[i].x);
-                // pMesh.mTangents.push_back(pAssimpMesh->mTangents[i].x);
-                // pMesh.mTangents.push_back(pAssimpMesh->mTangents[i].x);
-                //// Bitangent
-                // pMesh.mBitangents.push_back(pAssimpMesh->mBitangents[i].x);
-                // pMesh.mBitangents.push_back(pAssimpMesh->mBitangents[i].x);
-                // pMesh.mBitangents.push_back(pAssimpMesh->mBitangents[i].x);
-            }
+            pMesh.mNormals.push_back(pAssimpMesh->mNormals[i].x);
+            pMesh.mNormals.push_back(pAssimpMesh->mNormals[i].y);
+            pMesh.mNormals.push_back(pAssimpMesh->mNormals[i].z);
         }
-
-        // now wak through each of the mesh's faces and retrieve the corresponding vertex indices
-        for (unsigned int i = 0; i < pAssimpMesh->mNumFaces; i++)
+        if (pAssimpMesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
-            aiFace face = pAssimpMesh->mFaces[i];
-            for (unsigned int j = 0; j < face.mNumIndices; j++)
-                pMesh.mIndices.push_back(face.mIndices[j]);
-        }
+            // A vertex can contain up to 8 different texture coordinates. We thus make the
+            // assumption that we won't use models where a vertex can have multiple
+            // texture coordinates so we always take the first set (0).
 
-        { // Load the textures for the mesh
-                aiMaterial* material = pAssimpScene->mMaterials[pAssimpMesh->mMaterialIndex];
+            // Texture coords
+            ZEPHYR_ASSERT(pAssimpMesh->mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
 
-                processTextures(pMesh, material, Data::Texture::Purpose::Diffuse);
-                processTextures(pMesh, material, Data::Texture::Purpose::Specular);
-                processTextures(pMesh, material, Data::Texture::Purpose::Normal);
-                processTextures(pMesh, material, Data::Texture::Purpose::Height);
+            pMesh.mTextureCoordinates.push_back(pAssimpMesh->mTextureCoords[0][i].x);
+            pMesh.mTextureCoordinates.push_back(pAssimpMesh->mTextureCoords[0][i].y);
+            //// Tangent
+            // pMesh.mTangents.push_back(pAssimpMesh->mTangents[i].x);
+            // pMesh.mTangents.push_back(pAssimpMesh->mTangents[i].x);
+            // pMesh.mTangents.push_back(pAssimpMesh->mTangents[i].x);
+            //// Bitangent
+            // pMesh.mBitangents.push_back(pAssimpMesh->mBitangents[i].x);
+            // pMesh.mBitangents.push_back(pAssimpMesh->mBitangents[i].x);
+            // pMesh.mBitangents.push_back(pAssimpMesh->mBitangents[i].x);
         }
     }
 
-        void MeshManager::processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Data::Texture::Purpose& pPurpose)
+    // now wak through each of the mesh's faces and retrieve the corresponding vertex indices
+    for (unsigned int i = 0; i < pAssimpMesh->mNumFaces; i++)
+    {
+        aiFace face = pAssimpMesh->mFaces[i];
+        for (unsigned int j = 0; j < face.mNumIndices; j++)
+            pMesh.mIndices.push_back(face.mIndices[j]);
+    }
+
+    { // Load the textures for the mesh
+            aiMaterial* material = pAssimpScene->mMaterials[pAssimpMesh->mMaterialIndex];
+
+            processTextures(pMesh, material, Data::Texture::Purpose::Diffuse);
+            processTextures(pMesh, material, Data::Texture::Purpose::Specular);
+            processTextures(pMesh, material, Data::Texture::Purpose::Normal);
+            processTextures(pMesh, material, Data::Texture::Purpose::Height);
+    }
+}
+
+    void MeshManager::processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Data::Texture::Purpose& pPurpose)
     {
         aiTextureType type = aiTextureType::aiTextureType_UNKNOWN;
         switch (pPurpose)

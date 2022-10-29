@@ -2,7 +2,8 @@
 
 // ECS
 #include "EntityManager.hpp"
-#include "EventDispatcher.hpp"
+#include "Managers/MeshManager.hpp"
+#include "Managers/TextureManager.hpp"
 
 // IMGUI
 #define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
@@ -18,13 +19,13 @@
 #include <cmath>
 #include <numeric>
 
-Renderer::Renderer(ECS::EntityManager& pEntityManager)
+Renderer::Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager)
     : mDrawCount(0)
     , mTargetFPS(60)
-    , mTextureManager()
-    , mMeshManager(mTextureManager)
+    , mTextureManager(pTextureManager)
+    , mMeshManager(pMeshManager)
     , mEntityManager(pEntityManager)
-    , mOpenGLRenderer(mEntityManager)
+    , mOpenGLRenderer(mEntityManager, pMeshManager, pTextureManager)
     , mCamera(glm::vec3(0.0f, 1.7f, 7.0f), std::bind(&OpenGL::OpenGLRenderer::setView, &mOpenGLRenderer, std::placeholders::_1), std::bind(&OpenGL::OpenGLRenderer::setViewPosition, &mOpenGLRenderer, std::placeholders::_1))
     , mRenderImGui(true)
     , mRenderLightPositions(true)
@@ -38,26 +39,6 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
     , mImGuiRenderTimeTakenMS(0)
     , mDrawTimeTakenMS(0)
 {
-    mMeshManager.ForEach([this](const auto& mesh)
-                         { mOpenGLRenderer.initialiseMesh(mesh); }); // Depends on mShaders being initialised.
-    mTextureManager.ForEach([this](const auto& texture)
-                            { mOpenGLRenderer.initialiseTexture(texture); });
-    mTextureManager.ForEachCubeMap([this](const auto& cubeMap)
-                                   { mOpenGLRenderer.initialiseCubeMap(cubeMap); });
-
-    // Subscribe the listeners here as opposed to inside the OpenGLRenderer constructor to maintain the const& qualifier.
-    // OpenGLRenderer is a listener and shouldnt have the option to edit the data layer.
-    mEntityManager.mEntityCreatedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityCreated, &mOpenGLRenderer, std::placeholders::_1, std::placeholders::_2));
-    mEntityManager.mEntityRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityRemoved, &mOpenGLRenderer, std::placeholders::_1, std::placeholders::_2));
-
-    mEntityManager.mTransforms.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentAdded, &mOpenGLRenderer, std::placeholders::_1, std::placeholders::_2));
-    mEntityManager.mTransforms.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentChanged, &mOpenGLRenderer, std::placeholders::_1, std::placeholders::_2));
-    mEntityManager.mTransforms.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentRemoved, &mOpenGLRenderer, std::placeholders::_1));
-
-    mEntityManager.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentAdded, &mOpenGLRenderer, std::placeholders::_1, std::placeholders::_2));
-    // mEntityManager.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentChanged, &mOpenGLRenderer, std::placeholders::_1, std::placeholders::_2));
-    mEntityManager.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentRemoved, &mOpenGLRenderer, std::placeholders::_1));
-
     static const float floorSize           = 50.f;
     static const size_t grassCount         = 500;
     static const bool randomGrassPlacement = false;
@@ -221,7 +202,7 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager)
             mEntityManager.mMeshes.Add(entity, mesh);
         }
     }
-    {     // Lights
+    { // Lights
         { // Point light
             const std::array<glm::vec3, 4> pointLightPositions = {
                 glm::vec3(0.7f, 1.7f, 2.0f),

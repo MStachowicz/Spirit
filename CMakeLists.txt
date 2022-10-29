@@ -47,26 +47,18 @@ message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
 source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
-source/Renderer/MeshManager.hpp
-source/Renderer/MeshManager.cpp
-source/Renderer/TextureManager.hpp
-source/Renderer/TextureManager.cpp
 source/Renderer/Camera.hpp
 source/Renderer/Camera.cpp
 source/Renderer/ImGuiConfig.hpp
 )
 target_include_directories(Renderer
 PUBLIC source/Renderer
-PRIVATE source/External/stb
-PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Renderer
-PUBLIC ECS
 PUBLIC OpenGL
-PRIVATE FileSystem
+PRIVATE ECS
 PRIVATE Logger
 PRIVATE ImGui
-PRIVATE assimp
 )
 # ------------------------ RENDERER END ----------------------------
 
@@ -99,6 +91,62 @@ PRIVATE FileSystem
 PRIVATE Logger
 )
 # ------------------------ OPENGL END ----------------------------
+
+# ------------------------ DATA ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding Data library")
+add_library(Data
+source/Data/Mesh.hpp
+source/Data/Mesh.cpp
+source/Data/Collider.hpp
+source/Data/Collider.cpp
+source/Data/Texture.hpp
+source/Data/DirectionalLight.hpp
+source/Data/DirectionalLight.cpp
+source/Data/PointLight.hpp
+source/Data/PointLight.cpp
+source/Data/SpotLight.hpp
+source/Data/SpotLight.cpp
+source/Data/Transform.hpp
+source/Data/Transform.cpp
+)
+target_include_directories(Data
+PUBLIC source/Data
+PUBLIC source/External/GLM
+PUBLIC source/Collision
+)
+target_link_libraries(Data
+PUBLIC Utility
+PUBLIC Collision
+PRIVATE ImGui
+)
+# ------------------------ DATA END ----------------------------
+
+# ------------------------ ECS ----------------------------
+message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
+add_library(ECS
+source/ECS/Entity.hpp
+source/ECS/EntityManager.hpp
+source/ECS/EntityManager.cpp
+source/ECS/Managers/MeshManager.hpp
+source/ECS/Managers/MeshManager.cpp
+source/ECS/Managers/TextureManager.hpp
+source/ECS/Managers/TextureManager.cpp
+source/ECS/ComponentManager.hpp
+)
+target_include_directories(ECS
+PUBLIC source/ECS
+PUBLIC source/External/GLM
+PRIVATE source/External/stb
+PRIVATE source/External/ASSIMP/include
+)
+target_link_libraries(ECS
+PUBLIC Data
+PRIVATE Logger
+PRIVATE FileSystem
+PRIVATE assimp
+PRIVATE ImGui
+)
+# ------------------------ ECS END ----------------------------
 
 # ------------------------ INPUT ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Input static library")
@@ -150,54 +198,6 @@ target_link_libraries(JobSystem
 PRIVATE Logger
 )
 # ------------------------ JOBSYSTEM END ----------------------------
-
-# ------------------------ DATA ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding Data library")
-add_library(Data
-source/Data/Mesh.hpp
-source/Data/Mesh.cpp
-source/Data/Collider.hpp
-source/Data/Collider.cpp
-source/Data/Texture.hpp
-source/Data/DirectionalLight.hpp
-source/Data/DirectionalLight.cpp
-source/Data/PointLight.hpp
-source/Data/PointLight.cpp
-source/Data/SpotLight.hpp
-source/Data/SpotLight.cpp
-source/Data/Transform.hpp
-source/Data/Transform.cpp
-)
-target_include_directories(Data
-PUBLIC source/Data
-PUBLIC source/External/GLM
-PUBLIC source/Collision
-)
-target_link_libraries(Data
-PUBLIC Utility
-PUBLIC Collision
-PRIVATE ImGui
-)
-# ------------------------ DATA END ----------------------------
-
-# ------------------------ ECS ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding ECS interface")
-add_library(ECS
-source/ECS/Entity.hpp
-source/ECS/EntityManager.hpp
-source/ECS/EntityManager.cpp
-source/ECS/ComponentManager.hpp
-)
-target_include_directories(ECS
-PUBLIC source/ECS
-PUBLIC source/External/GLM
-)
-target_link_libraries(ECS
-PRIVATE Logger
-PRIVATE ImGui
-PUBLIC Data
-)
-# ------------------------ ECS END ----------------------------
 
 # ------------------------ UTILITY ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Utility static library")

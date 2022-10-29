@@ -1,11 +1,7 @@
 #pragma once
 
-// RENDERER
 #include "Camera.hpp"
-#include "MeshManager.hpp"
-#include "TextureManager.hpp"
 
-// OPENGL
 #include "OpenGLRenderer.hpp"
 
 // STD
@@ -16,11 +12,16 @@ namespace ECS
     class EntityManager;
     class Entity;
 } // namespace ECS
+namespace Manager
+{
+    class MeshManager;
+    class TextureManager;
+} // namespace Manager
 
 class Renderer
 {
 public:
-    Renderer(ECS::EntityManager& pEntityManager);
+    Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager);
 
     void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
     void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -33,10 +34,10 @@ public:
     Camera& getCamera() { return mCamera; }
 
 private:
-    // Order of initialisation is important here:
-    Manager::TextureManager mTextureManager;
-    Manager::MeshManager mMeshManager;
     ECS::EntityManager& mEntityManager;
+    const Manager::TextureManager& mTextureManager;
+    const Manager::MeshManager& mMeshManager;
+
     OpenGL::OpenGLRenderer mOpenGLRenderer;
     Camera mCamera;
 

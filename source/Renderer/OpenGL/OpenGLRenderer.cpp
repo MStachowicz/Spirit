@@ -9,6 +9,10 @@
 #include "SpotLight.hpp"
 #include "Texture.hpp"
 
+// MANAGER
+#include "Managers/MeshManager.hpp"
+#include "Managers/TextureManager.hpp"
+
 // External libs
 #include "glad/gl.h"
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
@@ -22,7 +26,7 @@
 
 namespace OpenGL
 {
-    OpenGLRenderer::OpenGLRenderer(const ECS::EntityManager& pEntityManager)
+    OpenGLRenderer::OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager)
         : cOpenGLVersionMajor(4)
         , cOpenGLVersionMinor(3)
         , mLinearDepthView(false)
@@ -35,7 +39,6 @@ namespace OpenGL
         , mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
         , mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLRenderer construction (OpenGLInstances.size() == 1)
         , mGLState()
-        , mEntityManager(pEntityManager)
         , mTexture1ShaderIndex(0)
         , mTexture2ShaderIndex(1)
         , mMaterialShaderIndex(2)
@@ -57,7 +60,23 @@ namespace OpenGL
         , mDepthViewerShader("depthView", mGLState)
         , mVisualiseNormalShader("visualiseNormal", mGLState)
         , mAvailableShaders{Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("texture1Instanced", mGLState)}
+        , mEntityManager(pEntityManager)
     {
+        pMeshManager.ForEach([this](const auto& mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
+        pTextureManager.ForEach([this](const auto& texture) { initialiseTexture(texture); });
+        pTextureManager.ForEachCubeMap([this](const auto& cubeMap) { initialiseCubeMap(cubeMap); });
+
+        pEntityManager.mEntityCreatedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityCreated, this, std::placeholders::_1, std::placeholders::_2));
+        pEntityManager.mEntityRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityRemoved, this, std::placeholders::_1, std::placeholders::_2));
+
+        pEntityManager.mTransforms.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
+        pEntityManager.mTransforms.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
+        pEntityManager.mTransforms.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentRemoved, this, std::placeholders::_1));
+
+        pEntityManager.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
+        // pEntityManager.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
+        pEntityManager.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentRemoved, this, std::placeholders::_1));
+
         glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
         mMainScreenFBO.generate();

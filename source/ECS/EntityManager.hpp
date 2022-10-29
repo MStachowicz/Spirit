@@ -62,6 +62,7 @@ namespace ECS
         Utility::EventDispatcher<const Entity&, const EntityManager&> mEntityCreatedEvent;
         Utility::EventDispatcher<const Entity&, const EntityManager&> mEntityRemovedEvent;
 
+        // #Optimisation - Lay out components entity by entity instead of component lists. Data locality could be favoured if each entity component was side by side in memory
         ComponentManager<Data::PointLight>       mPointLights;
         ComponentManager<Data::SpotLight>        mSpotLights;
         ComponentManager<Data::DirectionalLight> mDirectionalLights;

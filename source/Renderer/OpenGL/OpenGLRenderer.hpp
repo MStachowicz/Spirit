@@ -35,14 +35,25 @@ namespace Data
     struct PointLight;
     struct DirectionalLight;
     struct SpotLight;
-} // namespace Data
+}
+namespace Manager
+{
+    class MeshManager;
+    class TextureManager;
+}
 
 namespace OpenGL
 {
     // OpenGLRenderer uses Transform, MeshDraw, Pointlight, DirectionalLight and SpotLight components in the ECS to execute OpenGL draw commands.
     // Transform and MeshDraw components are cached into a more parsable format in mDrawcalls. In Listener functions DrawCalls are updated.
+    // At construction, OpenGLRenderer parses all the Data::Texture and Data::Mesh files into an OpenGL::Texture and OpenGL::Mesh.
     class OpenGLRenderer
     {
+    public:
+        // OpenGLRenderer is an ECS listener, it takes a non-const EntityManager to subscribe to events at construction only holding a const reference after.
+        OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager);
+        ~OpenGLRenderer();
+
     private:
         // A request to execute a specific MeshDraw at a number of locations using a GraphicsAPI.
         // DrawCall's purpose is to group together the same MeshDraw's differentiating them only by the Model matrices found inside mModels.
@@ -78,8 +89,6 @@ namespace OpenGL
         OpenGLWindow mWindow;        // GLFW window which both GLFWInput and OpenGLRenderer depend on for their construction.
         GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
         GLState mGLState;
-
-        const ECS::EntityManager& mEntityManager;
 
         size_t mTexture1ShaderIndex;
         size_t mTexture2ShaderIndex;
@@ -152,10 +161,9 @@ namespace OpenGL
         std::vector<GLData::Texture> mTextures; // Mapping of Data::Texture to OpenGL::Texture.
         std::vector<GLData::Texture> mCubeMaps; // Mapping of Data::CubeMapTexture to OpenGL::Texture.
 
-    public:
-        OpenGLRenderer(const ECS::EntityManager& pEntityManager);
-        ~OpenGLRenderer();
+        const ECS::EntityManager& mEntityManager;
 
+    public:
         void preDraw();
         void draw();
         void postDraw();

@@ -7,6 +7,8 @@
 #include "CollisionSystem.hpp"
 
 #include "ECS/EntityManager.hpp"
+#include "ECS/Managers/MeshManager.hpp"
+#include "ECS/Managers/TextureManager.hpp"
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
@@ -17,16 +19,20 @@ public:
     void simulationLoop();
 
 private:
+    Manager::TextureManager mTextureManager;
+    Manager::MeshManager mMeshManager;
     ECS::EntityManager mEntityManager;
-    Renderer mRenderer;
+
     Collision::CollisionSystem mCollisionSystem;
+
+    Renderer mRenderer;
     Input mInput;
 
-    bool    mPhysicsTimeStepChanged     = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
-    int     mPhysicsTicksPerSecond      = 60; // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
-    std::chrono::duration<double>   mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mRenderer.mTargetFPS;
-    std::chrono::milliseconds       maxFrameDelta   = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
-    int     mPhysicsUpdatesCount        = 0; // TODO: move to physics system when added
+    bool mPhysicsTimeStepChanged                  = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
+    int mPhysicsTicksPerSecond                    = 60;    // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
+    std::chrono::duration<double> mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mRenderer.mTargetFPS;
+    std::chrono::milliseconds maxFrameDelta       = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
+    int mPhysicsUpdatesCount                      = 0;                              // TODO: move to physics system when added
 
     // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
     // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
