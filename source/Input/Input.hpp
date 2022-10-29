@@ -1,7 +1,6 @@
 #pragma once
 
 class InputHandler;
-class Camera;
 
 namespace InputAPI
 {
@@ -10,12 +9,16 @@ namespace InputAPI
     enum class Action;
     enum class CursorMode;
 }
+namespace Manager
+{
+    class CameraManager;
+}
 
 // Processes input coming in from a registered mInputHandler using the InputAPI.
 class Input
 {
 public:
-    Input(Camera& pCamera);
+    Input(Manager::CameraManager& pCameraManager);
     void pollEvents();
     bool closeRequested();
 private:
@@ -25,6 +28,6 @@ private:
     bool mCloseRequested = false;
     bool mCapturingMouse = false;
 
-    Camera& mCurrentCamera;
-    InputHandler* mInputHandler = nullptr;
+    InputHandler* mInputHandler;
+    Manager::CameraManager& mCameraManager;
 };

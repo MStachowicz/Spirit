@@ -4,6 +4,7 @@
 #include "EntityManager.hpp"
 #include "Managers/MeshManager.hpp"
 #include "Managers/TextureManager.hpp"
+#include "Camera.hpp"
 
 // IMGUI
 #define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
@@ -19,14 +20,13 @@
 #include <cmath>
 #include <numeric>
 
-Renderer::Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager)
+Renderer::Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager, Manager::CameraManager& pCameraManager)
     : mDrawCount(0)
     , mTargetFPS(60)
     , mTextureManager(pTextureManager)
     , mMeshManager(pMeshManager)
     , mEntityManager(pEntityManager)
-    , mOpenGLRenderer(mEntityManager, pMeshManager, pTextureManager)
-    , mCamera(glm::vec3(0.0f, 1.7f, 7.0f), std::bind(&OpenGL::OpenGLRenderer::setView, &mOpenGLRenderer, std::placeholders::_1), std::bind(&OpenGL::OpenGLRenderer::setViewPosition, &mOpenGLRenderer, std::placeholders::_1))
+    , mOpenGLRenderer(mEntityManager, pMeshManager, pTextureManager, pCameraManager)
     , mRenderImGui(true)
     , mRenderLightPositions(true)
     , mShowFPSPlot(false)

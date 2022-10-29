@@ -1,17 +1,18 @@
 #include "Input.hpp"
-#include "Logger.hpp"
-#include "GLFWInput.hpp"
-#include "Camera.hpp"
 
+#include "Managers/CameraManager.hpp"
+
+#include "Logger.hpp"
+
+#include "GLFWInput.hpp"
 #include "imgui.h"
 
-Input::Input(Camera& pCamera)
-: mCurrentCamera(pCamera)
-, mInputHandler(
-    new GLFWInput(
-          std::bind(&Input::onInput, this, std::placeholders::_1)
+Input::Input(Manager::CameraManager& pCameraManager)
+    : mInputHandler(new GLFWInput
+        ( std::bind(&Input::onInput, this, std::placeholders::_1)
         , std::bind(&Input::onMousePress, this, std::placeholders::_1, std::placeholders::_2)
         , std::bind(&Input::onMouseMove, this, std::placeholders::_1, std::placeholders::_2)))
+    , mCameraManager(pCameraManager)
 {}
 
 void Input::pollEvents()
@@ -22,7 +23,10 @@ void Input::pollEvents()
 void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
 {
     if (mCapturingMouse)
-        mCurrentCamera.ProcessMouseMove(pXOffset, pYOffset);
+        mCameraManager.modifyPrimaryCamera([&pXOffset, &pYOffset](auto& pPrimaryCamera)
+        {
+            pPrimaryCamera.ProcessMouseMove(pXOffset, pYOffset);
+        });
 }
 
 void Input::onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction)
@@ -64,33 +68,33 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
 {
     switch (pKeyPressed)
     {
-    case InputAPI::Key::KEY_W:
-        mCurrentCamera.move(Camera::Forward);
-        break;
-    case InputAPI::Key::KEY_S:
-         mCurrentCamera.move(Camera::Backward);
-        break;
-    case InputAPI::Key::KEY_A:
-         mCurrentCamera.move(Camera::Left);
-        break;
-    case InputAPI::Key::KEY_D:
-         mCurrentCamera.move(Camera::Right);
-        break;
-    case InputAPI::Key::KEY_E:
-         mCurrentCamera.move(Camera::Up);
-        break;
-    case InputAPI::Key::KEY_Q:
-         mCurrentCamera.move(Camera::Down);
-        break;
-    case InputAPI::Key::KEY_ESCAPE:
-        mCloseRequested = true;
-        break;
-    case InputAPI::Key::KEY_ENTER:
-        break;
-    case InputAPI::Key::KEY_UNKNOWN:
-    default:
-        LOG_WARN("Unknown key press of value");
-        break;
+        case InputAPI::Key::KEY_W:
+            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Forward); });
+            break;
+        case InputAPI::Key::KEY_S:
+            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Backward); });
+            break;
+        case InputAPI::Key::KEY_A:
+            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Left); });
+            break;
+        case InputAPI::Key::KEY_D:
+            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Right); });
+            break;
+        case InputAPI::Key::KEY_E:
+            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Up); });
+            break;
+        case InputAPI::Key::KEY_Q:
+            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Down); });
+            break;
+        case InputAPI::Key::KEY_ESCAPE:
+            mCloseRequested = true;
+            break;
+        case InputAPI::Key::KEY_ENTER:
+            break;
+        case InputAPI::Key::KEY_UNKNOWN:
+        default:
+            LOG_WARN("Unknown key press of value");
+            break;
     }
 }
 

@@ -4,8 +4,9 @@ Application::Application()
     : mTextureManager()
     , mMeshManager(mTextureManager)
     , mEntityManager()
-    , mRenderer(mEntityManager, mTextureManager, mMeshManager)
-    , mInput(mRenderer.getCamera())
+    , mCameraManager(mEntityManager.mCameras)
+    , mRenderer(mEntityManager, mTextureManager, mMeshManager, mCameraManager)
+    , mInput(mCameraManager)
     , mCollisionSystem(mEntityManager.mColliders)
 {}
 

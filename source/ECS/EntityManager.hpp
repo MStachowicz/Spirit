@@ -9,6 +9,7 @@
 #include "Transform.hpp"
 #include "Mesh.hpp"
 #include "Collider.hpp"
+#include "Camera.hpp"
 
 #include <vector>
 #include <functional>
@@ -46,6 +47,8 @@ namespace ECS
             mDirectionalLights.Remove(pEntity.mID);
             mTransforms.Remove(pEntity.mID);
             mMeshes.Remove(pEntity.mID);
+            mColliders.Remove(pEntity.mID);
+            mCameras.Remove(pEntity.mID);
 
             mEntityRemovedEvent.Dispatch(pEntity.mID, *this);
 
@@ -69,6 +72,7 @@ namespace ECS
         ComponentManager<Data::Transform>        mTransforms;
         ComponentManager<Data::MeshDraw>         mMeshes;
         ComponentManager<Data::Collider>         mColliders;
+        ComponentManager<Data::Camera>           mCameras;
 
         void DrawImGui();
     private:

@@ -9,6 +9,7 @@
 #include "ECS/EntityManager.hpp"
 #include "ECS/Managers/MeshManager.hpp"
 #include "ECS/Managers/TextureManager.hpp"
+#include "ECS/Managers/CameraManager.hpp"
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
@@ -19,12 +20,14 @@ public:
     void simulationLoop();
 
 private:
+    // PER APPLICATION
     Manager::TextureManager mTextureManager;
     Manager::MeshManager mMeshManager;
     ECS::EntityManager mEntityManager;
 
+    Manager::CameraManager mCameraManager;
     Collision::CollisionSystem mCollisionSystem;
-
+    // PER VIEW
     Renderer mRenderer;
     Input mInput;
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Camera.hpp"
-
 #include "OpenGLRenderer.hpp"
 
 // STD
@@ -12,16 +10,21 @@ namespace ECS
     class EntityManager;
     class Entity;
 } // namespace ECS
+namespace Data
+{
+    class Camera;
+}
 namespace Manager
 {
     class MeshManager;
     class TextureManager;
 } // namespace Manager
 
+
 class Renderer
 {
 public:
-    Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager);
+    Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager, Manager::CameraManager& pCameraManager);
 
     void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
     void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -31,15 +34,12 @@ public:
 
     int mDrawCount;
     int mTargetFPS; // Independently of physics, the number of frames the renderer will aim to draw per second.
-    Camera& getCamera() { return mCamera; }
 
 private:
     ECS::EntityManager& mEntityManager;
     const Manager::TextureManager& mTextureManager;
     const Manager::MeshManager& mMeshManager;
-
     OpenGL::OpenGLRenderer mOpenGLRenderer;
-    Camera mCamera;
 
     bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.
     bool mRenderLightPositions;

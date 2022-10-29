@@ -47,8 +47,6 @@ message(STATUS "\n[ZEPHYR] -- Adding Renderer static library")
 add_library(Renderer
 source/Renderer/Renderer.hpp
 source/Renderer/Renderer.cpp
-source/Renderer/Camera.hpp
-source/Renderer/Camera.cpp
 source/Renderer/ImGuiConfig.hpp
 )
 target_include_directories(Renderer
@@ -99,6 +97,8 @@ source/Data/Mesh.hpp
 source/Data/Mesh.cpp
 source/Data/Collider.hpp
 source/Data/Collider.cpp
+source/Data/Camera.hpp
+source/Data/Camera.cpp
 source/Data/Texture.hpp
 source/Data/DirectionalLight.hpp
 source/Data/DirectionalLight.cpp
@@ -129,6 +129,8 @@ source/ECS/EntityManager.hpp
 source/ECS/EntityManager.cpp
 source/ECS/Managers/MeshManager.hpp
 source/ECS/Managers/MeshManager.cpp
+source/ECS/Managers/CameraManager.hpp
+source/ECS/Managers/CameraManager.cpp
 source/ECS/Managers/TextureManager.hpp
 source/ECS/Managers/TextureManager.cpp
 source/ECS/ComponentManager.hpp
@@ -164,7 +166,7 @@ PRIVATE source/External/GLFW/include
 target_link_libraries(Input
 PRIVATE glfw
 PRIVATE OpenGL # Zephyr input creates an instance of GLFWInput provided by OpenGLRenderer
-PRIVATE Renderer # Included to manipulate Renderer::Camera
+PRIVATE ECS
 PRIVATE ImGui
 PRIVATE Logger
 )

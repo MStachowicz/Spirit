@@ -12,6 +12,7 @@
 // MANAGER
 #include "Managers/MeshManager.hpp"
 #include "Managers/TextureManager.hpp"
+#include "Managers/CameraManager.hpp"
 
 // External libs
 #include "glad/gl.h"
@@ -26,7 +27,7 @@
 
 namespace OpenGL
 {
-    OpenGLRenderer::OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager)
+    OpenGLRenderer::OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager, Manager::CameraManager& pCameraManager)
         : cOpenGLVersionMajor(4)
         , cOpenGLVersionMinor(3)
         , mLinearDepthView(false)
@@ -76,6 +77,12 @@ namespace OpenGL
         pEntityManager.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
         // pEntityManager.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
         pEntityManager.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentRemoved, this, std::placeholders::_1));
+
+        pCameraManager.mPrimaryCameraViewChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setView, this, std::placeholders::_1));
+        pCameraManager.mPrimaryCameraViewPositionChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setViewPosition, this, std::placeholders::_1));
+        const auto primaryCam = pCameraManager.getPrimaryCamera();
+        setView(primaryCam.getViewMatrix());
+        setViewPosition(primaryCam.getPosition());
 
         glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 

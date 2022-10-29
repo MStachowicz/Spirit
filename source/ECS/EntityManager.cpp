@@ -26,6 +26,8 @@ namespace ECS
                             ImGui::Separator();
                         if (mDirectionalLights.Modify(mEntities[i], [](auto& component){ component.DrawImGui(); }))
                             ImGui::Separator();
+                        if (mCameras.Modify(mEntities[i],           [](auto& component){ component.DrawImGui(); }))
+                            ImGui::Separator();
 
                         if (ImGui::Button("Delete"))
                             removeEntity(mEntities[i].mID);

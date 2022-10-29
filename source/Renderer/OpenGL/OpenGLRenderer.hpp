@@ -40,6 +40,7 @@ namespace Manager
 {
     class MeshManager;
     class TextureManager;
+    class CameraManager;
 }
 
 namespace OpenGL
@@ -51,7 +52,7 @@ namespace OpenGL
     {
     public:
         // OpenGLRenderer is an ECS listener, it takes a non-const EntityManager to subscribe to events at construction only holding a const reference after.
-        OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager);
+        OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager, Manager::CameraManager& pCameraManager);
         ~OpenGLRenderer();
 
     private:
