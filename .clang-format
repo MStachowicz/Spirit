@@ -14,6 +14,9 @@ TabWidth: '1'
 IndentWidth: '4'
 SpacesBeforeTrailingComments: '1'
 
+# Short includes alphabetically. Will respect space seperated blocks of includes.
+IncludeBlocks: Preserve
+
 # Access modifiers stay left-alligned (public, private...
 AccessModifierOffset: -4
 
