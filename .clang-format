@@ -1,4 +1,6 @@
 ﻿---
+#https://zed0.co.uk/clang-format-configurator/
+
 BasedOnStyle: Google
 
 # Pointer designation always next to the type they pertain to.
@@ -10,22 +12,25 @@ ColumnLimit: '0'
 
 # Dont use tabs, use 4 spaces instead. Tabs vary across OS.
 UseTab: Never
-TabWidth: '1'
+TabWidth: '4'
 IndentWidth: '4'
 SpacesBeforeTrailingComments: '1'
 
-# Short includes alphabetically. Will respect space seperated blocks of includes.
+# Sort includes alphabetically. Will respect space seperated blocks of includes.
 IncludeBlocks: Preserve
 
 # Access modifiers stay left-alligned (public, private...
 AccessModifierOffset: -4
 
+# Allow these on single line for better readability.
+AllowShortEnumsOnASingleLine: 'true'
+AllowShortCaseLabelsOnASingleLine: 'true'
+AllowShortBlocksOnASingleLine: 'Always'
+
 # Always indent after braces.
 BreakBeforeBraces: Allman
 NamespaceIndentation: All
-
 AlignConsecutiveAssignments: 'true'
 BreakConstructorInitializers: BeforeComma
-AllowShortCaseLabelsOnASingleLine: 'true'
-
+KeepEmptyLinesAtTheStartOfBlocks: 'false'
 ...
