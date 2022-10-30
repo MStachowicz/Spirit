@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-namespace Data
+namespace Component
 {
     void PointLight::DrawImGui()
     {

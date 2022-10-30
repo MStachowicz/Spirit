@@ -3,7 +3,7 @@
 #include "glm/vec3.hpp"
 #include "glm/trigonometric.hpp"
 
-namespace Data
+namespace Component
 {
     struct SpotLight
     {

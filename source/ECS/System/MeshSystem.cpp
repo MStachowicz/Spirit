@@ -1,24 +1,24 @@
-#include "MeshManager.hpp"
+#include "MeshSystem.hpp"
 
 #include "Logger.hpp"
-#include "TextureManager.hpp"
+#include "TextureSystem.hpp"
+#include "File.hpp"
 
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 
-#include <File.hpp>
 
-namespace Manager
+namespace System
 {
-    MeshID MeshManager::getMeshID(const std::string& pMeshName) const
+    Component::MeshID MeshSystem::getMeshID(const std::string& pMeshName) const
     {
         const auto it = mMeshNames.find(pMeshName);
         ZEPHYR_ASSERT(it != mMeshNames.end(), "Could not find mesh '{}' in Mesh data store.", pMeshName);
         return mMeshes[it->second].mID;
     }
 
-    void MeshManager::setIDRecursively(Data::Mesh& pMesh, const bool& pRootMesh)
+    void MeshSystem::setIDRecursively(Component::Mesh& pMesh, const bool& pRootMesh)
     {
         pMesh.mID.Set(mMeshes.size() - 1);
 
@@ -26,19 +26,19 @@ namespace Manager
             setIDRecursively(childMesh, false);
     }
 
-    void MeshManager::addMesh(Data::Mesh& pMesh)
+    void MeshSystem::addMesh(Component::Mesh& pMesh)
     {
         ZEPHYR_ASSERT(mMeshNames.find(pMesh.mName) == mMeshNames.end(), "addMesh should only be called with unique mesh name");
 
         mMeshes.push_back(pMesh);
-        Data::Mesh& newMesh = mMeshes.back();
+        Component::Mesh& newMesh = mMeshes.back();
         setIDRecursively(newMesh, true);
         mMeshNames.emplace(std::make_pair(newMesh.mName, newMesh.mID.Get()));
 
         ZEPHYR_ASSERT(isMeshValid(newMesh), "Adding invalid mesh");
     }
 
-    MeshID MeshManager::loadModel(const std::filesystem::path& pFilePath)
+    Component::MeshID MeshSystem::loadModel(const std::filesystem::path& pFilePath)
     {
         Assimp::Importer importer;
             const aiScene* scene = importer.ReadFile(pFilePath.string(), aiProcess_Triangulate);
@@ -49,7 +49,7 @@ namespace Manager
             ZEPHYR_ASSERT(false, "Failed to load model using ASSIMP");
         }
 
-        Data::Mesh rootMesh;
+        Component::Mesh rootMesh;
             rootMesh.mName     = pFilePath.stem().string();
             rootMesh.mFilePath = pFilePath.parent_path().string();
         processNode(rootMesh, scene->mRootNode, scene);
@@ -59,7 +59,7 @@ namespace Manager
     }
 
     // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object
-    void MeshManager::processNode(Data::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene)
+    void MeshSystem::processNode(Component::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene)
     {
         for (unsigned int i = 0; i < pNode->mNumMeshes; i++)
         {
@@ -69,7 +69,7 @@ namespace Manager
 
         for (unsigned int i = 0; i < pNode->mNumChildren; i++)
         {
-            Data::Mesh childMesh;
+            Component::Mesh childMesh;
                 childMesh.mName     = pParentMesh.mName + "-child-" + std::to_string(i);
             childMesh.mFilePath = pParentMesh.mFilePath;
             processNode(childMesh, pNode->mChildren[i], pScene);
@@ -77,7 +77,7 @@ namespace Manager
         }
     }
 
-    void MeshManager::processData(Data::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene)
+    void MeshSystem::processData(Component::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene)
 {
     for (unsigned int i = 0; i < pAssimpMesh->mNumVertices; i++)
     {
@@ -124,22 +124,22 @@ namespace Manager
     { // Load the textures for the mesh
             aiMaterial* material = pAssimpScene->mMaterials[pAssimpMesh->mMaterialIndex];
 
-            processTextures(pMesh, material, Data::Texture::Purpose::Diffuse);
-            processTextures(pMesh, material, Data::Texture::Purpose::Specular);
-            processTextures(pMesh, material, Data::Texture::Purpose::Normal);
-            processTextures(pMesh, material, Data::Texture::Purpose::Height);
+            processTextures(pMesh, material, Component::Texture::Purpose::Diffuse);
+            processTextures(pMesh, material, Component::Texture::Purpose::Specular);
+            processTextures(pMesh, material, Component::Texture::Purpose::Normal);
+            processTextures(pMesh, material, Component::Texture::Purpose::Height);
     }
 }
 
-    void MeshManager::processTextures(Data::Mesh& pMesh, aiMaterial* pMaterial, const Data::Texture::Purpose& pPurpose)
+    void MeshSystem::processTextures(Component::Mesh& pMesh, aiMaterial* pMaterial, const Component::Texture::Purpose& pPurpose)
     {
         aiTextureType type = aiTextureType::aiTextureType_UNKNOWN;
         switch (pPurpose)
         {
-                case Data::Texture::Purpose::Diffuse: type = aiTextureType_DIFFUSE; break;
-                case Data::Texture::Purpose::Specular: type = aiTextureType_SPECULAR; break;
-                case Data::Texture::Purpose::Normal: type = aiTextureType_HEIGHT; break;
-                case Data::Texture::Purpose::Height: type = aiTextureType_AMBIENT; break;
+                case Component::Texture::Purpose::Diffuse: type = aiTextureType_DIFFUSE; break;
+                case Component::Texture::Purpose::Specular: type = aiTextureType_SPECULAR; break;
+                case Component::Texture::Purpose::Normal: type = aiTextureType_HEIGHT; break;
+                case Component::Texture::Purpose::Height: type = aiTextureType_AMBIENT; break;
         default:
             ZEPHYR_ASSERT(false, "This Texture::Purpose has no corresponding ASSIMP type.");
             break;
@@ -150,12 +150,12 @@ namespace Manager
             aiString fileName;
             pMaterial->GetTexture(type, i, &fileName);
             const std::string textureFilePath = pMesh.mFilePath + "/" + fileName.C_Str();
-                TextureID tex                     = mTextureManager.loadTexture(textureFilePath, pPurpose).mID;
+                Component::TextureID tex                     = mTextureSystem.loadTexture(textureFilePath, pPurpose).mID;
             pMesh.mTextures.push_back(tex);
         }
     }
 
-    bool MeshManager::isMeshValid(const Data::Mesh& pMesh)
+    bool MeshSystem::isMeshValid(const Component::Mesh& pMesh)
     {
         ZEPHYR_ASSERT(!pMesh.mName.empty(), "Mesh name cannot be empty.");
 
@@ -187,14 +187,14 @@ namespace Manager
         return true;
     }
 
-    void MeshManager::buildMeshes() // Populates mMeshes with some commonly used shapes
+    void MeshSystem::buildMeshes() // Populates mMeshes with some commonly used shapes
     {
         loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/xian/xian.obj");
         loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/backpack/backpack.obj");
         loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/cube/cube.obj");
 
         { // 2D TRIANGLE
-            Data::Mesh mesh;
+            Component::Mesh mesh;
             mesh.mName = "2DTriangle";
             mesh.mVertices = {
                 -1.0f, -1.0f, 0.0f, // Left
@@ -212,7 +212,7 @@ namespace Manager
             addMesh(mesh);
         }
         { // SKYBOX
-            Data::Mesh mesh;
+            Component::Mesh mesh;
             mesh.mName = "Skybox";
             mesh.mVertices = {
                 -1.0f,  1.0f, -1.0f,
@@ -255,7 +255,7 @@ namespace Manager
             addMesh(mesh);
         }
         { // QUAD
-            Data::Mesh mesh;
+            Component::Mesh mesh;
             mesh.mName = "Quad";
             mesh.mVertices = {
             -1.0f,  1.0f, 0.0f,  // Top-left
@@ -279,7 +279,7 @@ namespace Manager
             addMesh(mesh);
         }
         { // 3D CUBE (supported vertex attributes: Position, Texture coordinates(2D), Normal)
-            Data::Mesh mesh;
+            Component::Mesh mesh;
             mesh.mName = "3DCube";
             mesh.mVertices = {
                 // Back face
@@ -410,4 +410,4 @@ namespace Manager
             addMesh(mesh);
         }
     }
-} // namespace Manager
+} // namespace System

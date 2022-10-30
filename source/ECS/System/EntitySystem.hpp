@@ -16,13 +16,13 @@
 
 namespace ECS
 {
-    class EntityManager
+    class EntitySystem
     {
         // The mediator for Entities and Components.
-        // The EntityManager allows subscribing to events for adding and removing entities.
+        // The EntitySystem allows subscribing to events for adding and removing entities.
         // Changes to entities can be subscribed to via the specific ComponentManager members for the specific component type of interest.
     public:
-        EntityManager()
+        EntitySystem()
             : mNextEntityID(0)
             , inactiveIDCount(0)
         {}
@@ -62,17 +62,17 @@ namespace ECS
                 pFunction(entity);
         }
 
-        Utility::EventDispatcher<const Entity&, const EntityManager&> mEntityCreatedEvent;
-        Utility::EventDispatcher<const Entity&, const EntityManager&> mEntityRemovedEvent;
+        Utility::EventDispatcher<const Entity&, const EntitySystem&> mEntityCreatedEvent;
+        Utility::EventDispatcher<const Entity&, const EntitySystem&> mEntityRemovedEvent;
 
         // #Optimisation - Lay out components entity by entity instead of component lists. Data locality could be favoured if each entity component was side by side in memory
-        ComponentManager<Data::PointLight>       mPointLights;
-        ComponentManager<Data::SpotLight>        mSpotLights;
-        ComponentManager<Data::DirectionalLight> mDirectionalLights;
-        ComponentManager<Data::Transform>        mTransforms;
-        ComponentManager<Data::MeshDraw>         mMeshes;
-        ComponentManager<Data::Collider>         mColliders;
-        ComponentManager<Data::Camera>           mCameras;
+        ComponentManager<Component::PointLight>       mPointLights;
+        ComponentManager<Component::SpotLight>        mSpotLights;
+        ComponentManager<Component::DirectionalLight> mDirectionalLights;
+        ComponentManager<Component::Transform>        mTransforms;
+        ComponentManager<Component::MeshDraw>         mMeshes;
+        ComponentManager<Component::Collider>         mColliders;
+        ComponentManager<Component::Camera>           mCameras;
 
         void DrawImGui();
     private:

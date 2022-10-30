@@ -1,23 +1,19 @@
 #include "OpenGLRenderer.hpp"
 
-// ECS
-#include "EntityManager.hpp"
-
-// DATA
 #include "DirectionalLight.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
 #include "Texture.hpp"
 
-// MANAGER
-#include "Managers/MeshManager.hpp"
-#include "Managers/TextureManager.hpp"
-#include "Managers/CameraManager.hpp"
+#include "CameraSystem.hpp"
+#include "EntitySystem.hpp"
+#include "MeshSystem.hpp"
+#include "TextureSystem.hpp"
 
-// External libs
+#include "Logger.hpp"
+
 #include "glad/gl.h"
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
-#include "Logger.hpp"
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
@@ -27,7 +23,7 @@
 
 namespace OpenGL
 {
-    OpenGLRenderer::OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager, Manager::CameraManager& pCameraManager)
+    OpenGLRenderer::OpenGLRenderer(ECS::EntitySystem& pEntitySystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem, System::CameraSystem& pCameraSystem)
         : cOpenGLVersionMajor(4)
         , cOpenGLVersionMinor(3)
         , mLinearDepthView(false)
@@ -61,26 +57,26 @@ namespace OpenGL
         , mDepthViewerShader("depthView", mGLState)
         , mVisualiseNormalShader("visualiseNormal", mGLState)
         , mAvailableShaders{Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("texture1Instanced", mGLState)}
-        , mEntityManager(pEntityManager)
+        , mEntitySystem(pEntitySystem)
     {
-        pMeshManager.ForEach([this](const auto& mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
-        pTextureManager.ForEach([this](const auto& texture) { initialiseTexture(texture); });
-        pTextureManager.ForEachCubeMap([this](const auto& cubeMap) { initialiseCubeMap(cubeMap); });
+        pMeshSystem.ForEach([this](const auto& mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
+        pTextureSystem.ForEach([this](const auto& texture) { initialiseTexture(texture); });
+        pTextureSystem.ForEachCubeMap([this](const auto& cubeMap) { initialiseCubeMap(cubeMap); });
 
-        pEntityManager.mEntityCreatedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityCreated, this, std::placeholders::_1, std::placeholders::_2));
-        pEntityManager.mEntityRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityRemoved, this, std::placeholders::_1, std::placeholders::_2));
+        pEntitySystem.mEntityCreatedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityCreated, this, std::placeholders::_1, std::placeholders::_2));
+        pEntitySystem.mEntityRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityRemoved, this, std::placeholders::_1, std::placeholders::_2));
 
-        pEntityManager.mTransforms.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
-        pEntityManager.mTransforms.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
-        pEntityManager.mTransforms.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentRemoved, this, std::placeholders::_1));
+        pEntitySystem.mTransforms.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
+        pEntitySystem.mTransforms.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
+        pEntitySystem.mTransforms.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentRemoved, this, std::placeholders::_1));
 
-        pEntityManager.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
-        // pEntityManager.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
-        pEntityManager.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentRemoved, this, std::placeholders::_1));
+        pEntitySystem.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
+        // pEntitySystem.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
+        pEntitySystem.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentRemoved, this, std::placeholders::_1));
 
-        pCameraManager.mPrimaryCameraViewChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setView, this, std::placeholders::_1));
-        pCameraManager.mPrimaryCameraViewPositionChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setViewPosition, this, std::placeholders::_1));
-        const auto primaryCam = pCameraManager.getPrimaryCamera();
+        pCameraSystem.mPrimaryCameraViewChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setView, this, std::placeholders::_1));
+        pCameraSystem.mPrimaryCameraViewPositionChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setViewPosition, this, std::placeholders::_1));
+        const auto primaryCam = pCameraSystem.getPrimaryCamera();
         setView(primaryCam.getViewMatrix());
         setViewPosition(primaryCam.getPosition());
 
@@ -144,7 +140,7 @@ namespace OpenGL
         }
     }
 
-    void OpenGLRenderer::addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh)
+    void OpenGLRenderer::addEntityDrawCall(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::MeshDraw& pMesh)
     {
         // If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
         // If the MeshDraw variation already exists in a DrawCall, append just the Transform data to the mModels.
@@ -181,14 +177,14 @@ namespace OpenGL
         }
     }
 
-    void OpenGLRenderer::onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
+    void OpenGLRenderer::onEntityCreated(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager)
     {
-        if (const Data::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
-            if (const Data::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
+        if (const Component::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
+            if (const Component::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
                 addEntityDrawCall(pEntity, *transform, *mesh);
     }
 
-    void OpenGLRenderer::onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntityManager& pManager)
+    void OpenGLRenderer::onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager)
     {
         removeEntityDrawCall(pEntity);
     }
@@ -201,12 +197,12 @@ namespace OpenGL
         removeEntityDrawCall(pEntity);
     }
 
-    void OpenGLRenderer::onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+    void OpenGLRenderer::onTransformComponentAdded(const ECS::Entity& pEntity, const Component::Transform& pTransform)
     {
-        if (const auto mesh = mEntityManager.mMeshes.GetComponent(pEntity))
+        if (const auto mesh = mEntitySystem.mMeshes.GetComponent(pEntity))
             addEntityDrawCall(pEntity, pTransform, *mesh);
     }
-    void OpenGLRenderer::onTransformComponentChanged(const ECS::Entity& pEntity, const Data::Transform& pTransform)
+    void OpenGLRenderer::onTransformComponentChanged(const ECS::Entity& pEntity, const Component::Transform& pTransform)
     {
         // Find the DrawCall containing pEntity Transform data and update the model matrix for it.
         for (size_t i = 0; i < mDrawCalls.size(); i++)
@@ -228,9 +224,9 @@ namespace OpenGL
         }
     }
 
-    void OpenGLRenderer::onMeshComponentAdded(const ECS::Entity& pEntity, const Data::MeshDraw& pMesh)
+    void OpenGLRenderer::onMeshComponentAdded(const ECS::Entity& pEntity, const Component::MeshDraw& pMesh)
     {
-        if (const auto transform = mEntityManager.mTransforms.GetComponent(pEntity))
+        if (const auto transform = mEntitySystem.mTransforms.GetComponent(pEntity))
             addEntityDrawCall(pEntity, *transform, pMesh);
     }
 
@@ -241,16 +237,16 @@ namespace OpenGL
         Shader* shaderToUse = nullptr;
         switch (pDrawCall.mMesh.mDrawStyle)
         {
-            case Data::DrawStyle::Textured:
+            case Component::DrawStyle::Textured:
                 if (pDrawCall.mMesh.mTexture1.has_value() && pDrawCall.mMesh.mTexture2.has_value())
                     shaderToUse = &mAvailableShaders[mTexture2ShaderIndex];
                 else
                     shaderToUse = &mAvailableShaders[mTexture1ShaderIndex];
                 break;
-            case Data::DrawStyle::UniformColour:
+            case Component::DrawStyle::UniformColour:
                 shaderToUse = &mAvailableShaders[mUniformShaderIndex];
                 break;
-            case Data::DrawStyle::LightMap:
+            case Component::DrawStyle::LightMap:
                 shaderToUse = &mAvailableShaders[mLightMapIndex];
                 break;
         }
@@ -401,8 +397,8 @@ namespace OpenGL
 
                 switch (mDrawCalls[i].mMesh.mDrawMode)
                 {
-                    case Data::DrawMode::Fill: mGLState.setPolygonMode(GLType::PolygonMode::Fill); break;
-                    case Data::DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); break;
+                    case Component::DrawMode::Fill: mGLState.setPolygonMode(GLType::PolygonMode::Fill); break;
+                    case Component::DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); break;
                     default: ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLRenderer draw."); break;
                 }
 
@@ -456,17 +452,17 @@ namespace OpenGL
 
     void OpenGLRenderer::setupLights(const bool& pRenderLightPositions)
     {
-        mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight)
+        mEntitySystem.mPointLights.ForEach([this](const Component::PointLight& pPointLight)
                                             { setShaderVariables(pPointLight); });
-        mEntityManager.mDirectionalLights.ForEach([this](const Data::DirectionalLight& pDirectionalLight)
+        mEntitySystem.mDirectionalLights.ForEach([this](const Component::DirectionalLight& pDirectionalLight)
                                                   { setShaderVariables(pDirectionalLight); });
-        mEntityManager.mSpotLights.ForEach([this](const Data::SpotLight& pSpotLight)
+        mEntitySystem.mSpotLights.ForEach([this](const Component::SpotLight& pSpotLight)
                                            { setShaderVariables(pSpotLight); });
 
         if (pRenderLightPositions)
         {
             mLightEmitterShader.use(mGLState);
-            mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight)
+            mEntitySystem.mPointLights.ForEach([this](const Component::PointLight& pPointLight)
                                                 {
 			mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
 			mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
@@ -474,7 +470,7 @@ namespace OpenGL
 
             mLightEmitterShader.use(mGLState);
             mGLState.setPolygonMode(GLType::PolygonMode::Line);
-            mEntityManager.mColliders.ForEach([this](const Data::Collider& pCollider)
+            mEntitySystem.mColliders.ForEach([this](const Component::Collider& pCollider)
                                               {
 			const auto highPoint = glm::vec3(pCollider.mBoundingBox.mHighX, pCollider.mBoundingBox.mHighY, pCollider.mBoundingBox.mHighZ);
 			const auto lowPoint = glm::vec3(pCollider.mBoundingBox.mLowX, pCollider.mBoundingBox.mLowY, pCollider.mBoundingBox.mLowZ);
@@ -491,7 +487,7 @@ namespace OpenGL
         }
     }
 
-    void OpenGLRenderer::setShaderVariables(const Data::PointLight& pPointLight)
+    void OpenGLRenderer::setShaderVariables(const Component::PointLight& pPointLight)
     {
         const std::string uniform     = "Lights.mPointLights[" + std::to_string(pointLightDrawCount) + "]";
         const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
@@ -508,7 +504,7 @@ namespace OpenGL
         pointLightDrawCount++;
     }
 
-    void OpenGLRenderer::setShaderVariables(const Data::DirectionalLight& pDirectionalLight)
+    void OpenGLRenderer::setShaderVariables(const Component::DirectionalLight& pDirectionalLight)
     {
         const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
         const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
@@ -520,7 +516,7 @@ namespace OpenGL
 
         directionalLightDrawCount++;
     }
-    void OpenGLRenderer::setShaderVariables(const Data::SpotLight& pSpotLight)
+    void OpenGLRenderer::setShaderVariables(const Component::SpotLight& pSpotLight)
     {
         const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
         const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
@@ -666,16 +662,16 @@ namespace OpenGL
         ImGui::End();
     }
 
-    const OpenGLRenderer::OpenGLMesh& OpenGLRenderer::getGLMesh(const MeshID& pMeshID) const
+    const OpenGLRenderer::OpenGLMesh& OpenGLRenderer::getGLMesh(const Component::MeshID& pMeshID) const
     {
         const auto it = std::find_if(mGLMeshes.begin(), mGLMeshes.end(), [&pMeshID](const OpenGLMesh& pGLMesh)
                                      { return pMeshID.Get() == pGLMesh.mID.Get(); });
 
-        ZEPHYR_ASSERT(it != mGLMeshes.end(), "No matching OpenGL::Mesh found for Data::Mesh with ID '{}'. Was the mesh correctly initialised?", pMeshID.Get());
+        ZEPHYR_ASSERT(it != mGLMeshes.end(), "No matching OpenGL::Mesh found for Component::Mesh with ID '{}'. Was the mesh correctly initialised?", pMeshID.Get());
         return *it;
     }
 
-    void OpenGLRenderer::initialiseMesh(const Data::Mesh& pMesh)
+    void OpenGLRenderer::initialiseMesh(const Component::Mesh& pMesh)
     {
         OpenGLMesh* newMesh = nullptr;
         {
@@ -700,7 +696,7 @@ namespace OpenGL
                     m3DCubeID = pMesh.mID;
             }
         }
-        ZEPHYR_ASSERT(newMesh != nullptr, "Failed to initialise Data::Mesh with ID '{}'", pMesh.mID.Get());
+        ZEPHYR_ASSERT(newMesh != nullptr, "Failed to initialise Component::Mesh with ID '{}'", pMesh.mID.Get());
 
         newMesh->mID       = pMesh.mID;
         newMesh->mDrawMode = GLType::PrimitiveMode::Triangles; // OpenGLRenderer only supports Triangles at this revision
@@ -756,16 +752,16 @@ namespace OpenGL
             initialiseMesh(childMesh);
 
         ZEPHYR_ASSERT(mGLMeshes.size() == (newMesh->mID.Get() + 1), "OpenGL::Mesh::ID {} does not match index position in Mesh container.", newMesh->mID.Get());
-        ZEPHYR_ASSERT(pMesh.mID.Get() == newMesh->mID.Get(), "MeshID's do not match.");
-        LOG_INFO("Data::Mesh: '{} (ID: {})' loaded into OpenGL with ID: '{}' and VAO: {}", pMesh.mName, pMesh.mID.Get(), newMesh->mID.Get(), newMesh->mVAO.getHandle());
+        ZEPHYR_ASSERT(pMesh.mID.Get() == newMesh->mID.Get(), "Component::MeshID's do not match.");
+        LOG_INFO("Component::Mesh: '{} (ID: {})' loaded into OpenGL with ID: '{}' and VAO: {}", pMesh.mName, pMesh.mID.Get(), newMesh->mID.Get(), newMesh->mVAO.getHandle());
     }
 
-    const GLData::Texture& OpenGLRenderer::getTexture(const TextureID& pTextureID) const
+    const GLData::Texture& OpenGLRenderer::getTexture(const Component::TextureID& pTextureID) const
     {
         return mTextures[pTextureID.Get()];
     }
 
-    void OpenGLRenderer::initialiseTexture(const Data::Texture& pTexture)
+    void OpenGLRenderer::initialiseTexture(const Component::Texture& pTexture)
     {
         GLData::Texture newTexture = {GLData::Texture::Type::Texture2D};
         newTexture.generate();
@@ -776,12 +772,12 @@ namespace OpenGL
         if (pTexture.mName == "missing")
             mMissingTextureID = pTexture.mID;
 
-        ZEPHYR_ASSERT(mTextures.size() == pTexture.mID.Get(), "OpenGL::Texture does not match index position of Data::Texture::ID ({} != {})", mTextures.size(), pTexture.mID.Get());
+        ZEPHYR_ASSERT(mTextures.size() == pTexture.mID.Get(), "OpenGL::Texture does not match index position of Component::Texture::ID ({} != {})", mTextures.size(), pTexture.mID.Get());
         mTextures.push_back({newTexture});
-        LOG_INFO("Data::Texture: '{} (ID: {})' loaded into OpenGL with VAO: {}", pTexture.mName, pTexture.mID.Get(), newTexture.getHandle());
+        LOG_INFO("Component::Texture: '{} (ID: {})' loaded into OpenGL with VAO: {}", pTexture.mName, pTexture.mID.Get(), newTexture.getHandle());
     }
 
-    void OpenGLRenderer::initialiseCubeMap(const Data::CubeMapTexture& pCubeMap)
+    void OpenGLRenderer::initialiseCubeMap(const Component::CubeMapTexture& pCubeMap)
     {
         // OpenGL cubeMap texture objects store all 6 faces under 1 VAO hence only one generate and bind is used before 6 pushData calls
         // Each face can be offset by index (last param of pushData) in the order Right (0), Left (1), Top(2), Bottom(3), Back(4), Front(5)
@@ -797,7 +793,7 @@ namespace OpenGL
         newCubeMap.pushData(pCubeMap.mBack.mWidth, pCubeMap.mBack.mHeight, pCubeMap.mBack.mNumberOfChannels, pCubeMap.mBack.getData(), 5);
 
         mCubeMaps.push_back(newCubeMap);
-        LOG_INFO("Data::CubeMapTexture: '{}' loaded into OpenGL with VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
+        LOG_INFO("Component::CubeMapTexture: '{}' loaded into OpenGL with VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
     }
 
     GladGLContext* OpenGLRenderer::initialiseGLAD()

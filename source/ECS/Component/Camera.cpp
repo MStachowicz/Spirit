@@ -2,7 +2,7 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-namespace Data
+namespace Component
 {
     Camera::Camera(const glm::vec3& pPosition, const float& pYaw, const float& pPitch)
         : mPrimaryCamera(false)
@@ -90,4 +90,4 @@ namespace Data
 
         mView = glm::lookAt(mPosition, mPosition + mFront, mUp);
     }
-} // namespace Data
+} // namespace Component

@@ -1,22 +1,33 @@
 #pragma once
 
-#include "Types.hpp"
-
 #include <array>
 #include <filesystem>
+#include <optional>
 #include <string>
 
-namespace Manager
+namespace System
 {
-    class TextureManager;
+    class TextureSystem;
 }
 
-namespace Data
+namespace Component
 {
-    // Texture is a data only container used by TextureManager to store loaded textures.
+    // Unique ID of a texture, represents the index of the Texture in the Texture container.
+    struct TextureID
+    {
+        size_t Get() const { return mID.value(); }
+        void Set(size_t pID) { mID = pID; }
+
+        bool operator==(const TextureID& rhs) const { return mID == rhs.mID; }
+
+    private:
+        std::optional<size_t> mID;
+    };
+
+    // Texture represents a texture file on the disk. Texture are created and owned by TextureSystem to store loaded textures.
     struct Texture
     {
-        friend class Manager::TextureManager;
+        friend class System::TextureSystem;
 
         TextureID mID;
         std::string mName               = "";
@@ -47,4 +58,4 @@ namespace Data
         Texture mBack;
         Texture mFront;
     };
-}; // namespace Data
+}; // namespace Component

@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-namespace Data
+namespace Component
 {
     void MeshDraw::DrawImGui()
     {
@@ -41,13 +41,13 @@ namespace Data
     //    ImGui::Separator();
     //    switch (pDrawCall.mDrawStyle)
     //    {
-    //    case Data::DrawStyle::Textured:
+    //    case Component::DrawStyle::Textured:
     //    {
     //        { // Texture 1
-    //            const std::string currentTexture = pDrawCall.mTexture1.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture1.value()) : "Empty";
+    //            const std::string currentTexture = pDrawCall.mTexture1.has_value() ? mTextureSystem.getTextureName(pDrawCall.mTexture1.value()) : "Empty";
     //            if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
     //            {
-    //                mTextureManager.ForEach([&](const Texture &texture)
+    //                mTextureSystem.ForEach([&](const Texture &texture)
     //                                        {
 	//			if (ImGui::Selectable(texture.mName.c_str()))
 	//			{
@@ -58,13 +58,13 @@ namespace Data
     //        }
     //        if (pDrawCall.mTexture1.has_value())
     //        { // Texture 2
-    //            const std::string currentTexture = pDrawCall.mTexture2.has_value() ? mTextureManager.getTextureName(pDrawCall.mTexture2.value()) : "Empty";
+    //            const std::string currentTexture = pDrawCall.mTexture2.has_value() ? mTextureSystem.getTextureName(pDrawCall.mTexture2.value()) : "Empty";
     //            if (ImGui::BeginCombo("Texture 2", currentTexture.c_str(), ImGuiComboFlags()))
     //            {
     //                if (pDrawCall.mTexture2.has_value())
     //                    if (ImGui::Selectable("Empty"))
     //                        pDrawCall.mTexture2 = std::nullopt;
-    //                mTextureManager.ForEach([&](const Texture &texture)
+    //                mTextureSystem.ForEach([&](const Texture &texture)
     //                                        {
 	//			if (ImGui::Selectable(texture.mName.c_str()))
 	//			{
@@ -81,21 +81,21 @@ namespace Data
     //        }
     //    }
     //    break;
-    //    case Data::DrawStyle::UniformColour:
+    //    case Component::DrawStyle::UniformColour:
     //    {
     //        if (!pDrawCall.mColour.has_value())
     //            pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
     //        ImGui::ColorEdit3("Colour", &pDrawCall.mColour.value().x);
     //    }
     //    break;
-    //    case Data::DrawStyle::LightMap:
+    //    case Component::DrawStyle::LightMap:
     //    {
     //        ImGui::Text("Available texture slots");
     //        {
-    //            const std::string currentTexture = pDrawCall.mDiffuseTextureID.has_value() ? mTextureManager.getTextureName(pDrawCall.mDiffuseTextureID.value()) : "No texture set";
+    //            const std::string currentTexture = pDrawCall.mDiffuseTextureID.has_value() ? mTextureSystem.getTextureName(pDrawCall.mDiffuseTextureID.value()) : "No texture set";
     //            if (ImGui::BeginCombo("Diffuse", currentTexture.c_str(), ImGuiComboFlags()))
     //            {
-    //                mTextureManager.ForEach([&](const Texture &texture)
+    //                mTextureSystem.ForEach([&](const Texture &texture)
     //                                        {
 	//			if (ImGui::Selectable(texture.mName.c_str()))
 	//				pDrawCall.mDiffuseTextureID = texture.getID(); });
@@ -103,10 +103,10 @@ namespace Data
     //            }
     //        }
     //        {
-    //            const std::string currentTexture = pDrawCall.mSpecularTextureID.has_value() ? mTextureManager.getTextureName(pDrawCall.mSpecularTextureID.value()) : "No texture set";
+    //            const std::string currentTexture = pDrawCall.mSpecularTextureID.has_value() ? mTextureSystem.getTextureName(pDrawCall.mSpecularTextureID.value()) : "No texture set";
     //            if (ImGui::BeginCombo("Specular", currentTexture.c_str(), ImGuiComboFlags()))
     //            {
-    //                mTextureManager.ForEach([&](const Texture &texture)
+    //                mTextureSystem.ForEach([&](const Texture &texture)
     //                                        {
 	//			if (ImGui::Selectable(texture.mName.c_str()))
 	//				pDrawCall.mSpecularTextureID = texture.getID(); });

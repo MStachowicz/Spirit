@@ -7,24 +7,24 @@
 
 namespace ECS
 {
-    class EntityManager;
+    class EntitySystem;
     class Entity;
 } // namespace ECS
-namespace Data
+namespace Component
 {
     class Camera;
 }
-namespace Manager
+namespace System
 {
-    class MeshManager;
-    class TextureManager;
-} // namespace Manager
+    class MeshSystem;
+    class TextureSystem;
+} // namespace System
 
 
 class Renderer
 {
 public:
-    Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureManager& pTextureManager, const Manager::MeshManager& pMeshManager, Manager::CameraManager& pCameraManager);
+    Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem, System::CameraSystem& pCameraSystem);
 
     void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
     void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -36,9 +36,9 @@ public:
     int mTargetFPS; // Independently of physics, the number of frames the renderer will aim to draw per second.
 
 private:
-    ECS::EntityManager& mEntityManager;
-    const Manager::TextureManager& mTextureManager;
-    const Manager::MeshManager& mMeshManager;
+    ECS::EntitySystem& mEntitySystem;
+    const System::TextureSystem& mTextureSystem;
+    const System::MeshSystem& mMeshSystem;
     OpenGL::OpenGLRenderer mOpenGLRenderer;
 
     bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.

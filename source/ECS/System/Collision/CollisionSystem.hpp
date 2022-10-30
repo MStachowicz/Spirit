@@ -8,7 +8,7 @@ namespace ECS
     class ComponentManager;
     class Entity;
 }
-namespace Data
+namespace Component
 {
     class Collider;
 }
@@ -18,15 +18,15 @@ namespace Collision
     class CollisionSystem
     {
        private:
-        ECS::ComponentManager<Data::Collider>& mColliders;
+        ECS::ComponentManager<Component::Collider>& mColliders;
         BoundingBoxTree mBoundingBoxTree;
 
        public:
-        CollisionSystem(ECS::ComponentManager<Data::Collider>& pColliders);
+        CollisionSystem(ECS::ComponentManager<Component::Collider>& pColliders);
 
        private:
-        void onCollisionComponentAdded(const ECS::Entity& pEntity, const Data::Collider& pCollider);
-        void onCollisionComponentChanged(const ECS::Entity& pEntity, const Data::Collider& pCollider);
+        void onCollisionComponentAdded(const ECS::Entity& pEntity, const Component::Collider& pCollider);
+        void onCollisionComponentChanged(const ECS::Entity& pEntity, const Component::Collider& pCollider);
         void onCollisionComponentRemoved(const ECS::Entity& pEntity);
     };
 

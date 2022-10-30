@@ -28,31 +28,31 @@ struct GladGLContext;
 
 namespace ECS
 {
-    class EntityManager;
+    class EntitySystem;
 }
-namespace Data
+namespace Component
 {
     struct PointLight;
     struct DirectionalLight;
     struct SpotLight;
 }
-namespace Manager
+namespace System
 {
-    class MeshManager;
-    class TextureManager;
-    class CameraManager;
+    class MeshSystem;
+    class TextureSystem;
+    class CameraSystem;
 }
 
 namespace OpenGL
 {
     // OpenGLRenderer uses Transform, MeshDraw, Pointlight, DirectionalLight and SpotLight components in the ECS to execute OpenGL draw commands.
     // Transform and MeshDraw components are cached into a more parsable format in mDrawcalls. In Listener functions DrawCalls are updated.
-    // At construction, OpenGLRenderer parses all the Data::Texture and Data::Mesh files into an OpenGL::Texture and OpenGL::Mesh.
+    // At construction, OpenGLRenderer parses all the Component::Texture and Component::Mesh files into an OpenGL::Texture and OpenGL::Mesh.
     class OpenGLRenderer
     {
     public:
-        // OpenGLRenderer is an ECS listener, it takes a non-const EntityManager to subscribe to events at construction only holding a const reference after.
-        OpenGLRenderer(ECS::EntityManager& pEntityManager, const Manager::MeshManager& pMeshManager, const Manager::TextureManager& pTextureManager, Manager::CameraManager& pCameraManager);
+        // OpenGLRenderer is an ECS listener, it takes a non-const EntitySystem to subscribe to events at construction only holding a const reference after.
+        OpenGLRenderer(ECS::EntitySystem& pEntitySystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem, System::CameraSystem& pCameraSystem);
         ~OpenGLRenderer();
 
     private:
@@ -61,7 +61,7 @@ namespace OpenGL
         // For the above reason DrawCalls are a Zephyr::Renderer construct as they are fed to GraphicsAPI's in this more parsable format for instancing.
         struct DrawCall
         {
-            Data::MeshDraw mMesh;
+            Component::MeshDraw mMesh;
 
             // List of per-Entity transform matrices
             std::vector<glm::mat4> mModels;
@@ -97,7 +97,7 @@ namespace OpenGL
         size_t mMaterialShaderIndex;
         size_t mLightMapIndex;
         size_t mTexture1InstancedShaderIndex;
-        TextureID mMissingTextureID;
+        Component::TextureID mMissingTextureID;
         int pointLightDrawCount;
         int spotLightDrawCount;
         int directionalLightDrawCount;
@@ -122,16 +122,16 @@ namespace OpenGL
         PostProcessingOptions mPostProcessingOptions;
 
         GLData::FBO mMainScreenFBO;
-        MeshID mScreenQuad;
+        Component::MeshID mScreenQuad;
         Shader mScreenTextureShader;
 
-        MeshID mSkyBoxMeshID;
+        Component::MeshID mSkyBoxMeshID;
         Shader mSkyBoxShader;
 
         Shader mDepthViewerShader;
         Shader mVisualiseNormalShader;
 
-        MeshID m3DCubeID;
+        Component::MeshID m3DCubeID;
         Shader mLightEmitterShader;
 
         std::vector<Shader> mAvailableShaders;                // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
@@ -139,7 +139,7 @@ namespace OpenGL
 
         struct OpenGLMesh
         {
-            MeshID mID;
+            Component::MeshID mID;
 
             GLType::PrimitiveMode mDrawMode = GLType::PrimitiveMode::Triangles;
             int mDrawSize                   = -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
@@ -159,10 +159,10 @@ namespace OpenGL
             std::vector<OpenGLMesh> mChildMeshes;
         };
         std::vector<OpenGLMesh> mGLMeshes;
-        std::vector<GLData::Texture> mTextures; // Mapping of Data::Texture to OpenGL::Texture.
-        std::vector<GLData::Texture> mCubeMaps; // Mapping of Data::CubeMapTexture to OpenGL::Texture.
+        std::vector<GLData::Texture> mTextures; // Mapping of Component::Texture to OpenGL::Texture.
+        std::vector<GLData::Texture> mCubeMaps; // Mapping of Component::CubeMapTexture to OpenGL::Texture.
 
-        const ECS::EntityManager& mEntityManager;
+        const ECS::EntitySystem& mEntitySystem;
 
     public:
         void preDraw();
@@ -176,39 +176,39 @@ namespace OpenGL
         void renderImGuiFrame();
         void renderImGui();
 
-        void initialiseMesh(const Data::Mesh& pMesh);
-        void initialiseTexture(const Data::Texture& pTexture);
-        void initialiseCubeMap(const Data::CubeMapTexture& pCubeMap);
+        void initialiseMesh(const Component::Mesh& pMesh);
+        void initialiseTexture(const Component::Texture& pTexture);
+        void initialiseCubeMap(const Component::CubeMapTexture& pCubeMap);
         void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
         void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 
         // Listeners
-        void onEntityCreated(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
-        void onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntityManager& pManager);
+        void onEntityCreated(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager);
+        void onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager);
 
-        void onTransformComponentAdded(const ECS::Entity& pEntity, const Data::Transform& pTransform);
-        void onTransformComponentChanged(const ECS::Entity& pEntity, const Data::Transform& pTransform);
+        void onTransformComponentAdded(const ECS::Entity& pEntity, const Component::Transform& pTransform);
+        void onTransformComponentChanged(const ECS::Entity& pEntity, const Component::Transform& pTransform);
         void onTransformComponentRemoved(const ECS::Entity& pEntity);
 
-        void onMeshComponentAdded(const ECS::Entity& pEntity, const Data::MeshDraw& pMesh);
+        void onMeshComponentAdded(const ECS::Entity& pEntity, const Component::MeshDraw& pMesh);
         void onMeshComponentRemoved(const ECS::Entity& pEntity);
 
     private:
         // Using the mesh and tranform component assigned to an Entity, construct a DrawCall for it.
-        void addEntityDrawCall(const ECS::Entity& pEntity, const Data::Transform& pTransform, const Data::MeshDraw& pMesh);
+        void addEntityDrawCall(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::MeshDraw& pMesh);
         void removeEntityDrawCall(const ECS::Entity& pEntity);
 
-        void setShaderVariables(const Data::PointLight& pPointLight);
-        void setShaderVariables(const Data::DirectionalLight& pDirectionalLight);
-        void setShaderVariables(const Data::SpotLight& pSpotLight);
+        void setShaderVariables(const Component::PointLight& pPointLight);
+        void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
+        void setShaderVariables(const Component::SpotLight& pSpotLight);
 
         // Holds all the constructed instances of OpenGLRenderer to allow calling non-static member functions.
         inline static std::vector<OpenGLRenderer*> OpenGLInstances;
         void onResize(const int pWidth, const int pHeight);
 
         // Get all the data required to draw this mesh in its default configuration.
-        const OpenGLMesh& getGLMesh(const MeshID& pMeshID) const;
-        const GLData::Texture& getTexture(const TextureID& pTextureID) const;
+        const OpenGLMesh& getGLMesh(const Component::MeshID& pMeshID) const;
+        const GLData::Texture& getTexture(const Component::TextureID& pTextureID) const;
         // Returns the shader assigned to the DrawCall.
         // This can be overridden in the Draw function if mBufferDrawType is set to something other than BufferDrawType::Colour.
         Shader* getShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex);

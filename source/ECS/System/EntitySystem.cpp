@@ -1,9 +1,9 @@
-#include "EntityManager.hpp"
+#include "EntitySystem.hpp"
 #include "imgui.h"
 
 namespace ECS
 {
-    void EntityManager::DrawImGui()
+    void EntitySystem::DrawImGui()
     {
         if (ImGui::Begin("Entity options"))
         {

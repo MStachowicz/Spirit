@@ -1,18 +1,18 @@
 #include "Input.hpp"
 
-#include "Managers/CameraManager.hpp"
+#include "CameraSystem.hpp"
 
 #include "Logger.hpp"
 
 #include "GLFWInput.hpp"
 #include "imgui.h"
 
-Input::Input(Manager::CameraManager& pCameraManager)
+Input::Input(System::CameraSystem& pCameraSystem)
     : mInputHandler(new GLFWInput
         ( std::bind(&Input::onInput, this, std::placeholders::_1)
         , std::bind(&Input::onMousePress, this, std::placeholders::_1, std::placeholders::_2)
         , std::bind(&Input::onMouseMove, this, std::placeholders::_1, std::placeholders::_2)))
-    , mCameraManager(pCameraManager)
+    , mCameraSystem(pCameraSystem)
 {}
 
 void Input::pollEvents()
@@ -23,7 +23,7 @@ void Input::pollEvents()
 void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
 {
     if (mCapturingMouse)
-        mCameraManager.modifyPrimaryCamera([&pXOffset, &pYOffset](auto& pPrimaryCamera)
+        mCameraSystem.modifyPrimaryCamera([&pXOffset, &pYOffset](auto& pPrimaryCamera)
         {
             pPrimaryCamera.ProcessMouseMove(pXOffset, pYOffset);
         });
@@ -69,22 +69,22 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
     switch (pKeyPressed)
     {
         case InputAPI::Key::KEY_W:
-            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Forward); });
+            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Forward); });
             break;
         case InputAPI::Key::KEY_S:
-            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Backward); });
+            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Backward); });
             break;
         case InputAPI::Key::KEY_A:
-            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Left); });
+            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Left); });
             break;
         case InputAPI::Key::KEY_D:
-            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Right); });
+            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Right); });
             break;
         case InputAPI::Key::KEY_E:
-            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Up); });
+            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Up); });
             break;
         case InputAPI::Key::KEY_Q:
-            mCameraManager.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Data::Camera::Down); });
+            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Down); });
             break;
         case InputAPI::Key::KEY_ESCAPE:
             mCloseRequested = true;

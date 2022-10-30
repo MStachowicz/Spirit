@@ -2,7 +2,7 @@
 
 #include "glm/vec3.hpp"
 
-namespace Data
+namespace Component
 {
     struct Transform
     {

@@ -4,7 +4,7 @@
 
 #include "BoundingBox.hpp"
 
-namespace Data
+namespace Component
 {
     class Collider
     {

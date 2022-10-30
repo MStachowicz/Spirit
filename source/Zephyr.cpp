@@ -1,12 +1,13 @@
-#include "Logger.hpp"
 #include "Application.hpp"
-#include "JobSystem.hpp"
-#include "Utility.hpp"
+
 #include "File.hpp"
+#include "JobSystem.hpp"
+#include "Logger.hpp"
+#include "Stopwatch.hpp"
 
 int main(int argc, char *argv[])
 {
-    Application::Clock::time_point initStartTime = Application::Clock::now();
+    Utility::Stopwatch stopwatch;
 
     Logger::initialise(); // Logger must be initialised first as everything depends on it for logging and error checks.
     ZEPHYR_ASSERT(argc > 0, "No arguments supplied to executable, directories cannot be initialised")
@@ -19,7 +20,7 @@ int main(int argc, char *argv[])
     JobSystem::initialise();
 
     Application app;
-    LOG_INFO("Zephyr initialisation took {}ms", std::chrono::round<std::chrono::milliseconds>(Application::Clock::now() - initStartTime).count());
+    LOG_INFO("Zephyr initialisation took {0:.3f}ms", stopwatch.getTime<std::ratio<1>, float>());
 
     app.simulationLoop();
 

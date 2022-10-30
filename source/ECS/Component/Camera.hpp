@@ -5,7 +5,7 @@
 
 #include <functional>
 
-namespace Data
+namespace Component
 {
     // Camera operating using Euler angles to calculate the corresponding Vectors and Matrices to define a view in 3D space.
     class Camera
@@ -18,7 +18,7 @@ namespace Data
         void ProcessMouseMove(const float& pXOffset, const float& pYOffset, const bool& pConstrainPitch = true); // Processes mouse movement to allow moving camera in it's current mPosition.
         void processScroll(const float& pOffset);                                                                // Process mouse scrollwheel events. Applies a zoom on the camera.
 
-        bool mPrimaryCamera; // Only one Data::Camera can be a primaryCamera, this camera is used when rendering the scene. See CameraManager.
+        bool mPrimaryCamera; // Only one Component::Camera can be a primaryCamera, this camera is used when rendering the scene. See CameraSystem.
 
         const glm::mat4& getViewMatrix() const { return mView; };
         const glm::vec3& getPosition() const { return mPosition; };
@@ -59,4 +59,4 @@ namespace Data
 
         static inline const glm::vec3 WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     };
-} // namespace Data
+} // namespace Component

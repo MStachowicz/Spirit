@@ -4,7 +4,7 @@
 
 #include "imgui.h"
 
-namespace Data
+namespace Component
 {
     void DirectionalLight::DrawImGui()
     {

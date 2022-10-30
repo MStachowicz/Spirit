@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Entity.hpp"
-
 #include "EventDispatcher.hpp"
+
 #include "Logger.hpp"
 
 #include <vector>

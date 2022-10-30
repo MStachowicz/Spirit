@@ -1,13 +1,13 @@
 #include "Application.hpp"
 
 Application::Application()
-    : mTextureManager()
-    , mMeshManager(mTextureManager)
-    , mEntityManager()
-    , mCameraManager(mEntityManager.mCameras)
-    , mRenderer(mEntityManager, mTextureManager, mMeshManager, mCameraManager)
-    , mInput(mCameraManager)
-    , mCollisionSystem(mEntityManager.mColliders)
+    : mTextureSystem()
+    , mMeshSystem(mTextureSystem)
+    , mEntitySystem()
+    , mCameraSystem(mEntitySystem.mCameras)
+    , mRenderer(mEntitySystem, mTextureSystem, mMeshSystem, mCameraSystem)
+    , mInput(mCameraSystem)
+    , mCollisionSystem(mEntitySystem.mColliders)
 {}
 
 void Application::simulationLoop()

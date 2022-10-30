@@ -9,16 +9,16 @@ namespace InputAPI
     enum class Action;
     enum class CursorMode;
 }
-namespace Manager
+namespace System
 {
-    class CameraManager;
+    class CameraSystem;
 }
 
 // Processes input coming in from a registered mInputHandler using the InputAPI.
 class Input
 {
 public:
-    Input(Manager::CameraManager& pCameraManager);
+    Input(System::CameraSystem& pCameraSystem);
     void pollEvents();
     bool closeRequested();
 private:
@@ -29,5 +29,5 @@ private:
     bool mCapturingMouse = false;
 
     InputHandler* mInputHandler;
-    Manager::CameraManager& mCameraManager;
+    System::CameraSystem& mCameraSystem;
 };
