@@ -130,9 +130,9 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureMan
             if (randomGrassPlacement)
             {
                 std::array<float, grassCount> randomX;
-                util::fillRandomNumbers(-floorSize, floorSize, randomX);
+                Utility::fillRandomNumbers(-floorSize, floorSize, randomX);
                 std::array<float, grassCount> randomZ;
-                util::fillRandomNumbers(-floorSize, floorSize, randomZ);
+                Utility::fillRandomNumbers(-floorSize, floorSize, randomZ);
                 for (size_t i = 0; i < grassCount; i++)
                     grassPositions[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
             }
@@ -159,7 +159,7 @@ Renderer::Renderer(ECS::EntityManager& pEntityManager, const Manager::TextureMan
         }
 
         std::array<float, grassCount> randomY;
-        util::fillRandomNumbers(0.2f, 0.6f, randomY);
+        Utility::fillRandomNumbers(0.2f, 0.6f, randomY);
         for (size_t i = 0; i < grassCount; i++)
         {
             auto& entity = mEntityManager.CreateEntity();

@@ -11,10 +11,10 @@ namespace Data
             ImGui::TreePop();
         }
 
-        // static const std::array<std::string, util::toIndex(DrawMode::Count)> drawModes{"Fill", "Wireframe"};
-        // static std::string convert(const DrawMode &pDrawMode) { return drawModes[util::toIndex(pDrawMode)]; }
-        // static const std::array<std::string, util::toIndex(DrawStyle::Count)> drawStyles{"Textured", "Uniform Colour", "Light Map"};
-        // static std::string convert(const DrawStyle &pDrawStyle) { return drawStyles[util::toIndex(pDrawStyle)]; }
+        // static const std::array<std::string, Utility::toIndex(DrawMode::Count)> drawModes{"Fill", "Wireframe"};
+        // static std::string convert(const DrawMode &pDrawMode) { return drawModes[Utility::toIndex(pDrawMode)]; }
+        // static const std::array<std::string, Utility::toIndex(DrawStyle::Count)> drawStyles{"Textured", "Uniform Colour", "Light Map"};
+        // static std::string convert(const DrawStyle &pDrawStyle) { return drawStyles[Utility::toIndex(pDrawStyle)]; }
 
     //    { // Draw mode selection
     //        if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))

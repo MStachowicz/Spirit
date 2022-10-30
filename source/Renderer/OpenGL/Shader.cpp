@@ -162,7 +162,7 @@ namespace OpenGL
             if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
                 mAttributes.insert(Attribute::TextureCoordinate2D);
 
-        ZEPHYR_ASSERT(!mAttributes.empty() && mAttributes.size() <= util::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mAttributes.size());
+        ZEPHYR_ASSERT(!mAttributes.empty() && mAttributes.size() <= Utility::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mAttributes.size());
     }
 
     void Shader::use(GLState& pGLState) const
@@ -172,7 +172,7 @@ namespace OpenGL
 
     int Shader::getAttributeLocation(const Attribute& pAttribute)
     {
-        int location = static_cast<int>(util::toIndex(pAttribute));
+        int location = static_cast<int>(Utility::toIndex(pAttribute));
         return location;
 
         // Non static version of getAttributeLocation, not necessary as attribute locations are

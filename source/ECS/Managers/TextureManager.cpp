@@ -25,7 +25,7 @@ namespace Manager
 
     TextureManager::TextureManager()
     {
-        util::File::ForEachFile(util::File::textureDirectory, [&](auto& entry) {
+        Utility::File::ForEachFile(Utility::File::textureDirectory, [&](auto& entry) {
             if (entry.is_regular_file())
                 loadTexture(entry.path()); // Load all the texture files in the root texture folder.
             else if (entry.is_directory() && entry.path().stem().string() == "Cubemaps")
@@ -37,7 +37,7 @@ namespace Manager
     {
         // Iterate over every folder inside pCubeMapsDirectory, for each folder iterate over 6 textures to load individual
         // texture data into a CubeMapTexture object.
-        util::File::ForEachFile(pCubeMapsDirectory, [&](auto& cubemapDirectory)
+        Utility::File::ForEachFile(pCubeMapsDirectory, [&](auto& cubemapDirectory)
                                 {
         ZEPHYR_ASSERT(cubemapDirectory.is_directory(), "Path given was not a directory. Store cubemaps in folders.");
         Data::CubeMapTexture cubemap;
@@ -49,7 +49,7 @@ namespace Manager
         std::set<int> heights;
         std::set<int> channelCounts;
 
-        util::File::ForEachFile(cubemapDirectory, [&](auto& cubemapTexture)
+        Utility::File::ForEachFile(cubemapDirectory, [&](auto& cubemapTexture)
         {
             ZEPHYR_ASSERT(cubemapTexture.is_regular_file(), "Cubemap directory contains non-texture files.");
 

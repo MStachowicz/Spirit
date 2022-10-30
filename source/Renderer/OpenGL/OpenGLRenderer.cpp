@@ -165,7 +165,7 @@ namespace OpenGL
         }
 
         drawCallIt->mEntityModelIndexLookup[pEntity.mID] = drawCallIt->mModels.size();
-        drawCallIt->mModels.push_back(util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale));
+        drawCallIt->mModels.push_back(Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale));
         const bool updated = updateShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
 
         if (!updated)
@@ -214,7 +214,7 @@ namespace OpenGL
             auto it = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
             if (it != mDrawCalls[i].mEntityModelIndexLookup.end())
             {
-                mDrawCalls[i].mModels[it->second] = util::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+                mDrawCalls[i].mModels[it->second] = Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
 
                 // If the shader is instanced, we have to update the instance data array directly at the corresponding index.
                 auto shader = getShader(mDrawCalls[i], i);
@@ -381,7 +381,7 @@ namespace OpenGL
                 }
                 else if (shader->getName() == "lightMap")
                 {
-                    ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[util::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lightMap shader.")
+                    ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lightMap shader.")
                     ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mDiffuseTextureID.has_value(), "DrawCall must have mDiffuseTextureID set to draw using lightMap shader");
                     ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mSpecularTextureID.has_value(), "DrawCall must have mSpecularTextureID set to draw using lightMap shader");
                     ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mShininess.has_value(), "DrawCall must have mTexture2 set to draw using texture2");
@@ -468,7 +468,7 @@ namespace OpenGL
             mLightEmitterShader.use(mGLState);
             mEntityManager.mPointLights.ForEach([this](const Data::PointLight& pPointLight)
                                                 {
-			mLightEmitterShader.setUniform(mGLState, "model", util::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
+			mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
 			mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
    			draw(getGLMesh(m3DCubeID)); });
 
@@ -484,7 +484,7 @@ namespace OpenGL
 			const auto sizeY = pCollider.mBoundingBox.mHighY - pCollider.mBoundingBox.mLowY;
 			const auto sizeZ = pCollider.mBoundingBox.mHighZ - pCollider.mBoundingBox.mLowZ;
 
-			mLightEmitterShader.setUniform(mGLState, "model", util::GetModelMatrix(center, glm::vec3(0.f), glm::vec3(sizeX, sizeY, sizeZ)));
+			mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(center, glm::vec3(0.f), glm::vec3(sizeX, sizeY, sizeZ)));
    			mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
    			draw(getGLMesh(m3DCubeID)); });
             mGLState.setPolygonMode(GLType::PolygonMode::Fill);
@@ -615,7 +615,7 @@ namespace OpenGL
             ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
             ImGui::Separator();
 
-            static const std::array<std::string, util::toIndex(BufferDrawType::Count)> bufferDrawTypes{
+            static const std::array<std::string, Utility::toIndex(BufferDrawType::Count)> bufferDrawTypes{
                 "Colour",
                 "Depth"};
             if (ImGui::BeginCombo("Buffer draw style", bufferDrawTypes[static_cast<size_t>(mBufferDrawType)].c_str(), ImGuiComboFlags()))
@@ -729,27 +729,27 @@ namespace OpenGL
 
         if (!pMesh.mVertices.empty())
         {
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->Bind(mGLState);
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::Position3D)]->PushVertexAttributeData(mGLState, pMesh.mVertices, Shader::getAttributeLocation(Shader::Attribute::Position3D), Shader::getAttributeComponentCount(Shader::Attribute::Position3D));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::Position3D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::Position3D)]->Bind(mGLState);
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::Position3D)]->PushVertexAttributeData(mGLState, pMesh.mVertices, Shader::getAttributeLocation(Shader::Attribute::Position3D), Shader::getAttributeComponentCount(Shader::Attribute::Position3D));
         }
         if (!pMesh.mNormals.empty())
         {
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->Bind(mGLState);
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::Normal3D)]->PushVertexAttributeData(mGLState, pMesh.mNormals, Shader::getAttributeLocation(Shader::Attribute::Normal3D), Shader::getAttributeComponentCount(Shader::Attribute::Normal3D));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)]->Bind(mGLState);
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)]->PushVertexAttributeData(mGLState, pMesh.mNormals, Shader::getAttributeLocation(Shader::Attribute::Normal3D), Shader::getAttributeComponentCount(Shader::Attribute::Normal3D));
         }
         if (!pMesh.mColours.empty())
         {
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->Bind(mGLState);
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::ColourRGB)]->PushVertexAttributeData(mGLState, pMesh.mColours, Shader::getAttributeLocation(Shader::Attribute::ColourRGB), Shader::getAttributeComponentCount(Shader::Attribute::ColourRGB));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::ColourRGB)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::ColourRGB)]->Bind(mGLState);
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::ColourRGB)]->PushVertexAttributeData(mGLState, pMesh.mColours, Shader::getAttributeLocation(Shader::Attribute::ColourRGB), Shader::getAttributeComponentCount(Shader::Attribute::ColourRGB));
         }
         if (!pMesh.mTextureCoordinates.empty())
         {
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->Bind(mGLState);
-            newMesh->mVBOs[util::toIndex(Shader::Attribute::TextureCoordinate2D)]->PushVertexAttributeData(mGLState, pMesh.mTextureCoordinates, Shader::getAttributeLocation(Shader::Attribute::TextureCoordinate2D), Shader::getAttributeComponentCount(Shader::Attribute::TextureCoordinate2D));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::TextureCoordinate2D)].emplace(GLData::VBO(mGLState, GLType::BufferUsage::StaticDraw));
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::TextureCoordinate2D)]->Bind(mGLState);
+            newMesh->mVBOs[Utility::toIndex(Shader::Attribute::TextureCoordinate2D)]->PushVertexAttributeData(mGLState, pMesh.mTextureCoordinates, Shader::getAttributeLocation(Shader::Attribute::TextureCoordinate2D), Shader::getAttributeComponentCount(Shader::Attribute::TextureCoordinate2D));
         }
 
         for (const auto& childMesh : pMesh.mChildMeshes)

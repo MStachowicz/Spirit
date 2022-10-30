@@ -153,7 +153,7 @@ namespace OpenGL
 
             GLData::VAO mVAO;
             std::optional<GLData::EBO> mEBO;
-            std::array<std::optional<GLData::VBO>, util::toIndex(Shader::Attribute::Count)> mVBOs;
+            std::array<std::optional<GLData::VBO>, Utility::toIndex(Shader::Attribute::Count)> mVBOs;
 
             // Composite mesh
             std::vector<OpenGLMesh> mChildMeshes;
