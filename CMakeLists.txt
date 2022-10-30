@@ -194,7 +194,7 @@ source/Utility/Utility.cpp
 source/Utility/File.hpp
 source/Utility/File.cpp
 source/Utility/Types.hpp
-source/Utility/Timer.hpp
+source/Utility/Stopwatch.hpp
 source/Utility/EventDispatcher.hpp
 )
 target_include_directories(Utility

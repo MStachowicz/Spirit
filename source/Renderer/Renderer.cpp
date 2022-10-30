@@ -4,16 +4,14 @@
 #include "EntityManager.hpp"
 #include "Managers/MeshManager.hpp"
 #include "Managers/TextureManager.hpp"
-#include "Camera.hpp"
 
 // IMGUI
 #define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
 #include "imgui.h"
 
-// LOGGER
-#include "Logger.hpp"
 // UTILITY
-#include "Timer.hpp"
+#include "Logger.hpp"
+#include "Stopwatch.hpp"
 
 // STD
 #include <chrono>
@@ -246,7 +244,7 @@ void Renderer::onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw)
 
 void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 {
-    Stopwatch stopwatch;
+    Utility::Stopwatch stopwatch;
 
     onFrameStart(pTimeSinceLastDraw);
     mOpenGLRenderer.preDraw();
@@ -264,7 +262,7 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
 void Renderer::renderImGui()
 {
     // Render all ImGui from here.
-    Stopwatch stopWatch;
+    Utility::Stopwatch stopWatch;
 
     mOpenGLRenderer.newImGuiFrame();
     if (mRenderImGui)
