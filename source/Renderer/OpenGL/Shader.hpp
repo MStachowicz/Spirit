@@ -80,7 +80,6 @@ namespace OpenGL
         void scanForAttributes(const std::string& pSourceCode);
 
         std::string mName;
-        std::string mSourcePath;
         unsigned int mHandle;
         bool mIsInstanced;
         int mTextureUnits;                       // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'

@@ -1,8 +1,8 @@
 #include "Shader.hpp"
 
-#include "FileSystem.hpp"
 #include "Logger.hpp"
 #include "Utility.hpp"
+#include "File.hpp"
 
 #include <sstream>
 
@@ -10,14 +10,16 @@ namespace OpenGL
 {
     Shader::Shader(const std::string& pName, GLState& pGLState)
         : mName(pName)
-        , mSourcePath(File::GLSLShaderDirectory)
         , mIsInstanced(false)
         , mTextureUnits(0)
     {
+        const auto shaderPath = Utility::File::GLSLShaderDirectory / mName;
+
         unsigned int vertexShader;
-        const std::string vertexShaderPath = mSourcePath + mName + ".vert";
-        ZEPHYR_ASSERT(File::exists(vertexShaderPath), "Vertex shader does not exist at path {}", vertexShaderPath);
-        std::string vertexSource = File::readFromFile(vertexShaderPath);
+        auto vertexShaderPath = shaderPath;
+        vertexShaderPath.replace_extension("vert");
+        ZEPHYR_ASSERT(Utility::File::exists(vertexShaderPath), "Vertex shader does not exist at path '{}'", vertexShaderPath.string());
+        std::string vertexSource = Utility::File::readFromFile(vertexShaderPath);
         {
             vertexShader = pGLState.CreateShader(GLType::ShaderProgramType::Vertex);
             pGLState.ShaderSource(vertexShader, vertexSource);
@@ -27,21 +29,23 @@ namespace OpenGL
 
         unsigned int fragmentShader;
         {
-            const std::string fragmentShaderPath = mSourcePath + mName + ".frag";
-            ZEPHYR_ASSERT(File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath);
+            auto fragmentShaderPath = shaderPath;
+            fragmentShaderPath.replace_extension("frag");
+            ZEPHYR_ASSERT(Utility::File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath.string());
             fragmentShader     = pGLState.CreateShader(GLType::ShaderProgramType::Fragment);
-            std::string source = File::readFromFile(fragmentShaderPath);
+            std::string source = Utility::File::readFromFile(fragmentShaderPath);
             pGLState.ShaderSource(fragmentShader, source);
             pGLState.CompileShader(fragmentShader);
         }
 
         std::optional<unsigned int> geometryShader;
         {
-            const std::string shaderPath = mSourcePath + mName + ".geom";
-            if (File::exists(shaderPath))
+            auto geomShaderPath = shaderPath;
+            geomShaderPath.replace_extension("geom");
+            if (Utility::File::exists(shaderPath))
             {
                 geometryShader     = pGLState.CreateShader(GLType::ShaderProgramType::Geometry);
-                std::string source = File::readFromFile(shaderPath);
+                std::string source = Utility::File::readFromFile(shaderPath);
                 pGLState.ShaderSource(geometryShader.value(), source);
                 pGLState.CompileShader(geometryShader.value());
             }
@@ -57,7 +61,7 @@ namespace OpenGL
             pGLState.LinkProgram(mHandle);
         }
 
-        {     // Setup all the unform variables for the linked shader program using OpenGL program introspection
+        { // Setup all the unform variables for the linked shader program using OpenGL program introspection
             { // UniformBlock setup
                 const int blockCount = pGLState.getActiveUniformBlockCount(mHandle);
                 for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)

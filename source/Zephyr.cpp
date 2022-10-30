@@ -1,8 +1,8 @@
 #include "Logger.hpp"
 #include "Application.hpp"
 #include "JobSystem.hpp"
-#include "FileSystem.hpp"
 #include "Utility.hpp"
+#include "File.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -15,8 +15,7 @@ int main(int argc, char *argv[])
     for (int index{}; index != argc; ++index)
         LOG_INFO("Argument {}: {}", index + 1, argv[index]);
 
-    File::setupDirectories(argv[0]);
-    Utility::File::initialise(argv[0]);
+    Utility::File::setupDirectories(argv[0]);
     JobSystem::initialise();
 
     Application app;

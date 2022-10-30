@@ -17,7 +17,7 @@ source/Application.cpp
 target_link_libraries(Zephyr
 PRIVATE Logger
 PRIVATE JobSystem
-PRIVATE FileSystem
+PRIVATE Utility
 PRIVATE Renderer
 PRIVATE Input
 )
@@ -85,7 +85,6 @@ PUBLIC Data
 PRIVATE glad_GL
 PRIVATE glfw
 PRIVATE ImGui
-PRIVATE FileSystem
 PRIVATE Logger
 )
 # ------------------------ OPENGL END ----------------------------
@@ -144,7 +143,7 @@ PRIVATE source/External/ASSIMP/include
 target_link_libraries(ECS
 PUBLIC Data
 PRIVATE Logger
-PRIVATE FileSystem
+PRIVATE Utility
 PRIVATE assimp
 PRIVATE ImGui
 )
@@ -172,20 +171,6 @@ PRIVATE Logger
 )
 # ------------------------ INPUT END ----------------------------
 
-# ------------------------ FILESYSTEM ----------------------------
-message(STATUS "\n[ZEPHYR] -- Adding File System static library")
-add_library(FileSystem
-source/FileSystem/FileSystem.hpp
-source/FileSystem/FileSystem.cpp
-)
-target_include_directories(FileSystem
-PUBLIC source/FileSystem
-)
-target_link_libraries(FileSystem
-PRIVATE Logger
-)
-# ------------------------ FILESYSTEM END ----------------------------
-
 # ------------------------ JOBSYSTEM ----------------------------
 message(STATUS "\n[ZEPHYR] -- Adding Job System static library")
 add_library(JobSystem
@@ -206,6 +191,8 @@ message(STATUS "\n[ZEPHYR] -- Adding Utility static library")
 add_library(Utility
 source/Utility/Utility.hpp
 source/Utility/Utility.cpp
+source/Utility/File.hpp
+source/Utility/File.cpp
 source/Utility/Types.hpp
 source/Utility/Timer.hpp
 source/Utility/EventDispatcher.hpp
