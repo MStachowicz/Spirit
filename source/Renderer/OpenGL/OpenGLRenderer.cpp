@@ -330,7 +330,7 @@ namespace OpenGL
 
     Shader* OpenGLRenderer::getInstancedShader(const Shader& pShader)
     {
-        ZEPHYR_ASSERT(!pShader.isInstanced(), "Trying to find an instanced version of an already instanced shader.")
+        ZEPHYR_ASSERT(!pShader.isInstanced(), "Trying to find an instanced version of an already instanced shader.");
 
         for (size_t i = 0; i < mAvailableShaders.size(); i++)
         {
@@ -377,7 +377,7 @@ namespace OpenGL
                 }
                 else if (shader->getName() == "lightMap")
                 {
-                    ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lightMap shader.")
+                    ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lightMap shader.");
                     ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mDiffuseTextureID.has_value(), "DrawCall must have mDiffuseTextureID set to draw using lightMap shader");
                     ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mSpecularTextureID.has_value(), "DrawCall must have mSpecularTextureID set to draw using lightMap shader");
                     ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mShininess.has_value(), "DrawCall must have mTexture2 set to draw using texture2");
@@ -709,7 +709,7 @@ namespace OpenGL
         else
         {
             newMesh->mDrawMethod = OpenGLMesh::DrawMethod::Array;
-            ZEPHYR_ASSERT(newMesh->mDrawMode == GLType::PrimitiveMode::Triangles, "Only PrimitiveMode::Triangles is supported")
+            ZEPHYR_ASSERT(newMesh->mDrawMode == GLType::PrimitiveMode::Triangles, "Only PrimitiveMode::Triangles is supported");
             newMesh->mDrawSize = static_cast<int>(pMesh.mVertices.size()) / 3; // Divide verts by 3 as we draw the vertices by Triangles count.
         }
 
@@ -800,7 +800,7 @@ namespace OpenGL
     {
         GladGLContext* GLADContext = (GladGLContext*)malloc(sizeof(GladGLContext));
         int version                = gladLoadGLContext(GLADContext, glfwGetProcAddress);
-        ZEPHYR_ASSERT(GLADContext && version != 0, "Failed to initialise GLAD GL context")
+        ZEPHYR_ASSERT(GLADContext && version != 0, "Failed to initialise GLAD GL context");
         // TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
         LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
         return GLADContext;

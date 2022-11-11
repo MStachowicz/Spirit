@@ -51,7 +51,7 @@ namespace ECS
             if (it != mEntityComponentIndexLookup.end())
             {
                 const size_t entityBeingRemovedIndex = it->second;
-                ZEPHYR_ASSERT(mEntities[entityBeingRemovedIndex] == pEntity.mID, "Entity ID should match")
+                ZEPHYR_ASSERT(mEntities[entityBeingRemovedIndex] == pEntity.mID, "Entity ID should match");
 
                 mEntityComponentIndexLookup.erase(it);
                 if (entityBeingRemovedIndex < mComponents.size() - 1)

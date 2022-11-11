@@ -21,7 +21,7 @@ namespace Utility
         executablePath = pExecutePath;
 
         const auto& found = executablePath.string().find("Zephyr");
-        ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string())
+        ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string());
 
         rootDirectory = executablePath.string().substr(0, found + 6); // offset substr by length of "Zephyr"
         LOG_INFO("Root directory initialised to '{}'", rootDirectory.string());

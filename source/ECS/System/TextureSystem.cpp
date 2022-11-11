@@ -39,50 +39,51 @@ namespace System
         // Iterate over every folder inside pCubeMapsDirectory, for each folder iterate over 6 textures to load individual
         // texture data into a CubeMapTexture object.
         Utility::File::forEachFile(pCubeMapsDirectory, [&](auto& cubemapDirectory)
-                                {
-        ZEPHYR_ASSERT(cubemapDirectory.is_directory(), "Path given was not a directory. Store cubemaps in folders.");
-        Component::CubeMapTexture cubemap;
-        cubemap.mName = cubemapDirectory.path().stem().string();
-        cubemap.mFilePath = cubemapDirectory.path();
-
-        int count = 0;
-        std::set<int> widths;
-        std::set<int> heights;
-        std::set<int> channelCounts;
-
-        Utility::File::forEachFile(cubemapDirectory, [&](auto& cubemapTexture)
         {
-            ZEPHYR_ASSERT(cubemapTexture.is_regular_file(), "Cubemap directory contains non-texture files.");
+            ZEPHYR_ASSERT(cubemapDirectory.is_directory(), "Path given was not a directory. Store cubemaps in folders.");
+            Component::CubeMapTexture cubemap;
+            cubemap.mName = cubemapDirectory.path().stem().string();
+            cubemap.mFilePath = cubemapDirectory.path();
 
-            Component::Texture* newTexture = nullptr;
-            const std::string textureName = cubemapTexture.path().stem().string();
+            int count = 0;
+            std::set<int> widths;
+            std::set<int> heights;
+            std::set<int> channelCounts;
 
-            if (textureName == "right")       newTexture = &cubemap.mRight;
-            else if (textureName == "left")   newTexture = &cubemap.mLeft;
-            else if (textureName == "top")    newTexture = &cubemap.mTop;
-            else if (textureName == "bottom") newTexture = &cubemap.mBottom;
-            else if (textureName == "back")   newTexture = &cubemap.mBack;
-            else if (textureName == "front")  newTexture = &cubemap.mFront;
-            else ZEPHYR_ASSERT(false, "Cubemap texture name '{}' is invalid" , textureName)
+            Utility::File::forEachFile(cubemapDirectory, [&](auto& cubemapTexture)
+            {
+                ZEPHYR_ASSERT(cubemapTexture.is_regular_file(), "Cubemap directory contains non-texture files.");
 
-            // @PERFORMANCE
-            // loadTexture will push the Component::Texture to the mTexture array before returning.
-            // The line below will copy the Component::Texture to the cubemap duplicating the data.
-            *newTexture = loadTexture(cubemapTexture.path(), Component::Texture::Purpose::Cubemap);
+                Component::Texture* newTexture = nullptr;
+                const std::string textureName = cubemapTexture.path().stem().string();
 
-            widths.insert(newTexture->mWidth);
-            heights.insert(newTexture->mHeight);
-            channelCounts.insert(newTexture->mNumberOfChannels);
-            count++;
+                if (textureName == "right")       newTexture = &cubemap.mRight;
+                else if (textureName == "left")   newTexture = &cubemap.mLeft;
+                else if (textureName == "top")    newTexture = &cubemap.mTop;
+                else if (textureName == "bottom") newTexture = &cubemap.mBottom;
+                else if (textureName == "back")   newTexture = &cubemap.mBack;
+                else if (textureName == "front")  newTexture = &cubemap.mFront;
+                else ZEPHYR_ASSERT(false, "Cubemap texture name '{}' is invalid" , textureName);
+
+                // @PERFORMANCE
+                // loadTexture will push the Component::Texture to the mTexture array before returning.
+                // The line below will copy the Component::Texture to the cubemap duplicating the data.
+                *newTexture = loadTexture(cubemapTexture.path(), Component::Texture::Purpose::Cubemap);
+
+                widths.insert(newTexture->mWidth);
+                heights.insert(newTexture->mHeight);
+                channelCounts.insert(newTexture->mNumberOfChannels);
+                count++;
+            });
+
+            ZEPHYR_ASSERT(count == 6, "There must be 6 loaded textures for a cubemap.");
+            ZEPHYR_ASSERT(widths.size() == 1, "There are missmatched texture widths in the cubemap.");
+            ZEPHYR_ASSERT(heights.size() == 1, "There are missmatched texture heights in the cubemap.");
+            ZEPHYR_ASSERT(channelCounts.size() == 1, "There are missmatched texture channel counts in the cubemap.");
+
+            mCubeMaps.push_back(cubemap);
+            LOG_INFO("Component::CubemapTexture '{}' loaded", cubemap.mName);
         });
-
-        ZEPHYR_ASSERT(count == 6, "There must be 6 loaded textures for a cubemap.");
-        ZEPHYR_ASSERT(widths.size() == 1, "There are missmatched texture widths in the cubemap.");
-        ZEPHYR_ASSERT(heights.size() == 1, "There are missmatched texture heights in the cubemap.");
-        ZEPHYR_ASSERT(channelCounts.size() == 1, "There are missmatched texture channel counts in the cubemap.");
-
-        mCubeMaps.push_back(cubemap);
-        LOG_INFO("Component::CubemapTexture '{}' loaded", cubemap.mName); });
     }
 
     Component::Texture& TextureSystem::loadTexture(const std::filesystem::path& pFilePath, const Component::Texture::Purpose pPurpose, const std::string& pName /* = "" */)
@@ -92,7 +93,7 @@ namespace System
         else
             stbi_set_flip_vertically_on_load(true);
 
-        ZEPHYR_ASSERT(Utility::File::exists(pFilePath), "The texture file with path {} could not be found.", pFilePath.string()) // #C++20 if switched logger to use std::format, direct use of std::filesystem::path is available
+        ZEPHYR_ASSERT(Utility::File::exists(pFilePath), "The texture file with path {} could not be found.", pFilePath.string()); // #C++20 if switched logger to use std::format, direct use of std::filesystem::path is available
 
         const auto& textureLocation = mFilePathLookup.find(pFilePath.string());
         if (textureLocation != mFilePathLookup.end())

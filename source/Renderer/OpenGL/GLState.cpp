@@ -671,7 +671,7 @@ namespace GLData
 {
     void VAO::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO")
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO");
         glGenVertexArrays(1, &mHandle);
         mInitialised = true;
     }
@@ -1069,7 +1069,7 @@ namespace GLData
 
     void RBO::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated RBO")
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated RBO");
         glGenRenderbuffers(1, &mHandle);
         mInitialised = true;
     }
@@ -1086,7 +1086,7 @@ namespace GLData
     }
     void FBO::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated FBO")
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated FBO");
         glGenFramebuffers(1, &mHandle);
         mInitialised = true;
     }
@@ -1207,7 +1207,7 @@ namespace GLData
     }
     void Texture::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated Texture")
+        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated Texture");
         glGenTextures(1, &mHandle);
         mInitialised = true;
     }
