@@ -25,9 +25,15 @@ PRIVATE Utility
     add_library(Entity
     source/ECS/Entity/Entity.hpp
     source/ECS/Entity/Entity.cpp
+    source/ECS/Entity/Storage.hpp
+    source/ECS/Entity/Storage.cpp
+    source/ECS/Entity/Meta.hpp
     )
     target_include_directories(Entity
     PUBLIC source/ECS/Entity
+    )
+    target_link_libraries(Entity
+    PUBLIC Utility
     )
     # Entity --------------------------------------------------------------------------------------
 
@@ -222,3 +228,5 @@ PRIVATE Utility
     # ASSIMP --------------------------------------------------------------------------------------
     add_subdirectory(source/External/ASSIMP External/ASSIMP)
     # ASSIMP end ----------------------------------------------------------------------------------
+
+    # STB included (header only)
