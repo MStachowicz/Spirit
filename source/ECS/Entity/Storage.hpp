@@ -293,11 +293,11 @@ namespace ECS
 
     public:
         template <typename... ComponentTypes>
-        EntityID addEntity(ComponentTypes&&... args)
+        EntityID addEntity(ComponentTypes&&... pComponents)
         {
             static_assert(Meta::is_unique<ComponentTypes...>);
 
-            // #OPTIMISATION make this a std::array using size of args pack
+            // #OPTIMISATION make this a std::array using size of pComponents pack
             std::vector<std::pair<ComponentID, size_t>> componentsInArguments;
             std::bitset<32> componentsBitset;
             size_t sumSize = 0;
@@ -310,7 +310,7 @@ namespace ECS
                 componentsBitset.set(ID, true);
                 sumSize += sizeof(pComponent);
             };
-            (processComponent(args), ...);
+            (processComponent(pComponents), ...);
 
             auto archetypeID = getMatchingArchetype(componentsBitset);
             if (!archetypeID)
@@ -320,15 +320,15 @@ namespace ECS
                 archetypeID = archetypes.size() - 1;
             }
 
-            // Push the ComponentTypes&&... args to the archetypeID
+            // Push the ComponentTypes&&... pComponents to the archetypeID
             auto& archetype = archetypes[archetypeID.value()];
-            archetype.push_back(componentsInArguments, std::forward<ComponentTypes>(args)...);
+            archetype.push_back(componentsInArguments, std::forward<ComponentTypes>(pComponents)...);
 
             return nextEntity++;
         }
 
         template <typename Func>
-        void foreach(const Func& func)
+        void foreach(const Func& pFunction)
         {
             // Match functionBitset to an archetype and call apply on it.
             using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
@@ -344,7 +344,7 @@ namespace ECS
                     if (archetypes[archetypeID].mInstanceCount > 0)
                     {
                         const auto componentOffsets = archetypes[archetypeID].getComponentOffsets(functionComponentIDs);
-                        ApplyFunctionToArchetype<Func, FunctionParameterPack>::apply(func, archetypes[archetypeID], componentOffsets);
+                        ApplyFunctionToArchetype<Func, FunctionParameterPack>::apply(pFunction, archetypes[archetypeID], componentOffsets);
                     }
                 }
             }
