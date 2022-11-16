@@ -1,3 +1,5 @@
+#pragma once
+
 namespace Meta
 {
     // Encapsulates a parameter pack
