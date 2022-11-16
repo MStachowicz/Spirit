@@ -42,4 +42,18 @@ namespace Meta
     inline constexpr auto is_unique = std::true_type{};
     template <typename T, typename... Rest>
     inline constexpr auto is_unique<T, Rest...> = std::bool_constant<(!std::is_same_v<T, Rest> && ...) && is_unique<Rest...>>{};
+
+    // Convert a std::array to a std::vector in one call.
+    template<typename T, size_t N>
+    std::vector<T> makeVector(const std::array<T, N> pArray )
+    {
+        return std::vector<T>(pArray.begin(), pArray.end());
+    }
+
+    // Returns the sum of the sizof of each individual argument in the variadic.
+    template <typename... Args>
+    constexpr static size_t sizeOfVariadic()
+    {
+        return (0 + ... + sizeof(Args));
+    }
 }
