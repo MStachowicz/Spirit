@@ -216,8 +216,9 @@ namespace ECS
             }
         }; // class Archetype
 
-        EntityID mNextEntity         = 0;
+        EntityID mNextEntity = 0;
         std::vector<Archetype> mArchetypes;
+        std::vector<std::pair<ArchetypeID, ArchetypeInstanceID>> mEntityToArchetypeID; // Maps EntityID to an arc
 
         template <typename... FunctionArgs>
         struct FunctionHelper;
@@ -301,6 +302,7 @@ namespace ECS
 
             auto& archetype = mArchetypes[archetypeID.value()];
             archetype.push_back(std::forward<ComponentTypes>(pComponents)...);
+            mEntityToArchetypeID.push_back({archetypeID.value(), archetype.mInstanceCount - 1});
 
             return mNextEntity++;
         }
@@ -325,5 +327,12 @@ namespace ECS
                 }
             }
         };
+
+        template <typename ComponentType>
+        const ComponentType& getComponent(const EntityID& pEntity)
+        {
+            const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+            return mArchetypes[archetype].getComponent<ComponentType>(index);
+        }
     };
 } // namespace ECS
