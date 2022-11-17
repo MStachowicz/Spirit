@@ -232,17 +232,24 @@ namespace ECS
             {
                 return ECS::Storage::getBitset<FunctionArgs...>();
             }
+            // Does this function take only one parameter of type EntityID.
+            constexpr static bool isEntityIDFunction()
+            {
+                if constexpr(sizeof...(FunctionArgs) == 1 && std::is_same_v<EntityID, std::decay_t<typename Meta::GetNth<0, FunctionArgs...>::Type>>)
+                    return true;
+                else
+                    return false;
+            }
         };
 
         template <typename... FunctionArgs>
-        struct ApplyFunctionToArchetype;
+        struct ApplyFunction;
         template <typename Func, typename... FunctionArgs>
-        struct ApplyFunctionToArchetype<Func, Meta::PackArgs<FunctionArgs...>>
+        struct ApplyFunction<Func, Meta::PackArgs<FunctionArgs...>>
         {
-            static void apply(const Func& pFunction, Archetype& pArchetype)
+            static void applyToArchetype(const Func& pFunction, Archetype& pArchetype)
             {
                 const auto componentOffsets = pArchetype.getComponentOffsets<FunctionArgs...>();
-
                 impl(pFunction, pArchetype, componentOffsets, std::make_index_sequence<sizeof...(FunctionArgs)>{});
             }
 
@@ -322,9 +329,23 @@ namespace ECS
                 {
                     if (mArchetypes[archetypeID].mInstanceCount > 0)
                     {
-                        ApplyFunctionToArchetype<Func, FunctionParameterPack>::apply(pFunction, mArchetypes[archetypeID]);
+                        ApplyFunction<Func, FunctionParameterPack>::applyToArchetype(pFunction, mArchetypes[archetypeID]);
                     }
                 }
+            }
+        };
+
+        // Calls Func on every EntityID. Func must have only one parameter of type ECS::EntityID.
+        template <typename Func>
+        void foreachEntity(const Func& pFunction)
+        {
+            using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
+            static_assert(FunctionHelper<FunctionParameterPack>::isEntityIDFunction());
+
+            if (mNextEntity > 0)
+            {
+                for (EntityID i = 0; i < mNextEntity; i++)
+                    pFunction(i);
             }
         };
 
