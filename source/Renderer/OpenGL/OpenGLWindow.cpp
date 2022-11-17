@@ -22,7 +22,8 @@ namespace OpenGL
 
         if (activeGLFWWindows == 0) // First time window creation, setup GLFW and window hints
         {
-            ZEPHYR_ASSERT(glfwInit(), "GLFW initialisation failed");
+            const auto initalisedGLFW = glfwInit();
+            ZEPHYR_ASSERT(initalisedGLFW == GLFW_TRUE, "GLFW initialisation failed");
 
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, mOpenGLMajorVersion);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, mOpenGLMinorVersion);
