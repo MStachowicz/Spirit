@@ -334,5 +334,14 @@ namespace ECS
             const auto [archetype, index] = mEntityToArchetypeID[pEntity];
             return mArchetypes[archetype].getComponent<ComponentType>(index);
         }
+
+        template <typename... ComponentTypes>
+        bool hasComponents(const EntityID& pEntity)
+        {
+            const auto requestedBitset = getBitset<ComponentTypes...>();
+            const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+            const auto entityBitset = mArchetypes[archetype].componentStoredBitset;
+            return (requestedBitset == entityBitset || ((requestedBitset & entityBitset) == requestedBitset));
+        }
     };
 } // namespace ECS
