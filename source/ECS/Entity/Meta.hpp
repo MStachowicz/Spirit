@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 namespace Meta
 {
     // Encapsulates a parameter pack
@@ -58,4 +60,10 @@ namespace Meta
     {
         return (0 + ... + sizeof(Args));
     }
+
+    template<std::size_t N, typename... Args>
+    struct GetNth
+    {
+        using Type = std::tuple_element_t<N, std::tuple<Args...>>;
+    };
 }

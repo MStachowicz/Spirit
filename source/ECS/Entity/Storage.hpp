@@ -336,12 +336,23 @@ namespace ECS
         }
 
         template <typename... ComponentTypes>
-        bool hasComponents(const EntityID& pEntity)
+        bool hasComponents(const EntityID& pEntity) const
         {
-            const auto requestedBitset = getBitset<ComponentTypes...>();
-            const auto [archetype, index] = mEntityToArchetypeID[pEntity];
-            const auto entityBitset = mArchetypes[archetype].componentStoredBitset;
-            return (requestedBitset == entityBitset || ((requestedBitset & entityBitset) == requestedBitset));
+            static_assert(sizeof...(ComponentTypes) != 0);
+
+            if constexpr(sizeof...(ComponentTypes) > 1)
+            {
+                const auto requestedBitset = getBitset<ComponentTypes...>();
+                const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+                const auto entityBitset = mArchetypes[archetype].componentStoredBitset;
+                return (requestedBitset == entityBitset || ((requestedBitset & entityBitset) == requestedBitset));
+            }
+            else
+            {
+                typedef typename Meta::GetNth<0, ComponentTypes...>::Type ComponentType;
+                const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+                return mArchetypes[archetype].componentStoredBitset.test(ComponentIDGenerator::get<ComponentType>());
+            }
         }
     };
 } // namespace ECS
