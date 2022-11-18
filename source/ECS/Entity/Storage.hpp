@@ -388,7 +388,7 @@ namespace ECS
         std::decay_t<ComponentType>& getComponentMutable(const EntityID& pEntity)
         {
             const auto [archetype, index] = mEntityToArchetypeID[pEntity];
-            return *mArchetypes[archetype].getComponent<ComponentType>(index);
+            return *mArchetypes[archetype].getComponentMutable<ComponentType>(index);
         }
 
         // Check if EntityID has been assigned all of the ComponentTypes queried.
