@@ -1,9 +1,14 @@
 #include "Renderer.hpp"
 
 // ECS
-#include "EntitySystem.hpp"
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
+
+#include "PointLight.hpp"
+#include "SpotLight.hpp"
+#include "DirectionalLight.hpp"
+#include "Camera.hpp"
+#include "Collider.hpp"
 
 // UTILITY
 #include "Logger.hpp"
@@ -18,13 +23,13 @@
 #include <cmath>
 #include <numeric>
 
-Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem, System::CameraSystem& pCameraSystem)
+Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem)
     : mDrawCount(0)
     , mTargetFPS(60)
     , mTextureSystem(pTextureSystem)
     , mMeshSystem(pMeshSystem)
-    , mEntitySystem(pEntitySystem)
-    , mOpenGLRenderer(mEntitySystem, pMeshSystem, pTextureSystem, pCameraSystem)
+    , mStorage(pStorage)
+    , mOpenGLRenderer(pStorage, pMeshSystem, pTextureSystem)
     , mRenderImGui(true)
     , mRenderLightPositions(true)
     , mShowFPSPlot(false)
@@ -40,14 +45,16 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
     static const float floorSize           = 50.f;
     static const size_t grassCount         = 500;
     static const bool randomGrassPlacement = false;
-    { // Floor
-        auto& entity = mEntitySystem.CreateEntity();
-
+    {// Camera
+        Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
+        camera.mPrimaryCamera = true;
+        mStorage.addEntity(camera);
+    }
+    {// Floor
         Component::Transform transform;
         transform.mPosition;
         transform.mRotation.x = -90.f;
         transform.mScale      = glm::vec3(floorSize);
-        mEntitySystem.mTransforms.Add(entity, transform);
 
         Component::MeshDraw mesh;
         mesh.mID                  = mMeshSystem.getMeshID("Quad");
@@ -56,9 +63,10 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
         mesh.mSpecularTextureID   = mTextureSystem.getTextureID("black");
         mesh.mShininess           = 128.f;
         mesh.mTextureRepeatFactor = 20.f;
-        mEntitySystem.mMeshes.Add(entity, mesh);
+
+        mStorage.addEntity(transform, mesh);
     }
-    { // Cubes
+    {// Cubes
         std::array<glm::vec3, 10> cubePositions = {
             glm::vec3(3.0f, 0.5f, -3.0f),
             glm::vec3(-1.3f, 0.5f, -1.5f),
@@ -72,11 +80,8 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
             glm::vec3(2.0f, 0.5f, -15.0f)};
         for (size_t i = 0; i < cubePositions.size(); i++)
         {
-            auto& entity = mEntitySystem.CreateEntity();
-
             Component::Transform transform;
             transform.mPosition = cubePositions[i];
-            mEntitySystem.mTransforms.Add(entity, transform);
 
             Component::MeshDraw mesh;
             mesh.mID                = mMeshSystem.getMeshID("cube");
@@ -85,16 +90,17 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
             mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("metalContainerDiffuse");
             mesh.mSpecularTextureID = mTextureSystem.getTextureID("metalContainerSpecular");
             mesh.mShininess         = 64.f;
-            mEntitySystem.mMeshes.Add(entity, mesh);
+
+            Component::Collider collider;
+            collider.mBoundingBox = Collision::BoundingBox(-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f);
+
+            mStorage.addEntity(mesh, transform, collider);
         }
     }
-    { // Backpack
-        auto& entity = mEntitySystem.CreateEntity();
-
+    {// Backpack
         Component::Transform transform;
         transform.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
         transform.mScale    = glm::vec3(0.5f);
-        mEntitySystem.mTransforms.Add(entity, transform);
 
         Component::MeshDraw mesh;
         mesh.mID                = mMeshSystem.getMeshID("backpack");
@@ -102,17 +108,14 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
         mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("diffuse");
         mesh.mSpecularTextureID = mTextureSystem.getTextureID("specular");
         mesh.mShininess         = 64.f;
-        mEntitySystem.mMeshes.Add(entity, mesh);
 
+        mStorage.addEntity(mesh, transform);
     }
-    { // Xian
-        auto& entity = mEntitySystem.CreateEntity();
-
+    {// Xian
         Component::Transform transform;
         transform.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
         transform.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
         transform.mScale    = glm::vec3(0.4f);
-        mEntitySystem.mTransforms.Add(entity, transform);
 
         Component::MeshDraw mesh;
         mesh.mID                = mMeshSystem.getMeshID("xian");
@@ -120,9 +123,10 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
         mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("Base_Color");
         mesh.mSpecularTextureID = mTextureSystem.getTextureID("black");
         mesh.mShininess         = 64.f;
-        mEntitySystem.mMeshes.Add(entity, mesh);
+
+        mStorage.addEntity(mesh, transform);
     }
-    { // Billboard grass
+    {// Billboard grass
         std::array<glm::vec3, grassCount> grassPositions;
         {
             if (randomGrassPlacement)
@@ -160,22 +164,20 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
         Utility::fillRandomNumbers(0.2f, 0.6f, randomY);
         for (size_t i = 0; i < grassCount; i++)
         {
-            auto& entity = mEntitySystem.CreateEntity();
-
             Component::Transform transform;
             transform.mScale    = glm::vec3(0.2f, randomY[i], 0.2f);
             transform.mPosition = grassPositions[i];
             transform.mPosition.y += transform.mScale.y;
-            mEntitySystem.mTransforms.Add(entity, transform);
 
             Component::MeshDraw mesh;
             mesh.mID        = mMeshSystem.getMeshID("Quad");
             mesh.mDrawStyle = Component::DrawStyle::Textured;
             mesh.mTexture1  = mTextureSystem.getTextureID("grassBillboard");
-            mEntitySystem.mMeshes.Add(entity, mesh);
+
+            mStorage.addEntity(mesh, transform);
         }
     }
-    { // Windows
+    {// Windows
         std::array<glm::vec3, 5> windowPositions = {
             glm::vec3(-1.5f, 0.0f, 1.48f),
             glm::vec3(1.5f, 0.0f, 1.51f),
@@ -185,23 +187,21 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
 
         for (const auto& position : windowPositions)
         {
-            auto& entity = mEntitySystem.CreateEntity();
-
             Component::Transform transform;
             transform.mScale    = glm::vec3(0.2f);
             transform.mPosition = position;
             transform.mPosition.y += transform.mScale.y;
-            mEntitySystem.mTransforms.Add(entity, transform);
 
             Component::MeshDraw mesh;
             mesh.mID        = mMeshSystem.getMeshID("Quad");
             mesh.mDrawStyle = Component::DrawStyle::Textured;
             mesh.mTexture1  = mTextureSystem.getTextureID("window");
-            mEntitySystem.mMeshes.Add(entity, mesh);
+
+            mStorage.addEntity(mesh, transform);
         }
     }
-    { // Lights
-        { // Point light
+    {// Lights
+        {// Point light
             const std::array<glm::vec3, 4> pointLightPositions = {
                 glm::vec3(0.7f, 1.7f, 2.0f),
                 glm::vec3(0.0f, 1.0f, -3.0f),
@@ -218,17 +218,18 @@ Renderer::Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem
                 Component::PointLight pointLight;
                 pointLight.mPosition = pointLightPositions[i];
                 pointLight.mColour   = pointLightColours[i];
-                mEntitySystem.mPointLights.Add(mEntitySystem.CreateEntity(), pointLight);
+                mStorage.addEntity(pointLight);
             }
         }
 
-        { // Directional light
+        {// Directional light
             Component::DirectionalLight directionalLight;
             directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
-            mEntitySystem.mDirectionalLights.Add(mEntitySystem.CreateEntity(), directionalLight);
+            mStorage.addEntity(directionalLight);
         }
-        // Spotlight
-        mEntitySystem.mSpotLights.Add(mEntitySystem.CreateEntity(), {});
+        {// Spotlight
+            mStorage.addEntity(Component::SpotLight());
+        }
     }
 }
 
@@ -259,6 +260,41 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
     mDrawTimeTakenMS = stopwatch.getTime<std::milli, float>();
 }
 
+void Renderer::drawEntityPanel()
+{
+    if (ImGui::Begin("Entity options"))
+        {
+            mStorage.foreachEntity([this](ECS::EntityID& pEntity)
+            {
+                const std::string title = "Entity " + std::to_string(pEntity);
+                if (ImGui::TreeNode(title.c_str()))
+                {
+                    if (mStorage.hasComponents<Component::Transform>(pEntity))
+                        mStorage.getComponentMutable<Component::Transform&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::MeshDraw>(pEntity))
+                        mStorage.getComponentMutable<Component::MeshDraw&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::Collider>(pEntity))
+                        mStorage.getComponentMutable<Component::Collider&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::Camera>(pEntity))
+                        mStorage.getComponentMutable<Component::Camera&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::DirectionalLight>(pEntity))
+                        mStorage.getComponentMutable<Component::DirectionalLight&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::SpotLight>(pEntity))
+                        mStorage.getComponentMutable<Component::SpotLight&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::PointLight>(pEntity))
+                        mStorage.getComponentMutable<Component::PointLight&>(pEntity).DrawImGui();
+
+                    ImGui::Separator();
+                    ImGui::Separator();
+
+                    ImGui::TreePop();
+                }
+            });
+        }
+        ImGui::End();
+}
+
+
 void Renderer::renderImGui()
 {
     // Render all ImGui from here.
@@ -288,8 +324,7 @@ void Renderer::renderImGui()
             }
         }
         ImGui::End();
-
-        mEntitySystem.DrawImGui();
+        drawEntityPanel();
         ImGui::ShowDemoWindow();
         ImGui::ShowMetricsWindow();
 

@@ -24,19 +24,20 @@ namespace System
 class Renderer
 {
 public:
-    Renderer(ECS::EntitySystem& pEntitySystem, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem, System::CameraSystem& pCameraSystem);
+    Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem);
 
     void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
     void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
 
     void renderImGui();
+    void drawEntityPanel();
     void plotFPSTimes();
 
     int mDrawCount;
     int mTargetFPS; // Independently of physics, the number of frames the renderer will aim to draw per second.
 
 private:
-    ECS::EntitySystem& mEntitySystem;
+    ECS::Storage& mStorage;
     const System::TextureSystem& mTextureSystem;
     const System::MeshSystem& mMeshSystem;
     OpenGL::OpenGLRenderer mOpenGLRenderer;

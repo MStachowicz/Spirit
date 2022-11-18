@@ -6,7 +6,7 @@
 #include "Shader.hpp"
 
 // ECS
-#include "Entity.hpp"
+#include "Storage.hpp"
 
 // DATA
 #include "Mesh.hpp"
@@ -28,7 +28,7 @@ struct GladGLContext;
 
 namespace ECS
 {
-    class EntitySystem;
+    class Storage;
 }
 namespace Component
 {
@@ -40,7 +40,6 @@ namespace System
 {
     class MeshSystem;
     class TextureSystem;
-    class CameraSystem;
 }
 
 namespace OpenGL
@@ -51,24 +50,11 @@ namespace OpenGL
     class OpenGLRenderer
     {
     public:
-        // OpenGLRenderer is an ECS listener, it takes a non-const EntitySystem to subscribe to events at construction only holding a const reference after.
-        OpenGLRenderer(ECS::EntitySystem& pEntitySystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem, System::CameraSystem& pCameraSystem);
+        // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
+        OpenGLRenderer(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem);
         ~OpenGLRenderer();
 
     private:
-        // A request to execute a specific MeshDraw at a number of locations using a GraphicsAPI.
-        // DrawCall's purpose is to group together the same MeshDraw's differentiating them only by the Model matrices found inside mModels.
-        // For the above reason DrawCalls are a Zephyr::Renderer construct as they are fed to GraphicsAPI's in this more parsable format for instancing.
-        struct DrawCall
-        {
-            Component::MeshDraw mMesh;
-
-            // List of per-Entity transform matrices
-            std::vector<glm::mat4> mModels;
-            // Mapping of EntityID to index into mModels.
-            std::unordered_map<ECS::EntityID, size_t> mEntityModelIndexLookup;
-        };
-        std::vector<DrawCall> mDrawCalls; // GraphicsAPI Executes all these DrawCalls using the draw function.
 
         glm::mat4 mViewMatrix;   // The view matrix used in draw(), set in setView
         glm::vec3 mViewPosition; // The view position used in draw(), set in setViewPosition
@@ -80,7 +66,6 @@ namespace OpenGL
         bool mLinearDepthView;
         bool mVisualiseNormals;
         bool mUseInstancedDraw;        // When possible this renderer will use DrawInstanced to more efficiently render lots of the same objects.
-        int mInstancingCountThreshold; // When a DrawCall is repeated this many times, it is marked as a candidate for instanced rendering. To qualify, the DrawCall must also have an instanced compatible shader retrieved by getShader.
         float mZNearPlane;
         float mZFarPlane;
         float mFOV;
@@ -121,6 +106,8 @@ namespace OpenGL
         };
         PostProcessingOptions mPostProcessingOptions;
 
+        std::vector<Shader> mAvailableShaders; // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
+
         GLData::FBO mMainScreenFBO;
         Component::MeshID mScreenQuad;
         Shader mScreenTextureShader;
@@ -133,9 +120,6 @@ namespace OpenGL
 
         Component::MeshID m3DCubeID;
         Shader mLightEmitterShader;
-
-        std::vector<Shader> mAvailableShaders;                // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
-        std::vector<std::optional<Shader>> mDrawCallToShader; // 1-1 mapping of mDrawCalls to Shader they are using to render.
 
         struct OpenGLMesh
         {
@@ -162,7 +146,7 @@ namespace OpenGL
         std::vector<GLData::Texture> mTextures; // Mapping of Component::Texture to OpenGL::Texture.
         std::vector<GLData::Texture> mCubeMaps; // Mapping of Component::CubeMapTexture to OpenGL::Texture.
 
-        const ECS::EntitySystem& mEntitySystem;
+        ECS::Storage& mStorage;
 
     public:
         void preDraw();
@@ -182,22 +166,8 @@ namespace OpenGL
         void setView(const glm::mat4& pViewMatrix) { mViewMatrix = pViewMatrix; }
         void setViewPosition(const glm::vec3& pViewPosition) { mViewPosition = pViewPosition; }
 
-        // Listeners
-        void onEntityCreated(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager);
-        void onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager);
-
-        void onTransformComponentAdded(const ECS::Entity& pEntity, const Component::Transform& pTransform);
-        void onTransformComponentChanged(const ECS::Entity& pEntity, const Component::Transform& pTransform);
-        void onTransformComponentRemoved(const ECS::Entity& pEntity);
-
-        void onMeshComponentAdded(const ECS::Entity& pEntity, const Component::MeshDraw& pMesh);
-        void onMeshComponentRemoved(const ECS::Entity& pEntity);
-
     private:
-        // Using the mesh and tranform component assigned to an Entity, construct a DrawCall for it.
-        void addEntityDrawCall(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::MeshDraw& pMesh);
-        void removeEntityDrawCall(const ECS::Entity& pEntity);
-
+        Shader* getShader(Component::MeshDraw& pMeshDraw);
         void setShaderVariables(const Component::PointLight& pPointLight);
         void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
         void setShaderVariables(const Component::SpotLight& pSpotLight);
@@ -209,21 +179,9 @@ namespace OpenGL
         // Get all the data required to draw this mesh in its default configuration.
         const OpenGLMesh& getGLMesh(const Component::MeshID& pMeshID) const;
         const GLData::Texture& getTexture(const Component::TextureID& pTextureID) const;
-        // Returns the shader assigned to the DrawCall.
-        // This can be overridden in the Draw function if mBufferDrawType is set to something other than BufferDrawType::Colour.
-        Shader* getShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex);
-        // Returns the instanced version of pShader.
-        Shader* getInstancedShader(const Shader& pShader);
 
-        // Checks if the current Shader assigned to pDrawCall is correct, assigns a new shader is it's not.
-        // updateShader is called whenever data changes that might require a Shader change e.g.
-        // Transform components added/removed/changed.
-        // Instanced ImGUI flags change.
-        bool updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex);
         // Recursively draw the OpenGLMesh and all its children.
         void draw(const OpenGLMesh& pMesh, const size_t& pInstancedCount = 0);
-        // Called whenever mUseInstancedDraw changes.
-        void onInstancedOptionChanged();
 
         static GladGLContext* initialiseGLAD();                                       // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
         static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global.

@@ -4,13 +4,7 @@
 
 namespace ECS
 {
-    template <class>
-    class ComponentManager;
-    class Entity;
-}
-namespace Component
-{
-    class Collider;
+    class Storage;
 }
 
 namespace Collision
@@ -18,16 +12,10 @@ namespace Collision
     class CollisionSystem
     {
        private:
-        ECS::ComponentManager<Component::Collider>& mColliders;
         BoundingBoxTree mBoundingBoxTree;
+        ECS::Storage& mStorage;
 
        public:
-        CollisionSystem(ECS::ComponentManager<Component::Collider>& pColliders);
-
-       private:
-        void onCollisionComponentAdded(const ECS::Entity& pEntity, const Component::Collider& pCollider);
-        void onCollisionComponentChanged(const ECS::Entity& pEntity, const Component::Collider& pCollider);
-        void onCollisionComponentRemoved(const ECS::Entity& pEntity);
+        CollisionSystem(ECS::Storage& pStorage);
     };
-
 } // namespace Collision

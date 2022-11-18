@@ -4,9 +4,9 @@
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
 #include "Texture.hpp"
+#include "Collider.hpp"
+#include "Camera.hpp"
 
-#include "CameraSystem.hpp"
-#include "EntitySystem.hpp"
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
 
@@ -23,13 +23,11 @@
 
 namespace OpenGL
 {
-    OpenGLRenderer::OpenGLRenderer(ECS::EntitySystem& pEntitySystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem, System::CameraSystem& pCameraSystem)
+    OpenGLRenderer::OpenGLRenderer(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem)
         : cOpenGLVersionMajor(4)
         , cOpenGLVersionMinor(3)
         , mLinearDepthView(false)
         , mVisualiseNormals(false)
-        , mUseInstancedDraw(false)
-        , mInstancingCountThreshold(20)
         , mZNearPlane(0.1f)
         , mZFarPlane(100.0f)
         , mFOV(45.f)
@@ -57,28 +55,20 @@ namespace OpenGL
         , mDepthViewerShader("depthView", mGLState)
         , mVisualiseNormalShader("visualiseNormal", mGLState)
         , mAvailableShaders{Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("texture1Instanced", mGLState)}
-        , mEntitySystem(pEntitySystem)
+        , mStorage(pStorage)
     {
         pMeshSystem.ForEach([this](const auto& mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
         pTextureSystem.ForEach([this](const auto& texture) { initialiseTexture(texture); });
         pTextureSystem.ForEachCubeMap([this](const auto& cubeMap) { initialiseCubeMap(cubeMap); });
 
-        pEntitySystem.mEntityCreatedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityCreated, this, std::placeholders::_1, std::placeholders::_2));
-        pEntitySystem.mEntityRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onEntityRemoved, this, std::placeholders::_1, std::placeholders::_2));
-
-        pEntitySystem.mTransforms.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
-        pEntitySystem.mTransforms.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
-        pEntitySystem.mTransforms.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onTransformComponentRemoved, this, std::placeholders::_1));
-
-        pEntitySystem.mMeshes.mComponentAddedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentAdded, this, std::placeholders::_1, std::placeholders::_2));
-        // pEntitySystem.mMeshes.mComponentChangedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentChanged, this, std::placeholders::_1, std::placeholders::_2));
-        pEntitySystem.mMeshes.mComponentRemovedEvent.Subscribe(std::bind(&OpenGL::OpenGLRenderer::onMeshComponentRemoved, this, std::placeholders::_1));
-
-        pCameraSystem.mPrimaryCameraViewChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setView, this, std::placeholders::_1));
-        pCameraSystem.mPrimaryCameraViewPositionChanged.Subscribe(std::bind(&OpenGL::OpenGLRenderer::setViewPosition, this, std::placeholders::_1));
-        const auto primaryCam = pCameraSystem.getPrimaryCamera();
-        setView(primaryCam.getViewMatrix());
-        setViewPosition(primaryCam.getPosition());
+        mStorage.foreach([this](Component::Camera& pCamera)
+        {
+            if (pCamera.mPrimaryCamera)
+            {
+                setView(pCamera.getViewMatrix());
+                setViewPosition(pCamera.getPosition());
+            }
+        });
 
         glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
@@ -103,192 +93,21 @@ namespace OpenGL
             OpenGLInstances.erase(it);
     }
 
-    void OpenGLRenderer::removeEntityDrawCall(const ECS::Entity& pEntity)
-    {
-        // Find the DrawCall containing pEntity data and remove it.
-        // Move the last model into the to-be-deleted position and pop the back.
-        // Finally, update the mEntityModelIndexLookup of the moved entity data to point to the position of the removed data.
-        for (size_t i = 0; i < mDrawCalls.size(); i++)
-        {
-            auto entityIndexToRemove = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
-            if (entityIndexToRemove != mDrawCalls[i].mEntityModelIndexLookup.end())
-            {
-                const size_t removedEntityModelsIndex = entityIndexToRemove->second;
-                mDrawCalls[i].mEntityModelIndexLookup.erase(entityIndexToRemove);
-
-                if (removedEntityModelsIndex < mDrawCalls[i].mModels.size())
-                {
-                    mDrawCalls[i].mModels[removedEntityModelsIndex] = std::move(mDrawCalls[i].mModels.back());
-
-                    // Reverse find the moved entity in mEntityModelIndexLookup by searching the map for the final index.
-                    // If this becomes a performance problem, on add, we can cache the last element EntityID and perform a
-                    // regular map search.
-                    const size_t movedEntityIndex = mDrawCalls[i].mModels.size() - 1;
-                    for (auto& entityIndex : mDrawCalls[i].mEntityModelIndexLookup)
-                    {
-                        if (entityIndex.second == movedEntityIndex)
-                        {
-                            entityIndex.second = removedEntityModelsIndex;
-                            break;
-                        }
-                    }
-                }
-
-                mDrawCalls[i].mModels.pop_back();
-                return;
-            }
-        }
-    }
-
-    void OpenGLRenderer::addEntityDrawCall(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::MeshDraw& pMesh)
-    {
-        // If an entity has a MeshDraw and Transform component, add it to the mDrawCalls list.
-        // If the MeshDraw variation already exists in a DrawCall, append just the Transform data to the mModels.
-        // We store a copy of MeshDraw in a single DrawCall so while the data is copied here, it only exists once for each unique mesh.
-
-        auto drawCallIt = std::find_if(mDrawCalls.begin(), mDrawCalls.end(), [pMesh](const DrawCall& entry)
-                                       { return entry.mMesh.mID == pMesh.mID && entry.mMesh.mDrawMode == pMesh.mDrawMode && entry.mMesh.mDrawStyle == pMesh.mDrawStyle
-                                                // Per DrawStyle values
-                                                && entry.mMesh.mTexture1 == pMesh.mTexture1 && entry.mMesh.mTexture2 == pMesh.mTexture2 && entry.mMesh.mMixFactor == pMesh.mMixFactor && entry.mMesh.mColour == pMesh.mColour && entry.mMesh.mDiffuseTextureID == pMesh.mDiffuseTextureID && entry.mMesh.mSpecularTextureID == pMesh.mSpecularTextureID && entry.mMesh.mShininess == pMesh.mShininess && entry.mMesh.mTextureRepeatFactor == pMesh.mTextureRepeatFactor; });
-
-        if (drawCallIt == mDrawCalls.end())
-        {
-            DrawCall drawCall;
-            drawCall.mMesh = pMesh;
-            mDrawCalls.push_back(drawCall);
-            mDrawCallToShader.push_back(std::nullopt);
-            drawCallIt = mDrawCalls.end() - 1;
-        }
-
-        drawCallIt->mEntityModelIndexLookup[pEntity.mID] = drawCallIt->mModels.size();
-        drawCallIt->mModels.push_back(Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale));
-        const bool updated = updateShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
-
-        if (!updated)
-        {
-            // If updateShader doesnt assign a new shader to the DrawCall, it does not update the buffer data, we manually update the buffer for the
-            // newly pushed back model matrix of Transform component.
-            auto shader = getShader(*drawCallIt, drawCallIt - mDrawCalls.begin());
-            if (shader->isInstanced())
-            {
-                auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
-                instanceModelsArray->Set(mGLState, drawCallIt->mModels.back(), drawCallIt->mModels.size() - 1);
-            }
-        }
-    }
-
-    void OpenGLRenderer::onEntityCreated(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager)
-    {
-        if (const Component::MeshDraw* mesh = pManager.mMeshes.GetComponent(pEntity))
-            if (const Component::Transform* transform = pManager.mTransforms.GetComponent(pEntity))
-                addEntityDrawCall(pEntity, *transform, *mesh);
-    }
-
-    void OpenGLRenderer::onEntityRemoved(const ECS::Entity& pEntity, const ECS::EntitySystem& pManager)
-    {
-        removeEntityDrawCall(pEntity);
-    }
-    void OpenGLRenderer::onTransformComponentRemoved(const ECS::Entity& pEntity)
-    {
-        removeEntityDrawCall(pEntity);
-    }
-    void OpenGLRenderer::onMeshComponentRemoved(const ECS::Entity& pEntity)
-    {
-        removeEntityDrawCall(pEntity);
-    }
-
-    void OpenGLRenderer::onTransformComponentAdded(const ECS::Entity& pEntity, const Component::Transform& pTransform)
-    {
-        if (const auto mesh = mEntitySystem.mMeshes.GetComponent(pEntity))
-            addEntityDrawCall(pEntity, pTransform, *mesh);
-    }
-    void OpenGLRenderer::onTransformComponentChanged(const ECS::Entity& pEntity, const Component::Transform& pTransform)
-    {
-        // Find the DrawCall containing pEntity Transform data and update the model matrix for it.
-        for (size_t i = 0; i < mDrawCalls.size(); i++)
-        {
-            auto it = mDrawCalls[i].mEntityModelIndexLookup.find(pEntity.mID);
-            if (it != mDrawCalls[i].mEntityModelIndexLookup.end())
-            {
-                mDrawCalls[i].mModels[it->second] = Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
-
-                // If the shader is instanced, we have to update the instance data array directly at the corresponding index.
-                auto shader = getShader(mDrawCalls[i], i);
-                if (shader->isInstanced())
-                {
-                    auto instanceModelsArray = shader->getShaderBlockVariable("InstancedData.models[0]");
-                    instanceModelsArray->Set(mGLState, mDrawCalls[i].mModels[it->second], it->second);
-                }
-                return;
-            }
-        }
-    }
-
-    void OpenGLRenderer::onMeshComponentAdded(const ECS::Entity& pEntity, const Component::MeshDraw& pMesh)
-    {
-        if (const auto transform = mEntitySystem.mTransforms.GetComponent(pEntity))
-            addEntityDrawCall(pEntity, *transform, pMesh);
-    }
-
-    bool OpenGLRenderer::updateShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex)
-    {
-        ZEPHYR_ASSERT(mDrawCallToShader.size() == mDrawCalls.size(), "DrawCall to shader mapping must remain 1-1. Was a DrawCall added or removed but not had a shader set?");
-
-        Shader* shaderToUse = nullptr;
-        switch (pDrawCall.mMesh.mDrawStyle)
-        {
-            case Component::DrawStyle::Textured:
-                if (pDrawCall.mMesh.mTexture1.has_value() && pDrawCall.mMesh.mTexture2.has_value())
-                    shaderToUse = &mAvailableShaders[mTexture2ShaderIndex];
-                else
-                    shaderToUse = &mAvailableShaders[mTexture1ShaderIndex];
-                break;
-            case Component::DrawStyle::UniformColour:
-                shaderToUse = &mAvailableShaders[mUniformShaderIndex];
-                break;
-            case Component::DrawStyle::LightMap:
-                shaderToUse = &mAvailableShaders[mLightMapIndex];
-                break;
-        }
-        ZEPHYR_ASSERT(shaderToUse != nullptr, "Couldn't identify a shader to render this DrawCall.");
-
-        if (mUseInstancedDraw && pDrawCall.mModels.size() >= mInstancingCountThreshold)
-            if (auto* shader = getInstancedShader(*shaderToUse))
-                shaderToUse = shader;
-            else
-                LOG_INFO("DrawCall reached the instanced threshold but no instanced shader was present to use. Add an instanced version of Shader '{}'", shaderToUse->getName());
-
-        if (mDrawCallToShader[pDrawCallIndex].has_value() && mDrawCallToShader[pDrawCallIndex].value().getName() == shaderToUse->getName())
-            return false; // Already using the correct shader.
-        else
-        {
-            // Assign the new shader
-            mDrawCallToShader[pDrawCallIndex] = Shader(shaderToUse->getName(), mGLState);
-
-            // If the newly assigned shader is an instanced one, update all the model data.
-            if (mDrawCallToShader[pDrawCallIndex]->isInstanced())
-            {
-                auto instanceModelsArray = mDrawCallToShader[pDrawCallIndex]->getShaderBlockVariable("InstancedData.models[0]");
-                for (size_t i = 0; i < pDrawCall.mModels.size(); i++)
-                    instanceModelsArray->Set(mGLState, pDrawCall.mModels[i], i);
-            }
-            return true;
-        }
-    }
-
-    void OpenGLRenderer::onInstancedOptionChanged()
-    {
-        for (size_t i = 0; i < mDrawCalls.size(); i++)
-            updateShader(mDrawCalls[i], i);
-    }
-
     void OpenGLRenderer::preDraw()
     {
+        mStorage.foreach([this](Component::Camera& pCamera)
+        {
+            if (pCamera.mPrimaryCamera)
+            {
+                setView(pCamera.getViewMatrix());
+                setViewPosition(pCamera.getPosition());
+            }
+        });
+
         mMainScreenFBO.bind(mGLState);
         mMainScreenFBO.clearBuffers();
         mGLState.checkFramebufferBufferComplete();
 
-        // #OPTIMISATION do this only when view or projection changes.
         mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
         mGLState.setUniformBlockVariable("ViewProperties.view", mViewMatrix);
         mGLState.setUniformBlockVariable("ViewProperties.projection", mProjection);
@@ -311,117 +130,94 @@ namespace OpenGL
             mScreenTextureShader.setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
         }
 
-        // TODO: Set this for all shaders that use viewPosition + make this more generalised (find any shaders with viewPosition vars to set?).
-        for (size_t i = 0; i < mDrawCallToShader.size(); i++)
-        {
-            if (mDrawCallToShader[i].has_value() && mDrawCallToShader[i]->getName() == "lightMap")
-            {
-                mDrawCallToShader[i]->use(mGLState);
-                mDrawCallToShader[i]->setUniform(mGLState, "viewPosition", mViewPosition);
-            }
-        }
-    }
-
-    Shader* OpenGLRenderer::getShader(const DrawCall& pDrawCall, const size_t& pDrawCallIndex)
-    {
-        ZEPHYR_ASSERT(pDrawCallIndex < mDrawCallToShader.size() && mDrawCallToShader[pDrawCallIndex].has_value(), "Could not find a shader to execute this DrawCall with");
-        return &mDrawCallToShader[pDrawCallIndex].value();
-    }
-
-    Shader* OpenGLRenderer::getInstancedShader(const Shader& pShader)
-    {
-        ZEPHYR_ASSERT(!pShader.isInstanced(), "Trying to find an instanced version of an already instanced shader.");
-
-        for (size_t i = 0; i < mAvailableShaders.size(); i++)
-        {
-            if (mAvailableShaders[i].getName() == pShader.getName() + "Instanced")
-                return &mAvailableShaders[i];
-        }
-        return nullptr;
+       for (size_t i = 0; i < mAvailableShaders.size(); i++)
+       {
+           if (mAvailableShaders[i].getName() == "lightMap")
+               mAvailableShaders[i].setUniform(mGLState, "viewPosition", mViewPosition);
+       }
     }
 
     void OpenGLRenderer::draw()
     {
-        for (size_t i = 0; i < mDrawCalls.size(); i++)
+        mStorage.foreach([this](Component::Transform& pTransform, Component::MeshDraw& pMeshDraw)
         {
-            if (mDrawCalls[i].mModels.empty())
-                continue;
+            const OpenGLMesh& GLMesh = getGLMesh(pMeshDraw.mID);
 
-            const OpenGLMesh& GLMesh = getGLMesh(mDrawCalls[i].mMesh.mID);
-            if (Shader* shader = mBufferDrawType == BufferDrawType::Depth ? &mDepthViewerShader : getShader(mDrawCalls[i], i))
+            if (mBufferDrawType == BufferDrawType::Colour)
             {
+                auto* shader = getShader(pMeshDraw);
                 shader->use(mGLState);
 
                 if (shader->getName() == "texture1" || shader->getName() == "texture1Instanced")
                 {
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture1 shader");
+                    ZEPHYR_ASSERT(pMeshDraw.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture1 shader");
                     mGLState.setActiveTextureUnit(0);
-                    getTexture(mDrawCalls[i].mMesh.mTexture1.value()).bind();
+                    getTexture(pMeshDraw.mTexture1.value()).bind();
                 }
                 else if (shader->getName() == "texture2")
                 {
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mMixFactor.has_value(), "DrawCall must have mixFactor set to draw using texture2 shader");
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture2 shader");
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mTexture2.has_value(), "DrawCall must have mTexture2 set to draw using texture2 shader");
+                    ZEPHYR_ASSERT(pMeshDraw.mMixFactor.has_value(), "DrawCall must have mixFactor set to draw using texture2 shader");
+                    ZEPHYR_ASSERT(pMeshDraw.mTexture1.has_value(), "DrawCall must have mTexture1 set to draw using texture2 shader");
+                    ZEPHYR_ASSERT(pMeshDraw.mTexture2.has_value(), "DrawCall must have mTexture2 set to draw using texture2 shader");
 
-                    shader->setUniform(mGLState, "mixFactor", mDrawCalls[i].mMesh.mMixFactor.value());
+                    shader->setUniform(mGLState, "mixFactor", pMeshDraw.mMixFactor.value());
                     mGLState.setActiveTextureUnit(0);
-                    getTexture(mDrawCalls[i].mMesh.mTexture1.value()).bind();
+                    getTexture(pMeshDraw.mTexture1.value()).bind();
                     mGLState.setActiveTextureUnit(1);
-                    getTexture(mDrawCalls[i].mMesh.mTexture2.value()).bind();
+                    getTexture(pMeshDraw.mTexture2.value()).bind();
                 }
                 else if (shader->getName() == "uniformColour")
                 {
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mColour.has_value(), "DrawCall must have mColour set to draw using uniformColour shader");
-                    shader->setUniform(mGLState, "colour", mDrawCalls[i].mMesh.mColour.value());
+                    ZEPHYR_ASSERT(pMeshDraw.mColour.has_value(), "DrawCall must have mColour set to draw using uniformColour shader");
+                    shader->setUniform(mGLState, "colour", pMeshDraw.mColour.value());
                 }
                 else if (shader->getName() == "lightMap")
                 {
                     ZEPHYR_ASSERT(GLMesh.mDrawSize == 0 || GLMesh.mVBOs[Utility::toIndex(Shader::Attribute::Normal3D)].has_value(), "Cannot draw a mesh with no Normal data using lightMap shader.");
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mDiffuseTextureID.has_value(), "DrawCall must have mDiffuseTextureID set to draw using lightMap shader");
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mSpecularTextureID.has_value(), "DrawCall must have mSpecularTextureID set to draw using lightMap shader");
-                    ZEPHYR_ASSERT(mDrawCalls[i].mMesh.mShininess.has_value(), "DrawCall must have mTexture2 set to draw using texture2");
+                    ZEPHYR_ASSERT(pMeshDraw.mDiffuseTextureID.has_value(), "DrawCall must have mDiffuseTextureID set to draw using lightMap shader");
+                    ZEPHYR_ASSERT(pMeshDraw.mSpecularTextureID.has_value(), "DrawCall must have mSpecularTextureID set to draw using lightMap shader");
+                    ZEPHYR_ASSERT(pMeshDraw.mShininess.has_value(), "DrawCall must have mTexture2 set to draw using texture2");
 
                     mGLState.setActiveTextureUnit(0);
-                    getTexture(mDrawCalls[i].mMesh.mDiffuseTextureID.value()).bind();
+                    getTexture(pMeshDraw.mDiffuseTextureID.value()).bind();
                     mGLState.setActiveTextureUnit(1);
-                    getTexture(mDrawCalls[i].mMesh.mSpecularTextureID.value()).bind();
-                    shader->setUniform(mGLState, "shininess", mDrawCalls[i].mMesh.mShininess.value());
-                    shader->setUniform(mGLState, "textureRepeatFactor", mDrawCalls[i].mMesh.mTextureRepeatFactor.has_value() ? mDrawCalls[i].mMesh.mTextureRepeatFactor.value() : 1.f);
+                    getTexture(pMeshDraw.mSpecularTextureID.value()).bind();
+                    shader->setUniform(mGLState, "shininess", pMeshDraw.mShininess.value());
+                    shader->setUniform(mGLState, "textureRepeatFactor", pMeshDraw.mTextureRepeatFactor.has_value() ? pMeshDraw.mTextureRepeatFactor.value() : 1.f);
                 }
                 else if (shader->getName() == "depthView")
-                {
-                }
-                else
-                    ZEPHYR_ASSERT(false, "Shader {} not found for setting uniform variables. Do you need to add a new shader to the above list?");
+                {}
 
-                switch (mDrawCalls[i].mMesh.mDrawMode)
+                switch (pMeshDraw.mDrawMode)
                 {
-                    case Component::DrawMode::Fill: mGLState.setPolygonMode(GLType::PolygonMode::Fill); break;
+                    case Component::DrawMode::Fill:      mGLState.setPolygonMode(GLType::PolygonMode::Fill); break;
                     case Component::DrawMode::Wireframe: mGLState.setPolygonMode(GLType::PolygonMode::Line); break;
-                    default: ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLRenderer draw."); break;
+                    default: ZEPHYR_ASSERT(false, "Unknown drawMode requested for OpenGLRenderer draw.");    break;
                 }
 
                 // Instanced shaders set their models in buffers so dont need to set the model matrix here, just call draw.
                 if (shader->isInstanced())
                 {
-                    draw(GLMesh, mDrawCalls[i].mModels.size());
+                    ZEPHYR_ASSERT(false, "Instanced rendering is disabled. No instanced shader should be assigned to a MeshDraw.");
+                    //draw(GLMesh, pMeshDraw.mModels.size());
                 }
                 else
                 {
-                    for (const auto& model : mDrawCalls[i].mModels)
+                    auto model = Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+                    shader->setUniform(mGLState, "model", model);
+                    draw(GLMesh);
+                    if (mVisualiseNormals)
                     {
-                        shader->setUniform(mGLState, "model", model);
+                        mVisualiseNormalShader.setUniform(mGLState, "model", model);
                         draw(GLMesh);
-                        if (mVisualiseNormals)
-                        {
-                            mVisualiseNormalShader.setUniform(mGLState, "model", model);
-                            draw(GLMesh);
-                        }
                     }
                 }
             }
-        }
+            else if (mBufferDrawType == BufferDrawType::Depth)
+            {
+                //mDepthViewerShader
+            }
+        });
     }
 
     void OpenGLRenderer::draw(const OpenGLRenderer::OpenGLMesh& pMesh, const size_t& pInstancedCount /* = 0*/)
@@ -452,39 +248,76 @@ namespace OpenGL
 
     void OpenGLRenderer::setupLights(const bool& pRenderLightPositions)
     {
-        mEntitySystem.mPointLights.ForEach([this](const Component::PointLight& pPointLight)
-                                            { setShaderVariables(pPointLight); });
-        mEntitySystem.mDirectionalLights.ForEach([this](const Component::DirectionalLight& pDirectionalLight)
-                                                  { setShaderVariables(pDirectionalLight); });
-        mEntitySystem.mSpotLights.ForEach([this](const Component::SpotLight& pSpotLight)
-                                           { setShaderVariables(pSpotLight); });
+        mStorage.foreach([this](Component::PointLight& pPointLight)
+        {
+            setShaderVariables(pPointLight);
+        });
+        mStorage.foreach([this](Component::DirectionalLight& pDirectionalLight)
+        {
+            setShaderVariables(pDirectionalLight);
+        });
+        mStorage.foreach([this](Component::SpotLight& pSpotLight)
+        {
+            setShaderVariables(pSpotLight);
+        });
 
         if (pRenderLightPositions)
         {
             mLightEmitterShader.use(mGLState);
-            mEntitySystem.mPointLights.ForEach([this](const Component::PointLight& pPointLight)
-                                                {
-			mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
-			mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
-   			draw(getGLMesh(m3DCubeID)); });
 
+            mStorage.foreach([this](Component::PointLight& pPointLight)
+            {
+                mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
+                mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
+                draw(getGLMesh(m3DCubeID));
+            });
+        }
+
+        { // Render collision shapes
             mLightEmitterShader.use(mGLState);
             mGLState.setPolygonMode(GLType::PolygonMode::Line);
-            mEntitySystem.mColliders.ForEach([this](const Component::Collider& pCollider)
-                                              {
-			const auto highPoint = glm::vec3(pCollider.mBoundingBox.mHighX, pCollider.mBoundingBox.mHighY, pCollider.mBoundingBox.mHighZ);
-			const auto lowPoint = glm::vec3(pCollider.mBoundingBox.mLowX, pCollider.mBoundingBox.mLowY, pCollider.mBoundingBox.mLowZ);
-			const auto lowToHigh = highPoint - lowPoint;
-			const glm::vec3 center = lowPoint + (lowToHigh / 2.f);
-			const auto sizeX = pCollider.mBoundingBox.mHighX - pCollider.mBoundingBox.mLowX;
-			const auto sizeY = pCollider.mBoundingBox.mHighY - pCollider.mBoundingBox.mLowY;
-			const auto sizeZ = pCollider.mBoundingBox.mHighZ - pCollider.mBoundingBox.mLowZ;
 
-			mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(center, glm::vec3(0.f), glm::vec3(sizeX, sizeY, sizeZ)));
-   			mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
-   			draw(getGLMesh(m3DCubeID)); });
+            mStorage.foreach([this](Component::Collider& pCollider, Component::Transform& pTransform)
+            {
+			    const auto highPoint = glm::vec3(pCollider.mBoundingBox.mHighX, pCollider.mBoundingBox.mHighY, pCollider.mBoundingBox.mHighZ);
+			    const auto lowPoint = glm::vec3(pCollider.mBoundingBox.mLowX, pCollider.mBoundingBox.mLowY, pCollider.mBoundingBox.mLowZ);
+			    const auto lowToHigh = highPoint - lowPoint;
+			    const glm::vec3 center = lowPoint + (lowToHigh / 2.f);
+			    const auto sizeX = pCollider.mBoundingBox.mHighX - pCollider.mBoundingBox.mLowX;
+			    const auto sizeY = pCollider.mBoundingBox.mHighY - pCollider.mBoundingBox.mLowY;
+			    const auto sizeZ = pCollider.mBoundingBox.mHighZ - pCollider.mBoundingBox.mLowZ;
+
+                auto colliderModelMat = Utility::GetModelMatrix(center, glm::vec3(0.f), glm::vec3(sizeX, sizeY, sizeZ));
+                auto transformModelMat = Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+
+			    mLightEmitterShader.setUniform(mGLState, "model", colliderModelMat * transformModelMat);
+   			    mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
+   			    draw(getGLMesh(m3DCubeID));
+            });
             mGLState.setPolygonMode(GLType::PolygonMode::Fill);
         }
+    }
+
+    Shader* OpenGLRenderer::getShader(Component::MeshDraw& pMeshDraw)
+    {
+        Shader* shaderToUse = nullptr;
+        switch (pMeshDraw.mDrawStyle)
+        {
+            case Component::DrawStyle::Textured:
+                if (pMeshDraw.mTexture1.has_value() && pMeshDraw.mTexture2.has_value())
+                    shaderToUse = &mAvailableShaders[mTexture2ShaderIndex];
+                else
+                    shaderToUse = &mAvailableShaders[mTexture1ShaderIndex];
+                break;
+            case Component::DrawStyle::UniformColour:
+                shaderToUse = &mAvailableShaders[mUniformShaderIndex];
+                break;
+            case Component::DrawStyle::LightMap:
+                shaderToUse = &mAvailableShaders[mLightMapIndex];
+                break;
+        }
+        ZEPHYR_ASSERT(shaderToUse != nullptr, "Couldn't identify a shader to render this MeshDraw with.");
+        return shaderToUse;
     }
 
     void OpenGLRenderer::setShaderVariables(const Component::PointLight& pPointLight)
@@ -628,16 +461,6 @@ namespace OpenGL
                 ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
 
             ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
-
-            {
-                ImGui::Separator(); // Instancing options
-                if (ImGui::Checkbox("Use instanced rendering", &mUseInstancedDraw))
-                    onInstancedOptionChanged();
-                if (mUseInstancedDraw)
-                    if (ImGui::SliderInt("Instanced rendering threshold", &mInstancingCountThreshold, 1, 1000))
-                        onInstancedOptionChanged();
-            }
-            ImGui::Separator();
 
             ImGui::Separator();
             mGLState.renderImGui();

@@ -23,8 +23,6 @@ PRIVATE Utility
 # ENTITY COMPONENT SYSTEM *************************************************************************
     # Entity --------------------------------------------------------------------------------------
     add_library(Entity
-    source/ECS/Entity/Entity.hpp
-    source/ECS/Entity/Entity.cpp
     source/ECS/Entity/Storage.hpp
     source/ECS/Entity/Storage.cpp
     source/ECS/Entity/Meta.hpp
@@ -72,12 +70,6 @@ PRIVATE Utility
     source/ECS/System/Collision/BoundingBoxTree.hpp
     source/ECS/System/Collision/CollisionSystem.cpp
     source/ECS/System/Collision/CollisionSystem.hpp
-    source/ECS/System/CameraSystem.cpp
-    source/ECS/System/CameraSystem.hpp
-    source/ECS/System/ComponentManager.hpp
-    source/ECS/System/EntitySystem.cpp
-    source/ECS/System/EntitySystem.hpp
-    source/ECS/System/EventDispatcher.hpp
     source/ECS/System/MeshSystem.cpp
     source/ECS/System/MeshSystem.hpp
     source/ECS/System/TextureSystem.cpp
@@ -92,7 +84,7 @@ PRIVATE Utility
     target_link_libraries(System
     PUBLIC Component
     PUBLIC Entity
-    PUBLIC Utility # ComponentManager.hpp includes Logger (templated class)
+    PRIVATE Utility
     PRIVATE ImGui
     PRIVATE assimp
     )
@@ -168,6 +160,7 @@ PRIVATE Utility
 # STATELESS UTILITY *******************************************************************************
     # ------------------------ Utility ------------------------------------------------------------
     add_library(Utility
+    source/Utility/EventDispatcher.hpp
     source/Utility/JobSystem/JobSystem.cpp
     source/Utility/JobSystem/JobSystem.hpp
     source/Utility/JobSystem/Test.hpp

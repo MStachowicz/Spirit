@@ -1,18 +1,20 @@
 #include "Input.hpp"
 
-#include "CameraSystem.hpp"
+#include "Storage.hpp"
+
+#include "Camera.hpp"
 
 #include "Logger.hpp"
 
 #include "GLFWInput.hpp"
 #include "imgui.h"
 
-Input::Input(System::CameraSystem& pCameraSystem)
+Input::Input(ECS::Storage& pStorage)
     : mInputHandler(new GLFWInput
         ( std::bind(&Input::onInput, this, std::placeholders::_1)
         , std::bind(&Input::onMousePress, this, std::placeholders::_1, std::placeholders::_2)
         , std::bind(&Input::onMouseMove, this, std::placeholders::_1, std::placeholders::_2)))
-    , mCameraSystem(pCameraSystem)
+        , mStorage(pStorage)
 {}
 
 void Input::pollEvents()
@@ -23,10 +25,12 @@ void Input::pollEvents()
 void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
 {
     if (mCapturingMouse)
-        mCameraSystem.modifyPrimaryCamera([&pXOffset, &pYOffset](auto& pPrimaryCamera)
-        {
-            pPrimaryCamera.ProcessMouseMove(pXOffset, pYOffset);
-        });
+    {
+        auto primaryCamera = getPrimaryCamera(mStorage);
+        if (primaryCamera)
+            primaryCamera->ProcessMouseMove(pXOffset, pYOffset);
+    }
+
 }
 
 void Input::onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction)
@@ -69,23 +73,47 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
     switch (pKeyPressed)
     {
         case InputAPI::Key::KEY_W:
-            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Forward); });
+        {
+            auto primaryCamera = getPrimaryCamera(mStorage);
+            if (primaryCamera)
+                primaryCamera->move(Component::Camera::Forward);
             break;
+        }
         case InputAPI::Key::KEY_S:
-            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Backward); });
+        {
+            auto primaryCamera = getPrimaryCamera(mStorage);
+            if (primaryCamera)
+                primaryCamera->move(Component::Camera::Backward);
             break;
+        }
         case InputAPI::Key::KEY_A:
-            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Left); });
+        {
+            auto primaryCamera = getPrimaryCamera(mStorage);
+            if (primaryCamera)
+                primaryCamera->move(Component::Camera::Left);
             break;
+        }
         case InputAPI::Key::KEY_D:
-            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Right); });
+        {
+            auto primaryCamera = getPrimaryCamera(mStorage);
+            if (primaryCamera)
+                primaryCamera->move(Component::Camera::Right);
             break;
+        }
         case InputAPI::Key::KEY_E:
-            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Up); });
+        {
+            auto primaryCamera = getPrimaryCamera(mStorage);
+            if (primaryCamera)
+                primaryCamera->move(Component::Camera::Up);
             break;
+        }
         case InputAPI::Key::KEY_Q:
-            mCameraSystem.modifyPrimaryCamera([](auto& pPrimaryCamera) { pPrimaryCamera.move(Component::Camera::Down); });
+        {
+            auto primaryCamera = getPrimaryCamera(mStorage);
+            if (primaryCamera)
+                primaryCamera->move(Component::Camera::Down);
             break;
+        }
         case InputAPI::Key::KEY_ESCAPE:
             mCloseRequested = true;
             break;
@@ -101,4 +129,16 @@ void Input::onInput(const InputAPI::Key& pKeyPressed)
 bool Input::closeRequested()
 {
     return mInputHandler->closeRequested() || mCloseRequested;
+}
+
+Component::Camera* Input::getPrimaryCamera(ECS::Storage& pStorage)
+{
+    Component::Camera* primaryCamera;
+    pStorage.foreach([&primaryCamera](Component::Camera& pCamera)
+    {
+        if (pCamera.mPrimaryCamera)
+            primaryCamera = &pCamera;
+    });
+
+    return primaryCamera;
 }

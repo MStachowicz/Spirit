@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 class InputHandler;
 
 namespace InputAPI
@@ -9,25 +11,32 @@ namespace InputAPI
     enum class Action;
     enum class CursorMode;
 }
-namespace System
+namespace ECS
 {
-    class CameraSystem;
+    class Storage;
+}
+namespace Component
+{
+    class Camera;
 }
 
 // Processes input coming in from a registered mInputHandler using the InputAPI.
 class Input
 {
 public:
-    Input(System::CameraSystem& pCameraSystem);
+    Input(ECS::Storage& pStorage);
     void pollEvents();
     bool closeRequested();
 private:
+
     void onInput(const InputAPI::Key& pKeyPressed);
     void onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction);
     void onMouseMove(const float& pXOffset, const float& pYOffset);
     bool mCloseRequested = false;
     bool mCapturingMouse = false;
 
+    static Component::Camera* getPrimaryCamera(ECS::Storage& pStorage);
+
     InputHandler* mInputHandler;
-    System::CameraSystem& mCameraSystem;
+    ECS::Storage& mStorage;
 };

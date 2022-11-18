@@ -5,11 +5,10 @@
 #include "Renderer.hpp"
 #include "Input.hpp"
 
+#include "Storage.hpp"
 #include "CollisionSystem.hpp"
-#include "EntitySystem.hpp"
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
-#include "CameraSystem.hpp"
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
@@ -23,9 +22,8 @@ private:
     // PER APPLICATION
     System::TextureSystem mTextureSystem;
     System::MeshSystem mMeshSystem;
-    ECS::EntitySystem mEntitySystem;
+    ECS::Storage mStorage;
 
-    System::CameraSystem mCameraSystem;
     Collision::CollisionSystem mCollisionSystem;
     // PER VIEW
     Renderer mRenderer;

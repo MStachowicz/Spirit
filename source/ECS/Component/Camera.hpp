@@ -18,7 +18,7 @@ namespace Component
         void ProcessMouseMove(const float& pXOffset, const float& pYOffset, const bool& pConstrainPitch = true); // Processes mouse movement to allow moving camera in it's current mPosition.
         void processScroll(const float& pOffset);                                                                // Process mouse scrollwheel events. Applies a zoom on the camera.
 
-        bool mPrimaryCamera; // Only one Component::Camera can be a primaryCamera, this camera is used when rendering the scene. See CameraSystem.
+        bool mPrimaryCamera; // Only one Component::Camera can be a primaryCamera, this camera is used when rendering the scene.
 
         const glm::mat4& getViewMatrix() const { return mView; };
         const glm::vec3& getPosition() const { return mPosition; };

@@ -1,13 +1,13 @@
 #include "Application.hpp"
 
+
 Application::Application()
     : mTextureSystem()
     , mMeshSystem(mTextureSystem)
-    , mEntitySystem()
-    , mCameraSystem(mEntitySystem.mCameras)
-    , mRenderer(mEntitySystem, mTextureSystem, mMeshSystem, mCameraSystem)
-    , mInput(mCameraSystem)
-    , mCollisionSystem(mEntitySystem.mColliders)
+    , mStorage()
+    , mRenderer(mStorage, mTextureSystem, mMeshSystem)
+    , mInput(mStorage)
+    , mCollisionSystem(mStorage)
 {}
 
 void Application::simulationLoop()
