@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     Utility::Stopwatch stopwatch;
 
     Logger::initialise(); // Logger must be initialised first as everything depends on it for logging and error checks.
-    ZEPHYR_ASSERT(argc > 0, "No arguments supplied to executable, directories cannot be initialised")
+    ZEPHYR_ASSERT(argc > 0, "No arguments supplied to executable, directories cannot be initialised");
 
     LOG_INFO("Number of arguments passed on launch: {}", argc);
     for (int index{}; index != argc; ++index)
