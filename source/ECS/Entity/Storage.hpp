@@ -3,13 +3,13 @@
 #include "Logger.hpp"
 
 #include <algorithm>
+#include <array>
 #include <bitset>
 #include <iostream>
 #include <optional>
 #include <typeindex>
 #include <typeinfo>
 #include <vector>
-#include <array>
 
 #include "Meta.hpp"
 
@@ -41,16 +41,22 @@ namespace ECS
         }
     };
 
+    // Generates a bitset out of all the ComponentTypes.
+    template <typename... ComponentTypes>
+    static ComponentBitset getBitset()
+    {
+        ComponentBitset componentBitset;
+        (componentBitset.set(ComponentIDGenerator::get<ComponentTypes>()), ...);
+        return componentBitset;
+    }
+
+    // Creates a storage container for EntityID and Components.
+    // Components are stored in Archetypes contiguously in memory for every unique combination of ComponentTypes.
     class Storage
     {
-        template <typename... ComponentTypes>
-        static ComponentBitset getBitset()
-        {
-            ComponentBitset componentBitset;
-            (componentBitset.set(ComponentIDGenerator::get<ComponentTypes>()), ...);
-            return componentBitset;
-        }
-
+        // Archetype is defined as a unique combination of ComponentTypes. It is a non-templated class allowing any combination of unique types to be stored in its mBuffer.
+        // The ComponentTypes are retrievable using getComponent and getComponentImpl as well as their 'Mutable' variants.
+        // Every archetype stores its mBitset for matching ComponentTypes to. mComponentLayout sets out how those ComponentTypes are laid out in mBuffer.
         struct Archetype
         {
             // Archetype stores an instance of this per component holding information about how the memory layout of mBuffer.
@@ -68,13 +74,14 @@ namespace ECS
                 BufferPosition mOffset; // Byte offset from the start of the archetype instance to this componentType.
             };
 
-            const ComponentBitset componentStoredBitset;         // The unique identifier for this archetype. Each bit corresponds to a component this archetype stores per instance.
-            const std::vector<ComponentLayout> mComponentLayout; // How the components are laid out in each instance of the archetype. The .size() of this vector tells us the number of components in an instance.
-            const size_t mInstanceSize;                          // Byte Size of each archetype instance.
-            size_t mInstanceCount;                               // The number of mArchetypes instances stored in the mBuffer.
+            const ComponentBitset mBitset;         // The unique identifier for this archetype. Each bit corresponds to a ComponentType this archetype stores per ArchetypeInstanceID.
+            const std::vector<ComponentLayout> mComponentLayout; // How the components are laid out in each ArchetypeInstanceID. The .size() of this vector tells us the number of unique ComponentTypes in an ArchetypeInstanceID.
+            const size_t mInstanceSize;                          // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
+            ArchetypeInstanceID mNextInstanceID;                 // The ArchetypeInstanceID past the end of the mBuffer.
             std::vector<Byte> mBuffer;
 
-            // Take the list of ComponentTypes and return an array of their ComponentLayouts.
+            // Take the list of ComponentTypes and returns an array of their ComponentLayouts.
+            // Packs the ComponentTypes tightly with 0 gaps in the same order they come in through the variadic template.
             template <typename... ComponentTypes>
             static std::array<ComponentLayout, sizeof...(ComponentTypes)> processComponentsIntoArchetypeLayout()
             {
@@ -92,13 +99,13 @@ namespace ECS
             // This "cheats" by taking advantage of type deduction giving us access to 'ComponentTypes...' in the constructor.
             template <typename... ComponentTypes>
             struct ArchetypeParameterPack {};
-
+            // Construct an Archetype from a list of ComponentTypes. The order the ComponentTypes will be packed in mBuffer is determined in processComponentsIntoArchetypeLayout() function.
             template<typename... ComponentTypes>
             Archetype(ArchetypeParameterPack<ComponentTypes...>)
-            : componentStoredBitset(getBitset<ComponentTypes...>())
+            : mBitset(getBitset<ComponentTypes...>())
             , mComponentLayout(Meta::makeVector(processComponentsIntoArchetypeLayout<ComponentTypes...>()))
             , mInstanceSize(Meta::sizeOfVariadic<ComponentTypes...>())
-            , mInstanceCount(0)
+            , mNextInstanceID(0)
             {
                 mBuffer.resize(mInstanceSize); // Reserve enough space to push 1 instance.
 
@@ -127,6 +134,7 @@ namespace ECS
                 LOG_INFO("ECS: New Archetype created out of component combination ({}). Memory layout: {}", components, componentLayout);
             }
 
+            // Search the mComponentLayout vector for the ComponentType and return its ComponentLayout.
             template <typename ComponentType>
             const ComponentLayout& getComponentLayout() const
             {
@@ -142,26 +150,13 @@ namespace ECS
                     return mComponentLayout.front();
                 }
             };
-
-            // Returns the component of ComponentType at pInstanceIndex in the mBuffer.
-            // pComponentID is used to lookup the offset of the ComponentType in an instance of the archetype.
+            // Get the byte offset of ComponentType from the start of any ArchetypeInstanceID.
             template <typename ComponentType>
-            ComponentType getComponent(const ArchetypeInstanceID& pInstanceIndex)
+            BufferPosition getComponentOffset() const
             {
-                const auto componentStartPosition = getComponentPosition<ComponentType>(pInstanceIndex);
-                return getComponentImpl<ComponentType>(componentStartPosition);
+                const auto& layout = getComponentLayout<ComponentType>();
+                return layout.mOffset;
             }
-
-            // Returns the component of ComponentType at pPosition in the mBuffer.
-            // There is no guaratee pPosition points to memory of ComponentType. Only use this function when you are certain pPosition is correct.
-            // A valid pPosition can be retrieved using getComponentOffset and/or getComponentPosition.
-            template <typename ComponentType>
-            ComponentType getComponentImpl(const BufferPosition& pPosition)
-            {
-                //typedef typename std::remove_reference_t<ComponentType> DecayedComponentType;
-                return reinterpret_cast<ComponentType>(mBuffer[pPosition]);
-            }
-
             // Get the byte position of ComponentType at ArchetypeInstanceID.
             template <typename ComponentType>
             BufferPosition getComponentPosition(const ArchetypeInstanceID& pInstanceIndex) const
@@ -170,55 +165,83 @@ namespace ECS
                 return indexStartPosition + getComponentOffset<ComponentType>();
             }
 
-            // Get the byte offset of ComponentType from the start of any ArchetypeInstanceID.
+            // Returns a const pointer to a component of ComponentType at pInstanceIndex in the mBuffer.
+            // The position of this component is found using a linear search of mComponentLayouts. If the BufferPosition is known use getComponentImpl directly.
             template <typename ComponentType>
-            BufferPosition getComponentOffset() const
+            const std::decay_t<ComponentType>* getComponent(const ArchetypeInstanceID& pInstanceIndex) const
             {
-                const auto& layout = getComponentLayout<ComponentType>();
-                return layout.mOffset;
+                const auto componentStartPosition = getComponentPosition<ComponentType>(pInstanceIndex);
+                return getComponentImpl<ComponentType>(componentStartPosition);
+            }
+            // Returns a const pointer to a component of ComponentType at pPosition in the mBuffer.
+            // There is no guaratee pPosition points to the start of a type ComponentType. Only use this function when you are certain pPosition is the start of a ComponentType!
+            // A valid pPosition can be retrieved using getComponentPosition.
+            template <typename ComponentType>
+            const std::decay_t<ComponentType>* getComponentImpl(const BufferPosition& pPosition) const
+            {
+                return reinterpret_cast<const std::decay_t<ComponentType>*>(&mBuffer[pPosition]);
             }
 
-            template <typename... ComponentTypes>
-            std::array<BufferPosition, sizeof...(ComponentTypes)> getComponentOffsets()
+            // Returns a pointer to a component of ComponentType at pPosition in the mBuffer.
+            // There is no guaratee pPosition points to the start of a type ComponentType. Only use this function when you are certain pPosition is the start of a ComponentType!
+            // A valid pPosition can be retrieved using getComponentPosition.
+            template <typename ComponentType>
+            std::decay_t<ComponentType>* getComponentMutable(const ArchetypeInstanceID& pInstanceIndex)
             {
-                std::array<BufferPosition, sizeof...(ComponentTypes)> offsetsOfComponentTypes;
-                size_t i = 0;
-                (void(offsetsOfComponentTypes[i++] = getComponentOffset<ComponentTypes>()) , ...);
-                return offsetsOfComponentTypes;
+                const auto componentStartPosition = getComponentPosition<ComponentType>(pInstanceIndex);
+                return getComponentMutableImpl<ComponentType>(componentStartPosition);
+            }
+            // Returns a pointer to a component of ComponentType at pPosition in the mBuffer.
+            // There is no guaratee pPosition points to the start of a type ComponentType. Only use this function when you are certain pPosition is the start of a ComponentType!
+            // A valid pPosition can be retrieved using getComponentPosition.
+            template <typename ComponentType>
+            std::decay_t<ComponentType>* getComponentMutableImpl(const BufferPosition& pPosition)
+            {
+                return reinterpret_cast<std::decay_t<ComponentType>*>(&mBuffer[pPosition]);
             }
 
-            // Assign ComponentType the value pComponent at ArchetypeInstanceID.
+            // Assign pNewValue to the ComponentType at ArchetypeInstanceID.
             template <typename ComponentType>
-            void assign(const ComponentType& pComponent, const ArchetypeInstanceID& pInstanceIndex)
+            void assign(const ComponentType& pNewValue, const ArchetypeInstanceID& pInstanceIndex)
             {
-                if (mBuffer.capacity() < getComponentPosition<ComponentType>(pInstanceIndex) + sizeof(pComponent))
+                if (mBuffer.capacity() < getComponentPosition<ComponentType>(pInstanceIndex) + sizeof(pNewValue))
                     throw std::logic_error("Index out of range! Trying to assign to a component past the end of the archetype buffer.");
 
-                auto& component = getComponent<ComponentType&>(pInstanceIndex);
-                component = pComponent;
+                auto* component = getComponentMutable<ComponentType>(pInstanceIndex);
+                *component = pNewValue;
             }
 
-            // Assign pComponents past the end of the mBuffer.
+            // Assign pComponentValues to a new ArchetypeInstanceID. The new ArchetypeInstanceID == mNextInstanceID.
+            // If the new ArchetypeInstanceID extends beyond the end of mBuffer capacity, the buffer is doubled.
             template <typename... ComponentTypes>
-            void push_back(ComponentTypes&&... pComponents)
+            void push_back(ComponentTypes&&... pComponentValues)
             {
                 static_assert(Meta::is_unique<ComponentTypes...>);
-                const auto endInstanceStartPosition = mInstanceSize * mInstanceCount;
+                const auto endInstanceStartPosition = mInstanceSize * mNextInstanceID;
 
                 // double the size of the mBuffer until there is enough space for a new instance of this archetype.
                 while (endInstanceStartPosition + mInstanceSize > mBuffer.capacity())
                     mBuffer.resize(mBuffer.capacity() * 2);
 
-                auto assignComponent = [&](auto& pComponent) { assign(pComponent, mInstanceCount); };
-                (assignComponent(pComponents), ...);
+                auto assignComponent = [&](auto& pComponent) { assign(pComponent, mNextInstanceID); };
+                (assignComponent(pComponentValues), ...);
 
-                mInstanceCount++; // Only do this once for all the components
+                mNextInstanceID++; // Only do this once for all the components
+            }
+
+            template <typename... ComponentTypes>
+            std::array<BufferPosition, sizeof...(ComponentTypes)> getComponentOffsets() const
+            {
+                std::array<BufferPosition, sizeof...(ComponentTypes)> offsetsOfComponentTypes;
+                size_t i = 0;
+                (void(offsetsOfComponentTypes[i++] = getComponentOffset<ComponentTypes>()), ...);
+                return offsetsOfComponentTypes;
             }
         }; // class Archetype
 
         EntityID mNextEntity = 0;
         std::vector<Archetype> mArchetypes;
-        std::vector<std::pair<ArchetypeID, ArchetypeInstanceID>> mEntityToArchetypeID; // Maps EntityID to an arc
+        std::vector<std::pair<ArchetypeID, ArchetypeInstanceID>> mEntityToArchetypeID; // Maps EntityID to position a pair [ position in mArchetypes, ArchetypeInstanceID in archetype ]
 
         template <typename... FunctionArgs>
         struct FunctionHelper;
@@ -230,7 +253,7 @@ namespace ECS
 
             static ComponentBitset getBitset()
             {
-                return ECS::Storage::getBitset<FunctionArgs...>();
+                return ECS::getBitset<FunctionArgs...>();
             }
             // Does this function take only one parameter of type EntityID.
             constexpr static bool isEntityIDFunction()
@@ -257,25 +280,25 @@ namespace ECS
             template <std::size_t... Is>
             static void impl(const Func& pFunction, Archetype& pArchetype, const std::array<BufferPosition, sizeof...(FunctionArgs)>& pArchetypeOffsets, std::index_sequence<Is...>)
             { // If we have reached this point we can guarantee pArchetype contains all the components in FunctionArgs.
-                for (size_t i = 0; i < pArchetype.mInstanceCount; i++)
-                    pFunction(pArchetype.getComponentImpl<FunctionArgs>((pArchetype.mInstanceSize * i) + pArchetypeOffsets[Is])...);
+                for (size_t i = 0; i < pArchetype.mNextInstanceID; i++)
+                    pFunction(*pArchetype.getComponentMutableImpl<FunctionArgs>((pArchetype.mInstanceSize * i) + pArchetypeOffsets[Is])...);
             }
         };
 
-        // Find the ArchetypeID of the archetype with the exact matching componentBitset.
+        // Find the ArchetypeID with the exact matching componentBitset.
         // Every Archetype has a unique bitset so we can guarantee only one exists.
         // Returns nullopt if this archtype hasnt been added to mArchetypes yet.
         std::optional<ArchetypeID> getMatchingArchetype(const ComponentBitset& pComponentBitset)
         {
             for (ArchetypeID i = 0; i < mArchetypes.size(); i++)
             {
-                if (pComponentBitset == mArchetypes[i].componentStoredBitset)
+                if (pComponentBitset == mArchetypes[i].mBitset)
                     return i;
             }
 
             return std::nullopt;
         };
-        // Find the ArchetypeIDs of any mArchetypes with the exact matching componentBitsetor contain it.
+        // Find the ArchetypeIDs of any Archetypes with the exact matching componentBitset or containing it.
         // Returns an empty vec if there are none.
         std::vector<ArchetypeID> getMatchingOrContainedArchetypes(const ComponentBitset& pComponentBitset)
         {
@@ -283,7 +306,7 @@ namespace ECS
 
             for (ArchetypeID i = 0; i < mArchetypes.size(); i++)
             {
-                if (pComponentBitset == mArchetypes[i].componentStoredBitset || ((pComponentBitset & mArchetypes[i].componentStoredBitset) == pComponentBitset))
+                if (pComponentBitset == mArchetypes[i].mBitset || ((pComponentBitset & mArchetypes[i].mBitset) == pComponentBitset))
                     returnVec.push_back(i);
             }
 
@@ -291,16 +314,17 @@ namespace ECS
         };
 
     public:
+        // Creates an EntityID out of the ComponentTypes.
+        // The ComponentTypes must all be unique, only one of each ComponentType can be owned by an EntityID.
+        // The ComponentTypes can be retrieved individually using getComponent or as a combination using foreach.
         template <typename... ComponentTypes>
         EntityID addEntity(ComponentTypes&&... pComponents)
         {
-            // To construct a new entity, we analyse the ComponentTypes and build a ComponentBitset to match an archetype to it.
-            // Once we have an archetype we push the Component data to the Archetype buffer and update the EntityArchetypeMap.
             static_assert(Meta::is_unique<ComponentTypes...>);
 
-            std::bitset<32> componentsBitset = getBitset<ComponentTypes...>();
-
+            const std::bitset<32> componentsBitset = getBitset<ComponentTypes...>();
             auto archetypeID = getMatchingArchetype(componentsBitset);
+
             if (!archetypeID)
             {// No matching archetype was found we add a new one for this ComponentBitset.
                 mArchetypes.push_back(Archetype(Archetype::ArchetypeParameterPack<ComponentTypes...>()));
@@ -309,15 +333,16 @@ namespace ECS
 
             auto& archetype = mArchetypes[archetypeID.value()];
             archetype.push_back(std::forward<ComponentTypes>(pComponents)...);
-            mEntityToArchetypeID.push_back({archetypeID.value(), archetype.mInstanceCount - 1});
+            mEntityToArchetypeID.push_back({archetypeID.value(), archetype.mNextInstanceID - 1});
 
             return mNextEntity++;
         }
 
+        // Calls Func on every EntityID which owns all of the components in the Func parameter pack.
+        // Func can have any number of ComponentTypes but will only be called if the Entity owns all of the components or more.
         template <typename Func>
         void foreach(const Func& pFunction)
         {
-            // Match functionBitset to an archetype and call apply on it.
             using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
 
             const auto functionBitset = FunctionHelper<FunctionParameterPack>::getBitset();
@@ -327,15 +352,14 @@ namespace ECS
             {
                 for (auto& archetypeID : archetypeIDs)
                 {
-                    if (mArchetypes[archetypeID].mInstanceCount > 0)
+                    if (mArchetypes[archetypeID].mNextInstanceID > 0)
                     {
                         ApplyFunction<Func, FunctionParameterPack>::applyToArchetype(pFunction, mArchetypes[archetypeID]);
                     }
                 }
             }
         };
-
-        // Calls Func on every EntityID. Func must have only one parameter of type ECS::EntityID.
+        // Calls Func on every EntityID. Func must have only one parameter of type ECS::EntityID otherwise wont compile.
         template <typename Func>
         void foreachEntity(const Func& pFunction)
         {
@@ -349,30 +373,42 @@ namespace ECS
             }
         };
 
+        // Get a const reference to component of ComponentType belonging to EntityID.
+        // If EntityID doesn't own one exception will be thrown. Owned ComponentTypes can be queried using hasComponents.
         template <typename ComponentType>
-        const ComponentType& getComponent(const EntityID& pEntity)
+        const std::decay_t<ComponentType>& getComponent(const EntityID& pEntity) const
         {
             const auto [archetype, index] = mEntityToArchetypeID[pEntity];
-            return mArchetypes[archetype].getComponent<ComponentType>(index);
+            return *mArchetypes[archetype].getComponent<ComponentType>(index);
         }
 
+        // Get a reference to component of ComponentType belonging to EntityID.
+        // If EntityID doesn't own one exception will be thrown. Owned ComponentTypes can be queried using hasComponents.
+        template <typename ComponentType>
+        std::decay_t<ComponentType>& getComponentMutable(const EntityID& pEntity)
+        {
+            const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+            return *mArchetypes[archetype].getComponent<ComponentType>(index);
+        }
+
+        // Check if EntityID has been assigned all of the ComponentTypes queried.
         template <typename... ComponentTypes>
         bool hasComponents(const EntityID& pEntity) const
         {
             static_assert(sizeof...(ComponentTypes) != 0);
 
             if constexpr(sizeof...(ComponentTypes) > 1)
-            {
+            {// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
                 const auto requestedBitset = getBitset<ComponentTypes...>();
                 const auto [archetype, index] = mEntityToArchetypeID[pEntity];
-                const auto entityBitset = mArchetypes[archetype].componentStoredBitset;
+                const auto entityBitset = mArchetypes[archetype].mBitset;
                 return (requestedBitset == entityBitset || ((requestedBitset & entityBitset) == requestedBitset));
             }
             else
-            {
+            {// If we only have one requested ComponentType, we can skip the ComponentTypes bitset construction and test just the corresponding bit.
                 typedef typename Meta::GetNth<0, ComponentTypes...>::Type ComponentType;
                 const auto [archetype, index] = mEntityToArchetypeID[pEntity];
-                return mArchetypes[archetype].componentStoredBitset.test(ComponentIDGenerator::get<ComponentType>());
+                return mArchetypes[archetype].mBitset.test(ComponentIDGenerator::get<ComponentType>());
             }
         }
     };
