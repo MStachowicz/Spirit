@@ -20,76 +20,74 @@ PRIVATE Utility
 )
 # Zephyr end --------------------------------------------------------------------------------------
 
-# ENTITY COMPONENT SYSTEM *************************************************************************
-    # Entity --------------------------------------------------------------------------------------
-    add_library(Entity
-    source/ECS/Entity/Storage.hpp
-    source/ECS/Entity/Storage.cpp
-    source/ECS/Entity/Meta.hpp
-    )
-    target_include_directories(Entity
-    PUBLIC source/ECS/Entity
-    )
-    target_link_libraries(Entity
-    PUBLIC Utility
-    )
-    # Entity --------------------------------------------------------------------------------------
+# ECS --------------------------------------------------------------------------------------
+add_library(ECS
+source/ECS/Storage.hpp
+source/ECS/Storage.cpp
+source/ECS/Meta.hpp
+)
+target_include_directories(ECS
+PUBLIC source/ECS
+)
+target_link_libraries(ECS
+PUBLIC Utility # Uses Logger in Storage.hpp
+)
+# ECS --------------------------------------------------------------------------------------
 
-    # Component -----------------------------------------------------------------------------------
-    add_library(Component
-    source/ECS/Component/BoundingBox.cpp
-    source/ECS/Component/BoundingBox.hpp
-    source/ECS/Component/Camera.cpp
-    source/ECS/Component/Camera.hpp
-    source/ECS/Component/Collider.cpp
-    source/ECS/Component/Collider.hpp
-    source/ECS/Component/DirectionalLight.cpp
-    source/ECS/Component/DirectionalLight.hpp
-    source/ECS/Component/Mesh.cpp
-    source/ECS/Component/Mesh.hpp
-    source/ECS/Component/PointLight.cpp
-    source/ECS/Component/PointLight.hpp
-    source/ECS/Component/SpotLight.cpp
-    source/ECS/Component/SpotLight.hpp
-    source/ECS/Component/Texture.hpp
-    source/ECS/Component/Transform.cpp
-    source/ECS/Component/Transform.hpp
-    )
-    target_include_directories(Component
-    PUBLIC source/ECS/Component
-    PUBLIC source/External/GLM
-    )
-    target_link_libraries(Component
-    PRIVATE ImGui
-    )
-    # Component end -------------------------------------------------------------------------------
+# Component -----------------------------------------------------------------------------------
+add_library(Component
+source/Component/BoundingBox.cpp
+source/Component/BoundingBox.hpp
+source/Component/Camera.cpp
+source/Component/Camera.hpp
+source/Component/Collider.cpp
+source/Component/Collider.hpp
+source/Component/DirectionalLight.cpp
+source/Component/DirectionalLight.hpp
+source/Component/Mesh.cpp
+source/Component/Mesh.hpp
+source/Component/PointLight.cpp
+source/Component/PointLight.hpp
+source/Component/SpotLight.cpp
+source/Component/SpotLight.hpp
+source/Component/Texture.hpp
+source/Component/Transform.cpp
+source/Component/Transform.hpp
+)
+target_include_directories(Component
+PUBLIC source/Component
+PUBLIC source/External/GLM
+)
+target_link_libraries(Component
+PRIVATE ImGui
+)
+# Component end -------------------------------------------------------------------------------
 
-    # System --------------------------------------------------------------------------------------
-    add_library(System
-    source/ECS/System/Collision/BoundingBoxTree.cpp
-    source/ECS/System/Collision/BoundingBoxTree.hpp
-    source/ECS/System/Collision/CollisionSystem.cpp
-    source/ECS/System/Collision/CollisionSystem.hpp
-    source/ECS/System/MeshSystem.cpp
-    source/ECS/System/MeshSystem.hpp
-    source/ECS/System/TextureSystem.cpp
-    source/ECS/System/TextureSystem.hpp
-    )
-    target_include_directories(System
-    PUBLIC source/ECS/System
-    PUBLIC source/ECS/System/Collision
-    PRIVATE source/External/stb
-    PRIVATE source/External/ASSIMP/include
-    )
-    target_link_libraries(System
-    PUBLIC Component
-    PUBLIC Entity
-    PRIVATE Utility
-    PRIVATE ImGui
-    PRIVATE assimp
-    )
-    # System end ----------------------------------------------------------------------------------
-# ENTITY COMPONENT SYSTEM END *********************************************************************
+# System --------------------------------------------------------------------------------------
+add_library(System
+source/System/Collision/BoundingBoxTree.cpp
+source/System/Collision/BoundingBoxTree.hpp
+source/System/Collision/CollisionSystem.cpp
+source/System/Collision/CollisionSystem.hpp
+source/System/MeshSystem.cpp
+source/System/MeshSystem.hpp
+source/System/TextureSystem.cpp
+source/System/TextureSystem.hpp
+)
+target_include_directories(System
+PUBLIC source/System
+PUBLIC source/System/Collision
+PRIVATE source/External/stb
+PRIVATE source/External/ASSIMP/include
+)
+target_link_libraries(System
+PUBLIC Component
+PUBLIC ECS
+PRIVATE Utility
+PRIVATE ImGui
+PRIVATE assimp
+)
+# System end ----------------------------------------------------------------------------------
 
 # INPUT & RENDERING BACKEND ***********************************************************************
     # Renderer ------------------------------------------------------------------------------------
