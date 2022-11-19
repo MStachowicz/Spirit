@@ -1,14 +1,19 @@
 #include "Renderer.hpp"
 
 // ECS
+#include "Storage.hpp"
+
+// SYSTEM
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
 
+// COMPONENT
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
 #include "DirectionalLight.hpp"
 #include "Camera.hpp"
 #include "Collider.hpp"
+#include "Transform.hpp"
 
 // UTILITY
 #include "Logger.hpp"

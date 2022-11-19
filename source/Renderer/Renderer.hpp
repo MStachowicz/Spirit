@@ -2,24 +2,17 @@
 
 #include "OpenGLRenderer.hpp"
 
-// STD
 #include <vector>
 
 namespace ECS
 {
-    class EntitySystem;
-    class Entity;
-} // namespace ECS
-namespace Component
-{
-    class Camera;
+    class Storage;
 }
 namespace System
 {
     class MeshSystem;
     class TextureSystem;
-} // namespace System
-
+}
 
 class Renderer
 {

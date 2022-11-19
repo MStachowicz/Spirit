@@ -1,17 +1,25 @@
 #include "OpenGLRenderer.hpp"
 
+// ECS
+#include "Storage.hpp"
+
+// COMPONENTS
 #include "DirectionalLight.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
 #include "Texture.hpp"
 #include "Collider.hpp"
 #include "Camera.hpp"
+#include "Mesh.hpp"
+#include "Transform.hpp"
 
+// SYSTEMS
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
 
 #include "Logger.hpp"
 
+// EXTERNAL
 #include "glad/gl.h"
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
@@ -26,36 +34,50 @@ namespace OpenGL
     OpenGLRenderer::OpenGLRenderer(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem)
         : cOpenGLVersionMajor(4)
         , cOpenGLVersionMinor(3)
+        , mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
+        , mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLRenderer construction (OpenGLInstances.size() == 1)
+        , mGLState()
+        , mMainScreenFBO()
+        , mStorage(pStorage)
+        , mViewMatrix()
+        , mViewPosition()
+        , mProjection()
         , mLinearDepthView(false)
         , mVisualiseNormals(false)
         , mZNearPlane(0.1f)
         , mZFarPlane(100.0f)
         , mFOV(45.f)
-        , mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
-        , mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLRenderer construction (OpenGLInstances.size() == 1)
-        , mGLState()
+        , pointLightDrawCount(0)
+        , spotLightDrawCount(0)
+        , directionalLightDrawCount(0)
+        , mBufferDrawType(BufferDrawType::Colour)
+        , mPostProcessingOptions()
+        , mAvailableShaders
+        { Shader("texture1" , mGLState)
+        , Shader("texture2" , mGLState)
+        , Shader("material" , mGLState)
+        , Shader("colour" , mGLState)
+        , Shader("uniformColour" , mGLState)
+        , Shader("lightMap" , mGLState)
+        , Shader("texture1Instanced" , mGLState)}
         , mTexture1ShaderIndex(0)
         , mTexture2ShaderIndex(1)
         , mMaterialShaderIndex(2)
         , mUniformShaderIndex(4)
         , mLightMapIndex(5)
         , mTexture1InstancedShaderIndex(6)
-        , mMissingTextureID()
-        , pointLightDrawCount(0)
-        , spotLightDrawCount(0)
-        , directionalLightDrawCount(0)
-        , mBufferDrawType(BufferDrawType::Colour)
-        , mPostProcessingOptions()
-        , mScreenQuad()
         , mScreenTextureShader("screenTexture", mGLState)
-        , mSkyBoxMeshID()
         , mSkyBoxShader("skybox", mGLState)
-        , m3DCubeID()
         , mLightEmitterShader("uniformColour", mGLState)
         , mDepthViewerShader("depthView", mGLState)
         , mVisualiseNormalShader("visualiseNormal", mGLState)
-        , mAvailableShaders{Shader("texture1", mGLState), Shader("texture2", mGLState), Shader("material", mGLState), Shader("colour", mGLState), Shader("uniformColour", mGLState), Shader("lightMap", mGLState), Shader("texture1Instanced", mGLState)}
-        , mStorage(pStorage)
+        , mGLMeshData{}
+        , m3DCubeMeshIndex{0}
+        , mSkyBoxMeshIndex{0}
+        , mScreenQuadMeshIndex{0}
+        , mTextures{}
+        , mMissingTextureID{0}
+        , mCubeMaps{}
     {
         pMeshSystem.ForEach([this](const auto& mesh) { initialiseMesh(mesh); }); // Depends on mShaders being initialised.
         pTextureSystem.ForEach([this](const auto& texture) { initialiseTexture(texture); });
@@ -65,8 +87,8 @@ namespace OpenGL
         {
             if (pCamera.mPrimaryCamera)
             {
-                setView(pCamera.getViewMatrix());
-                setViewPosition(pCamera.getPosition());
+                mViewMatrix = pCamera.getViewMatrix();
+                mViewPosition = pCamera.getPosition();
             }
         });
 
@@ -99,8 +121,8 @@ namespace OpenGL
         {
             if (pCamera.mPrimaryCamera)
             {
-                setView(pCamera.getViewMatrix());
-                setViewPosition(pCamera.getPosition());
+                mViewMatrix = pCamera.getViewMatrix();
+                mViewPosition = pCamera.getPosition();
             }
         });
 
@@ -141,7 +163,7 @@ namespace OpenGL
     {
         mStorage.foreach([this](Component::Transform& pTransform, Component::MeshDraw& pMeshDraw)
         {
-            const OpenGLMesh& GLMesh = getGLMesh(pMeshDraw.mID);
+            const GLMeshData& GLMesh = mGLMeshData[pMeshDraw.mID.Get()];
 
             if (mBufferDrawType == BufferDrawType::Colour)
             {
@@ -220,7 +242,7 @@ namespace OpenGL
         });
     }
 
-    void OpenGLRenderer::draw(const OpenGLRenderer::OpenGLMesh& pMesh, const size_t& pInstancedCount /* = 0*/)
+    void OpenGLRenderer::draw(const OpenGLRenderer::GLMeshData& pMesh, const size_t& pInstancedCount /* = 0*/)
     {
         if (pMesh.mDrawSize > 0)
         {
@@ -228,16 +250,16 @@ namespace OpenGL
 
             if (pInstancedCount > 0)
             {
-                if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Indices)
+                if (pMesh.mDrawMethod == GLMeshData::DrawMethod::Indices)
                     mGLState.drawElementsInstanced(pMesh.mDrawMode, pMesh.mDrawSize, static_cast<int>(pInstancedCount));
-                else if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Array)
+                else if (pMesh.mDrawMethod == GLMeshData::DrawMethod::Array)
                     mGLState.drawArraysInstanced(pMesh.mDrawMode, pMesh.mDrawSize, static_cast<int>(pInstancedCount));
             }
             else
             {
-                if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Indices)
+                if (pMesh.mDrawMethod == GLMeshData::DrawMethod::Indices)
                     mGLState.drawElements(pMesh.mDrawMode, pMesh.mDrawSize);
-                else if (pMesh.mDrawMethod == OpenGLMesh::DrawMethod::Array)
+                else if (pMesh.mDrawMethod == GLMeshData::DrawMethod::Array)
                     mGLState.drawArrays(pMesh.mDrawMode, pMesh.mDrawSize);
             }
         }
@@ -269,7 +291,7 @@ namespace OpenGL
             {
                 mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
                 mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
-                draw(getGLMesh(m3DCubeID));
+                draw(mGLMeshData[m3DCubeMeshIndex]);
             });
         }
 
@@ -292,7 +314,7 @@ namespace OpenGL
 
 			    mLightEmitterShader.setUniform(mGLState, "model", colliderModelMat * transformModelMat);
    			    mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
-   			    draw(getGLMesh(m3DCubeID));
+                draw(mGLMeshData[m3DCubeMeshIndex]);
             });
             mGLState.setPolygonMode(GLType::PolygonMode::Fill);
         }
@@ -385,7 +407,7 @@ namespace OpenGL
 
             mGLState.setActiveTextureUnit(0);
             mCubeMaps.front().bind();
-            draw(getGLMesh(mSkyBoxMeshID));
+            draw(mGLMeshData[mSkyBoxMeshIndex]);
 
             mGLState.toggleDepthTest(depthTestBefore);
             mGLState.setDepthTestType(depthTestTypeBefore);
@@ -405,7 +427,7 @@ namespace OpenGL
             mScreenTextureShader.use(mGLState);
             mGLState.setActiveTextureUnit(0);
             mMainScreenFBO.getColourTexture().bind();
-            draw(getGLMesh(mScreenQuad));
+            draw(mGLMeshData[mScreenQuadMeshIndex]);
 
             mGLState.toggleCullFaces(cullFacesBefore);
             mGLState.toggleDepthTest(depthTestBefore);
@@ -485,53 +507,39 @@ namespace OpenGL
         ImGui::End();
     }
 
-    const OpenGLRenderer::OpenGLMesh& OpenGLRenderer::getGLMesh(const Component::MeshID& pMeshID) const
+    void OpenGLRenderer::initialiseMesh(const Component::Mesh& pMesh, GLMeshData* pParentMesh /*= nullptr*/)
     {
-        const auto it = std::find_if(mGLMeshes.begin(), mGLMeshes.end(), [&pMeshID](const OpenGLMesh& pGLMesh)
-                                     { return pMeshID.Get() == pGLMesh.mID.Get(); });
+        ZEPHYR_ASSERT(pParentMesh || mGLMeshData.size() == (pMesh.mID.Get()), "mGLMeshData size does not match Mesh ID. Has the order of Meshes changed or are they not ordered by MeshID");
 
-        ZEPHYR_ASSERT(it != mGLMeshes.end(), "No matching OpenGL::Mesh found for Component::Mesh with ID '{}'. Was the mesh correctly initialised?", pMeshID.Get());
-        return *it;
-    }
-
-    void OpenGLRenderer::initialiseMesh(const Component::Mesh& pMesh)
-    {
-        OpenGLMesh* newMesh = nullptr;
+        GLMeshData* newMesh = nullptr;
+        if (pParentMesh)
         {
-            auto GLMeshLocation = std::find_if(mGLMeshes.begin(), mGLMeshes.end(), [&pMesh](const OpenGLMesh& pGLMesh)
-                                               { return pMesh.mID.Get() == pGLMesh.mID.Get(); });
-
-            if (GLMeshLocation != mGLMeshes.end())
-            {
-                GLMeshLocation->mChildMeshes.push_back({});
-                newMesh = &GLMeshLocation->mChildMeshes.back();
-            }
-            else
-            {
-                mGLMeshes.push_back({});
-                newMesh = &mGLMeshes.back();
-
-                if (pMesh.mName == "Quad")
-                    mScreenQuad = pMesh.mID;
-                else if (pMesh.mName == "Skybox")
-                    mSkyBoxMeshID = pMesh.mID;
-                else if (pMesh.mName == "3DCube")
-                    m3DCubeID = pMesh.mID;
-            }
+            pParentMesh->mChildMeshes.push_back({});
+            newMesh = &pParentMesh->mChildMeshes.back();
         }
-        ZEPHYR_ASSERT(newMesh != nullptr, "Failed to initialise Component::Mesh with ID '{}'", pMesh.mID.Get());
+        else
+        {
+            mGLMeshData.push_back({});
+            newMesh = &mGLMeshData.back();
+        }
 
-        newMesh->mID       = pMesh.mID;
+        if (pMesh.mName == "Quad")
+            mScreenQuadMeshIndex = mGLMeshData.size() - 1;
+        else if (pMesh.mName == "Skybox")
+            mSkyBoxMeshIndex = mGLMeshData.size() - 1;
+        else if (pMesh.mName == "3DCube")
+            m3DCubeMeshIndex = mGLMeshData.size() - 1;
+
         newMesh->mDrawMode = GLType::PrimitiveMode::Triangles; // OpenGLRenderer only supports Triangles at this revision
 
         if (!pMesh.mIndices.empty())
         {
-            newMesh->mDrawMethod = OpenGLMesh::DrawMethod::Indices;
+            newMesh->mDrawMethod = GLMeshData::DrawMethod::Indices;
             newMesh->mDrawSize   = static_cast<int>(pMesh.mIndices.size());
         }
         else
         {
-            newMesh->mDrawMethod = OpenGLMesh::DrawMethod::Array;
+            newMesh->mDrawMethod = GLMeshData::DrawMethod::Array;
             ZEPHYR_ASSERT(newMesh->mDrawMode == GLType::PrimitiveMode::Triangles, "Only PrimitiveMode::Triangles is supported");
             newMesh->mDrawSize = static_cast<int>(pMesh.mVertices.size()) / 3; // Divide verts by 3 as we draw the vertices by Triangles count.
         }
@@ -571,12 +579,11 @@ namespace OpenGL
             newMesh->mVBOs[Utility::toIndex(Shader::Attribute::TextureCoordinate2D)]->PushVertexAttributeData(mGLState, pMesh.mTextureCoordinates, Shader::getAttributeLocation(Shader::Attribute::TextureCoordinate2D), Shader::getAttributeComponentCount(Shader::Attribute::TextureCoordinate2D));
         }
 
+        // Recursively call initialiseMesh on all the child meshes appending them to GLMeshData::mChildMeshes.
         for (const auto& childMesh : pMesh.mChildMeshes)
-            initialiseMesh(childMesh);
+            initialiseMesh(childMesh, newMesh);
 
-        ZEPHYR_ASSERT(mGLMeshes.size() == (newMesh->mID.Get() + 1), "OpenGL::Mesh::ID {} does not match index position in Mesh container.", newMesh->mID.Get());
-        ZEPHYR_ASSERT(pMesh.mID.Get() == newMesh->mID.Get(), "Component::MeshID's do not match.");
-        LOG_INFO("Component::Mesh: '{} (ID: {})' loaded into OpenGL with ID: '{}' and VAO: {}", pMesh.mName, pMesh.mID.Get(), newMesh->mID.Get(), newMesh->mVAO.getHandle());
+        LOG_INFO("Component::Mesh: '{} (ID: {})' loaded into OpenGL with VAO: {}", pMesh.mName, pMesh.mID.Get(), newMesh->mVAO.getHandle());
     }
 
     const GLData::Texture& OpenGLRenderer::getTexture(const Component::TextureID& pTextureID) const
@@ -593,7 +600,7 @@ namespace OpenGL
 
         // Cache the ID of the 'missing' texture.
         if (pTexture.mName == "missing")
-            mMissingTextureID = pTexture.mID;
+            mMissingTextureID = mTextures.size();
 
         ZEPHYR_ASSERT(mTextures.size() == pTexture.mID.Get(), "OpenGL::Texture does not match index position of Component::Texture::ID ({} != {})", mTextures.size(), pTexture.mID.Get());
         mTextures.push_back({newTexture});

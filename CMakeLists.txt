@@ -121,13 +121,13 @@ PRIVATE assimp
     target_include_directories(OpenGL
     PUBLIC source/Renderer/OpenGL
     PUBLIC source/External/GLM
-    PUBLIC source/ECS
-    PUBLIC source/Data
     PRIVATE source/External/GLFW/include
     )
     target_link_libraries(OpenGL
-    PUBLIC System
     PUBLIC Utility # ToIndex used in header for size of Shader::attribute arrays.
+    PRIVATE System
+    PRIVATE Component
+    PRIVATE ECS
     PRIVATE glad_GL
     PRIVATE glfw
     PRIVATE ImGui
