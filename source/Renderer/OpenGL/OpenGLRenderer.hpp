@@ -150,7 +150,6 @@ namespace OpenGL
         size_t mMissingTextureID;
         std::vector<GLData::Texture> mCubeMaps; // Mapping of Component::CubeMapTexture to OpenGL::Texture.
 
-        const GLData::Texture& getTexture(const Component::TextureID& pTextureID) const;
         Shader* getShader(Component::MeshDraw& pMeshDraw);
 
         void setShaderVariables(const Component::PointLight& pPointLight);
