@@ -20,11 +20,12 @@ Input::Input(ECS::Storage& pStorage)
 void Input::pollEvents()
 {
     mInputHandler->pollEvents();
+    mCapturedThisFrame = false;
 }
 
 void Input::onMouseMove(const float& pXOffset, const float& pYOffset)
 {
-    if (mCapturingMouse)
+    if (mCapturingMouse && !mCapturedThisFrame) // X,Y offsets can be large on the same frame mouse is captured. Skip on mCapturedThisFrame.
     {
         auto primaryCamera = getPrimaryCamera(mStorage);
         if (primaryCamera)
@@ -51,6 +52,7 @@ void Input::onMousePress(const InputAPI::MouseButton& pMouseButton, const InputA
                     mInputHandler->setCursorMode(InputAPI::CursorMode::CAPTURED);
                     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
                     mCapturingMouse = true;
+                    mCapturedThisFrame = true;
                 }
                 else
                 {

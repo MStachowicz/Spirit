@@ -34,6 +34,7 @@ private:
     void onMouseMove(const float& pXOffset, const float& pYOffset);
     bool mCloseRequested = false;
     bool mCapturingMouse = false;
+    bool mCapturedThisFrame = false; // If the mouse was captured in this pollEvents cycle.
 
     static Component::Camera* getPrimaryCamera(ECS::Storage& pStorage);
 
