@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Chrono"
-#include "Logger.hpp"
-#include "Renderer.hpp"
-#include "Input.hpp"
-
-#include "Storage.hpp"
 #include "CollisionSystem.hpp"
-#include "PhysicsSystem.hpp"
+#include "Input.hpp"
 #include "MeshSystem.hpp"
+#include "PhysicsSystem.hpp"
+#include "Renderer.hpp"
+#include "Storage.hpp"
 #include "TextureSystem.hpp"
+
+#include "Logger.hpp"
+
+#include <Chrono>
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
 class Application
@@ -20,7 +21,6 @@ public:
     void simulationLoop();
 
 private:
-    // PER APPLICATION
     System::TextureSystem mTextureSystem;
     System::MeshSystem mMeshSystem;
     ECS::Storage mStorage;
@@ -28,7 +28,6 @@ private:
     Collision::CollisionSystem mCollisionSystem;
     System::PhysicsSystem mPhysicsSystem;
 
-    // PER VIEW
     Renderer mRenderer;
     Input mInput;
 
@@ -46,9 +45,9 @@ private:
         auto physicsTimestep = std::chrono::duration<Clock::rep, std::ratio<1, pPhysicsTicksPerSecond>>{1};
 
         LOG_INFO("Physics ticks per second: {}" , pPhysicsTicksPerSecond);
-        LOG_INFO("Physics fixed timestep: {}ms" , std::chrono::round<std::chrono::microseconds>(physicsTimestep).count() / 1000.);
+        LOG_INFO("Physics fixed timestep: {}ms" , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count());
         LOG_INFO("Renderer FPS: {}"             , mRenderer.mTargetFPS);
-        LOG_INFO("Render timestep: {}ms"        , std::chrono::round<std::chrono::microseconds>(mRenderTimestep).count() / 1000.);
+        LOG_INFO("Render timestep: {}ms"        , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(mRenderTimestep).count());
 
         // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both
         // a Clock::duration and 1/60 of a second. Time-based arithmetic will have no truncation error, or any round-off error
@@ -57,9 +56,9 @@ private:
         typedef std::chrono::time_point<Clock, Duration>        TimePoint;
 
         Duration durationSinceLastPhysicsTick   = Duration::zero();     // Accumulated time since the last physics update.
-        Duration durationSinceLastRenderTick    = Duration::zero();     // Accumulated time since the last physics update.
+        Duration durationSinceLastRenderTick    = Duration::zero();     // Accumulated time since the last render.
         Duration durationSinceLastFrame         = Duration::zero();     // Time between this frame and last frame.
-        Duration durationTotalSimulation        = Duration::zero();     // Total time simulation has been running.
+        Duration durationApplicationRunning     = Duration::zero();     // Total time the application has been running.
 
         TimePoint physicsTime{};      // The time point the physics is advanced to currently.
         TimePoint timeFrameStarted{}; // The time point at the start of a new frame.
@@ -80,7 +79,7 @@ private:
                 durationSinceLastFrame = maxFrameDelta;
 
             timeLastFrameStarted            = timeFrameStarted;
-            durationTotalSimulation         += durationSinceLastFrame;
+            durationApplicationRunning      += durationSinceLastFrame;
             durationSinceLastPhysicsTick    += durationSinceLastFrame;
             durationSinceLastRenderTick     += durationSinceLastFrame;
 
@@ -109,9 +108,9 @@ private:
             }
         }
 
-        const double totalTimeSeconds = std::chrono::round<std::chrono::milliseconds>(durationTotalSimulation).count() / 1000.;
-        const double renderFPS = (double)mRenderer.mDrawCount / totalTimeSeconds;
-        const double physicsFPS = (double)mPhysicsSystem.mUpdateCount / totalTimeSeconds;
+        const double totalTimeSeconds = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1,1>> >(durationApplicationRunning).count();
+        const double renderFPS = static_cast<double>(mRenderer.mDrawCount) / totalTimeSeconds;
+        const double physicsFPS = static_cast<double>(mPhysicsSystem.mUpdateCount) / totalTimeSeconds;
 
         LOG_INFO("------------------------------------------------------------------------");
         LOG_INFO("Total simulation time: {}s", totalTimeSeconds);
