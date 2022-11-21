@@ -71,6 +71,8 @@ source/System/Collision/BoundingBoxTree.cpp
 source/System/Collision/BoundingBoxTree.hpp
 source/System/Collision/CollisionSystem.cpp
 source/System/Collision/CollisionSystem.hpp
+source/System/PhysicsSystem.cpp
+source/System/PhysicsSystem.hpp
 source/System/MeshSystem.cpp
 source/System/MeshSystem.hpp
 source/System/TextureSystem.cpp

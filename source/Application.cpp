@@ -8,6 +8,7 @@ Application::Application()
     , mRenderer(mStorage, mTextureSystem, mMeshSystem)
     , mInput(mStorage)
     , mCollisionSystem(mStorage)
+    , mPhysicsSystem(mStorage)
 {}
 
 void Application::simulationLoop()

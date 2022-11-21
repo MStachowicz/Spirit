@@ -7,6 +7,7 @@
 
 #include "Storage.hpp"
 #include "CollisionSystem.hpp"
+#include "PhysicsSystem.hpp"
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
 
@@ -25,6 +26,8 @@ private:
     ECS::Storage mStorage;
 
     Collision::CollisionSystem mCollisionSystem;
+    System::PhysicsSystem mPhysicsSystem;
+
     // PER VIEW
     Renderer mRenderer;
     Input mInput;
@@ -33,7 +36,6 @@ private:
     int mPhysicsTicksPerSecond                    = 60;    // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
     std::chrono::duration<double> mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mRenderer.mTargetFPS;
     std::chrono::milliseconds maxFrameDelta       = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
-    int mPhysicsUpdatesCount                      = 0;                              // TODO: move to physics system when added
 
     // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
     // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
@@ -87,10 +89,10 @@ private:
             {
                 durationSinceLastPhysicsTick -= physicsTimestep;
                 physicsTime                  += physicsTimestep;
-                mPhysicsUpdatesCount++;
 
                 //previousState = currentState;
                 //integrate(currentState, physicsTime, physicsTimestep);
+                mPhysicsSystem.integrate(std::chrono::duration_cast<System::PhysicsSystem::DeltaTime>(physicsTimestep));
             }
 
             if (durationSinceLastRenderTick >= mRenderTimestep)
@@ -109,11 +111,11 @@ private:
 
         const double totalTimeSeconds = std::chrono::round<std::chrono::milliseconds>(durationTotalSimulation).count() / 1000.;
         const double renderFPS = (double)mRenderer.mDrawCount / totalTimeSeconds;
-        const double physicsFPS = (double)mPhysicsUpdatesCount / totalTimeSeconds;
+        const double physicsFPS = (double)mPhysicsSystem.mUpdateCount / totalTimeSeconds;
 
         LOG_INFO("------------------------------------------------------------------------");
         LOG_INFO("Total simulation time: {}s", totalTimeSeconds);
-        LOG_INFO("Total physics updates: {}", mPhysicsUpdatesCount);
+        LOG_INFO("Total physics updates: {}", mPhysicsSystem.mUpdateCount);
         LOG_INFO("Averaged physics updates per second: {}/s", physicsFPS);
         LOG_INFO("Total rendered frames: {}", mRenderer.mDrawCount);
         LOG_INFO("Averaged render frames per second: {}/s", renderFPS);
