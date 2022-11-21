@@ -48,6 +48,8 @@ source/Component/Mesh.cpp
 source/Component/Mesh.hpp
 source/Component/PointLight.cpp
 source/Component/PointLight.hpp
+source/Component/RigidBody.cpp
+source/Component/RigidBody.hpp
 source/Component/SpotLight.cpp
 source/Component/SpotLight.hpp
 source/Component/Texture.hpp
