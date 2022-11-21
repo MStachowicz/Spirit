@@ -8,11 +8,12 @@
 #include "TextureSystem.hpp"
 
 // COMPONENT
-#include "PointLight.hpp"
-#include "SpotLight.hpp"
-#include "DirectionalLight.hpp"
 #include "Camera.hpp"
 #include "Collider.hpp"
+#include "DirectionalLight.hpp"
+#include "RigidBody.hpp"
+#include "PointLight.hpp"
+#include "SpotLight.hpp"
 #include "Transform.hpp"
 
 // UTILITY
@@ -276,10 +277,12 @@ void Renderer::drawEntityPanel()
                 {
                     if (mStorage.hasComponents<Component::Transform>(pEntity))
                         mStorage.getComponentMutable<Component::Transform&>(pEntity).DrawImGui();
-                    if (mStorage.hasComponents<Component::MeshDraw>(pEntity))
-                        mStorage.getComponentMutable<Component::MeshDraw&>(pEntity).DrawImGui();
                     if (mStorage.hasComponents<Component::Collider>(pEntity))
                         mStorage.getComponentMutable<Component::Collider&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::RigidBody>(pEntity))
+                        mStorage.getComponentMutable<Component::RigidBody&>(pEntity).DrawImGui();
+                    if (mStorage.hasComponents<Component::MeshDraw>(pEntity))
+                        mStorage.getComponentMutable<Component::MeshDraw&>(pEntity).DrawImGui();
                     if (mStorage.hasComponents<Component::Camera>(pEntity))
                         mStorage.getComponentMutable<Component::Camera&>(pEntity).DrawImGui();
                     if (mStorage.hasComponents<Component::DirectionalLight>(pEntity))
