@@ -192,6 +192,8 @@ namespace System
         loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/xian/xian.obj");
         loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/backpack/backpack.obj");
         loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/cube/cube.obj");
+        loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/cone/cone_32.obj");
+        loadModel("C:/Users/micha/OneDrive/Desktop/Zephyr/source/Resources/Models/cylinder/cylinder_32.obj");
 
         { // 2D TRIANGLE
             Component::Mesh mesh;
