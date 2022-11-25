@@ -6,6 +6,7 @@
 #include <random>
 
 #include "glm/mat4x4.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 namespace Utility
 {
@@ -46,4 +47,7 @@ namespace Utility
     }
 
     glm::mat4 GetModelMatrix(const glm::vec3& pPosition, const glm::vec3& pRotation, const glm::vec3& pScale);
+
+    // Returns the quaternon rotation to get from pStart to pDestination.
+    glm::quat getRotation(const glm::vec3& pStart, const glm::vec3& pDestination);
 }
