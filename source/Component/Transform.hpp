@@ -1,17 +1,22 @@
 #pragma once
 
-#include "glm/vec3.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "glm/mat4x4.hpp"
+#include "glm/vec3.hpp"
 
 namespace Component
 {
     struct Transform
     {
-        glm::vec3 mPosition    = glm::vec3(0.0f); // World space position.
-        glm::vec3 mRotation    = glm::vec3(0.0f); // Rotation represented in Euler angles. Range [-360 - 360].
-        glm::vec3 mScale       = glm::vec3(1.0f);
-        glm::vec3 mDirection   = glm::vec3(0.f, 0.f, 1.f); // Unit vector giving the direction the entity is facing.
-        glm::quat mOrientation = glm::identity<glm::quat>(); // Unit quaternion taking the forward direction (0,0,1) to the current orientation.
+        inline static const glm::vec3 StartingDirection = glm::vec3(0.f, 0.f, 1.f);
+
+        glm::vec3 mPosition      = glm::vec3(0.0f);   // World-space position.
+        glm::vec3 mRollPitchYaw  = glm::vec3(0.0f);   // Roll, Pitch, Yaw rotation represented in Euler degree angles. Range [-180 - 180].
+        glm::vec3 mScale         = glm::vec3(1.0f);
+        glm::vec3 mDirection     = StartingDirection; // World-space direction vector the entity is facing.
+        glm::quat mOrientation   = glm::identity<glm::quat>(); // Unit quaternion taking the StartingDirection to the current orientation.
+
+        glm::mat4 mModel = glm::identity<glm::mat4>();
 
         void DrawImGui();
     };

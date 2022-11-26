@@ -59,7 +59,7 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
     {// Floor
         Component::Transform transform;
         transform.mPosition;
-        transform.mRotation.x = -90.f;
+        transform.mRollPitchYaw.x = -90.f;
         transform.mScale      = glm::vec3(floorSize);
 
         Component::MeshDraw mesh;
@@ -120,7 +120,7 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
     {// Xian
         Component::Transform transform;
         transform.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
-        transform.mRotation = glm::vec3(-10.0f, 230.0f, -15.0f);
+        transform.mRollPitchYaw = glm::vec3(-10.0f, 230.0f, -15.0f);
         transform.mScale    = glm::vec3(0.4f);
 
         Component::MeshDraw mesh;

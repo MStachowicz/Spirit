@@ -62,6 +62,7 @@ PUBLIC source/External/GLM
 )
 target_link_libraries(Component
 PRIVATE ImGui
+PRIVATE Utility
 )
 # Component end -------------------------------------------------------------------------------
 

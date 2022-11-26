@@ -3,6 +3,8 @@
 #include "imgui.h"
 #include "glm/gtx/euler_angles.hpp"
 
+#include "Utility.hpp"
+
 #include <string>
 
 namespace Component
@@ -14,11 +16,10 @@ namespace Component
             ImGui::SliderFloat3("Position (m)", &mPosition.x, -50.f, 50.f);
             ImGui::SliderFloat3("Scale", &mScale.x, 0.1f, 10.f);
 
-            if (ImGui::SliderFloat3("Rotation (degrees)", &mRotation.x, -360.f, 360.f))
-            {
-                const auto rotationMat = glm::inverse(glm::eulerAngleXYZ(glm::radians(mRotation.x), glm::radians(mRotation.y), glm::radians(mRotation.z)));
-                mDirection = glm::vec3(glm::vec4(0.f, 0.f, 1.f, 0.f) * rotationMat);
-                mOrientation = glm::normalize(glm::toQuat(rotationMat));
+            if (ImGui::SliderFloat3("Roll Pitch Yaw (degrees)", &mRollPitchYaw.x, -180.f, 180.f))
+            { // Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
+                mOrientation = glm::normalize(Utility::toQuaternion(glm::radians(mRollPitchYaw)));
+                mDirection = glm::normalize(mOrientation * StartingDirection);
             }
 
             ImGui::Separator();

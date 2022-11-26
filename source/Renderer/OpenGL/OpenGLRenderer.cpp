@@ -366,12 +366,11 @@ namespace OpenGL
                 }
                 else
                 {
-                    auto model = Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
-                    shader->setUniform(mGLState, "model", model);
+                    shader->setUniform(mGLState, "model", pTransform.mModel);
                     draw(GLMesh);
                     if (mVisualiseNormals)
                     {
-                        mVisualiseNormalShader.setUniform(mGLState, "model", model);
+                        mVisualiseNormalShader.setUniform(mGLState, "model", pTransform.mModel);
                         draw(GLMesh);
                     }
                 }
