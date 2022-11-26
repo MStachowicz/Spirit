@@ -37,7 +37,7 @@ namespace OpenGL
         template <class T>
         void setUniform(GLState& pGLState, const std::string& pVariableName, const T& pValue)
         {
-            auto& variable = std::find_if(std::begin(mUniformVariables), std::end(mUniformVariables),
+            auto variable = std::find_if(std::begin(mUniformVariables), std::end(mUniformVariables),
                                           [&pVariableName](const GLData::UniformVariable& pVariable)
                                           { return pVariable.mName.value() == pVariableName; });
 
@@ -55,7 +55,7 @@ namespace OpenGL
         {
             for (auto& shaderBlock : mShaderBufferBlocks)
             {
-                auto& variable = std::find_if(std::begin(shaderBlock.mVariables), std::end(shaderBlock.mVariables),
+                auto variable = std::find_if(std::begin(shaderBlock.mVariables), std::end(shaderBlock.mVariables),
                                               [&pVariableName](const GLData::ShaderStorageBlockVariable& pVariable)
                                               { return pVariable.mName.value() == pVariableName; });
 
