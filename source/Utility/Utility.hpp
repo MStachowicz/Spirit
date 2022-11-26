@@ -48,6 +48,12 @@ namespace Utility
 
     glm::mat4 GetModelMatrix(const glm::vec3& pPosition, const glm::vec3& pRotation, const glm::vec3& pScale);
 
-    // Returns the quaternon rotation to get from pStart to pDestination.
+    // Converts a quaternion rotation into XYZ (Roll-Pitch-Yaw) Euler angles in radians.
+    glm::vec3 toRollPitchYaw(const glm::quat pOrientation);
+    // Converts Roll-Pitch-Yaw into a quaternion rotation. Roll, pitch and yaw are expected in radians.
+    glm::quat toQuaternion(const float& pRoll, const float& pPitch, const float& pYaw);
+    // Converts XYZ (Roll-Pitch-Yaw) into a quaternion rotation. Roll, pitch and yaw are expected in radians.
+    inline glm::quat toQuaternion(const glm::vec3& pRollPitchYaw) { return toQuaternion(pRollPitchYaw.x, pRollPitchYaw.y, pRollPitchYaw.z); }
+    // Returns the quaternon rotation to get from pStart to pDestination direction vectors.
     glm::quat getRotation(const glm::vec3& pStart, const glm::vec3& pDestination);
 }
