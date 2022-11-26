@@ -163,6 +163,7 @@ PRIVATE assimp
     # ------------------------ Utility ------------------------------------------------------------
     add_library(Utility
     source/Utility/EventDispatcher.hpp
+    source/Utility/Geometry.hpp
     source/Utility/JobSystem/JobSystem.cpp
     source/Utility/JobSystem/JobSystem.hpp
     source/Utility/JobSystem/Test.hpp
