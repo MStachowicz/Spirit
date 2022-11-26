@@ -382,7 +382,7 @@ namespace OpenGL
         });
     }
 
-    void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength)
+    void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour /*= glm::vec3(1.f,1.f,1.f)*/)
     {
         // Draw an arrow starting at pOrigin of length pLength point in pOrientation.
         // The body/stem of the arrow is a cylinder, the head/tip is a cone model.
@@ -419,7 +419,7 @@ namespace OpenGL
         arrowHeadModel = arrowHeadModel * arrowToDirectionRot;
         arrowHeadModel = glm::scale(arrowHeadModel, arrowHeadScale);
 
-        mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(1.f, 1.f, 1.f));
+        mLightEmitterShader.setUniform(mGLState, "colour", pColour);
 
         const auto& glConeMesh = mGLMeshData[mConeIndex];
         mLightEmitterShader.setUniform(mGLState, "model", arrowHeadModel);
