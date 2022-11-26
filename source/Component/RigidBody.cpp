@@ -23,6 +23,17 @@ namespace Component
             ImGui::Separator();
             ImGui::Checkbox("Apply Gravity", &mApplyGravity);
             ImGui::TreePop();
+
+            if (ImGui::Button("Reset"))
+            {
+                mForce        = glm::vec3(0.f, 0.f, 0.f);
+                mMomentum     = glm::vec3(0.f, 0.f, 0.f);
+                mAcceleration = glm::vec3(0.f, 0.f, 0.f);
+                mVelocity     = glm::vec3(0.f, 0.f, 0.f);
+                mTorque          = glm::vec3(0.f, 0.f, 0.f);
+                mAngularMomentum = glm::vec3(0.f, 0.f, 0.f);
+                mAngularVelocity = glm::vec3(0.f, 0.f, 0.f);
+            }
         }
     }
 }

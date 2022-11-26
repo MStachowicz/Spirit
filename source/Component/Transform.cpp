@@ -26,6 +26,15 @@ namespace Component
             ImGui::Text(("Directon:    " + std::to_string(mDirection.x) + ", " + std::to_string(mDirection.y) + ", " + std::to_string(mDirection.z)).c_str());
             ImGui::Text(("Orientation: " + std::to_string(mOrientation.w) + ", " + std::to_string(mOrientation.x) + ", " + std::to_string(mOrientation.y) + ", " + std::to_string(mOrientation.z)).c_str());
 
+            // https://glm.g-truc.net/0.9.2/api/a00259.html#
+            if (ImGui::Button("Reset"))
+            {
+                mPosition     = glm::vec3(0.0f, 5.0f, 0.0f);
+                mRollPitchYaw = glm::vec3(0.0f);
+                mScale        = glm::vec3(1.0f);
+                mDirection    = StartingDirection;
+                mOrientation  = glm::identity<glm::quat>();
+            }
             ImGui::TreePop();
         }
     }
