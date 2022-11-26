@@ -19,6 +19,7 @@
 // UTILITY
 #include "Logger.hpp"
 #include "Stopwatch.hpp"
+#include "Geometry.hpp"
 
 // IMGUI
 #define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
@@ -100,7 +101,10 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
             Component::Collider collider;
             collider.mBoundingBox = Collision::BoundingBox(-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f);
 
-            mStorage.addEntity(mesh, transform, collider);
+            Component::RigidBody rigidBody;
+            rigidBody.mMass = 72.f;
+            rigidBody.mInertia = Geometry::CuboidInertia(rigidBody.mMass, 1.f, 1.f, 1.f).x;
+            mStorage.addEntity(mesh, transform, collider, rigidBody);
         }
     }
     {// Backpack
