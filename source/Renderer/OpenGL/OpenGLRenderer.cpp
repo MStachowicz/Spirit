@@ -22,9 +22,12 @@
 // EXTERNAL
 #include "glad/gl.h"
 #include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
+#include "imgui.h"
+
+//GLM
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
-#include "imgui.h"
+#include "glm/gtx/quaternion.hpp"
 
 // STD
 #include <algorithm>
@@ -44,6 +47,7 @@ namespace OpenGL
         , mProjection()
         , mLinearDepthView(false)
         , mVisualiseNormals(false)
+        , mShowOrientations(true)
         , mZNearPlane(0.1f)
         , mZFarPlane(100.0f)
         , mFOV(45.f)
@@ -75,6 +79,8 @@ namespace OpenGL
         , m3DCubeMeshIndex{0}
         , mSkyBoxMeshIndex{0}
         , mScreenQuadMeshIndex{0}
+        , mCylinderIndex{0}
+        , mConeIndex{0}
         , mTextures{}
         , mMissingTextureID{0}
         , mCubeMaps{}
@@ -136,6 +142,10 @@ namespace OpenGL
             mSkyBoxMeshIndex = mGLMeshData.size() - 1;
         else if (pMesh.mName == "3DCube")
             m3DCubeMeshIndex = mGLMeshData.size() - 1;
+        else if (pMesh.mName == "cylinder_32")
+            mCylinderIndex = mGLMeshData.size() - 1;
+        else if (pMesh.mName == "cone_32")
+            mConeIndex = mGLMeshData.size() - 1;
 
         newMesh->mDrawMode = GLType::PrimitiveMode::Triangles; // OpenGLRenderer only supports Triangles at this revision
 
@@ -373,6 +383,54 @@ namespace OpenGL
         });
     }
 
+    void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength)
+    {
+        // Draw an arrow starting at pOrigin of length pLength point in pOrientation.
+        // The body/stem of the arrow is a cylinder, the head/tip is a cone model.
+        // We use seperate models for both to preserve the proportions which would be lost if we uniformly scaled an 'arrow mesh'
+
+        static const float lengthToBodyLength  = 0.8f; //= 0.714f; // The proportion of the arrow that is the body.
+        static const float lengthToBodyDiameter = 0.1f; // The factor from the length of the arrow to the diameter of the body.
+        static const float bodyToHeadDiameter = 2.f; // The factor from the diamater of the body to the diameter of the head.
+
+        // Model constants
+        static const float cylinderDimensions = 2.f; // The default cylinder model has x, y and z dimensions in the range = [-1 - 1]
+        static const float coneDimensions = 2.f;     // The default cone model has x, y and z dimensions in the range     = [-1 - 1]
+        static const glm::vec3 modelDirection{0.f, 1.f, 0.f};                // Unit vec up, cone/cylinder models are alligned up (along y) by default.
+
+        // Find the dimensions using pLength
+        const float arrowBodyLength = pLength * lengthToBodyLength;
+        const float arrowHeadLength = pLength - arrowBodyLength;
+        const float arrowBodyDiameter = pLength * lengthToBodyDiameter;
+        const float arrowHeadDiameter = arrowBodyDiameter * bodyToHeadDiameter;
+        // The rotation to apply to make the arrow mesh point in pDirection.
+        const auto arrowToDirectionRot = glm::mat4_cast(Utility::getRotation(modelDirection, pDirection));
+
+        // CYLINDER/BODY
+        const glm::vec3 arrowBodyCenter = pOrigin + (pDirection * (arrowBodyLength / 2.f)); // The center of the cylinder.
+        const glm::vec3 arrowBodyScale = glm::vec3(arrowBodyDiameter / cylinderDimensions, arrowBodyLength / cylinderDimensions, arrowBodyDiameter / cylinderDimensions);
+        glm::mat4 arrowBodyModel = glm::translate(glm::identity<glm::mat4>(), arrowBodyCenter);
+        arrowBodyModel = arrowBodyModel * arrowToDirectionRot;
+        arrowBodyModel = glm::scale(arrowBodyModel, arrowBodyScale);
+
+        // CONE/HEAD
+        const glm::vec3 arrowHeadPosition = pOrigin + (pDirection * (arrowBodyLength + (arrowHeadLength / 2.f))); // The center of the cone
+        const glm::vec3 arrowHeadScale = glm::vec3(arrowHeadDiameter / coneDimensions, arrowHeadLength / coneDimensions, arrowHeadDiameter / coneDimensions);
+        glm::mat4 arrowHeadModel = glm::translate(glm::identity<glm::mat4>(), arrowHeadPosition);
+        arrowHeadModel = arrowHeadModel * arrowToDirectionRot;
+        arrowHeadModel = glm::scale(arrowHeadModel, arrowHeadScale);
+
+        mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(1.f, 1.f, 1.f));
+
+        const auto& glConeMesh = mGLMeshData[mConeIndex];
+        mLightEmitterShader.setUniform(mGLState, "model", arrowHeadModel);
+        draw(glConeMesh);
+
+        const auto& glCylinderMesh = mGLMeshData[mCylinderIndex];
+        mLightEmitterShader.setUniform(mGLState, "model", arrowBodyModel);
+        draw(glCylinderMesh);
+    }
+
     void OpenGLRenderer::draw(const OpenGLRenderer::GLMeshData& pMesh, const size_t& pInstancedCount /* = 0*/)
     {
         if (pMesh.mDrawSize > 0)
@@ -473,6 +531,14 @@ namespace OpenGL
                 mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
                 mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
                 draw(mGLMeshData[m3DCubeMeshIndex]);
+            });
+        }
+
+        if (mShowOrientations)
+        {
+            mStorage.foreach([this](Component::Transform& pTransform)
+            {
+                drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
             });
         }
 
@@ -589,6 +655,7 @@ namespace OpenGL
                 ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
 
             ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
+            ImGui::Checkbox("Show orientations", &mShowOrientations);
 
             ImGui::Separator();
             mGLState.renderImGui();

@@ -9,6 +9,7 @@
 #include "Utility.hpp"
 
 // GLM
+#include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"
 
 // STD
@@ -82,6 +83,7 @@ namespace OpenGL
         // By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
         bool mLinearDepthView;
         bool mVisualiseNormals;
+        bool mShowOrientations;
         float mZNearPlane;
         float mZFarPlane;
         float mFOV;
@@ -145,6 +147,8 @@ namespace OpenGL
         size_t m3DCubeMeshIndex;
         size_t mSkyBoxMeshIndex;
         size_t mScreenQuadMeshIndex;
+        size_t mCylinderIndex;
+        size_t mConeIndex;
 
         std::vector<GLData::Texture> mTextures; // Mapping of Component::Texture to OpenGL::Texture.
         size_t mMissingTextureID;
@@ -156,6 +160,7 @@ namespace OpenGL
         void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
         void setShaderVariables(const Component::SpotLight& pSpotLight);
         void draw(const GLMeshData& pMesh, const size_t& pInstancedCount = 0); // Recursively draw the GLMeshData and all its children.
+        void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength); // Draw an arrow from pOrigin in pDirection of pLength.
 
         void initialiseMesh(const Component::Mesh& pMesh, GLMeshData* pParentMesh = nullptr);
         void initialiseTexture(const Component::Texture& pTexture);
