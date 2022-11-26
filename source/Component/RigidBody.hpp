@@ -16,6 +16,14 @@ namespace Component
         float mMass = 1;
         bool mApplyGravity = false;
         // -----------------------------------------------------------------------------
+        // Angular motion
+        // -----------------------------------------------------------------------------
+        glm::vec3 mTorque              = glm::vec3(0.f, 0.f, 0.f);
+        glm::vec3 mAngularMomentum     = glm::vec3(0.f, 0.f, 0.f);
+        glm::vec3 mAngularVelocity     = glm::vec3(0.f, 0.f, 0.f);
+        // mOrientation stored in Component::Transform
+        float mInertia = 1;
+        // -----------------------------------------------------------------------------
 
         void DrawImGui();
     };
