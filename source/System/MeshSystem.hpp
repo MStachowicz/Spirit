@@ -27,7 +27,6 @@ namespace System
     // MeshSystem is a container of the raw Mesh data.
     class MeshSystem
     {
-    private:
         std::vector<Component::Mesh> mMeshes;
         std::unordered_map<std::string, size_t> mMeshNames;
         System::TextureSystem& mTextureSystem;
@@ -50,9 +49,12 @@ namespace System
         // Loads model data using ASSIMP from pFilePath.
         Component::MeshID loadModel(const std::filesystem::path& pFilePath);
 
+        const Component::Mesh& getMesh(const Component::MeshID& pMeshID) const { return mMeshes[pMeshID.Get()]; }
+
     private:
         // Set the mID of the mesh and its children recursively.
         void setIDRecursively(Component::Mesh& pMesh, const bool& pRootMesh);
+        void uniteBoundsRecursively(Component::Mesh& pMesh, Geometry::AABB& AABB);
 
         void addMesh(Component::Mesh& pMesh);
         void buildMeshes();

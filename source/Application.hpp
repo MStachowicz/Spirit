@@ -25,7 +25,7 @@ private:
     System::MeshSystem mMeshSystem;
     ECS::Storage mStorage;
 
-    Collision::CollisionSystem mCollisionSystem;
+    System::CollisionSystem mCollisionSystem;
     System::PhysicsSystem mPhysicsSystem;
 
     Renderer mRenderer;

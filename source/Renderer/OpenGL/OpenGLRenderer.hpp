@@ -74,6 +74,7 @@ namespace OpenGL
         GLData::FBO mMainScreenFBO;
 
         ECS::Storage& mStorage;
+        const System::MeshSystem& mMeshSystem;
 
         glm::mat4 mViewMatrix;
         glm::vec3 mViewPosition;
@@ -84,6 +85,8 @@ namespace OpenGL
         bool mLinearDepthView;
         bool mVisualiseNormals;
         bool mShowOrientations;
+        bool mShowBoundingBoxes;
+        bool mFillBoundingBoxes;
         float mZNearPlane;
         float mZFarPlane;
         float mFOV;

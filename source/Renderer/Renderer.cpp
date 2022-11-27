@@ -57,25 +57,25 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
         camera.mPrimaryCamera = true;
         mStorage.addEntity(camera);
     }
-    {// Floor
-        Component::Transform transform;
-        transform.mPosition;
-        transform.mRollPitchYaw.x = -90.f;
-        transform.mScale      = glm::vec3(floorSize);
-
-        Component::MeshDraw mesh;
-        mesh.mID                  = mMeshSystem.getMeshID("Quad");
-        mesh.mDrawStyle           = Component::DrawStyle::LightMap;
-        mesh.mDiffuseTextureID    = mTextureSystem.getTextureID("grassTile");
-        mesh.mSpecularTextureID   = mTextureSystem.getTextureID("black");
-        mesh.mShininess           = 128.f;
-        mesh.mTextureRepeatFactor = 20.f;
-
-        mStorage.addEntity(transform, mesh);
-    }
+    //{// Floor
+    //    Component::Transform transform;
+    //    transform.mPosition;
+    //    transform.mRollPitchYaw.x = -90.f;
+    //    transform.mScale      = glm::vec3(floorSize);
+//
+    //    Component::MeshDraw mesh;
+    //    mesh.mID                  = mMeshSystem.getMeshID("Quad");
+    //    mesh.mDrawStyle           = Component::DrawStyle::LightMap;
+    //    mesh.mDiffuseTextureID    = mTextureSystem.getTextureID("grassTile");
+    //    mesh.mSpecularTextureID   = mTextureSystem.getTextureID("black");
+    //    mesh.mShininess           = 128.f;
+    //    mesh.mTextureRepeatFactor = 20.f;
+//
+    //    mStorage.addEntity(transform, mesh);
+    //}
     {// Cubes
         std::array<glm::vec3, 10> cubePositions = {
-            glm::vec3(3.0f, 0.5f, -3.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(-1.3f, 0.5f, -1.5f),
             glm::vec3(1.5f, 0.5f, -2.5f),
             glm::vec3(-1.5f, 0.5f, -2.5f),
@@ -85,7 +85,7 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
             glm::vec3(1.3f, 0.5f, -8.5f),
             glm::vec3(-3.8f, 0.5f, -12.3f),
             glm::vec3(2.0f, 0.5f, -15.0f)};
-        for (size_t i = 0; i < cubePositions.size(); i++)
+        for (size_t i = 0; i < 1; i++)
         {
             Component::Transform transform;
             transform.mPosition = cubePositions[i];
@@ -99,7 +99,6 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
             mesh.mShininess         = 64.f;
 
             Component::Collider collider;
-            collider.mBoundingBox = Collision::BoundingBox(-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f);
 
             Component::RigidBody rigidBody;
             rigidBody.mMass = 72.f;
@@ -107,109 +106,111 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
             mStorage.addEntity(mesh, transform, collider, rigidBody);
         }
     }
-    {// Backpack
-        Component::Transform transform;
-        transform.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
-        transform.mScale    = glm::vec3(0.5f);
-
-        Component::MeshDraw mesh;
-        mesh.mID                = mMeshSystem.getMeshID("backpack");
-        mesh.mDrawStyle         = Component::DrawStyle::LightMap;
-        mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("diffuse");
-        mesh.mSpecularTextureID = mTextureSystem.getTextureID("specular");
-        mesh.mShininess         = 64.f;
-
-        mStorage.addEntity(mesh, transform);
-    }
-    {// Xian
-        Component::Transform transform;
-        transform.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
-        transform.mRollPitchYaw = glm::vec3(-10.0f, 230.0f, -15.0f);
-        transform.mScale    = glm::vec3(0.4f);
-
-        Component::MeshDraw mesh;
-        mesh.mID                = mMeshSystem.getMeshID("xian");
-        mesh.mDrawStyle         = Component::DrawStyle::LightMap;
-        mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("Base_Color");
-        mesh.mSpecularTextureID = mTextureSystem.getTextureID("black");
-        mesh.mShininess         = 64.f;
-
-        mStorage.addEntity(mesh, transform);
-    }
-    {// Billboard grass
-        std::array<glm::vec3, grassCount> grassPositions;
-        {
-            if (randomGrassPlacement)
-            {
-                std::array<float, grassCount> randomX;
-                Utility::fillRandomNumbers(-floorSize, floorSize, randomX);
-                std::array<float, grassCount> randomZ;
-                Utility::fillRandomNumbers(-floorSize, floorSize, randomZ);
-                for (size_t i = 0; i < grassCount; i++)
-                    grassPositions[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
-            }
-            else
-            {
-                const float distance = 1.f;
-                float x              = -1;
-                float z              = 0;
-                for (size_t i = 0; i < grassCount; i++)
-                {
-                    x += distance;
-                    if (x > floorSize)
-                    {
-                        x = -floorSize;
-
-                        z += distance;
-                        if (z > floorSize)
-                            z = -floorSize;
-                    }
-
-                    grassPositions[i] = glm::vec3(x, 0.f, z);
-                }
-            }
-        }
-
-        std::array<float, grassCount> randomY;
-        Utility::fillRandomNumbers(0.2f, 0.6f, randomY);
-        for (size_t i = 0; i < grassCount; i++)
-        {
-            Component::Transform transform;
-            transform.mScale    = glm::vec3(0.2f, randomY[i], 0.2f);
-            transform.mPosition = grassPositions[i];
-            transform.mPosition.y += transform.mScale.y;
-
-            Component::MeshDraw mesh;
-            mesh.mID        = mMeshSystem.getMeshID("Quad");
-            mesh.mDrawStyle = Component::DrawStyle::Textured;
-            mesh.mTexture1  = mTextureSystem.getTextureID("grassBillboard");
-
-            mStorage.addEntity(mesh, transform);
-        }
-    }
-    {// Windows
-        std::array<glm::vec3, 5> windowPositions = {
-            glm::vec3(-1.5f, 0.0f, 1.48f),
-            glm::vec3(1.5f, 0.0f, 1.51f),
-            glm::vec3(0.0f, 0.0f, 1.7f),
-            glm::vec3(-0.3f, 0.0f, 1.3f),
-            glm::vec3(0.5f, 0.0f, 1.6f)};
-
-        for (const auto& position : windowPositions)
-        {
-            Component::Transform transform;
-            transform.mScale    = glm::vec3(0.2f);
-            transform.mPosition = position;
-            transform.mPosition.y += transform.mScale.y;
-
-            Component::MeshDraw mesh;
-            mesh.mID        = mMeshSystem.getMeshID("Quad");
-            mesh.mDrawStyle = Component::DrawStyle::Textured;
-            mesh.mTexture1  = mTextureSystem.getTextureID("window");
-
-            mStorage.addEntity(mesh, transform);
-        }
-    }
+    //{// Backpack
+    //    Component::Transform transform;
+    //    transform.mPosition = glm::vec3(-3.0f, 1.0f, 1.f);
+    //    transform.mScale    = glm::vec3(0.5f);
+//
+    //    Component::MeshDraw mesh;
+    //    mesh.mID                = mMeshSystem.getMeshID("backpack");
+    //    mesh.mDrawStyle         = Component::DrawStyle::LightMap;
+    //    mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("diffuse");
+    //    mesh.mSpecularTextureID = mTextureSystem.getTextureID("specular");
+    //    mesh.mShininess         = 64.f;
+//
+    //    mStorage.addEntity(mesh, transform);
+    //}
+    //{// Xian
+    //    Component::Transform transform;
+    //    transform.mPosition = glm::vec3(8.0f, 10.0f, 0.0f);
+    //    transform.mRollPitchYaw = glm::vec3(-10.0f, 230.0f, -15.0f);
+    //    transform.mScale    = glm::vec3(0.4f);
+//
+    //    Component::Collider collider;
+//
+    //    Component::MeshDraw mesh;
+    //    mesh.mID                = mMeshSystem.getMeshID("xian");
+    //    mesh.mDrawStyle         = Component::DrawStyle::LightMap;
+    //    mesh.mDiffuseTextureID  = mTextureSystem.getTextureID("Base_Color");
+    //    mesh.mSpecularTextureID = mTextureSystem.getTextureID("black");
+    //    mesh.mShininess         = 64.f;
+//
+    //    mStorage.addEntity(mesh, transform, collider);
+    //}
+    //{// Billboard grass
+    //    std::array<glm::vec3, grassCount> grassPositions;
+    //    {
+    //        if (randomGrassPlacement)
+    //        {
+    //            std::array<float, grassCount> randomX;
+    //            Utility::fillRandomNumbers(-floorSize, floorSize, randomX);
+    //            std::array<float, grassCount> randomZ;
+    //            Utility::fillRandomNumbers(-floorSize, floorSize, randomZ);
+    //            for (size_t i = 0; i < grassCount; i++)
+    //                grassPositions[i] = glm::vec3(randomX[i], 0.f, randomZ[i]);
+    //        }
+    //        else
+    //        {
+    //            const float distance = 1.f;
+    //            float x              = -1;
+    //            float z              = 0;
+    //            for (size_t i = 0; i < grassCount; i++)
+    //            {
+    //                x += distance;
+    //                if (x > floorSize)
+    //                {
+    //                    x = -floorSize;
+//
+    //                    z += distance;
+    //                    if (z > floorSize)
+    //                        z = -floorSize;
+    //                }
+//
+    //                grassPositions[i] = glm::vec3(x, 0.f, z);
+    //            }
+    //        }
+    //    }
+//
+    //    std::array<float, grassCount> randomY;
+    //    Utility::fillRandomNumbers(0.2f, 0.6f, randomY);
+    //    for (size_t i = 0; i < grassCount; i++)
+    //    {
+    //        Component::Transform transform;
+    //        transform.mScale    = glm::vec3(0.2f, randomY[i], 0.2f);
+    //        transform.mPosition = grassPositions[i];
+    //        transform.mPosition.y += transform.mScale.y;
+//
+    //        Component::MeshDraw mesh;
+    //        mesh.mID        = mMeshSystem.getMeshID("Quad");
+    //        mesh.mDrawStyle = Component::DrawStyle::Textured;
+    //        mesh.mTexture1  = mTextureSystem.getTextureID("grassBillboard");
+//
+    //        mStorage.addEntity(mesh, transform);
+    //    }
+    //}
+    //{// Windows
+    //    std::array<glm::vec3, 5> windowPositions = {
+    //        glm::vec3(-1.5f, 0.0f, 1.48f),
+    //        glm::vec3(1.5f, 0.0f, 1.51f),
+    //        glm::vec3(0.0f, 0.0f, 1.7f),
+    //        glm::vec3(-0.3f, 0.0f, 1.3f),
+    //        glm::vec3(0.5f, 0.0f, 1.6f)};
+//
+    //    for (const auto& position : windowPositions)
+    //    {
+    //        Component::Transform transform;
+    //        transform.mScale    = glm::vec3(0.2f);
+    //        transform.mPosition = position;
+    //        transform.mPosition.y += transform.mScale.y;
+//
+    //        Component::MeshDraw mesh;
+    //        mesh.mID        = mMeshSystem.getMeshID("Quad");
+    //        mesh.mDrawStyle = Component::DrawStyle::Textured;
+    //        mesh.mTexture1  = mTextureSystem.getTextureID("window");
+//
+    //        mStorage.addEntity(mesh, transform);
+    //    }
+    //}
     {// Lights
         {// Point light
             const std::array<glm::vec3, 4> pointLightPositions = {
@@ -231,7 +232,6 @@ Renderer::Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTexture
                 mStorage.addEntity(pointLight);
             }
         }
-
         {// Directional light
             Component::DirectionalLight directionalLight;
             directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);

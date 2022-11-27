@@ -42,12 +42,15 @@ namespace OpenGL
         , mGLState()
         , mMainScreenFBO()
         , mStorage(pStorage)
+        , mMeshSystem(pMeshSystem)
         , mViewMatrix()
         , mViewPosition()
         , mProjection()
         , mLinearDepthView(false)
         , mVisualiseNormals(false)
         , mShowOrientations(true)
+        , mShowBoundingBoxes(true)
+        , mFillBoundingBoxes(false)
         , mZNearPlane(0.1f)
         , mZFarPlane(100.0f)
         , mFOV(45.f)
@@ -544,24 +547,23 @@ namespace OpenGL
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, glm::vec3(0.f, 1.f, 0.f));
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 1.f, glm::vec3(0.f, 0.f, 1.f));
 
-        { // Render collision shapes
+        if (mShowBoundingBoxes)
+        {
             mLightEmitterShader.use(mGLState);
-            mGLState.setPolygonMode(GLType::PolygonMode::Line);
+            mGLState.setPolygonMode(mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
 
-            mStorage.foreach([this](Component::Collider& pCollider, Component::Transform& pTransform)
+            mStorage.foreach([this](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
             {
-			    const auto highPoint = glm::vec3(pCollider.mBoundingBox.mHighX, pCollider.mBoundingBox.mHighY, pCollider.mBoundingBox.mHighZ);
-			    const auto lowPoint = glm::vec3(pCollider.mBoundingBox.mLowX, pCollider.mBoundingBox.mLowY, pCollider.mBoundingBox.mLowZ);
-			    const auto lowToHigh = highPoint - lowPoint;
-			    const glm::vec3 center = lowPoint + (lowToHigh / 2.f);
-			    const auto sizeX = pCollider.mBoundingBox.mHighX - pCollider.mBoundingBox.mLowX;
-			    const auto sizeY = pCollider.mBoundingBox.mHighY - pCollider.mBoundingBox.mLowY;
-			    const auto sizeZ = pCollider.mBoundingBox.mHighZ - pCollider.mBoundingBox.mLowZ;
+                // Transform the object-space AABB to world space and render.
 
-                auto colliderModelMat = Utility::GetModelMatrix(center, glm::vec3(0.f), glm::vec3(sizeX, sizeY, sizeZ));
-                auto transformModelMat = Utility::GetModelMatrix(pTransform.mPosition, pTransform.mRotation, pTransform.mScale);
+                auto& AABB = mMeshSystem.getMesh(pMesh.mID).mAABB;
+                const auto rotateScale = glm::scale(glm::mat4_cast(pTransform.mOrientation), pTransform.mScale);
+                const auto transformedAABB = Geometry::AABB::transform(AABB, pTransform.mPosition, rotateScale);
 
-			    mLightEmitterShader.setUniform(mGLState, "model", colliderModelMat * transformModelMat);
+                auto AABBModelMat = glm::translate(glm::identity<glm::mat4>(), transformedAABB.getCenter());
+                AABBModelMat = glm::scale(AABBModelMat, transformedAABB.getSize());
+
+			    mLightEmitterShader.setUniform(mGLState, "model", AABBModelMat);
    			    mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
                 draw(mGLMeshData[m3DCubeMeshIndex]);
             });
@@ -658,6 +660,9 @@ namespace OpenGL
 
             ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
             ImGui::Checkbox("Show orientations", &mShowOrientations);
+            ImGui::Checkbox("Show bounding boxes", &mShowBoundingBoxes);
+            if (mShowBoundingBoxes)
+                ImGui::Checkbox("Fill bounding boxes ", &mFillBoundingBoxes);
 
             ImGui::Separator();
             mGLState.renderImGui();

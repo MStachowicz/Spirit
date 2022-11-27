@@ -16,7 +16,7 @@ namespace Component
             ImGui::SliderFloat3("Position (m)", &mPosition.x, -50.f, 50.f);
             ImGui::SliderFloat3("Scale", &mScale.x, 0.1f, 10.f);
 
-            if (ImGui::SliderFloat3("Roll Pitch Yaw (degrees)", &mRollPitchYaw.x, -180.f, 180.f))
+            if (ImGui::SliderFloat3("Roll Pitch Yaw (degrees)", &mRollPitchYaw.x, -179.999f, 179.999f))
             { // Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
                 mOrientation = glm::normalize(Utility::toQuaternion(glm::radians(mRollPitchYaw)));
                 mDirection = glm::normalize(mOrientation * StartingDirection);
@@ -29,7 +29,7 @@ namespace Component
             // https://glm.g-truc.net/0.9.2/api/a00259.html#
             if (ImGui::Button("Reset"))
             {
-                mPosition     = glm::vec3(0.0f, 5.0f, 0.0f);
+                mPosition     = glm::vec3(0.0f, 0.0f, 0.0f);
                 mRollPitchYaw = glm::vec3(0.0f);
                 mScale        = glm::vec3(1.0f);
                 mDirection    = StartingDirection;

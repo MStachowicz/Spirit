@@ -1,8 +1,8 @@
 #include "CollisionSystem.hpp"
 
-namespace Collision
+namespace System
 {
     CollisionSystem::CollisionSystem(ECS::Storage& pStorage)
         : mStorage{pStorage}
     { }
-} // namespace Collision
+} // namespace System

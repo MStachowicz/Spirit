@@ -26,6 +26,14 @@ namespace System
             setIDRecursively(childMesh, false);
     }
 
+    void MeshSystem::uniteBoundsRecursively(Component::Mesh& pMesh, Geometry::AABB& AABB)
+    {
+        AABB = Geometry::AABB::unite(AABB, pMesh.mAABB);
+
+        for (auto& childMesh : pMesh.mChildMeshes)
+            uniteBoundsRecursively(childMesh, AABB);
+    }
+
     void MeshSystem::addMesh(Component::Mesh& pMesh)
     {
         ZEPHYR_ASSERT(mMeshNames.find(pMesh.mName) == mMeshNames.end(), "addMesh should only be called with unique mesh name");
@@ -33,6 +41,7 @@ namespace System
         mMeshes.push_back(pMesh);
         Component::Mesh& newMesh = mMeshes.back();
         setIDRecursively(newMesh, true);
+        uniteBoundsRecursively(newMesh, newMesh.mAABB);
         mMeshNames.emplace(std::make_pair(newMesh.mName, newMesh.mID.Get()));
 
         ZEPHYR_ASSERT(isMeshValid(newMesh), "Adding invalid mesh");
@@ -84,6 +93,7 @@ namespace System
         pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].x);
         pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].y);
         pMesh.mVertices.push_back(pAssimpMesh->mVertices[i].z);
+        pMesh.mAABB = Geometry::AABB::unite(pMesh.mAABB, glm::vec3(pAssimpMesh->mVertices[i].x, pAssimpMesh->mVertices[i].y, pAssimpMesh->mVertices[i].z));
 
         if (pAssimpMesh->HasNormals())
         {

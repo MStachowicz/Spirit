@@ -4,6 +4,8 @@
 
 #include "glm/vec3.hpp"
 
+#include "AABB.hpp"
+
 #include <vector>
 #include <string>
 #include <optional>
@@ -44,6 +46,7 @@ namespace Component
         Component::MeshID mID;
         std::string mName;
         std::string mFilePath;
+        Geometry::AABB mAABB;
 
         std::vector<float> mVertices;           // Per-vertex position attributes.
         std::vector<float> mNormals;            // Per-vertex normal attributes.

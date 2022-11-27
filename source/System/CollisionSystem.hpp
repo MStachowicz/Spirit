@@ -1,21 +1,18 @@
 #pragma once
 
-#include "BoundingBoxTree.hpp"
-
 namespace ECS
 {
     class Storage;
 }
 
-namespace Collision
+namespace System
 {
     class CollisionSystem
     {
        private:
-        BoundingBoxTree mBoundingBoxTree;
         ECS::Storage& mStorage;
 
        public:
         CollisionSystem(ECS::Storage& pStorage);
     };
-} // namespace Collision
+} // namespace System

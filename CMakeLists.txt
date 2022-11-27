@@ -36,8 +36,6 @@ PUBLIC Utility # Uses Logger in Storage.hpp
 
 # Component -----------------------------------------------------------------------------------
 add_library(Component
-source/Component/BoundingBox.cpp
-source/Component/BoundingBox.hpp
 source/Component/Camera.cpp
 source/Component/Camera.hpp
 source/Component/Collider.cpp
@@ -61,6 +59,7 @@ PUBLIC source/Component
 PUBLIC source/External/GLM
 )
 target_link_libraries(Component
+PUBLIC Geometry
 PRIVATE ImGui
 PRIVATE Utility
 )
@@ -68,10 +67,8 @@ PRIVATE Utility
 
 # System --------------------------------------------------------------------------------------
 add_library(System
-source/System/Collision/BoundingBoxTree.cpp
-source/System/Collision/BoundingBoxTree.hpp
-source/System/Collision/CollisionSystem.cpp
-source/System/Collision/CollisionSystem.hpp
+source/System/CollisionSystem.cpp
+source/System/CollisionSystem.hpp
 source/System/PhysicsSystem.cpp
 source/System/PhysicsSystem.hpp
 source/System/MeshSystem.cpp
@@ -81,7 +78,6 @@ source/System/TextureSystem.hpp
 )
 target_include_directories(System
 PUBLIC source/System
-PUBLIC source/System/Collision
 PRIVATE source/External/stb
 PRIVATE source/External/ASSIMP/include
 )
@@ -93,6 +89,20 @@ PRIVATE ImGui
 PRIVATE assimp
 )
 # System end ----------------------------------------------------------------------------------
+
+# Geometry --------------------------------------------------------------------------------------
+add_library(Geometry
+source/Geometry/AABB.cpp
+source/Geometry/AABB.hpp
+source/Geometry/Geometry.hpp
+)
+target_include_directories(Geometry
+PUBLIC source/External/GLM
+PUBLIC source/Geometry
+)
+target_link_libraries(Geometry
+)
+# Geometry end ----------------------------------------------------------------------------------
 
 # INPUT & RENDERING BACKEND ***********************************************************************
     # Renderer ------------------------------------------------------------------------------------
@@ -164,7 +174,6 @@ PRIVATE assimp
     # ------------------------ Utility ------------------------------------------------------------
     add_library(Utility
     source/Utility/EventDispatcher.hpp
-    source/Utility/Geometry.hpp
     source/Utility/JobSystem/JobSystem.cpp
     source/Utility/JobSystem/JobSystem.hpp
     source/Utility/JobSystem/Test.hpp
