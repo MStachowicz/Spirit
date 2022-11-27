@@ -540,6 +540,9 @@ namespace OpenGL
                 drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
             });
         }
+        drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 1.f, glm::vec3(1.f, 0.f, 0.f));
+        drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, glm::vec3(0.f, 1.f, 0.f));
+        drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 1.f, glm::vec3(0.f, 0.f, 1.f));
 
         { // Render collision shapes
             mLightEmitterShader.use(mGLState);
