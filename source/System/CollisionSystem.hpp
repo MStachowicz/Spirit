@@ -4,6 +4,10 @@ namespace ECS
 {
     class Storage;
 }
+namespace System
+{
+    class MeshSystem;
+}
 
 namespace System
 {
@@ -11,8 +15,11 @@ namespace System
     {
        private:
         ECS::Storage& mStorage;
+        const System::MeshSystem& mMeshSystem;
 
        public:
-        CollisionSystem(ECS::Storage& pStorage);
+        CollisionSystem(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem);
+        void checkCollisions();
+
     };
 } // namespace System

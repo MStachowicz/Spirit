@@ -7,7 +7,7 @@ Application::Application()
     , mStorage()
     , mRenderer(mStorage, mTextureSystem, mMeshSystem)
     , mInput(mStorage)
-    , mCollisionSystem(mStorage)
+    , mCollisionSystem(mStorage, mMeshSystem)
     , mPhysicsSystem(mStorage)
 {}
 
