@@ -6,9 +6,10 @@ namespace Component
 {
     void Collider::DrawImGui()
     {
-        //if(ImGui::TreeNode("Collider"))
-        //{
-        // //  ImGui::TreePop();
-        //}
+        if(ImGui::TreeNode("Collider"))
+        {
+            ImGui::Checkbox("Colliding", &mCollided);
+            ImGui::TreePop();
+        }
     }
 }

@@ -6,10 +6,9 @@ namespace Component
 {
     class Collider
     {
-       public:
+    public:
+        bool mCollided = false;
 
-        //bool operator== (const Collider& pOther)  const { return mBoundingBox == pOther.mBoundingBox; };
-        //bool operator != (const Collider& pOther) const { return !(*this == pOther); }
         void DrawImGui();
     };
-}
+} // namespace Component
