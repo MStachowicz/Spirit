@@ -94,6 +94,8 @@ PRIVATE assimp
 add_library(Geometry
 source/Geometry/AABB.cpp
 source/Geometry/AABB.hpp
+source/Geometry/Intersect.cpp
+source/Geometry/Intersect.hpp
 source/Geometry/Geometry.hpp
 )
 target_include_directories(Geometry
