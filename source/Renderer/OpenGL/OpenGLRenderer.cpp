@@ -564,7 +564,8 @@ namespace OpenGL
                 AABBModelMat = glm::scale(AABBModelMat, transformedAABB.getSize());
 
 			    mLightEmitterShader.setUniform(mGLState, "model", AABBModelMat);
-   			    mLightEmitterShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
+
+   			    mLightEmitterShader.setUniform(mGLState, "colour", pCollider.mCollided ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 1.f, 0.f));
                 draw(mGLMeshData[m3DCubeMeshIndex]);
             });
             mGLState.setPolygonMode(GLType::PolygonMode::Fill);
