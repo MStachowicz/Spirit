@@ -94,6 +94,7 @@ PRIVATE assimp
 add_library(Geometry
 source/Geometry/AABB.cpp
 source/Geometry/AABB.hpp
+source/Geometry/Cylinder.hpp
 source/Geometry/Intersect.cpp
 source/Geometry/Intersect.hpp
 source/Geometry/Ray.hpp
