@@ -22,6 +22,7 @@ namespace Component
 
         const glm::mat4& getViewMatrix() const { return mView; };
         const glm::vec3& getPosition() const { return mPosition; };
+        const glm::vec3& getForwardDirection() const { return mFront; };
 
         void DrawImGui() {};
         bool operator== (const Camera& pOther) const
