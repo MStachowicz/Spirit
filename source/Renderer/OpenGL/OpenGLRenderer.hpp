@@ -7,6 +7,7 @@
 
 // GEOMETRY
 #include "Cylinder.hpp"
+#include "Sphere.hpp"
 
 // UTILITY
 #include "Utility.hpp"
@@ -68,6 +69,7 @@ namespace OpenGL
 
         // List of cylinders to draw for debugging purposes.
         std::vector<Geometry::Cylinder> debugCylinders;
+        std::vector<Geometry::Sphere> debugSpheres;
     private:
         const int cOpenGLVersionMajor, cOpenGLVersionMinor;
 
@@ -157,6 +159,7 @@ namespace OpenGL
         size_t mScreenQuadMeshIndex;
         size_t mCylinderIndex;
         size_t mConeIndex;
+        size_t mSphereIndex;
 
         std::vector<GLData::Texture> mTextures; // Mapping of Component::Texture to OpenGL::Texture.
         size_t mMissingTextureID;
@@ -171,6 +174,8 @@ namespace OpenGL
         void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
         void drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw a cylinder with base at pStart and top at pEnd of pDiameter.
         void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
+        void drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
+        void drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
 
         void initialiseMesh(const Component::Mesh& pMesh, GLMeshData* pParentMesh = nullptr);
         void initialiseTexture(const Component::Texture& pTexture);

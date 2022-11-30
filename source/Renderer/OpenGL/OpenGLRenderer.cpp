@@ -84,6 +84,7 @@ namespace OpenGL
         , mScreenQuadMeshIndex{0}
         , mCylinderIndex{0}
         , mConeIndex{0}
+        , mSphereIndex{0}
         , mTextures{}
         , mMissingTextureID{0}
         , mCubeMaps{}
@@ -149,6 +150,8 @@ namespace OpenGL
             mCylinderIndex = mGLMeshData.size() - 1;
         else if (pMesh.mName == "cone_32")
             mConeIndex = mGLMeshData.size() - 1;
+        else if (pMesh.mName == "Icosphere_2")
+            mSphereIndex = mGLMeshData.size() - 1;
 
         newMesh->mDrawMode = GLType::PrimitiveMode::Triangles; // OpenGLRenderer only supports Triangles at this revision
 
@@ -457,6 +460,22 @@ namespace OpenGL
         mLightEmitterShader.setUniform(mGLState, "model", modelMat);
         draw(glCylinderMesh);
     }
+    void OpenGLRenderer::drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& pColour/*= glm::vec3(1.f, 1.f, 1.f)*/)
+    {
+        drawSphere({pCenter, pRadius}, pColour);
+    }
+    void OpenGLRenderer::drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& pColour/*= glm::vec3(1.f, 1.f, 1.f)*/)
+    {
+        static const float sphereModelRadius = 1.f; // The default sphere model has XYZ dimensions in the range [-1 - 1] = radius of 1.f
+
+        glm::mat4 modelMat = glm::translate(glm::identity<glm::mat4>(), pSphere.mCenter);
+        modelMat = glm::scale(modelMat, glm::vec3(pSphere.mRadius / sphereModelRadius));
+
+        const auto& glSphereMesh = mGLMeshData[mSphereIndex];
+        mLightEmitterShader.setUniform(mGLState, "colour", pColour);
+        mLightEmitterShader.setUniform(mGLState, "model", modelMat);
+        draw(glSphereMesh);
+    }
 
     void OpenGLRenderer::draw(const OpenGLRenderer::GLMeshData& pMesh, const size_t& pInstancedCount /* = 0*/)
     {
@@ -574,6 +593,8 @@ namespace OpenGL
 
         for (const auto& cylinder : debugCylinders)
             drawCylinder(cylinder);
+        for (const auto& sphere : debugSpheres)
+            drawSphere(sphere);
 
         if (mShowBoundingBoxes)
         {
