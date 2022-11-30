@@ -66,6 +66,8 @@ namespace OpenGL
         void renderImGuiFrame();
         void renderImGui();
 
+        // List of cylinders to draw for debugging purposes.
+        std::vector<Geometry::Cylinder> debugCylinders;
     private:
         const int cOpenGLVersionMajor, cOpenGLVersionMinor;
 
