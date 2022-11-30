@@ -14,5 +14,5 @@ namespace Geometry
 
         glm::vec3 mCenter;
         float mRadius;
-    }
+    };
 }
