@@ -434,15 +434,19 @@ namespace OpenGL
     }
     void OpenGLRenderer::drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour /*= glm::vec3(1.f,1.f,1.f)*/)
     {
+        drawCylinder({pStart, pEnd, pDiameter}, pColour);
+    }
+    void OpenGLRenderer::drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour /*=glm::vec3(1.f, 1.f, 1.f)*/)
+    {
         static const float cylinderDimensions = 2.f; // The default cylinder model has x, y and z dimensions in the range = [-1 - 1]
         static const glm::vec3 cylinderAxis{0.f, 1.f, 0.f}; // Unit vec up, cone/cylinder models are alligned up (along y) by default.
 
-        const float length = glm::length(pEnd - pStart);
-        const glm::vec3 direction = glm::normalize(pEnd - pStart);
-        const glm::vec3 center = pStart + (direction * (length / 2.f)); // The center of the cylinder in world space.
+        const float length = glm::length(pCylinder.mTop - pCylinder.mBase);
+        const glm::vec3 direction = glm::normalize(pCylinder.mTop - pCylinder.mBase);
+        const glm::vec3 center = pCylinder.mBase + (direction * (length / 2.f)); // The center of the cylinder in world space.
         const glm::mat4 rotation = glm::mat4_cast(glm::rotation(cylinderAxis, direction));
         // Cylinder model is alligned along the y-axis, scale the x and z to diameter and y to length before rotating.
-        const glm::vec3 scale = glm::vec3(pDiameter / cylinderDimensions, length / cylinderDimensions, pDiameter / cylinderDimensions);
+        const glm::vec3 scale = glm::vec3(pCylinder.mDiameter / cylinderDimensions, length / cylinderDimensions, pCylinder.mDiameter / cylinderDimensions);
 
         glm::mat4 modelMat = glm::translate(glm::identity<glm::mat4>(), center);
         modelMat = modelMat * rotation;

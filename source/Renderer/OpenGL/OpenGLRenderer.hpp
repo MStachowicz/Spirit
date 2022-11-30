@@ -5,6 +5,9 @@
 #include "OpenGLWindow.hpp"
 #include "Shader.hpp"
 
+// GEOMETRY
+#include "Cylinder.hpp"
+
 // UTILITY
 #include "Utility.hpp"
 
@@ -163,8 +166,9 @@ namespace OpenGL
         void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
         void setShaderVariables(const Component::SpotLight& pSpotLight);
         void draw(const GLMeshData& pMesh, const size_t& pInstancedCount = 0); // Recursively draw the GLMeshData and all its children.
-        void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour = glm::vec3(1.f,1.f,1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
+        void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
         void drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw a cylinder with base at pStart and top at pEnd of pDiameter.
+        void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
 
         void initialiseMesh(const Component::Mesh& pMesh, GLMeshData* pParentMesh = nullptr);
         void initialiseTexture(const Component::Texture& pTexture);

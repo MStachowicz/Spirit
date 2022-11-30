@@ -144,6 +144,7 @@ target_link_libraries(Geometry
     )
     target_link_libraries(OpenGL
     PUBLIC Utility # ToIndex used in header for size of Shader::attribute arrays.
+    PUBLIC Geometry
     PRIVATE System
     PRIVATE Component
     PRIVATE ECS
