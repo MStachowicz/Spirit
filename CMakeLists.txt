@@ -98,6 +98,7 @@ source/Geometry/Cylinder.hpp
 source/Geometry/Intersect.cpp
 source/Geometry/Intersect.hpp
 source/Geometry/Ray.hpp
+source/Geometry/Sphere.hpp
 source/Geometry/Geometry.hpp
 )
 target_include_directories(Geometry
