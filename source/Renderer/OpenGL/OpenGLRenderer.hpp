@@ -42,6 +42,7 @@ namespace System
 {
     class MeshSystem;
     class TextureSystem;
+    class SceneSystem;
 }
 
 namespace OpenGL
@@ -53,7 +54,7 @@ namespace OpenGL
     {
     public:
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-        OpenGLRenderer(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem);
+        OpenGLRenderer(System::SceneSystem& pSceneSystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem);
         ~OpenGLRenderer();
 
         void preDraw();
@@ -80,7 +81,7 @@ namespace OpenGL
         GLState mGLState;
         GLData::FBO mMainScreenFBO;
 
-        ECS::Storage& mStorage;
+        System::SceneSystem& mSceneSystem;
         const System::MeshSystem& mMeshSystem;
 
         glm::mat4 mViewMatrix;

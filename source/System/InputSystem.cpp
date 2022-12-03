@@ -1,22 +1,29 @@
 #include "InputSystem.hpp"
 
+// ECS
 #include "Storage.hpp"
 
+// System
+#include "SceneSystem.hpp"
+
+// Component
 #include "Camera.hpp"
 
+// Utility
 #include "Logger.hpp"
 
+// External
 #include "GLFWInput.hpp"
 #include "imgui.h"
 
 namespace System
 {
-    InputSystem::InputSystem(ECS::Storage& pStorage)
+    InputSystem::InputSystem(System::SceneSystem& pSceneSystem)
         : mInputHandler(new GLFWInput
             ( std::bind(&InputSystem::onInput, this, std::placeholders::_1)
             , std::bind(&InputSystem::onMousePress, this, std::placeholders::_1, std::placeholders::_2)
             , std::bind(&InputSystem::onMouseMove, this, std::placeholders::_1, std::placeholders::_2)))
-            , mStorage(pStorage)
+            , mSceneSystem(pSceneSystem)
     {}
 
     void InputSystem::pollEvents()
@@ -29,7 +36,7 @@ namespace System
     {
         if (mCapturingMouse && !mCapturedThisFrame) // X,Y offsets can be large on the same frame mouse is captured. Skip on mCapturedThisFrame.
         {
-            auto primaryCamera = getPrimaryCamera(mStorage);
+            auto primaryCamera = mSceneSystem.getPrimaryCamera();
             if (primaryCamera)
                 primaryCamera->ProcessMouseMove(pXOffset, pYOffset);
         }
@@ -78,43 +85,37 @@ namespace System
         {
             case InputAPI::Key::KEY_W:
             {
-                auto primaryCamera = getPrimaryCamera(mStorage);
-                if (primaryCamera)
+                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
                     primaryCamera->move(Component::Camera::Forward);
                 break;
             }
             case InputAPI::Key::KEY_S:
             {
-                auto primaryCamera = getPrimaryCamera(mStorage);
-                if (primaryCamera)
+                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
                     primaryCamera->move(Component::Camera::Backward);
                 break;
             }
             case InputAPI::Key::KEY_A:
             {
-                auto primaryCamera = getPrimaryCamera(mStorage);
-                if (primaryCamera)
+                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
                     primaryCamera->move(Component::Camera::Left);
                 break;
             }
             case InputAPI::Key::KEY_D:
             {
-                auto primaryCamera = getPrimaryCamera(mStorage);
-                if (primaryCamera)
+                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
                     primaryCamera->move(Component::Camera::Right);
                 break;
             }
             case InputAPI::Key::KEY_E:
             {
-                auto primaryCamera = getPrimaryCamera(mStorage);
-                if (primaryCamera)
+                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
                     primaryCamera->move(Component::Camera::Up);
                 break;
             }
             case InputAPI::Key::KEY_Q:
             {
-                auto primaryCamera = getPrimaryCamera(mStorage);
-                if (primaryCamera)
+                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
                     primaryCamera->move(Component::Camera::Down);
                 break;
             }
@@ -133,17 +134,5 @@ namespace System
     bool InputSystem::closeRequested()
     {
         return mInputHandler->closeRequested() || mCloseRequested;
-    }
-
-    Component::Camera* InputSystem::getPrimaryCamera(ECS::Storage& pStorage)
-    {
-        Component::Camera* primaryCamera;
-        pStorage.foreach([&primaryCamera](Component::Camera& pCamera)
-        {
-            if (pCamera.mPrimaryCamera)
-                primaryCamera = &pCamera;
-        });
-
-        return primaryCamera;
     }
 }

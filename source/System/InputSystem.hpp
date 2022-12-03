@@ -9,22 +9,16 @@ namespace InputAPI
     enum class Action;
     enum class CursorMode;
 }
-namespace ECS
-{
-    class Storage;
-}
-namespace Component
-{
-    class Camera;
-}
 
 namespace System
 {
+    class SceneSystem;
+
     // Processes input coming in from a registered mInputHandler using the InputAPI.
     class InputSystem
     {
     public:
-        InputSystem(ECS::Storage& pStorage);
+        InputSystem(System::SceneSystem& pSceneSystem);
         void pollEvents();
         bool closeRequested();
     private:
@@ -36,9 +30,7 @@ namespace System
         bool mCapturingMouse = false;
         bool mCapturedThisFrame = false; // If the mouse was captured in this pollEvents cycle.
 
-        static Component::Camera* getPrimaryCamera(ECS::Storage& pStorage);
-
         InputHandler* mInputHandler;
-        ECS::Storage& mStorage;
+        SceneSystem& mSceneSystem;
     };
 }

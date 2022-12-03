@@ -4,20 +4,17 @@
 
 #include <vector>
 
-namespace ECS
-{
-    class Storage;
-}
 namespace System
 {
     class MeshSystem;
     class TextureSystem;
+    class SceneSystem;
 }
 
 class Renderer
 {
 public:
-    Renderer(ECS::Storage& pStorage, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem);
+    Renderer(System::SceneSystem& pSceneSystem, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem);
 
     void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
     void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -30,9 +27,7 @@ public:
     int mTargetFPS; // Independently of physics, the number of frames the renderer will aim to draw per second.
 
 private:
-    ECS::Storage& mStorage;
-    const System::TextureSystem& mTextureSystem;
-    const System::MeshSystem& mMeshSystem;
+    System::SceneSystem& mSceneSystem;
     OpenGL::OpenGLRenderer mOpenGLRenderer;
 
     bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.

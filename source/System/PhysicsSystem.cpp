@@ -1,5 +1,9 @@
 #include "PhysicsSystem.hpp"
 
+// System
+#include "SceneSystem.hpp"
+
+// Component
 #include "Storage.hpp"
 #include "RigidBody.hpp"
 #include "Transform.hpp"
@@ -8,9 +12,9 @@
 
 namespace System
 {
-    PhysicsSystem::PhysicsSystem(ECS::Storage& pStorage)
+    PhysicsSystem::PhysicsSystem(SceneSystem& pSceneSystem)
         : mUpdateCount{0}
-        , mStorage{pStorage}
+        , mSceneSystem{pSceneSystem}
         , mTotalSimulationTime{DeltaTime::zero()}
         , mGravity{glm::vec3(0.f, -9.81f, 0.f)}
     {}
@@ -20,7 +24,7 @@ namespace System
         mUpdateCount++;
         mTotalSimulationTime += pDeltaTime;
 
-        mStorage.foreach([this, &pDeltaTime]( Component::RigidBody& pRigidBody, Component::Transform& pTransform)
+        mSceneSystem.getCurrentScene().foreach([this, &pDeltaTime](Component::RigidBody& pRigidBody, Component::Transform& pTransform)
         {
             // F = ma
             if (pRigidBody.mApplyGravity)

@@ -2,14 +2,6 @@
 
 #include "glm/fwd.hpp"
 
-namespace ECS
-{
-    class Storage;
-}
-namespace System
-{
-    class MeshSystem;
-}
 namespace Geometry
 {
     struct Ray;
@@ -17,14 +9,17 @@ namespace Geometry
 
 namespace System
 {
+    class MeshSystem;
+    class SceneSystem;
+
     class CollisionSystem
     {
        private:
-        ECS::Storage& mStorage;
-        const System::MeshSystem& mMeshSystem;
+        const MeshSystem& mMeshSystem;
+        SceneSystem& mSceneSystem;
 
        public:
-        CollisionSystem(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem);
+        CollisionSystem(SceneSystem& pSceneSystem, const MeshSystem& pMeshSystem);
         void checkCollisions();
 
         bool castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const;

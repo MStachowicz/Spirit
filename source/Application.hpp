@@ -5,7 +5,7 @@
 #include "MeshSystem.hpp"
 #include "PhysicsSystem.hpp"
 #include "Renderer.hpp"
-#include "Storage.hpp"
+#include "SceneSystem.hpp"
 #include "TextureSystem.hpp"
 
 #include "OpenGLRenderer.hpp"
@@ -25,7 +25,7 @@ public:
 private:
     System::TextureSystem mTextureSystem;
     System::MeshSystem mMeshSystem;
-    ECS::Storage mStorage;
+    System::SceneSystem mSceneSystem;
 
     System::CollisionSystem mCollisionSystem;
     System::PhysicsSystem mPhysicsSystem;

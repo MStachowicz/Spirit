@@ -5,6 +5,7 @@
 
 // System
 #include "MeshSystem.hpp"
+#include "SceneSystem.hpp"
 
 // Component
 #include "Transform.hpp"
@@ -17,16 +18,17 @@
 
 namespace System
 {
-    CollisionSystem::CollisionSystem(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem)
-        : mStorage{pStorage}
+    CollisionSystem::CollisionSystem(SceneSystem& pSceneSystem, const MeshSystem& pMeshSystem)
+        : mSceneSystem{pSceneSystem}
         , mMeshSystem{pMeshSystem}
     {}
 
     void CollisionSystem::checkCollisions()
     {
-        mStorage.foreach([this](Component::Collider& pColliderA, Component::Transform& pTransformA, Component::MeshDraw& pMeshA)
+        auto& scene = mSceneSystem.getCurrentScene();
+        scene.foreach([&](Component::Collider& pColliderA, Component::Transform& pTransformA, Component::MeshDraw& pMeshA)
         {
-            mStorage.foreach([&](Component::Collider& pColliderB, Component::Transform& pTransformB, Component::MeshDraw& pMeshB)
+            scene.foreach([&](Component::Collider& pColliderB, Component::Transform& pTransformB, Component::MeshDraw& pMeshB)
             {
                 if (&pColliderA != &pColliderB)
                 {
@@ -58,7 +60,7 @@ namespace System
     {
         std::optional<float> nearestIntersectionAlongRay;
 
-        mStorage.foreach([&](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
+        mSceneSystem.getCurrentScene().foreach([&](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
         {
             auto& AABB = mMeshSystem.getMesh(pMesh.mID).mAABB;
             const auto rotateScale = glm::scale(glm::mat4_cast(pTransform.mOrientation), pTransform.mScale);

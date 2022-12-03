@@ -4,11 +4,11 @@
 Application::Application()
     : mTextureSystem()
     , mMeshSystem(mTextureSystem)
-    , mStorage()
-    , mRenderer(mStorage, mTextureSystem, mMeshSystem)
-    , mInputSystem(mStorage)
-    , mCollisionSystem(mStorage, mMeshSystem)
-    , mPhysicsSystem(mStorage)
+    , mSceneSystem(mTextureSystem, mMeshSystem)
+    , mRenderer(mSceneSystem, mTextureSystem, mMeshSystem)
+    , mInputSystem(mSceneSystem)
+    , mCollisionSystem(mSceneSystem, mMeshSystem)
+    , mPhysicsSystem(mSceneSystem)
 {}
 
 void Application::simulationLoop()

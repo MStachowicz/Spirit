@@ -16,6 +16,7 @@
 // SYSTEMS
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
+#include "SceneSystem.hpp"
 
 #include "Logger.hpp"
 
@@ -34,14 +35,14 @@
 
 namespace OpenGL
 {
-    OpenGLRenderer::OpenGLRenderer(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem)
+    OpenGLRenderer::OpenGLRenderer(System::SceneSystem& pSceneSystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem)
         : cOpenGLVersionMajor(4)
         , cOpenGLVersionMinor(3)
         , mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
         , mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLRenderer construction (OpenGLInstances.size() == 1)
         , mGLState()
         , mMainScreenFBO()
-        , mStorage(pStorage)
+        , mSceneSystem(pSceneSystem)
         , mMeshSystem(pMeshSystem)
         , mViewMatrix()
         , mViewPosition()
@@ -93,14 +94,11 @@ namespace OpenGL
         pTextureSystem.ForEach([this](const auto& texture) { initialiseTexture(texture); });
         pTextureSystem.ForEachCubeMap([this](const auto& cubeMap) { initialiseCubeMap(cubeMap); });
 
-        mStorage.foreach([this](Component::Camera& pCamera)
+        if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
         {
-            if (pCamera.mPrimaryCamera)
-            {
-                mViewMatrix = pCamera.getViewMatrix();
-                mViewPosition = pCamera.getPosition();
-            }
-        });
+            mViewMatrix   = primaryCamera->getViewMatrix();
+            mViewPosition = primaryCamera->getPosition();
+        }
 
         glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
 
@@ -244,7 +242,7 @@ namespace OpenGL
 
     void OpenGLRenderer::preDraw()
     {
-        mStorage.foreach([this](Component::Camera& pCamera)
+        mSceneSystem.getCurrentScene().foreach([this](Component::Camera& pCamera)
         {
             if (pCamera.mPrimaryCamera)
             {
@@ -308,7 +306,7 @@ namespace OpenGL
     }
     void OpenGLRenderer::draw()
     {
-        mStorage.foreach([this](Component::Transform& pTransform, Component::MeshDraw& pMeshDraw)
+        mSceneSystem.getCurrentScene().foreach([this](Component::Transform& pTransform, Component::MeshDraw& pMeshDraw)
         {
             const GLMeshData& GLMesh = mGLMeshData[pMeshDraw.mID.Get()];
 
@@ -555,15 +553,15 @@ namespace OpenGL
 
     void OpenGLRenderer::setupLights(const bool& pRenderLightPositions)
     {
-        mStorage.foreach([this](Component::PointLight& pPointLight)
+        mSceneSystem.getCurrentScene().foreach([this](Component::PointLight& pPointLight)
         {
             setShaderVariables(pPointLight);
         });
-        mStorage.foreach([this](Component::DirectionalLight& pDirectionalLight)
+        mSceneSystem.getCurrentScene().foreach([this](Component::DirectionalLight& pDirectionalLight)
         {
             setShaderVariables(pDirectionalLight);
         });
-        mStorage.foreach([this](Component::SpotLight& pSpotLight)
+        mSceneSystem.getCurrentScene().foreach([this](Component::SpotLight& pSpotLight)
         {
             setShaderVariables(pSpotLight);
         });
@@ -572,7 +570,7 @@ namespace OpenGL
         {
             mLightEmitterShader.use(mGLState);
 
-            mStorage.foreach([this](Component::PointLight& pPointLight)
+            mSceneSystem.getCurrentScene().foreach([this](Component::PointLight& pPointLight)
             {
                 mLightEmitterShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
                 mLightEmitterShader.setUniform(mGLState, "colour", pPointLight.mColour);
@@ -582,7 +580,7 @@ namespace OpenGL
 
         if (mShowOrientations)
         {
-            mStorage.foreach([this](Component::Transform& pTransform)
+            mSceneSystem.getCurrentScene().foreach([this](Component::Transform& pTransform)
             {
                 drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
             });
@@ -601,7 +599,7 @@ namespace OpenGL
             mLightEmitterShader.use(mGLState);
             mGLState.setPolygonMode(mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
 
-            mStorage.foreach([this](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
+            mSceneSystem.getCurrentScene().foreach([this](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
             {
                 // Transform the object-space AABB to world space and render.
 
