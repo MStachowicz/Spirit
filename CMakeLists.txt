@@ -71,6 +71,8 @@ source/System/CollisionSystem.cpp
 source/System/CollisionSystem.hpp
 source/System/PhysicsSystem.cpp
 source/System/PhysicsSystem.hpp
+source/System/InputSystem.hpp
+source/System/InputSystem.cpp
 source/System/MeshSystem.cpp
 source/System/MeshSystem.hpp
 source/System/TextureSystem.cpp
@@ -84,6 +86,7 @@ PRIVATE source/External/ASSIMP/include
 target_link_libraries(System
 PUBLIC Component
 PUBLIC ECS
+PRIVATE Input
 PRIVATE Utility
 PRIVATE ImGui
 PRIVATE assimp
@@ -157,13 +160,11 @@ target_link_libraries(Geometry
 
     # Input ---------------------------------------------------------------------------------------
     add_library(Input
-    source/Input/Input.hpp
-    source/Input/Input.cpp
     source/Input/InputAPI.hpp
     source/Input/GLFWInput.hpp
     source/Input/GLFWInput.cpp
     )
-    target_include_directories(Zephyr
+    target_include_directories(Input
     PUBLIC source/Input
     PRIVATE source/External/GLFW/include
     )

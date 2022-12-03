@@ -6,14 +6,14 @@ Application::Application()
     , mMeshSystem(mTextureSystem)
     , mStorage()
     , mRenderer(mStorage, mTextureSystem, mMeshSystem)
-    , mInput(mStorage)
+    , mInputSystem(mStorage)
     , mCollisionSystem(mStorage, mMeshSystem)
     , mPhysicsSystem(mStorage)
 {}
 
 void Application::simulationLoop()
 {
-    while (!mInput.closeRequested())
+    while (!mInputSystem.closeRequested())
     {
         switch (mPhysicsTicksPerSecond)
         {

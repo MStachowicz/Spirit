@@ -1,12 +1,14 @@
 #pragma once
 
 #include "CollisionSystem.hpp"
-#include "Input.hpp"
+#include "InputSystem.hpp"
 #include "MeshSystem.hpp"
 #include "PhysicsSystem.hpp"
 #include "Renderer.hpp"
 #include "Storage.hpp"
 #include "TextureSystem.hpp"
+
+#include "OpenGLRenderer.hpp"
 
 #include "Logger.hpp"
 
@@ -29,7 +31,7 @@ private:
     System::PhysicsSystem mPhysicsSystem;
 
     Renderer mRenderer;
-    Input mInput;
+    System::InputSystem mInputSystem;
 
     bool mPhysicsTimeStepChanged                  = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
     int mPhysicsTicksPerSecond                    = 60;    // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
@@ -69,8 +71,8 @@ private:
         // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
         while (true)
         {
-            mInput.pollEvents();
-            if (mInput.closeRequested() || mPhysicsTimeStepChanged)
+            mInputSystem.pollEvents();
+            if (mInputSystem.closeRequested() || mPhysicsTimeStepChanged)
                 break;
 
             timeFrameStarted = Clock::now();
