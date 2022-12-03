@@ -1,5 +1,7 @@
 #pragma once
 
+#include "glm/fwd.hpp"
+
 namespace ECS
 {
     class Storage;
@@ -7,6 +9,10 @@ namespace ECS
 namespace System
 {
     class MeshSystem;
+}
+namespace Geometry
+{
+    struct Ray;
 }
 
 namespace System
@@ -20,6 +26,8 @@ namespace System
        public:
         CollisionSystem(ECS::Storage& pStorage, const System::MeshSystem& pMeshSystem);
         void checkCollisions();
+
+        bool castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const;
 
     };
 } // namespace System

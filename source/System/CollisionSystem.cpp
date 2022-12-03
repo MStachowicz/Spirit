@@ -13,6 +13,7 @@
 
 // Geometry
 #include "Intersect.hpp"
+#include "Ray.hpp"
 
 namespace System
 {
@@ -51,5 +52,29 @@ namespace System
             });
 
         });
+    }
+
+    bool CollisionSystem::castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const
+    {
+        std::optional<float> nearestIntersectionAlongRay;
+
+        mStorage.foreach([&](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
+        {
+            auto& AABB = mMeshSystem.getMesh(pMesh.mID).mAABB;
+            const auto rotateScale = glm::scale(glm::mat4_cast(pTransform.mOrientation), pTransform.mScale);
+            const auto worldSpaceAABB = Geometry::AABB::transform(AABB, pTransform.mPosition, rotateScale);
+
+            glm::vec3 collisionPoint;
+            float lengthAlongRay;
+            if (Geometry::intersect(worldSpaceAABB, pRay, &collisionPoint, &lengthAlongRay))
+            {
+                pCollider.mCollided = true;
+
+                if (!nearestIntersectionAlongRay.has_value() || lengthAlongRay < nearestIntersectionAlongRay)
+                    outFirstIntersection = collisionPoint;
+            }
+        });
+
+        return nearestIntersectionAlongRay.has_value();
     }
 } // namespace System
