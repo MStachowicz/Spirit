@@ -73,6 +73,8 @@ source/System/PhysicsSystem.cpp
 source/System/PhysicsSystem.hpp
 source/System/InputSystem.hpp
 source/System/InputSystem.cpp
+source/System/SceneSystem.hpp
+source/System/SceneSystem.cpp
 source/System/MeshSystem.cpp
 source/System/MeshSystem.hpp
 source/System/TextureSystem.cpp
