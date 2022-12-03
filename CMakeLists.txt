@@ -114,96 +114,95 @@ target_link_libraries(Geometry
 )
 # Geometry end ----------------------------------------------------------------------------------
 
-# INPUT & RENDERING BACKEND ***********************************************************************
-    # Renderer ------------------------------------------------------------------------------------
-    add_library(Renderer
-    source/Renderer/Renderer.hpp
-    source/Renderer/Renderer.cpp
-    source/Renderer/ImGuiConfig.hpp
-    )
-    target_include_directories(Renderer
-    PUBLIC source/Renderer
-    )
-    target_link_libraries(Renderer
-    PUBLIC OpenGL
-    PRIVATE System
-    PRIVATE Utility
-    PRIVATE ImGui
-    )
-    # Renderer end --------------------------------------------------------------------------------
+# Renderer ------------------------------------------------------------------------------------
+add_library(Renderer
+source/Renderer/Renderer.hpp
+source/Renderer/Renderer.cpp
+source/Renderer/ImGuiConfig.hpp
+)
+target_include_directories(Renderer
+PUBLIC source/Renderer
+)
+target_link_libraries(Renderer
+PUBLIC OpenGL
+PRIVATE System
+PRIVATE Utility
+PRIVATE ImGui
+)
+# Renderer end --------------------------------------------------------------------------------
 
-    # OpenGL --------------------------------------------------------------------------------------
-    add_library(OpenGL
-    source/Renderer/OpenGL/OpenGLRenderer.hpp
-    source/Renderer/OpenGL/OpenGLRenderer.cpp
-    source/Renderer/OpenGL/GLState.hpp
-    source/Renderer/OpenGL/GLState.cpp
-    source/Renderer/OpenGL/OpenGLWindow.hpp
-    source/Renderer/OpenGL/OpenGLWindow.cpp
-    source/Renderer/OpenGL/Shader.hpp
-    source/Renderer/OpenGL/Shader.cpp
-    )
-    target_include_directories(OpenGL
-    PUBLIC source/Renderer/OpenGL
-    PUBLIC source/External/GLM
-    PRIVATE source/External/GLFW/include
-    )
-    target_link_libraries(OpenGL
-    PUBLIC Utility # ToIndex used in header for size of Shader::attribute arrays.
-    PUBLIC Geometry
-    PRIVATE System
-    PRIVATE Component
-    PRIVATE ECS
-    PRIVATE glad_GL
-    PRIVATE glfw
-    PRIVATE ImGui
-    )
-    # OpenGL end ----------------------------------------------------------------------------------
+# OpenGL --------------------------------------------------------------------------------------
+add_library(OpenGL
+source/OpenGL/OpenGLRenderer.hpp
+source/OpenGL/OpenGLRenderer.cpp
+source/OpenGL/GLState.hpp
+source/OpenGL/GLState.cpp
+source/OpenGL/OpenGLWindow.hpp
+source/OpenGL/OpenGLWindow.cpp
+source/OpenGL/Shader.hpp
+source/OpenGL/Shader.cpp
+)
+target_include_directories(OpenGL
+PUBLIC source/OpenGL
+PUBLIC source/External/GLM
+PRIVATE source/External/GLFW/include
+)
+target_link_libraries(OpenGL
+PUBLIC Utility # ToIndex used in header for size of Shader::attribute arrays.
+PUBLIC Geometry
+PRIVATE System
+PRIVATE Component
+PRIVATE ECS
+PRIVATE glad_GL
+PRIVATE glfw
+PRIVATE ImGui
+)
+# OpenGL end ----------------------------------------------------------------------------------
 
-    # Input ---------------------------------------------------------------------------------------
-    add_library(Input
-    source/Input/InputAPI.hpp
-    source/Input/GLFWInput.hpp
-    source/Input/GLFWInput.cpp
-    )
-    target_include_directories(Input
-    PUBLIC source/Input
-    PRIVATE source/External/GLFW/include
-    )
-    target_link_libraries(Input
-    PRIVATE glfw
-    PRIVATE OpenGL # Zephyr input creates an instance of GLFWInput provided by OpenGLRenderer
-    PRIVATE System
-    PRIVATE ImGui
-    PRIVATE Utility
-    )
+# Input ---------------------------------------------------------------------------------------
+add_library(Input
+source/Input/InputAPI.hpp
+source/Input/GLFWInput.hpp
+source/Input/GLFWInput.cpp
+)
+target_include_directories(Input
+PUBLIC source/Input
+PRIVATE source/External/GLFW/include
+)
+target_link_libraries(Input
+PRIVATE glfw
+PRIVATE OpenGL # Zephyr input creates an instance of GLFWInput provided by OpenGLRenderer
+PRIVATE System
+PRIVATE ImGui
+PRIVATE Utility
+)
 # Input end ---------------------------------------------------------------------------------------
 
-# STATELESS UTILITY *******************************************************************************
-    # ------------------------ Utility ------------------------------------------------------------
-    add_library(Utility
-    source/Utility/EventDispatcher.hpp
-    source/Utility/JobSystem/JobSystem.cpp
-    source/Utility/JobSystem/JobSystem.hpp
-    source/Utility/JobSystem/Test.hpp
-    source/Utility/File.cpp
-    source/Utility/File.hpp
-    source/Utility/Logger.hpp
-    source/Utility/Logger.cpp
-    source/Utility/Stopwatch.hpp
-    source/Utility/Utility.cpp
-    source/Utility/Utility.hpp
-    )
-    target_include_directories(Utility
-    PUBLIC source/Utility
-    PUBLIC source/Utility/JobSystem
-    PUBLIC source/External/GLM
-    PRIVATE source/External/spdlog/include
-    )
-    target_link_libraries(Utility
-    PUBLIC spdlog # Logger.hpp uses spdlog in the header.
-    )
-    # Utility end ---------------------------------------------------------------------------------
+# ------------------------ Utility ------------------------------------------------------------
+add_library(Utility
+source/Utility/EventDispatcher.hpp
+source/Utility/JobSystem/JobSystem.cpp
+source/Utility/JobSystem/JobSystem.hpp
+source/Utility/JobSystem/Test.hpp
+source/Utility/File.cpp
+source/Utility/File.hpp
+source/Utility/Logger.hpp
+source/Utility/Logger.cpp
+source/Utility/Stopwatch.hpp
+source/Utility/Utility.cpp
+source/Utility/Utility.hpp
+)
+target_include_directories(Utility
+PUBLIC source/Utility
+PUBLIC source/Utility/JobSystem
+PUBLIC source/External/GLM
+PRIVATE source/External/spdlog/include
+)
+target_link_libraries(Utility
+PUBLIC spdlog # Logger.hpp uses spdlog in the header.
+)
+# Utility end ---------------------------------------------------------------------------------
+
 
 # EXTERNAL LIBRARIES ******************************************************************************
     # ImGui ---------------------------------------------------------------------------------------

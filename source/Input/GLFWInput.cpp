@@ -1,7 +1,13 @@
 #include "GLFWInput.hpp"
-#include "GLFW/glfw3.h"
-#include "Logger.hpp"
+
+// OpenGL
 #include "OpenGLWindow.hpp"
+
+// Utility
+#include "Logger.hpp"
+
+// External
+#include "GLFW/glfw3.h"
 
 GLFWInput::GLFWInput(
     std::function<void(const InputAPI::Key&)> pOnKeyPressCallback

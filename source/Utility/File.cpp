@@ -26,7 +26,7 @@ namespace Utility
         rootDirectory = executablePath.string().substr(0, found + 6); // offset substr by length of "Zephyr"
         LOG_INFO("Root directory initialised to '{}'", rootDirectory.string());
 
-        GLSLShaderDirectory = std::filesystem::path(rootDirectory / "source" / "Renderer" / "OpenGL" / "GLSL");
+        GLSLShaderDirectory = std::filesystem::path(rootDirectory / "source" / "OpenGL" / "GLSL");
         LOG_INFO("Shader directory initialised to '{}'", GLSLShaderDirectory.string());
 
         textureDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Textures");
