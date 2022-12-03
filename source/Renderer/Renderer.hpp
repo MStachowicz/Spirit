@@ -1,20 +1,17 @@
 #pragma once
 
-#include "OpenGLRenderer.hpp"
-
 #include <vector>
+#include <chrono>
 
 namespace System
 {
-    class MeshSystem;
-    class TextureSystem;
     class SceneSystem;
 }
 
 class Renderer
 {
 public:
-    Renderer(System::SceneSystem& pSceneSystem, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem);
+    Renderer(System::SceneSystem& pSceneSystem);
 
     void onFrameStart(const std::chrono::microseconds& pTimeSinceLastDraw);
     void draw(const std::chrono::microseconds& pTimeSinceLastDraw);
@@ -28,10 +25,8 @@ public:
 
 private:
     System::SceneSystem& mSceneSystem;
-    OpenGL::OpenGLRenderer mOpenGLRenderer;
 
     bool mRenderImGui; // Toggle displaying all Zephyr ImGui except the Performance window.
-    bool mRenderLightPositions;
     bool mShowFPSPlot; // Whether we are displaying the
 
     bool mUseRawPerformanceData; // Whether the values displayed in Performance window will be averaged for smoother display.

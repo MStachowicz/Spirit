@@ -1,5 +1,6 @@
 #pragma once
 
+// System
 #include "CollisionSystem.hpp"
 #include "InputSystem.hpp"
 #include "MeshSystem.hpp"
@@ -8,10 +9,13 @@
 #include "SceneSystem.hpp"
 #include "TextureSystem.hpp"
 
+// OpenGL
 #include "OpenGLRenderer.hpp"
 
+// Utility
 #include "Logger.hpp"
 
+// STD
 #include <Chrono>
 
 // Application keeps track of timing and running the simulation loop and runtime of the program.
@@ -31,6 +35,7 @@ private:
     System::PhysicsSystem mPhysicsSystem;
 
     Renderer mRenderer;
+    OpenGL::OpenGLRenderer mOpenGLRenderer;
     System::InputSystem mInputSystem;
 
     bool mPhysicsTimeStepChanged                  = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
@@ -106,7 +111,15 @@ private:
                 //renderState = currentState * alpha + previousState * (1 - alpha);
                 //mRenderer.draw(renderState);
 
+                mOpenGLRenderer.draw();
+
+                mOpenGLRenderer.newImGuiFrame();
                 mRenderer.draw(std::chrono::round<std::chrono::microseconds>(durationSinceLastRenderTick));
+                mOpenGLRenderer.renderImGui();
+                mOpenGLRenderer.renderImGuiFrame();
+
+                mOpenGLRenderer.endFrame();
+
                 durationSinceLastRenderTick = Duration::zero();
             }
         }

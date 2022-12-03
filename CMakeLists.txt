@@ -14,6 +14,7 @@ source/Application.cpp
 )
 target_link_libraries(Zephyr
 PUBLIC System
+PUBLIC OpenGL
 PRIVATE Renderer
 PRIVATE Input
 PRIVATE Utility
@@ -124,7 +125,6 @@ target_include_directories(Renderer
 PUBLIC source/Renderer
 )
 target_link_libraries(Renderer
-PUBLIC OpenGL
 PRIVATE System
 PRIVATE Utility
 PRIVATE ImGui

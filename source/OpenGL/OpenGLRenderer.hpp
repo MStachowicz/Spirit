@@ -62,7 +62,7 @@ namespace OpenGL
         void postDraw();
         void endFrame();
 
-        void setupLights(const bool& pRenderLightPositions);
+        void setupLights();
 
         void newImGuiFrame();
         void renderImGuiFrame();
@@ -93,6 +93,7 @@ namespace OpenGL
         bool mLinearDepthView;
         bool mVisualiseNormals;
         bool mShowOrientations;
+        bool mShowLightPositions;
         bool mShowBoundingBoxes;
         bool mFillBoundingBoxes;
         float mZNearPlane;

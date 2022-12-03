@@ -50,6 +50,7 @@ namespace OpenGL
         , mLinearDepthView(false)
         , mVisualiseNormals(false)
         , mShowOrientations(true)
+        , mShowLightPositions(true)
         , mShowBoundingBoxes(true)
         , mFillBoundingBoxes(false)
         , mZNearPlane(0.1f)
@@ -242,14 +243,11 @@ namespace OpenGL
 
     void OpenGLRenderer::preDraw()
     {
-        mSceneSystem.getCurrentScene().foreach([this](Component::Camera& pCamera)
+        if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
         {
-            if (pCamera.mPrimaryCamera)
-            {
-                mViewMatrix = pCamera.getViewMatrix();
-                mViewPosition = pCamera.getPosition();
-            }
-        });
+            mViewMatrix = primaryCamera->getViewMatrix();
+            mViewPosition = primaryCamera->getPosition();
+        }
 
         mMainScreenFBO.bind(mGLState);
         mMainScreenFBO.clearBuffers();
@@ -306,6 +304,9 @@ namespace OpenGL
     }
     void OpenGLRenderer::draw()
     {
+        preDraw();
+        setupLights();
+
         mSceneSystem.getCurrentScene().foreach([this](Component::Transform& pTransform, Component::MeshDraw& pMeshDraw)
         {
             const GLMeshData& GLMesh = mGLMeshData[pMeshDraw.mID.Get()];
@@ -384,6 +385,8 @@ namespace OpenGL
                 //mDepthViewerShader
             }
         });
+
+        postDraw();
     }
 
     void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour /*= glm::vec3(1.f,1.f,1.f)*/)
@@ -551,7 +554,7 @@ namespace OpenGL
         spotLightDrawCount        = 0;
     }
 
-    void OpenGLRenderer::setupLights(const bool& pRenderLightPositions)
+    void OpenGLRenderer::setupLights()
     {
         mSceneSystem.getCurrentScene().foreach([this](Component::PointLight& pPointLight)
         {
@@ -566,7 +569,7 @@ namespace OpenGL
             setShaderVariables(pSpotLight);
         });
 
-        if (pRenderLightPositions)
+        if (mShowLightPositions)
         {
             mLightEmitterShader.use(mGLState);
 
@@ -708,6 +711,7 @@ namespace OpenGL
 
             ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
             ImGui::Checkbox("Show orientations", &mShowOrientations);
+            ImGui::Checkbox("Show orientations", &mShowLightPositions);
             ImGui::Checkbox("Show bounding boxes", &mShowBoundingBoxes);
             if (mShowBoundingBoxes)
                 ImGui::Checkbox("Fill bounding boxes ", &mFillBoundingBoxes);

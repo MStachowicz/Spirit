@@ -1,14 +1,14 @@
 #include "Application.hpp"
 
-
 Application::Application()
     : mTextureSystem()
     , mMeshSystem(mTextureSystem)
     , mSceneSystem(mTextureSystem, mMeshSystem)
-    , mRenderer(mSceneSystem, mTextureSystem, mMeshSystem)
-    , mInputSystem(mSceneSystem)
     , mCollisionSystem(mSceneSystem, mMeshSystem)
     , mPhysicsSystem(mSceneSystem)
+    , mRenderer(mSceneSystem)
+    , mOpenGLRenderer(mSceneSystem, mMeshSystem, mTextureSystem)
+    , mInputSystem(mSceneSystem)
 {}
 
 void Application::simulationLoop()

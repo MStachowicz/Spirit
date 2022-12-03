@@ -30,13 +30,11 @@
 #include <cmath>
 #include <numeric>
 
-Renderer::Renderer(System::SceneSystem& pSceneSystem, const System::TextureSystem& pTextureSystem, const System::MeshSystem& pMeshSystem)
+Renderer::Renderer(System::SceneSystem& pSceneSystem)
     : mDrawCount(0)
     , mTargetFPS(60)
     , mSceneSystem{pSceneSystem}
-    , mOpenGLRenderer(pSceneSystem, pMeshSystem, pTextureSystem)
     , mRenderImGui(true)
-    , mRenderLightPositions(true)
     , mShowFPSPlot(false)
     , mUseRawPerformanceData(false)
     , mDataSmoothingFactor(0.1f)
@@ -63,13 +61,7 @@ void Renderer::draw(const std::chrono::microseconds& pTimeSinceLastDraw)
     Utility::Stopwatch stopwatch;
 
     onFrameStart(pTimeSinceLastDraw);
-    mOpenGLRenderer.preDraw();
-    mOpenGLRenderer.setupLights(mRenderLightPositions);
-    mOpenGLRenderer.draw();
-    mOpenGLRenderer.postDraw();
-
-    renderImGui(); // Render ImGui last so UI is drawn over the scene.
-    mOpenGLRenderer.endFrame();
+    renderImGui();
 
     mDrawCount++;
     mDrawTimeTakenMS = stopwatch.getTime<std::milli, float>();
@@ -118,15 +110,8 @@ void Renderer::renderImGui()
     // Render all ImGui from here.
     Utility::Stopwatch stopWatch;
 
-    mOpenGLRenderer.newImGuiFrame();
     if (mRenderImGui)
     {
-        if (ImGui::Begin("Render options", nullptr))
-        {
-            ImGui::Checkbox("Render light positions", &mRenderLightPositions);
-        }
-        ImGui::End();
-
         if (ImGui::Begin("ImGui options"))
         {
             ImGuiIO& io = ImGui::GetIO();
@@ -142,11 +127,11 @@ void Renderer::renderImGui()
             }
         }
         ImGui::End();
+
         drawEntityPanel();
+
         ImGui::ShowDemoWindow();
         ImGui::ShowMetricsWindow();
-
-        mOpenGLRenderer.renderImGui();
     }
 
     // Regardless of mRenderImGui, we call newImGuiFrame() and renderImGuiFrame() to allow showing performance window.
@@ -198,7 +183,6 @@ void Renderer::renderImGui()
     }
     ImGui::End();
 
-    mOpenGLRenderer.renderImGuiFrame();
     mImGuiRenderTimeTakenMS = stopWatch.getTime<std::milli, float>();
 }
 
