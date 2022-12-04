@@ -20,9 +20,10 @@
 
 #include "Logger.hpp"
 
+// PLATFORM
+#include "Core.hpp"
+
 // EXTERNAL
-#include "glad/gl.h"
-#include "GLFW/glfw3.h" // Used to initialise GLAD using glfwGetProcAddress
 #include "imgui.h"
 
 //GLM
@@ -36,11 +37,7 @@
 namespace OpenGL
 {
     OpenGLRenderer::OpenGLRenderer(System::SceneSystem& pSceneSystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem)
-        : cOpenGLVersionMajor(4)
-        , cOpenGLVersionMinor(3)
-        , mWindow(cOpenGLVersionMajor, cOpenGLVersionMinor)
-        , mGLADContext(initialiseGLAD()) // TODO: This should only happen on first OpenGLRenderer construction (OpenGLInstances.size() == 1)
-        , mGLState()
+        : mGLState()
         , mMainScreenFBO()
         , mSceneSystem(pSceneSystem)
         , mMeshSystem(pMeshSystem)
@@ -101,26 +98,14 @@ namespace OpenGL
             mViewPosition = primaryCamera->getPosition();
         }
 
-        glfwSetWindowSizeCallback(mWindow.mHandle, windowSizeCallback);
+        Platform::Core::mWindowResizeEvent.subscribe(std::bind(&OpenGLRenderer::onWindowResize, this, std::placeholders::_1, std::placeholders::_2));
 
+        const auto [width, height] = Platform::Core::getWindow().size();
         mMainScreenFBO.generate();
-        mMainScreenFBO.attachColourBuffer(mWindow.mWidth, mWindow.mHeight, mGLState);
-        mMainScreenFBO.attachDepthBuffer(mWindow.mWidth, mWindow.mHeight, mGLState);
+        mMainScreenFBO.attachColourBuffer(width, height, mGLState);
+        mMainScreenFBO.attachDepthBuffer(width, height, mGLState);
 
-        OpenGLInstances.push_back(this);
         LOG_INFO("Constructed new OpenGLRenderer instance");
-    }
-    OpenGLRenderer::~OpenGLRenderer()
-    {
-        if (mGLADContext && OpenGLInstances.size() == 1)
-        {
-            free(mGLADContext);
-            LOG_INFO("Final OpenGLRenderer destructor called. Freeing GLAD memory.");
-        }
-
-        auto it = std::find(OpenGLInstances.begin(), OpenGLInstances.end(), this);
-        if (it != OpenGLInstances.end())
-            OpenGLInstances.erase(it);
     }
 
     void OpenGLRenderer::initialiseMesh(const Component::Mesh& pMesh, GLMeshData* pParentMesh /*= nullptr*/)
@@ -241,7 +226,28 @@ namespace OpenGL
         LOG_INFO("Component::CubeMapTexture: '{}' loaded into OpenGL with VAO: {}", pCubeMap.mName, newCubeMap.getHandle());
     }
 
-    void OpenGLRenderer::preDraw()
+    Shader* OpenGLRenderer::getShader(Component::MeshDraw& pMeshDraw)
+    {
+        Shader* shaderToUse = nullptr;
+        switch (pMeshDraw.mDrawStyle)
+        {
+            case Component::DrawStyle::Textured:
+                if (pMeshDraw.mTexture1.has_value() && pMeshDraw.mTexture2.has_value())
+                    shaderToUse = &mAvailableShaders[mTexture2ShaderIndex];
+                else
+                    shaderToUse = &mAvailableShaders[mTexture1ShaderIndex];
+                break;
+            case Component::DrawStyle::UniformColour:
+                shaderToUse = &mAvailableShaders[mUniformShaderIndex];
+                break;
+            case Component::DrawStyle::LightMap:
+                shaderToUse = &mAvailableShaders[mLightMapIndex];
+                break;
+        }
+        ZEPHYR_ASSERT(shaderToUse != nullptr, "Couldn't identify a shader to render this MeshDraw with.");
+        return shaderToUse;
+    }
+    void OpenGLRenderer::draw()
     {
         if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
         {
@@ -253,7 +259,7 @@ namespace OpenGL
         mMainScreenFBO.clearBuffers();
         mGLState.checkFramebufferBufferComplete();
 
-        mProjection = glm::perspective(glm::radians(mFOV), mWindow.mAspectRatio, mZNearPlane, mZFarPlane);
+        mProjection = glm::perspective(glm::radians(mFOV), Platform::Core::getWindow().aspectRatio(), mZNearPlane, mZFarPlane);
         mGLState.setUniformBlockVariable("ViewProperties.view", mViewMatrix);
         mGLState.setUniformBlockVariable("ViewProperties.projection", mProjection);
 
@@ -280,31 +286,7 @@ namespace OpenGL
            if (mAvailableShaders[i].getName() == "lightMap")
                mAvailableShaders[i].setUniform(mGLState, "viewPosition", mViewPosition);
        }
-    }
-    Shader* OpenGLRenderer::getShader(Component::MeshDraw& pMeshDraw)
-    {
-        Shader* shaderToUse = nullptr;
-        switch (pMeshDraw.mDrawStyle)
-        {
-            case Component::DrawStyle::Textured:
-                if (pMeshDraw.mTexture1.has_value() && pMeshDraw.mTexture2.has_value())
-                    shaderToUse = &mAvailableShaders[mTexture2ShaderIndex];
-                else
-                    shaderToUse = &mAvailableShaders[mTexture1ShaderIndex];
-                break;
-            case Component::DrawStyle::UniformColour:
-                shaderToUse = &mAvailableShaders[mUniformShaderIndex];
-                break;
-            case Component::DrawStyle::LightMap:
-                shaderToUse = &mAvailableShaders[mLightMapIndex];
-                break;
-        }
-        ZEPHYR_ASSERT(shaderToUse != nullptr, "Couldn't identify a shader to render this MeshDraw with.");
-        return shaderToUse;
-    }
-    void OpenGLRenderer::draw()
-    {
-        preDraw();
+
         setupLights();
 
         mSceneSystem.getCurrentScene().foreach([this](Component::Transform& pTransform, Component::MeshDraw& pMeshDraw)
@@ -386,7 +368,53 @@ namespace OpenGL
             }
         });
 
-        postDraw();
+        { // Skybox render
+            // Skybox is drawn in postDraw to maximise depth test culling of the textures in the cubemap which will always pass otherwise.
+            // Depth testing must be set to GL_LEQUAL because the depth values of skybox's are equal to depth buffer contents.
+            mSkyBoxShader.use(mGLState);
+            const glm::mat4 view = glm::mat4(glm::mat3(mViewMatrix)); // remove translation from the view matrix
+            mSkyBoxShader.setUniform(mGLState, "viewNoTranslation", view);
+            mSkyBoxShader.setUniform(mGLState, "projection", mProjection);
+
+            const bool depthTestBefore                      = mGLState.getDepthTest();
+            const GLType::DepthTestType depthTestTypeBefore = mGLState.getDepthTestType();
+            mGLState.toggleDepthTest(true);
+            mGLState.setDepthTestType(GLType::DepthTestType::LessEqual);
+
+            mGLState.setActiveTextureUnit(0);
+            mCubeMaps.front().bind();
+            draw(mGLMeshData[mSkyBoxMeshIndex]);
+
+            mGLState.toggleDepthTest(depthTestBefore);
+            mGLState.setDepthTestType(depthTestTypeBefore);
+        }
+
+        // Unbind after completing draw to ensure all subsequent actions apply to the default FBO.
+        mGLState.unbindFramebuffer();
+
+        { // Draw the colour output to the screen.
+            // Disable culling and depth testing to draw a quad in normalised screen coordinates
+            // using the mMainScreenFBO colour-buffer filled in the Draw functions in the last frame.
+            const bool depthTestBefore = mGLState.getDepthTest();
+            const bool cullFacesBefore = mGLState.getCullFaces();
+            mGLState.toggleCullFaces(false);
+            mGLState.toggleDepthTest(false);
+
+            mScreenTextureShader.use(mGLState);
+            mGLState.setActiveTextureUnit(0);
+            mMainScreenFBO.getColourTexture().bind();
+            draw(mGLMeshData[mScreenQuadMeshIndex]);
+
+            mGLState.toggleCullFaces(cullFacesBefore);
+            mGLState.toggleDepthTest(depthTestBefore);
+        }
+
+        ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
+        ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
+        ZEPHYR_ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
+        pointLightDrawCount       = 0;
+        directionalLightDrawCount = 0;
+        spotLightDrawCount        = 0;
     }
 
     void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour /*= glm::vec3(1.f,1.f,1.f)*/)
@@ -503,56 +531,6 @@ namespace OpenGL
         for (const auto& childMesh : pMesh.mChildMeshes)
             draw(childMesh);
     }
-    void OpenGLRenderer::postDraw()
-    {
-        { // Skybox render
-            // Skybox is drawn in postDraw to maximise depth test culling of the textures in the cubemap which will always pass otherwise.
-            // Depth testing must be set to GL_LEQUAL because the depth values of skybox's are equal to depth buffer contents.
-            mSkyBoxShader.use(mGLState);
-            const glm::mat4 view = glm::mat4(glm::mat3(mViewMatrix)); // remove translation from the view matrix
-            mSkyBoxShader.setUniform(mGLState, "viewNoTranslation", view);
-            mSkyBoxShader.setUniform(mGLState, "projection", mProjection);
-
-            const bool depthTestBefore                      = mGLState.getDepthTest();
-            const GLType::DepthTestType depthTestTypeBefore = mGLState.getDepthTestType();
-            mGLState.toggleDepthTest(true);
-            mGLState.setDepthTestType(GLType::DepthTestType::LessEqual);
-
-            mGLState.setActiveTextureUnit(0);
-            mCubeMaps.front().bind();
-            draw(mGLMeshData[mSkyBoxMeshIndex]);
-
-            mGLState.toggleDepthTest(depthTestBefore);
-            mGLState.setDepthTestType(depthTestTypeBefore);
-        }
-
-        // Unbind after completing draw to ensure all subsequent actions apply to the default FBO.
-        mGLState.unbindFramebuffer();
-
-        { // Draw the colour output to the screen.
-            // Disable culling and depth testing to draw a quad in normalised screen coordinates
-            // using the mMainScreenFBO colour-buffer filled in the Draw functions in the last frame.
-            const bool depthTestBefore = mGLState.getDepthTest();
-            const bool cullFacesBefore = mGLState.getCullFaces();
-            mGLState.toggleCullFaces(false);
-            mGLState.toggleDepthTest(false);
-
-            mScreenTextureShader.use(mGLState);
-            mGLState.setActiveTextureUnit(0);
-            mMainScreenFBO.getColourTexture().bind();
-            draw(mGLMeshData[mScreenQuadMeshIndex]);
-
-            mGLState.toggleCullFaces(cullFacesBefore);
-            mGLState.toggleDepthTest(depthTestBefore);
-        }
-
-        ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
-        ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
-        ZEPHYR_ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
-        pointLightDrawCount       = 0;
-        directionalLightDrawCount = 0;
-        spotLightDrawCount        = 0;
-    }
 
     void OpenGLRenderer::setupLights()
     {
@@ -668,34 +646,22 @@ namespace OpenGL
         spotLightDrawCount++;
     }
 
-    void OpenGLRenderer::endFrame()
-    {
-        mWindow.swapBuffers();
-    }
-    void OpenGLRenderer::newImGuiFrame()
-    {
-        mWindow.startImGuiFrame();
-    }
-    void OpenGLRenderer::renderImGuiFrame()
-    {
-        mWindow.renderImGui();
-    }
     void OpenGLRenderer::renderImGui()
     {
         if (ImGui::Begin("OpenGL options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            ImGui::Text(("OpenGL version: " + std::to_string(cOpenGLVersionMajor) + "." + std::to_string(cOpenGLVersionMinor)).c_str());
-            ImGui::Text(("Viewport size: " + std::to_string(mWindow.mWidth) + "x" + std::to_string(mWindow.mHeight)).c_str());
-            ImGui::Text(("Aspect ratio: " + std::to_string(static_cast<float>(mWindow.mWidth) / static_cast<float>(mWindow.mHeight))).c_str());
+            auto& window = Platform::Core::getWindow();
+            auto [width, height] = window.size();
+
+            ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
+            ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
             ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
             ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
             ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
             ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
             ImGui::Separator();
 
-            static const std::array<std::string, Utility::toIndex(BufferDrawType::Count)> bufferDrawTypes{
-                "Colour",
-                "Depth"};
+            static const std::array<std::string, Utility::toIndex(BufferDrawType::Count)> bufferDrawTypes{"Colour", "Depth"};
             if (ImGui::BeginCombo("Buffer draw style", bufferDrawTypes[static_cast<size_t>(mBufferDrawType)].c_str(), ImGuiComboFlags()))
             {
                 for (size_t i = 0; i < bufferDrawTypes.size(); i++)
@@ -711,7 +677,7 @@ namespace OpenGL
 
             ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
             ImGui::Checkbox("Show orientations", &mShowOrientations);
-            ImGui::Checkbox("Show orientations", &mShowLightPositions);
+            ImGui::Checkbox("Show light positions", &mShowLightPositions);
             ImGui::Checkbox("Show bounding boxes", &mShowBoundingBoxes);
             if (mShowBoundingBoxes)
                 ImGui::Checkbox("Fill bounding boxes ", &mFillBoundingBoxes);
@@ -739,39 +705,9 @@ namespace OpenGL
         ImGui::End();
     }
 
-    GladGLContext* OpenGLRenderer::initialiseGLAD()
-    {
-        GladGLContext* GLADContext = (GladGLContext*)malloc(sizeof(GladGLContext));
-        int version                = gladLoadGLContext(GLADContext, glfwGetProcAddress);
-        ZEPHYR_ASSERT(GLADContext && version != 0, "Failed to initialise GLAD GL context");
-        // TODO: Add an assert here for GLAD_VERSION to equal to cOpenGLVersion
-        LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-        return GLADContext;
-    }
-    void OpenGLRenderer::onResize(const int pWidth, const int pHeight)
+    void OpenGLRenderer::onWindowResize(const int pWidth, const int pHeight)
     {
         mMainScreenFBO.resize(pWidth, pHeight, mGLState);
         mGLState.setViewport(pWidth, pHeight);
-        mWindow.mWidth       = pWidth;
-        mWindow.mHeight      = pHeight;
-        mWindow.mAspectRatio = static_cast<float>(pWidth) / static_cast<float>(pHeight);
-    }
-    void OpenGLRenderer::windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
-    {
-        const float width  = static_cast<float>(pWidth);
-        const float height = static_cast<float>(pHeight);
-        LOG_INFO("OpenGL Window resolution changed to {}x{}", pWidth, pHeight);
-
-        ImGuiIO& io        = ImGui::GetIO();
-        io.DisplaySize     = ImVec2(width, height);
-        io.FontGlobalScale = std::round(ImGui::GetMainViewport()->DpiScale);
-
-        for (auto* OpenGLinstance : OpenGLInstances)
-        {
-            if (OpenGLinstance)
-            {
-                OpenGLinstance->onResize(pWidth, pHeight);
-            }
-        }
     }
 } // namespace OpenGL

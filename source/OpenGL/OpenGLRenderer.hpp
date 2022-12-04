@@ -2,7 +2,6 @@
 
 // OPENGL
 #include "GLState.hpp"
-#include "OpenGLWindow.hpp"
 #include "Shader.hpp"
 
 // GEOMETRY
@@ -20,8 +19,6 @@
 #include <array>
 #include <optional>
 #include <vector>
-
-struct GladGLContext;
 
 namespace ECS
 {
@@ -55,29 +52,16 @@ namespace OpenGL
     public:
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
         OpenGLRenderer(System::SceneSystem& pSceneSystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem);
-        ~OpenGLRenderer();
 
-        void preDraw();
         void draw();
-        void postDraw();
-        void endFrame();
 
         void setupLights();
-
-        void newImGuiFrame();
-        void renderImGuiFrame();
         void renderImGui();
 
         // List of cylinders to draw for debugging purposes.
         std::vector<Geometry::Cylinder> debugCylinders;
         std::vector<Geometry::Sphere> debugSpheres;
     private:
-        const int cOpenGLVersionMajor, cOpenGLVersionMinor;
-
-        // The window and GLAD context must be first declared to enforce the correct initialisation order:
-        // ***************************************************************************************************
-        OpenGLWindow mWindow;        // GLFW window which both GLFWInput and OpenGLRenderer depend on for their construction.
-        GladGLContext* mGLADContext; // Depends on OpenGLWindow being initialised first. Must be declared after mWindow.
         GLState mGLState;
         GLData::FBO mMainScreenFBO;
 
@@ -183,9 +167,6 @@ namespace OpenGL
         void initialiseTexture(const Component::Texture& pTexture);
         void initialiseCubeMap(const Component::CubeMapTexture& pCubeMap);
 
-        inline static std::vector<OpenGLRenderer*> OpenGLInstances;                   // Holds all the constructed instances of OpenGLRenderer to allow calling non-static member functions.
-        static GladGLContext* initialiseGLAD();                                       // Requires a GLFW window to be set as current context, done in OpenGLWindow constructor
-        static void windowSizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight); // Callback required by GLFW to be static/global. Calls the active OpenGLInstance::onResize.
-        void onResize(const int pWidth, const int pHeight);
+        void onWindowResize(const int pWidth, const int pHeight);
     };
 } // namespace OpenGL

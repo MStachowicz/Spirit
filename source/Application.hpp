@@ -9,11 +9,17 @@
 #include "SceneSystem.hpp"
 #include "TextureSystem.hpp"
 
+// Platform
+#include "Core.hpp"
+
 // OpenGL
 #include "OpenGLRenderer.hpp"
 
 // Utility
+#include "File.hpp"
+#include "JobSystem.hpp"
 #include "Logger.hpp"
+#include "Stopwatch.hpp"
 
 // STD
 #include <Chrono>
@@ -76,8 +82,9 @@ private:
         // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
         while (true)
         {
-            mInputSystem.pollEvents();
-            if (mInputSystem.closeRequested() || mPhysicsTimeStepChanged)
+            Platform::Core::pollEvents();
+
+            if (!Platform::Core::hasWindow() || mPhysicsTimeStepChanged)
                 break;
 
             timeFrameStarted = Clock::now();
@@ -111,15 +118,17 @@ private:
                 //renderState = currentState * alpha + previousState * (1 - alpha);
                 //mRenderer.draw(renderState);
 
+                // Draw Scene
                 mOpenGLRenderer.draw();
 
-                mOpenGLRenderer.newImGuiFrame();
-                mRenderer.draw(std::chrono::round<std::chrono::microseconds>(durationSinceLastRenderTick));
-                mOpenGLRenderer.renderImGui();
-                mOpenGLRenderer.renderImGuiFrame();
+                {// Draw UI
+                    Platform::Core::startImGuiFrame();
+                    mRenderer.draw();
+                    mOpenGLRenderer.renderImGui();
+                    Platform::Core::endImGuiFrame();
+                }
 
-                mOpenGLRenderer.endFrame();
-
+                Platform::Core::swapBuffers();
                 durationSinceLastRenderTick = Duration::zero();
             }
         }
@@ -136,3 +145,25 @@ private:
         LOG_INFO("Averaged render frames per second: {}/s", renderFPS);
     }
 };
+
+int main(int argc, char *argv[])
+{
+    Utility::Stopwatch stopwatch;
+
+    Logger::initialise(); // Logger must be initialised first as everything depends on it for logging and error checks.
+    Platform::Core::initialise();
+    Utility::File::setupDirectories(argv[0]);
+    JobSystem::initialise();
+
+    LOG_INFO("Number of arguments passed on launch: {}", argc);
+    for (int index{}; index != argc; ++index)
+        LOG_INFO("Argument {}: {}", index + 1, argv[index]);
+
+    Application app;
+    LOG_INFO("Zephyr initialisation took {0:.3f}ms", stopwatch.getTime<std::ratio<1>, float>());
+
+    app.simulationLoop();
+
+    Platform::Core::cleanup();
+    return EXIT_SUCCESS;
+}

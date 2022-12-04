@@ -1,36 +1,27 @@
 #pragma once
 
-class InputHandler;
-
-namespace InputAPI
+namespace Platform
 {
     enum class Key;
     enum class MouseButton;
     enum class Action;
     enum class CursorMode;
 }
-
 namespace System
 {
     class SceneSystem;
 
-    // Processes input coming in from a registered mInputHandler using the InputAPI.
+    // Listens to platform input events.
     class InputSystem
     {
     public:
-        InputSystem(System::SceneSystem& pSceneSystem);
-        void pollEvents();
-        bool closeRequested();
+        InputSystem(SceneSystem& pSceneSystem);
+
     private:
+        void onKeyPressed(const Platform::Key& pKeyPressed);
+        void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
+        void onMouseMoved(const float& pXOffset, const float& pYOffset);
 
-        void onInput(const InputAPI::Key& pKeyPressed);
-        void onMousePress(const InputAPI::MouseButton& pMouseButton, const InputAPI::Action& pAction);
-        void onMouseMove(const float& pXOffset, const float& pYOffset);
-        bool mCloseRequested = false;
-        bool mCapturingMouse = false;
-        bool mCapturedThisFrame = false; // If the mouse was captured in this pollEvents cycle.
-
-        InputHandler* mInputHandler;
         SceneSystem& mSceneSystem;
     };
 }

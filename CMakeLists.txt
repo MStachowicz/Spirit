@@ -8,15 +8,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Zephyr ------------------------------------------------------------------------------------------
 project(Zephyr)
 add_executable(Zephyr
-source/Zephyr.cpp
 source/Application.hpp
 source/Application.cpp
 )
 target_link_libraries(Zephyr
 PUBLIC System
 PUBLIC OpenGL
+PUBLIC Platform
 PRIVATE Renderer
-PRIVATE Input
 PRIVATE Utility
 )
 # Zephyr end --------------------------------------------------------------------------------------
@@ -88,10 +87,9 @@ PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(System
 PUBLIC Component
-PUBLIC ECS
-PRIVATE Input
+PUBLIC ECS #SceneSystem.hpp uses ECS storage
+PRIVATE Platform
 PRIVATE Utility
-PRIVATE ImGui
 PRIVATE assimp
 )
 # System end ----------------------------------------------------------------------------------
@@ -126,10 +124,29 @@ PUBLIC source/Renderer
 )
 target_link_libraries(Renderer
 PRIVATE System
+PRIVATE ECS
 PRIVATE Utility
 PRIVATE ImGui
 )
 # Renderer end --------------------------------------------------------------------------------
+
+# Platform ------------------------------------------------------------------------------------
+add_library(Platform
+source/Platform/Core.hpp
+source/Platform/Core.cpp
+source/Platform/InputDefinitions.hpp
+)
+target_include_directories(Platform
+PUBLIC source/Platform
+PRIVATE source/External/GLFW/include
+)
+target_link_libraries(Platform
+PUBLIC Utility
+PRIVATE glfw
+PRIVATE glad_GL
+PRIVATE ImGui
+)
+# Platform end --------------------------------------------------------------------------------
 
 # OpenGL --------------------------------------------------------------------------------------
 add_library(OpenGL
@@ -137,8 +154,6 @@ source/OpenGL/OpenGLRenderer.hpp
 source/OpenGL/OpenGLRenderer.cpp
 source/OpenGL/GLState.hpp
 source/OpenGL/GLState.cpp
-source/OpenGL/OpenGLWindow.hpp
-source/OpenGL/OpenGLWindow.cpp
 source/OpenGL/Shader.hpp
 source/OpenGL/Shader.cpp
 )
@@ -151,6 +166,7 @@ target_link_libraries(OpenGL
 PUBLIC Utility # ToIndex used in header for size of Shader::attribute arrays.
 PUBLIC Geometry
 PRIVATE System
+PRIVATE Platform
 PRIVATE Component
 PRIVATE ECS
 PRIVATE glad_GL
@@ -158,25 +174,6 @@ PRIVATE glfw
 PRIVATE ImGui
 )
 # OpenGL end ----------------------------------------------------------------------------------
-
-# Input ---------------------------------------------------------------------------------------
-add_library(Input
-source/Input/InputAPI.hpp
-source/Input/GLFWInput.hpp
-source/Input/GLFWInput.cpp
-)
-target_include_directories(Input
-PUBLIC source/Input
-PRIVATE source/External/GLFW/include
-)
-target_link_libraries(Input
-PRIVATE glfw
-PRIVATE OpenGL # Zephyr input creates an instance of GLFWInput provided by OpenGLRenderer
-PRIVATE System
-PRIVATE ImGui
-PRIVATE Utility
-)
-# Input end ---------------------------------------------------------------------------------------
 
 # ------------------------ Utility ------------------------------------------------------------
 add_library(Utility

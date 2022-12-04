@@ -10,11 +10,11 @@ namespace Utility
     class EventDispatcher
     {
     public:
-        void Subscribe(const std::function<void(Args&&... pArgs)>& pSubscriber)
+        void subscribe(const std::function<void(Args&&... pArgs)>& pSubscriber)
         {
             mSubscribers.push_back(pSubscriber);
         }
-        void Dispatch(Args&&... pArgs)
+        void dispatch(Args&&... pArgs)
         {
             for(const auto& subscriber : mSubscribers)
                 subscriber(std::forward<Args>(pArgs)...);
