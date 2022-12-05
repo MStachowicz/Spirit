@@ -59,6 +59,7 @@ namespace Platform
         // INPUT
         static void pollEvents();
         static bool UICapturingMouse();
+        static std::pair<float, float> getCursorPosition();
 
         // EVENTS
         static inline Utility::EventDispatcher<const Key&> mKeyPressEvent;

@@ -154,6 +154,13 @@ namespace Platform
         return ImGui::GetIO().WantCaptureMouse;
     }
 
+    std::pair<float, float> Core::getCursorPosition()
+    {
+        double x, y;
+        glfwGetCursorPos(mPrimaryWindow->mHandle, &x, &y);
+        return {static_cast<float>(x), static_cast<float>(y)};
+    }
+
     void Core::swapBuffers()
     {
         glfwSwapBuffers(mPrimaryWindow->mHandle);
