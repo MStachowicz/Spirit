@@ -6,9 +6,9 @@ Application::Application()
     , mSceneSystem(mTextureSystem, mMeshSystem)
     , mCollisionSystem(mSceneSystem, mMeshSystem)
     , mPhysicsSystem(mSceneSystem)
-    , mRenderer(mSceneSystem)
-    , mOpenGLRenderer(mSceneSystem, mMeshSystem, mTextureSystem)
     , mInputSystem(mSceneSystem)
+    , mOpenGLRenderer(mSceneSystem, mMeshSystem, mTextureSystem)
+    , mEditor(mSceneSystem, mOpenGLRenderer)
 {}
 
 void Application::simulationLoop()

@@ -15,8 +15,8 @@ target_link_libraries(Zephyr
 PUBLIC System
 PUBLIC OpenGL
 PUBLIC Platform
-PRIVATE Renderer
-PRIVATE Utility
+PUBLIC UI
+PUBLIC Utility
 )
 # Zephyr end --------------------------------------------------------------------------------------
 
@@ -113,22 +113,24 @@ target_link_libraries(Geometry
 )
 # Geometry end ----------------------------------------------------------------------------------
 
-# Renderer ------------------------------------------------------------------------------------
-add_library(Renderer
-source/Renderer/Renderer.hpp
-source/Renderer/Renderer.cpp
-source/Renderer/ImGuiConfig.hpp
+# UI ------------------------------------------------------------------------------------
+add_library(UI
+source/UI/Editor.hpp
+source/UI/Editor.cpp
+source/UI/ImGuiConfig.hpp
 )
-target_include_directories(Renderer
-PUBLIC source/Renderer
+target_include_directories(UI
+PUBLIC source/UI
 )
-target_link_libraries(Renderer
+target_link_libraries(UI
 PRIVATE System
+PRIVATE Platform
+PRIVATE OpenGL
 PRIVATE ECS
 PRIVATE Utility
 PRIVATE ImGui
 )
-# Renderer end --------------------------------------------------------------------------------
+# UI end --------------------------------------------------------------------------------
 
 # Platform ------------------------------------------------------------------------------------
 add_library(Platform

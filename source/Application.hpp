@@ -5,9 +5,11 @@
 #include "InputSystem.hpp"
 #include "MeshSystem.hpp"
 #include "PhysicsSystem.hpp"
-#include "Renderer.hpp"
 #include "SceneSystem.hpp"
 #include "TextureSystem.hpp"
+
+// UI
+#include "Editor.hpp"
 
 // Platform
 #include "Core.hpp"
@@ -39,14 +41,15 @@ private:
 
     System::CollisionSystem mCollisionSystem;
     System::PhysicsSystem mPhysicsSystem;
-
-    Renderer mRenderer;
-    OpenGL::OpenGLRenderer mOpenGLRenderer;
     System::InputSystem mInputSystem;
+
+    OpenGL::OpenGLRenderer mOpenGLRenderer;
+    UI::Editor mEditor;
 
     bool mPhysicsTimeStepChanged                  = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
     int mPhysicsTicksPerSecond                    = 60;    // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
-    std::chrono::duration<double> mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mRenderer.mTargetFPS;
+    int mRendersPerSecond                         = 60;    // The number of physics updates to perform per second. This is the template argument passed to simulationLoop pPhysicsTicksPerSecond.
+    std::chrono::duration<double> mRenderTimestep = std::chrono::duration<double>(std::chrono::seconds(1)) / mRendersPerSecond;
     std::chrono::milliseconds maxFrameDelta       = std::chrono::milliseconds(250); // If the time between loops is beyond this, cap at this duration
 
     // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
@@ -59,7 +62,7 @@ private:
 
         LOG_INFO("Physics ticks per second: {}" , pPhysicsTicksPerSecond);
         LOG_INFO("Physics fixed timestep: {}ms" , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count());
-        LOG_INFO("Renderer FPS: {}"             , mRenderer.mTargetFPS);
+        LOG_INFO("Renderer FPS: {}"             , mRendersPerSecond);
         LOG_INFO("Render timestep: {}ms"        , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(mRenderTimestep).count());
 
         // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both
@@ -116,17 +119,14 @@ private:
                 // preventing a subtle but visually unpleasant stuttering of the physics simulation on the screen
                 const double alpha = std::chrono::duration<double>{durationSinceLastPhysicsTick} / physicsTimestep; // Blending factor between 0-1 used to interpolate current state
                 //renderState = currentState * alpha + previousState * (1 - alpha);
-                //mRenderer.draw(renderState);
+                //mEditor.draw(renderState);
 
                 // Draw Scene
                 mOpenGLRenderer.draw();
 
-                {// Draw UI
-                    Platform::Core::startImGuiFrame();
-                    mRenderer.draw();
-                    mOpenGLRenderer.renderImGui();
-                    Platform::Core::endImGuiFrame();
-                }
+                // Draw UI
+                mEditor.draw();
+
 
                 Platform::Core::swapBuffers();
                 durationSinceLastRenderTick = Duration::zero();
@@ -134,14 +134,14 @@ private:
         }
 
         const double totalTimeSeconds = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1,1>> >(durationApplicationRunning).count();
-        const double renderFPS = static_cast<double>(mRenderer.mDrawCount) / totalTimeSeconds;
+        const double renderFPS = static_cast<double>(mEditor.mDrawCount) / totalTimeSeconds;
         const double physicsFPS = static_cast<double>(mPhysicsSystem.mUpdateCount) / totalTimeSeconds;
 
         LOG_INFO("------------------------------------------------------------------------");
         LOG_INFO("Total simulation time: {}s", totalTimeSeconds);
         LOG_INFO("Total physics updates: {}", mPhysicsSystem.mUpdateCount);
         LOG_INFO("Averaged physics updates per second: {}/s", physicsFPS);
-        LOG_INFO("Total rendered frames: {}", mRenderer.mDrawCount);
+        LOG_INFO("Total rendered frames: {}", mEditor.mDrawCount);
         LOG_INFO("Averaged render frames per second: {}/s", renderFPS);
     }
 };

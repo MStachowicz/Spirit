@@ -648,61 +648,57 @@ namespace OpenGL
 
     void OpenGLRenderer::renderImGui()
     {
-        if (ImGui::Begin("OpenGL options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        auto& window         = Platform::Core::getWindow();
+        auto [width, height] = window.size();
+
+        ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
+        ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
+        ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
+        ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
+        ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
+        ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
+        ImGui::Separator();
+
+        static const std::array<std::string, Utility::toIndex(BufferDrawType::Count)> bufferDrawTypes{"Colour", "Depth"};
+        if (ImGui::BeginCombo("Buffer draw style", bufferDrawTypes[static_cast<size_t>(mBufferDrawType)].c_str(), ImGuiComboFlags()))
         {
-            auto& window = Platform::Core::getWindow();
-            auto [width, height] = window.size();
-
-            ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
-            ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
-            ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
-            ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
-            ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
-            ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
-            ImGui::Separator();
-
-            static const std::array<std::string, Utility::toIndex(BufferDrawType::Count)> bufferDrawTypes{"Colour", "Depth"};
-            if (ImGui::BeginCombo("Buffer draw style", bufferDrawTypes[static_cast<size_t>(mBufferDrawType)].c_str(), ImGuiComboFlags()))
+            for (size_t i = 0; i < bufferDrawTypes.size(); i++)
             {
-                for (size_t i = 0; i < bufferDrawTypes.size(); i++)
-                {
-                    if (ImGui::Selectable(bufferDrawTypes[i].c_str()))
-                        mBufferDrawType = static_cast<BufferDrawType>(i);
-                }
-                ImGui::EndCombo();
+                if (ImGui::Selectable(bufferDrawTypes[i].c_str()))
+                    mBufferDrawType = static_cast<BufferDrawType>(i);
             }
-
-            if (mBufferDrawType == BufferDrawType::Depth)
-                ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
-
-            ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
-            ImGui::Checkbox("Show orientations", &mShowOrientations);
-            ImGui::Checkbox("Show light positions", &mShowLightPositions);
-            ImGui::Checkbox("Show bounding boxes", &mShowBoundingBoxes);
-            if (mShowBoundingBoxes)
-                ImGui::Checkbox("Fill bounding boxes ", &mFillBoundingBoxes);
-
-            ImGui::Separator();
-            mGLState.renderImGui();
-            ImGui::Separator();
-
-            ImGui::Separator();
-            if (ImGui::TreeNode("PostProcessing"))
-            {
-                ImGui::Checkbox("Invert", &mPostProcessingOptions.mInvertColours);
-                ImGui::Checkbox("Grayscale", &mPostProcessingOptions.mGrayScale);
-                ImGui::Checkbox("Sharpen", &mPostProcessingOptions.mSharpen);
-                ImGui::Checkbox("Blur", &mPostProcessingOptions.mBlur);
-                ImGui::Checkbox("Edge detection", &mPostProcessingOptions.mEdgeDetection);
-
-                if (mPostProcessingOptions.mSharpen || mPostProcessingOptions.mBlur || mPostProcessingOptions.mEdgeDetection)
-                    ImGui::SliderFloat("Kernel offset", &mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
-
-                ImGui::TreePop();
-            }
-            ImGui::Separator();
+            ImGui::EndCombo();
         }
-        ImGui::End();
+
+        if (mBufferDrawType == BufferDrawType::Depth)
+            ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
+
+        ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
+        ImGui::Checkbox("Show orientations", &mShowOrientations);
+        ImGui::Checkbox("Show light positions", &mShowLightPositions);
+        ImGui::Checkbox("Show bounding boxes", &mShowBoundingBoxes);
+        if (mShowBoundingBoxes)
+            ImGui::Checkbox("Fill bounding boxes ", &mFillBoundingBoxes);
+
+        ImGui::Separator();
+        mGLState.renderImGui();
+        ImGui::Separator();
+
+        ImGui::Separator();
+        if (ImGui::TreeNode("PostProcessing"))
+        {
+            ImGui::Checkbox("Invert", &mPostProcessingOptions.mInvertColours);
+            ImGui::Checkbox("Grayscale", &mPostProcessingOptions.mGrayScale);
+            ImGui::Checkbox("Sharpen", &mPostProcessingOptions.mSharpen);
+            ImGui::Checkbox("Blur", &mPostProcessingOptions.mBlur);
+            ImGui::Checkbox("Edge detection", &mPostProcessingOptions.mEdgeDetection);
+
+            if (mPostProcessingOptions.mSharpen || mPostProcessingOptions.mBlur || mPostProcessingOptions.mEdgeDetection)
+                ImGui::SliderFloat("Kernel offset", &mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
+
+            ImGui::TreePop();
+        }
+        ImGui::Separator();
     }
 
     void OpenGLRenderer::onWindowResize(const int pWidth, const int pHeight)
