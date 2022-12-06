@@ -57,6 +57,8 @@ namespace OpenGL
 
         void setupLights();
         void renderImGui();
+        const glm::mat4& projection() const { return mProjection; };
+        const glm::mat4& view() const       { return mViewMatrix; };
 
         // List of cylinders to draw for debugging purposes.
         std::vector<Geometry::Cylinder> debugCylinders;
