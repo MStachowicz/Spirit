@@ -57,8 +57,10 @@ namespace OpenGL
 
         void setupLights();
         void renderImGui();
-        const glm::mat4& projection() const { return mProjection; };
-        const glm::mat4& view() const       { return mViewMatrix; };
+
+        // Returns the current cursor screen position as a normalised direction vector in world-space.
+        // This function is OpenGL specific as it makes assumptions on NDC coordinate system and forward direction in world space.
+        glm::vec3 getCursorWorldDirection() const;
 
         // List of cylinders to draw for debugging purposes.
         std::vector<Geometry::Cylinder> debugCylinders;

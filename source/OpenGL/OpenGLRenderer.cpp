@@ -706,4 +706,26 @@ namespace OpenGL
         mMainScreenFBO.resize(pWidth, pHeight, mGLState);
         mGLState.setViewport(pWidth, pHeight);
     }
+
+    glm::vec3 OpenGLRenderer::getCursorWorldDirection() const
+    {
+        const auto [mouseX, mouseY]   = Platform::Core::getCursorPosition(); // VIEWPORT
+        ZEPHYR_ASSERT(mouseX > 0.f && mouseY > 0.f, "Mouse coordinates cannot be negative, did you miss a Window::capturingMouse() check before calling")
+        const auto [windowX, windowY] = Platform::Core::getWindow().size();
+
+        // VIEWPORT [0 - WINDOWSIZE] to OpenGL NDC [-1 - 1]
+        const glm::vec2 normalizedDisplayCoords = glm::vec2((2.f * mouseX) / windowX - 1.f, (2.f * mouseY) / windowY - 1.f);
+
+        // NDC to CLIPSPACE - Reversing normalizedDisplayCoords.y -> OpenGL windowSpace is relative to bottom left, getCursorPosition returns screen coordinates relative to top-left
+        const glm::vec4 clipSpaceRay = glm::vec4(normalizedDisplayCoords.x, -normalizedDisplayCoords.y, -1.f, 1.f);
+
+        // CLIPSPACE to EYE SPACE
+        auto eyeSpaceRay = glm::inverse(mProjection) * clipSpaceRay;
+        eyeSpaceRay      = glm::vec4(eyeSpaceRay.x, eyeSpaceRay.y, -1.f, 0.f); // Set the direction into the screen -1.f
+
+        // EYE SPACE to WORLD SPACE
+        const glm::vec3 worldSpaceRay = glm::normalize(glm::vec3(glm::inverse(mViewMatrix) * eyeSpaceRay));
+        return worldSpaceRay;
+    }
+
 } // namespace OpenGL
