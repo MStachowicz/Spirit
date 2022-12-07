@@ -7,6 +7,7 @@
 // GEOMETRY
 #include "Cylinder.hpp"
 #include "Sphere.hpp"
+#include "Ray.hpp"
 
 // UTILITY
 #include "Utility.hpp"
@@ -61,6 +62,8 @@ namespace OpenGL
         // Returns the current cursor screen position as a normalised direction vector in world-space.
         // This function is OpenGL specific as it makes assumptions on NDC coordinate system and forward direction in world space.
         glm::vec3 getCursorWorldDirection() const;
+        // Returns a ray cast from the primary camera view position in the direction of the cursor.
+        Geometry::Ray getCursorWorldRay() const;
 
         // List of cylinders to draw for debugging purposes.
         std::vector<Geometry::Cylinder> debugCylinders;

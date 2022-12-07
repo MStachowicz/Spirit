@@ -727,5 +727,9 @@ namespace OpenGL
         const glm::vec3 worldSpaceRay = glm::normalize(glm::vec3(glm::inverse(mViewMatrix) * eyeSpaceRay));
         return worldSpaceRay;
     }
+    Geometry::Ray OpenGLRenderer::getCursorWorldRay() const
+    {
+        return Geometry::Ray(mSceneSystem.getPrimaryCamera()->getPosition(), getCursorWorldDirection());
+    }
 
 } // namespace OpenGL
