@@ -39,11 +39,12 @@ private:
     System::MeshSystem mMeshSystem;
     System::SceneSystem mSceneSystem;
 
+    OpenGL::OpenGLRenderer mOpenGLRenderer;
+
     System::CollisionSystem mCollisionSystem;
     System::PhysicsSystem mPhysicsSystem;
     System::InputSystem mInputSystem;
 
-    OpenGL::OpenGLRenderer mOpenGLRenderer;
     UI::Editor mEditor;
 
     bool mPhysicsTimeStepChanged                  = false; // True when the physics timestep is changed, causes an exit from the loop and re-run
