@@ -53,12 +53,16 @@ namespace Platform
         static void swapBuffers();
         static void startImGuiFrame();
         static void endImGuiFrame();
+
         static Window& getWindow() { return *mPrimaryWindow; };
         static bool hasWindow()    { return mPrimaryWindow;  };
 
         // INPUT
         static void pollEvents();
+        // Is the mouse hovering over any UI elements. Click events during this state will generally be absorbed by the UI.
         static bool UICapturingMouse();
+        // Returns the cursor screen-coordinates, relative to the upper-left corner of the primary window.
+        // If the cursor is captured by the window the values returned can be negative (Window::capturingMouse).
         static std::pair<float, float> getCursorPosition();
 
         // EVENTS
