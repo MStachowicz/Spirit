@@ -8,7 +8,6 @@ Application::Application()
     , mCollisionSystem(mSceneSystem, mMeshSystem)
     , mPhysicsSystem(mSceneSystem)
     , mInputSystem(mSceneSystem)
-    , mOpenGLRenderer(mSceneSystem, mMeshSystem, mTextureSystem)
     , mEditor(mSceneSystem, mOpenGLRenderer)
 {}
 
