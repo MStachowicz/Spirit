@@ -34,7 +34,7 @@ namespace ECS
         template<typename ComponentType>
         static ComponentID get()
         {
-            typedef typename std::remove_reference_t<ComponentType> DecayedComponentType;
+            typedef typename std::decay_t<ComponentType> DecayedComponentType;
 
             //LOG_INFO("ECS: New Component encountered given ECS::ComponentID: {} | {} ({}) = size: {}B ", perComponentTypeID<DecayedComponentType>, std::type_index(typeid(DecayedComponentType)).name(), typeid(DecayedComponentType).raw_name(), sizeof(DecayedComponentType));
             return perComponentTypeID<DecayedComponentType>;
