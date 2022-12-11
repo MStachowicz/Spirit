@@ -79,6 +79,7 @@ namespace ECS
             const size_t mInstanceSize;                          // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
             ArchetypeInstanceID mNextInstanceID;                 // The ArchetypeInstanceID past the end of the mBuffer.
             std::vector<Byte> mBuffer;
+            std::vector<EntityID> mEntities;                     // EntityID at every ArchetypeInstanceID. Should be indexed only using ArchetypeInstanceID.
 
             // Take the list of ComponentTypes and returns an array of their ComponentLayouts.
             // Packs the ComponentTypes tightly with 0 gaps in the same order they come in through the variadic template.
@@ -214,7 +215,7 @@ namespace ECS
             // Assign pComponentValues to a new ArchetypeInstanceID. The new ArchetypeInstanceID == mNextInstanceID.
             // If the new ArchetypeInstanceID extends beyond the end of mBuffer capacity, the buffer is doubled.
             template <typename... ComponentTypes>
-            void push_back(ComponentTypes&&... pComponentValues)
+            void push_back(const EntityID& pEntity, ComponentTypes&&... pComponentValues)
             {
                 static_assert(Meta::is_unique<ComponentTypes...>);
                 const auto endInstanceStartPosition = mInstanceSize * mNextInstanceID;
@@ -226,7 +227,33 @@ namespace ECS
                 auto assignComponent = [&](auto& pComponent) { assign(pComponent, mNextInstanceID); };
                 (assignComponent(pComponentValues), ...);
 
+                mEntities.push_back(pEntity);
                 mNextInstanceID++; // Only do this once for all the components
+            }
+
+            // Remove the instance of the archetype at pInstanceIndex.
+            // This erase causes the end ArchetypeInstanceID EntityID to become the pInstanceIndex EntityID.
+            void erase(const ArchetypeInstanceID& pInstanceIndex)
+            {
+                if (pInstanceIndex != mNextInstanceID - 1) // If erasing off the end, skip the move
+                {
+                    const auto eraseIndexStartPosition = mInstanceSize * pInstanceIndex; // Position of the start of the instance at pInstanceIndex.
+                    const auto lastIndexStartPosition = mInstanceSize * (mNextInstanceID - 1); // Position of the start of the last instance.
+                    const auto lastIndexEndPosition   = lastIndexStartPosition + mInstanceSize; // Position of the end of the last instance.
+
+                    // The 'end' positions above are actually 1 index over the range, this is ok as std::move moves the range which contains all the elements
+                    // between first and last, including the element pointed by first but not the element pointed by last.
+
+                    // Move the end buffer data into the index requested for remove.
+                    std::move(mBuffer.begin() + lastIndexStartPosition, mBuffer.begin() + lastIndexEndPosition, mBuffer.begin() + eraseIndexStartPosition);
+                    // We don't pop mIntanceSize off the end of mBuffer as by decrementing mNextInstanceID the next push_back will overwrite the data anyway.
+                    // Reducing mNextInstanceID will also prevent forEach iterating past the end of the valid mBuffer range.
+
+                    mEntities[pInstanceIndex] = std::move(mEntities[mEntities.size() - 1]); // Move the end EntityID into the erased index, pop back below.
+                }
+
+                mNextInstanceID--;
+                mEntities.pop_back();
             }
 
             template <typename... ComponentTypes>
@@ -241,7 +268,9 @@ namespace ECS
 
         EntityID mNextEntity = 0;
         std::vector<Archetype> mArchetypes;
-        std::vector<std::pair<ArchetypeID, ArchetypeInstanceID>> mEntityToArchetypeID; // Maps EntityID to position a pair [ position in mArchetypes, ArchetypeInstanceID in archetype ]
+        // Maps EntityID to a position pair [ index in mArchetypes, ArchetypeInstanceID in archetype ].
+        // Nullopt here means the entity was deleted.
+        std::vector<std::optional<std::pair<ArchetypeID, ArchetypeInstanceID>>> mEntityToArchetypeID;
 
         template <typename... FunctionArgs>
         struct FunctionHelper;
@@ -331,11 +360,32 @@ namespace ECS
                 archetypeID = mArchetypes.size() - 1;
             }
 
+            const auto newEntity = mNextEntity++;
             auto& archetype = mArchetypes[archetypeID.value()];
-            archetype.push_back(std::forward<ComponentTypes>(pComponents)...);
-            mEntityToArchetypeID.push_back({archetypeID.value(), archetype.mNextInstanceID - 1});
+            archetype.push_back(newEntity, std::forward<ComponentTypes>(pComponents)...);
+            mEntityToArchetypeID.push_back(std::make_optional(std::make_pair(archetypeID.value(), archetype.mNextInstanceID - 1)));
 
-            return mNextEntity++;
+            return newEntity;
+        }
+        // Removes pEntity from storage.
+        // The associated EntityID is then on invalid for invoking other Storage funcrions on.
+        void deleteEntity(const EntityID& pEntity)
+        {
+            const auto [archetype, eraseIndex] = *mEntityToArchetypeID[pEntity];
+            mArchetypes[archetype].erase(eraseIndex);
+
+            { // Update Storage bookeeping after the remove (mEntityToArchetypeID)
+                if (eraseIndex != mArchetypes[archetype].mNextInstanceID) // If we removed from the end, no need to update mEntityToArchetypeID
+                {
+                    // After Archetype::erase, the EntityID at eraseIndex is the previously back ArchetypeInstance entity.
+                    // Assign the movedEntityID the correct index in the archetype (the erased entity index)
+                    auto& movedEntityID = mArchetypes[archetype].mEntities[eraseIndex];
+                    mEntityToArchetypeID[movedEntityID]->second = std::move(mEntityToArchetypeID[pEntity]->second);
+                }
+
+                // mEntityToArchetypeID is index alligned to EntityID's we cannot erase the index corresponding to pEntity, instead set to nullopt.
+                mEntityToArchetypeID[pEntity] = std::nullopt;
+            }
         }
 
         // Calls Func on every EntityID which owns all of the components in the Func parameter pack.
@@ -378,7 +428,7 @@ namespace ECS
         template <typename ComponentType>
         const std::decay_t<ComponentType>& getComponent(const EntityID& pEntity) const
         {
-            const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+            const auto [archetype, index] = *mEntityToArchetypeID[pEntity];
             return *mArchetypes[archetype].getComponent<ComponentType>(index);
         }
 
@@ -387,7 +437,7 @@ namespace ECS
         template <typename ComponentType>
         std::decay_t<ComponentType>& getComponentMutable(const EntityID& pEntity)
         {
-            const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+            const auto [archetype, index] = *mEntityToArchetypeID[pEntity];
             return *mArchetypes[archetype].getComponentMutable<ComponentType>(index);
         }
 
@@ -400,14 +450,14 @@ namespace ECS
             if constexpr(sizeof...(ComponentTypes) > 1)
             {// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
                 const auto requestedBitset = getBitset<ComponentTypes...>();
-                const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+                const auto [archetype, index] = *mEntityToArchetypeID[pEntity];
                 const auto entityBitset = mArchetypes[archetype].mBitset;
                 return (requestedBitset == entityBitset || ((requestedBitset & entityBitset) == requestedBitset));
             }
             else
             {// If we only have one requested ComponentType, we can skip the ComponentTypes bitset construction and test just the corresponding bit.
                 typedef typename Meta::GetNth<0, ComponentTypes...>::Type ComponentType;
-                const auto [archetype, index] = mEntityToArchetypeID[pEntity];
+                const auto [archetype, index] = *mEntityToArchetypeID[pEntity];
                 return mArchetypes[archetype].mBitset.test(ComponentIDGenerator::get<ComponentType>());
             }
         }
