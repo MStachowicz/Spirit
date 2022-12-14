@@ -255,15 +255,6 @@ namespace ECS
                 mNextInstanceID--;
                 mEntities.pop_back();
             }
-
-            template <typename... ComponentTypes>
-            std::array<BufferPosition, sizeof...(ComponentTypes)> getComponentOffsets() const
-            {
-                std::array<BufferPosition, sizeof...(ComponentTypes)> offsetsOfComponentTypes;
-                size_t i = 0;
-                (void(offsetsOfComponentTypes[i++] = getComponentOffset<ComponentTypes>()), ...);
-                return offsetsOfComponentTypes;
-            }
         }; // class Archetype
 
         EntityID mNextEntity = 0;
@@ -277,8 +268,8 @@ namespace ECS
         template <typename... FunctionArgs>
         struct FunctionHelper<Meta::PackArgs<FunctionArgs...>>
         {
-            static_assert(Meta::is_unique<FunctionArgs...>); // Cannot construct a bitset from a list of types with duplicates. Are you calling foreach with repeating parameters.
-            static_assert(sizeof...(FunctionArgs) > 0);      // Cannot construct a bitset with 0 function parameters. Are you calling foreach with no parameters.
+            static_assert(Meta::is_unique<FunctionArgs...>, "Cannot construct a FunctionHelper from a list of types with duplicates. Are you calling foreach with repeating parameters?");
+            static_assert(sizeof...(FunctionArgs) > 0, "Cannot construct a FunctionHelper with 0 types, are you calling foreach with 0 params?");
 
             static ComponentBitset getBitset()
             {
@@ -301,16 +292,33 @@ namespace ECS
         {
             static void applyToArchetype(const Func& pFunction, Archetype& pArchetype)
             {
-                const auto componentOffsets = pArchetype.getComponentOffsets<FunctionArgs...>();
-                impl(pFunction, pArchetype, componentOffsets, std::make_index_sequence<sizeof...(FunctionArgs)>{});
+                const auto indexSequence = std::index_sequence_for<FunctionArgs...>{};
+                const auto offsets = getOffsets(pArchetype, indexSequence);
+                impl(pFunction, pArchetype, offsets, indexSequence);
             }
 
         private:
             template <std::size_t... Is>
-            static void impl(const Func& pFunction, Archetype& pArchetype, const std::array<BufferPosition, sizeof...(FunctionArgs)>& pArchetypeOffsets, std::index_sequence<Is...>)
+            static void impl(const Func& pFunction, Archetype& pArchetype, const std::array<BufferPosition, sizeof...(FunctionArgs)>& pArchetypeOffsets, const std::index_sequence<Is...>&)
             { // If we have reached this point we can guarantee pArchetype contains all the components in FunctionArgs.
                 for (size_t i = 0; i < pArchetype.mNextInstanceID; i++)
                     pFunction(*pArchetype.getComponentMutableImpl<FunctionArgs>((pArchetype.mInstanceSize * i) + pArchetypeOffsets[Is])...);
+            }
+
+            // Assign the Byte offset of the ComponentType in pArchetype into pOffsets at pIndex.
+            template <typename ComponentType, std::size_t... Is>
+            static void setOffset(std::array<BufferPosition, sizeof...(FunctionArgs)>& pOffsets, const size_t& pIndex, const Archetype& pArchetype)
+            {
+                pOffsets[pIndex] = pArchetype.getComponentOffset<ComponentType>();
+            }
+
+            // Construct an array of corresponding to the offset of each FunctionArgs into the archetype.
+            template <std::size_t... Is>
+            static std::array<BufferPosition, sizeof...(FunctionArgs)> getOffsets(const Archetype& pArchetype, const std::index_sequence<Is...>&)
+            {
+                std::array<BufferPosition, sizeof...(FunctionArgs)> offsets;
+                (setOffset<FunctionArgs>(offsets, Is, pArchetype), ...);
+                return offsets;
             }
         };
 
@@ -445,7 +453,7 @@ namespace ECS
         template <typename... ComponentTypes>
         bool hasComponents(const EntityID& pEntity) const
         {
-            static_assert(sizeof...(ComponentTypes) != 0);
+            static_assert(sizeof...(ComponentTypes) != 0, "Cannot query hasComponents with 0 types.");
 
             if constexpr(sizeof...(ComponentTypes) > 1)
             {// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
