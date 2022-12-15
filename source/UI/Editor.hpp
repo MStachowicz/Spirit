@@ -1,12 +1,26 @@
 #pragma once
 
+#include <vector>
+
+namespace Platform
+{
+    enum class Key;
+    enum class MouseButton;
+    enum class Action;
+    enum class CursorMode;
+}
 namespace System
 {
     class SceneSystem;
+    class CollisionSystem;
 }
 namespace OpenGL
 {
     class OpenGLRenderer;
+}
+namespace ECS
+{
+    typedef size_t EntityID;
 }
 
 namespace UI
@@ -16,14 +30,19 @@ namespace UI
     class Editor
     {
     public:
-        Editor(System::SceneSystem& pSceneSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
+        Editor(System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
 
         void draw();
 
         int mDrawCount;
     private:
         System::SceneSystem& mSceneSystem;
+        System::CollisionSystem& mCollisionSystem;
         OpenGL::OpenGLRenderer& mOpenGLRenderer;
+
+        std::vector<ECS::EntityID> mSelectedEntities;
+
+        void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
 
         void drawEntityPanel();
         void drawGraphicsPanel();

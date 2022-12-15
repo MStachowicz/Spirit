@@ -37,16 +37,21 @@ namespace System
 
     void InputSystem::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)
     {
-        if (!Platform::Core::UICapturingMouse())
+        // InputSystem only reacts to inputs if the UI is not hovered and the mouse is captured by the window.
+        if (!Platform::Core::UICapturingMouse() && Platform::Core::getWindow().capturingMouse())
         {
             switch (pMouseButton)
             {
                 case Platform::MouseButton::MOUSE_LEFT:
+                    break;
                 case Platform::MouseButton::MOUSE_MIDDLE:
                     break;
                 case Platform::MouseButton::MOUSE_RIGHT:
+                {
                     if (pAction == Platform::Action::PRESS)
-                        Platform::Core::getWindow().setInputMode(Platform::Core::getWindow().capturingMouse() ? Platform::CursorMode::NORMAL : Platform::CursorMode::CAPTURED);
+                        Platform::Core::getWindow().setInputMode(Platform::CursorMode::NORMAL);
+                    break;
+                }
                     break;
                 default:
                     LOG_WARN("Unknown mouse press {}", pMouseButton);

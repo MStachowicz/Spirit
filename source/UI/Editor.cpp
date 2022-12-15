@@ -5,6 +5,7 @@
 
 // SYSTEM
 #include "SceneSystem.hpp"
+#include "CollisionSystem.hpp"
 
 // COMPONENT
 #include "Camera.hpp"
@@ -21,6 +22,7 @@
 
 // PLATFORM
 #include "Core.hpp"
+#include "InputDefinitions.hpp"
 
 // UTILITY
 #include "Logger.hpp"
@@ -31,11 +33,54 @@
 
 namespace UI
 {
-    Editor::Editor(System::SceneSystem& pSceneSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
+    Editor::Editor(System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
         : mDrawCount{0}
         , mSceneSystem{pSceneSystem}
+        , mCollisionSystem{pCollisionSystem}
         , mOpenGLRenderer{pOpenGLRenderer}
-    {}
+    {
+        Platform::Core::mMouseButtonEvent.subscribe(std::bind(&Editor::onMousePressed, this, std::placeholders::_1, std::placeholders::_2));
+    }
+
+    void Editor::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)
+    {
+        if (!Platform::Core::UICapturingMouse() && !Platform::Core::getWindow().capturingMouse())
+        {
+            switch (pMouseButton)
+            {
+                case Platform::MouseButton::MOUSE_LEFT:
+                {
+                    if (pAction == Platform::Action::PRESS)
+                    {
+                        auto entitiesUnderMouse      = mCollisionSystem.getEntitiesAlongRay(mOpenGLRenderer.getCursorWorldRay());
+
+                        if (!entitiesUnderMouse.empty())
+                        {
+                            std::sort(entitiesUnderMouse.begin(), entitiesUnderMouse.end(),[](const auto& left, const auto& right) { return left.second < right.second; });
+                            mSelectedEntities.push_back(entitiesUnderMouse.front().first);
+                            LOG_INFO("Entity{} has been selected", entitiesUnderMouse.front().first);
+                        }
+
+                        const auto mouseRayDirection = mOpenGLRenderer.getCursorWorldDirection();
+                        const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->getPosition(), mSceneSystem.getPrimaryCamera()->getPosition() + (mouseRayDirection * 1000.f), 0.02f);
+                        mOpenGLRenderer.debugCylinders.push_back(mouseRayCylinder);
+                    }
+                    break;
+                }
+                case Platform::MouseButton::MOUSE_MIDDLE:
+                {
+                    mOpenGLRenderer.debugCylinders.clear();
+                    break;
+                }
+                case Platform::MouseButton::MOUSE_RIGHT:
+                {
+                    if (pAction == Platform::Action::PRESS)
+                        Platform::Core::getWindow().setInputMode(Platform::Core::getWindow().capturingMouse() ? Platform::CursorMode::NORMAL : Platform::CursorMode::CAPTURED);
+                    break;
+                }
+            }
+        }
+    }
 
     void Editor::draw()
     {
