@@ -79,4 +79,23 @@ namespace System
 
         return nearestIntersectionAlongRay.has_value();
     }
+
+    std::vector<std::pair<ECS::EntityID, float>> CollisionSystem::getEntitiesAlongRay(const Geometry::Ray& pRay) const
+    {
+        std::vector<std::pair<ECS::EntityID, float>> entitiesAndDistance;
+
+        mSceneSystem.getCurrentScene().foreach([&](ECS::EntityID& pEntity, Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
+        {
+            auto& AABB = mMeshSystem.getMesh(pMesh.mID).mAABB;
+            const auto rotateScale = glm::scale(glm::mat4_cast(pTransform.mOrientation), pTransform.mScale);
+            const auto worldSpaceAABB = Geometry::AABB::transform(AABB, pTransform.mPosition, rotateScale);
+
+            glm::vec3 collisionPoint;
+            float lengthAlongRay;
+            if (Geometry::intersect(worldSpaceAABB, pRay, &collisionPoint, &lengthAlongRay))
+                entitiesAndDistance.push_back({pEntity, lengthAlongRay});
+        });
+
+        return entitiesAndDistance;
+    }
 } // namespace System
