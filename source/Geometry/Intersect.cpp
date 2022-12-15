@@ -67,6 +67,11 @@ namespace Geometry
             }
         }
 
+        // Special case, if a bad Ray is passed in e.g. 0.0,0.0,0.0
+        // All Ray components are < EPSILON we can fall through here and return true.
+        if (farthestEntry == -MAX || nearestExist == MAX)
+            return false;
+
         // Ray intersects all 3 slabs. Return point pIntersectionPoint and pLengthAlongRay
         if (pIntersectionPoint) *pIntersectionPoint = pRay.mStart + pRay.mDirection * farthestEntry;
         if (pLengthAlongRay)    *pLengthAlongRay    = farthestEntry;
