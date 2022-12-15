@@ -18,11 +18,12 @@
 namespace Platform
 {
     Window::Window(const int& pWidth, const int& pHeight)
-    : mWidth{pWidth}
-    , mHeight{pHeight}
-    , mAspectRatio{static_cast<float>(mWidth) / static_cast<float>(mHeight)}
-    , mCapturingMouse(false)
-    , mHandle{nullptr}
+        : mWidth{pWidth}
+        , mHeight{pHeight}
+        , mAspectRatio{static_cast<float>(mWidth) / static_cast<float>(mHeight)}
+        , mCapturingMouse{false}
+        , mCapturedChangedThisFrame{false}
+        , mHandle{nullptr}
     {
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
         mHandle = glfwCreateWindow(mWidth, mHeight, "Zephyr", NULL, NULL);
@@ -49,15 +50,18 @@ namespace Platform
             case CursorMode::NORMAL:
                 glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+                mCapturedChangedThisFrame = true;
                 mCapturingMouse = false;
                 break;
             case CursorMode::HIDDEN:
                 glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+                mCapturedChangedThisFrame = true;
                 mCapturingMouse = false;
                 break;
             case CursorMode::CAPTURED:
                 ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
                 glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                mCapturedChangedThisFrame = true;
                 mCapturingMouse = true;
                 break;
             case CursorMode::UNKNOWN:
@@ -144,6 +148,11 @@ namespace Platform
         {
             delete mPrimaryWindow;
             mPrimaryWindow = nullptr;
+        }
+        else
+        {
+            if (mPrimaryWindow->mCapturedChangedThisFrame)
+                mPrimaryWindow->mCapturedChangedThisFrame = false;
         }
 
         glfwPollEvents();

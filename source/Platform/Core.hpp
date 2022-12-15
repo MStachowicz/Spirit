@@ -21,7 +21,7 @@ namespace Platform
         void setInputMode(const CursorMode& pCursorMode);
         void requestClose();
 
-        bool capturingMouse()      const { return mCapturingMouse; };
+        bool capturingMouse()      const { return mCapturingMouse != mCapturedChangedThisFrame; };
         float aspectRatio()        const { return mAspectRatio; };
         std::pair<int, int> size() const { return {mWidth, mHeight}; };
 
@@ -33,6 +33,7 @@ namespace Platform
         int mHeight;
         float mAspectRatio;
         bool mCapturingMouse; // Is the mouse hidden and input is restricted to this window.
+        bool mCapturedChangedThisFrame; // Has mCapturingMouse changed on this pollEventCycle. Useful for avoiding same cycle input clashes.
         GLFWwindow* mHandle;
     };
 
@@ -61,6 +62,7 @@ namespace Platform
         static void pollEvents();
         // Is the mouse hovering over any UI elements. Click events during this state will generally be absorbed by the UI.
         static bool UICapturingMouse();
+
         // Returns the cursor screen-coordinates, relative to the upper-left corner of the primary window.
         // If the cursor is captured by the window the values returned can be negative (Window::capturingMouse).
         static std::pair<float, float> getCursorPosition();
