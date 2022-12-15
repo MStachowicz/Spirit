@@ -8,8 +8,8 @@ namespace Geometry
     struct Ray
     {
         Ray(const glm::vec3& pStart, const glm::vec3& pDirection)
-            : mStart()
-            , mDirection()
+            : mStart(pStart)
+            , mDirection(pDirection)
         {}
 
         glm::vec3 mStart;
