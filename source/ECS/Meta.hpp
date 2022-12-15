@@ -66,4 +66,11 @@ namespace Meta
     {
         using Type = std::tuple_element_t<N, std::tuple<Args...>>;
     };
+
+    // Does Type appear as one of the Args.
+    template <typename Type, typename... Args>
+    static constexpr bool hasType()
+    { // Fold on || returns false by default so this function also works with 0 Args.
+        return (std::is_same_v<Type, std::decay_t<Args>> || ...);
+    }
 }

@@ -36,17 +36,24 @@ namespace ECS
         {
             typedef typename std::decay_t<ComponentType> DecayedComponentType;
 
-            //LOG_INFO("ECS: New Component encountered given ECS::ComponentID: {} | {} ({}) = size: {}B ", perComponentTypeID<DecayedComponentType>, std::type_index(typeid(DecayedComponentType)).name(), typeid(DecayedComponentType).raw_name(), sizeof(DecayedComponentType));
+            //LOG_INFO("ECS: Component '{}' ECS::ComponentID: {}",  std::type_index(typeid(DecayedComponentType)).name(), perComponentTypeID<DecayedComponentType>);
             return perComponentTypeID<DecayedComponentType>;
         }
     };
 
-    // Generates a bitset out of all the ComponentTypes.
+    // Generates a bitset out of all the ComponentTypes. Skips over EntityID params.
     template <typename... ComponentTypes>
     static ComponentBitset getBitset()
     {
         ComponentBitset componentBitset;
-        (componentBitset.set(ComponentIDGenerator::get<ComponentTypes>()), ...);
+
+        auto setComponentBit = [&componentBitset]<typename ComponentType>()
+        {
+            if constexpr (!std::is_same_v<EntityID, std::decay_t<ComponentType>>) // Ignore any EntityID params supplied.
+                componentBitset.set(ComponentIDGenerator::get<ComponentType>());
+        };
+        (setComponentBit.operator()<ComponentTypes>(), ...);
+
         return componentBitset;
     }
 
@@ -301,18 +308,29 @@ namespace ECS
             template <std::size_t... Is>
             static void impl(const Func& pFunction, Archetype& pArchetype, const std::array<BufferPosition, sizeof...(FunctionArgs)>& pArchetypeOffsets, const std::index_sequence<Is...>&)
             { // If we have reached this point we can guarantee pArchetype contains all the components in FunctionArgs.
-                for (size_t i = 0; i < pArchetype.mNextInstanceID; i++)
-                    pFunction(*pArchetype.getComponentMutableImpl<FunctionArgs>((pArchetype.mInstanceSize * i) + pArchetypeOffsets[Is])...);
+                for (ArchetypeInstanceID i = 0; i < pArchetype.mNextInstanceID; i++)
+                    pFunction(*getFromArchetype<FunctionArgs>(pArchetype, i, pArchetypeOffsets[Is])...);
             }
 
-            // Assign the Byte offset of the ComponentType in pArchetype into pOffsets at pIndex.
+            template <typename ComponentType>
+            static std::decay_t<ComponentType>* getFromArchetype(Archetype& pArchetype, const ArchetypeInstanceID& pIndex, const size_t& pOffset)
+            {
+                if constexpr (std::is_same_v<EntityID, std::decay_t<ComponentType>>)
+                    return &pArchetype.mEntities[pIndex];
+                else
+                    return reinterpret_cast<std::decay_t<ComponentType>*>(&pArchetype.mBuffer[(pArchetype.mInstanceSize * pIndex) + pOffset]);
+            }
+
+            // Assign the Byte offset of the ComponentType in pArchetype into pOffsets at pIndex. Skips over EntityID's encountered.
             template <typename ComponentType, std::size_t... Is>
             static void setOffset(std::array<BufferPosition, sizeof...(FunctionArgs)>& pOffsets, const size_t& pIndex, const Archetype& pArchetype)
             {
-                pOffsets[pIndex] = pArchetype.getComponentOffset<ComponentType>();
+                if constexpr (!std::is_same_v<EntityID, std::decay_t<ComponentType>>) // Ignore any EntityID params supplied.
+                    pOffsets[pIndex] = pArchetype.getComponentOffset<ComponentType>();
             }
 
             // Construct an array of corresponding to the offset of each FunctionArgs into the archetype.
+            // EntityID's encountered will not be set but the index in the returned array will exist.
             template <std::size_t... Is>
             static std::array<BufferPosition, sizeof...(FunctionArgs)> getOffsets(const Archetype& pArchetype, const std::index_sequence<Is...>&)
             {
@@ -398,6 +416,7 @@ namespace ECS
 
         // Calls Func on every EntityID which owns all of the components in the Func parameter pack.
         // Func can have any number of ComponentTypes but will only be called if the Entity owns all of the components or more.
+        // An optional EntityID param in function will be supplied the EntityID which owns the ComponentTypes.
         template <typename Func>
         void foreach(const Func& pFunction)
         {
