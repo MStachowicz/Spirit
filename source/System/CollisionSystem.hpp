@@ -2,6 +2,8 @@
 
 #include "glm/fwd.hpp"
 
+#include <vector>
+
 namespace ECS
 {
     typedef size_t EntityID;
