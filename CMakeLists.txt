@@ -44,6 +44,7 @@ source/Component/DirectionalLight.cpp
 source/Component/DirectionalLight.hpp
 source/Component/Mesh.cpp
 source/Component/Mesh.hpp
+source/Component/Label.hpp
 source/Component/PointLight.cpp
 source/Component/PointLight.hpp
 source/Component/RigidBody.cpp

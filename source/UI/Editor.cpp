@@ -12,6 +12,7 @@
 #include "Collider.hpp"
 #include "DirectionalLight.hpp"
 #include "Mesh.hpp"
+#include "Label.hpp"
 #include "PointLight.hpp"
 #include "RigidBody.hpp"
 #include "SpotLight.hpp"
@@ -101,7 +102,13 @@ namespace UI
             auto& scene = mSceneSystem.getCurrentScene();
             scene.foreachEntity([&](ECS::EntityID& pEntity)
             {
-                const std::string title = "Entity " + std::to_string(pEntity);
+                std::string title = "Entity " + std::to_string(pEntity);
+                if (scene.hasComponents<Component::Label>(pEntity))
+                {
+                    auto label = scene.getComponentMutable<Component::Label&>(pEntity);
+                    title = label.mName;
+                }
+
                 if (ImGui::TreeNode(title.c_str()))
                 {
                     if (scene.hasComponents<Component::Transform>(pEntity))
