@@ -17,6 +17,7 @@ PUBLIC OpenGL
 PUBLIC Platform
 PUBLIC UI
 PUBLIC Utility
+PUBLIC Test
 )
 # Zephyr end --------------------------------------------------------------------------------------
 
@@ -204,6 +205,24 @@ PUBLIC spdlog # Logger.hpp uses spdlog in the header.
 )
 # Utility end ---------------------------------------------------------------------------------
 
+# ------------------------ Test ------------------------------------------------------------
+add_library(Test
+source/Test/UnitTester.hpp
+source/Test/UnitTester.cpp
+source/Test/MemoryCorrectnessChecker.hpp
+source/Test/MemoryCorrectnessChecker.cpp
+source/Test/Tests/ECSUnitTester.hpp
+source/Test/Tests/ECSUnitTester.cpp
+)
+target_include_directories(Test
+PUBLIC source/Test
+PUBLIC source/Test/Tests
+)
+target_link_libraries(Test
+PRIVATE Utility
+PRIVATE ECS
+)
+# Test end ---------------------------------------------------------------------------------
 
 # EXTERNAL LIBRARIES ******************************************************************************
     # ImGui ---------------------------------------------------------------------------------------

@@ -23,6 +23,9 @@
 #include "Logger.hpp"
 #include "Stopwatch.hpp"
 
+// Test
+#include "UnitTester.hpp"
+
 // STD
 #include <Chrono>
 
@@ -155,6 +158,8 @@ int main(int argc, char *argv[])
     Platform::Core::initialise();
     Utility::File::setupDirectories(argv[0]);
     JobSystem::initialise();
+
+    Test::UnitTester::runTests();
 
     LOG_INFO("Number of arguments passed on launch: {}", argc);
     for (int index{}; index != argc; ++index)
