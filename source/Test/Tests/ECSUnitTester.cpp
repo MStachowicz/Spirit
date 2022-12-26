@@ -360,31 +360,31 @@ namespace Test
 
                         // Construct
                         auto comp = Test::MemoryCorrectnessItem();
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive, is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive, is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Copy-construct - Add to storage.
                         auto ent = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Destruct - Delete from storage.
                         testStorage.deleteEntity(ent);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Copy-construct - Overwrite original in storage.
                         ent = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Destruct - Delete overwritten from storage.
                         testStorage.deleteEntity(ent);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                     } // Destruct - Comp out of scope delete.
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
                 }
                 { // Test 2: Add to storage then delete front to back.
                     {
@@ -393,43 +393,43 @@ namespace Test
 
                         // Construct
                         auto comp = Test::MemoryCorrectnessItem();
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive, is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive, is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Copy-construct Front and Back instances.
                         auto entFront = testStorage.addEntity(comp);
                         auto entBack  = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Destruct - Delete Front ent in storage.
                         testStorage.deleteEntity(entFront);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                         // Destruct - Delete Back ent in storage.
                         testStorage.deleteEntity(entBack);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Copy-construct Front and Back instances. Overwrites the original Front and Back components in memory.
                         entFront = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                         entBack = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Destruct - Delete Front ent in storage.
                         testStorage.deleteEntity(entFront);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                         // Destruct - Delete Back ent in storage.
                         testStorage.deleteEntity(entBack);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                     } // Destruct - Comp out of scope delete.
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
                 }
                 { // Test 3: Add to storage then delete back to front.
                     {
@@ -438,43 +438,43 @@ namespace Test
 
                         // Construct
                         auto comp = Test::MemoryCorrectnessItem();
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive, is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive, is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Copy-construct Front and Back instances.
                         auto entFront = testStorage.addEntity(comp);
                         auto entBack  = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Destruct - Delete Back ent in storage.
                         testStorage.deleteEntity(entBack);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                         // Destruct - Delete Front ent in storage.
                         testStorage.deleteEntity(entFront);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Copy-construct Front and Back instances. Overwrites the original Front and Back components in memory.
                         entFront = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                         entBack = testStorage.addEntity(comp);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                         // Destruct - Delete Back ent in storage.
                         testStorage.deleteEntity(entBack);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                         // Destruct - Delete Front ent in storage.
                         testStorage.deleteEntity(entFront);
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                        ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                     } // Destruct - Comp out of scope delete.
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
                 }
                 { // Test 3: Create X Delete X Overwrite X
                     Test::MemoryCorrectnessItem::reset();
@@ -488,15 +488,15 @@ namespace Test
                         auto comp = Test::MemoryCorrectnessItem();
                         entities.push_back(testStorage.addEntity(comp));
                     }
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == entityCount, "Should be {} components alive is: {}.", entityCount, Test::MemoryCorrectnessItem::count_alive());
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == entityCount, "Should be {} components alive is: {}.", entityCount, Test::MemoryCorrectnessItem::countAlive());
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                     // DELETE
                     for (size_t i = 0; i < entities.size(); i++)
                         testStorage.deleteEntity(entities[i]);
                     entities.clear();
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::count_alive());
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", Test::MemoryCorrectnessItem::countAlive());
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
 
                     // OVERWRITE
                     for (size_t i = 0; i < entityCount; i++)
@@ -504,8 +504,8 @@ namespace Test
                         auto comp = Test::MemoryCorrectnessItem();
                         entities.push_back(testStorage.addEntity(comp));
                     }
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::count_alive() == entityCount, "Should be {} components alive is: {}.", entityCount, Test::MemoryCorrectnessItem::count_alive());
-                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::errors_occurred == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::errors_occurred);
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countAlive() == entityCount, "Should be {} components alive is: {}.", entityCount, Test::MemoryCorrectnessItem::countAlive());
+                    ZEPHYR_ASSERT(Test::MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", Test::MemoryCorrectnessItem::countErrors());
                 }
                 { // Test 4: Create X Delete in random order.
                 }
