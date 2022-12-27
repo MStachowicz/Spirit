@@ -66,30 +66,48 @@ namespace ECS
         // Every archetype stores its mBitset for matching ComponentTypes to. mComponentLayout sets out how those ComponentTypes are laid out in mBuffer.
         struct Archetype
         {
+            // Destructor wraps a pointer to a destructor for DesctructorType with type erasure. Calling Destroy with an address of a DesctructorType instance will call its destructor.
+            // There is no safety for calling Destroy with a non-DestructorType instance address.
+            // This is a modified version of https://herbsutter.com/2016/09/25/to-store-a-destructor/
+            struct Destructor
+            {
+                Destructor() : Destroy([](const void*){}) {}
+
+                template <typename DestructorType>
+                Destructor(Meta::PackArg<DestructorType>)
+                    : Destroy{[](const void* pInstanceAddress)
+                        {
+                            using Type = std::decay_t<DestructorType>;
+                            // There is no possible runtime check to find if pInstanceAddress points to a type of DestructorType.
+                            // In the above Herb Sutter code, the Destructor class also stores the address to use and avoid this lack of 'type-safety'.
+                            static_cast<const Type*>(pInstanceAddress)->~Type();
+                        }}
+                {}
+
+                void (*Destroy)(const void*); // Pointer to the destructor function
+            };
+
             // Archetype stores an instance of this per component holding information about how the memory layout of mBuffer.
             // Component layouts are constructed in processComponentsIntoArchetypeLayout.
             struct ComponentLayout
             {
-                ComponentLayout() : mComponentID(0), mOffset(0)
+                ComponentLayout() : mComponentID{0}, mOffset{0}, mDestructor{}
                 {}
-                ComponentLayout(const ComponentID& pComponentID, const BufferPosition& pOffset)
-                : mComponentID(pComponentID)
-                , mOffset(pOffset)
+
+                template <typename DestructorType>
+                ComponentLayout(const BufferPosition& pOffset, Meta::PackArg<DestructorType>)
+                    : mComponentID{ComponentIDGenerator::get<DestructorType>()}
+                    , mOffset(pOffset)
+                    , mDestructor{Meta::PackArg<DestructorType>()}
                 {}
 
                 ComponentID mComponentID;
                 BufferPosition mOffset; // Byte offset from the start of the archetype instance to this componentType.
+                Destructor mDestructor;
             };
 
-            const ComponentBitset mBitset;         // The unique identifier for this archetype. Each bit corresponds to a ComponentType this archetype stores per ArchetypeInstanceID.
-            const std::vector<ComponentLayout> mComponentLayout; // How the components are laid out in each ArchetypeInstanceID. The .size() of this vector tells us the number of unique ComponentTypes in an ArchetypeInstanceID.
-            const size_t mInstanceSize;                          // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
-            ArchetypeInstanceID mNextInstanceID;                 // The ArchetypeInstanceID past the end of the mBuffer.
-            std::vector<Byte> mBuffer;
-            std::vector<EntityID> mEntities;                     // EntityID at every ArchetypeInstanceID. Should be indexed only using ArchetypeInstanceID.
-
             // Take the list of ComponentTypes and returns an array of their ComponentLayouts.
-            // Packs the ComponentTypes tightly with 0 gaps in the same order they come in through the variadic template.
+            // Packs the ComponentTypes tightly with 0 gaps in the same order they come in as in the parameter pack.
             template <typename... ComponentTypes>
             static std::array<ComponentLayout, sizeof...(ComponentTypes)> processComponentsIntoArchetypeLayout()
             {
@@ -98,18 +116,27 @@ namespace ECS
 
                 size_t i = 0;
                 size_t byteOffset = 0;
-                std::array<ComponentLayout, sizeof...(ComponentTypes)> componentLayout;
-                (void(componentLayout[i++] = ComponentLayout(ComponentIDGenerator::get<ComponentTypes>(), (byteOffset += sizeof(ComponentTypes)) - sizeof(ComponentTypes))), ...);
-                return componentLayout;
+                std::array<ComponentLayout, sizeof...(ComponentTypes)> componentLayouts;
+
+                (void(componentLayouts[i++] =
+                    ComponentLayout(
+                    (byteOffset += sizeof(ComponentTypes)) - sizeof(ComponentTypes)
+                    , Meta::PackArg<ComponentTypes>()))
+                    , ...);
+
+                return componentLayouts;
             }
 
-            // There is no way to explicitly specify templates for a constructor, as you cannot name a constructor.
-            // This "cheats" by taking advantage of type deduction giving us access to 'ComponentTypes...' in the constructor.
-            template <typename... ComponentTypes>
-            struct ArchetypeParameterPack {};
+            const ComponentBitset mBitset;         // The unique identifier for this archetype. Each bit corresponds to a ComponentType this archetype stores per ArchetypeInstanceID.
+            const std::vector<ComponentLayout> mComponentLayout; // How the components are laid out in each ArchetypeInstanceID. The .size() of this vector tells us the number of unique ComponentTypes in an ArchetypeInstanceID.
+            const size_t mInstanceSize;                          // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
+            ArchetypeInstanceID mNextInstanceID;                 // The ArchetypeInstanceID past the end of the mBuffer.
+            std::vector<Byte> mBuffer;
+            std::vector<EntityID> mEntities;                     // EntityID at every ArchetypeInstanceID. Should be indexed only using ArchetypeInstanceID.
+
             // Construct an Archetype from a list of ComponentTypes. The order the ComponentTypes will be packed in mBuffer is determined in processComponentsIntoArchetypeLayout() function.
             template<typename... ComponentTypes>
-            Archetype(ArchetypeParameterPack<ComponentTypes...>)
+            Archetype(Meta::PackArgs<ComponentTypes...>)
             : mBitset(getBitset<ComponentTypes...>())
             , mComponentLayout(Meta::makeVector(processComponentsIntoArchetypeLayout<ComponentTypes...>()))
             , mInstanceSize(Meta::sizeOfVariadic<ComponentTypes...>())
@@ -139,7 +166,7 @@ namespace ECS
                     }
                     componentLayout += '|';
                 }
-                LOG_INFO("ECS: New Archetype created out of component combination ({}). Memory layout: {}", components, componentLayout);
+                //LOG_INFO("ECS: New Archetype created out of component combination ({}). Memory layout: {}", components, componentLayout);
             }
 
             // Search the mComponentLayout vector for the ComponentType and return its ComponentLayout.
@@ -212,11 +239,14 @@ namespace ECS
             template <typename ComponentType>
             void assign(const ComponentType& pNewValue, const ArchetypeInstanceID& pInstanceIndex)
             {
-                if (mBuffer.capacity() < getComponentPosition<ComponentType>(pInstanceIndex) + sizeof(pNewValue))
+                const auto componentStartPosition = getComponentPosition<ComponentType>(pInstanceIndex);
+
+                if (mBuffer.capacity() < componentStartPosition + sizeof(pNewValue))
                     throw std::logic_error("Index out of range! Trying to assign to a component past the end of the archetype buffer.");
 
-                auto* component = getComponentMutable<ComponentType>(pInstanceIndex);
-                *component = pNewValue;
+                // Use placement new here since the memory is already allocated in push_back.
+                using DecayType     = std::decay_t<ComponentType>;
+                DecayType* comp = new(&mBuffer[componentStartPosition]) DecayType(pNewValue);
             }
 
             // Assign pComponentValues to a new ArchetypeInstanceID. The new ArchetypeInstanceID == mNextInstanceID.
@@ -224,7 +254,7 @@ namespace ECS
             template <typename... ComponentTypes>
             void push_back(const EntityID& pEntity, ComponentTypes&&... pComponentValues)
             {
-                static_assert(Meta::is_unique<ComponentTypes...>);
+                static_assert(Meta::is_unique<ComponentTypes...>, "Non unique component types! Archetype can only push back a set of unique ComponentTypes");
                 const auto endInstanceStartPosition = mInstanceSize * mNextInstanceID;
 
                 // double the size of the mBuffer until there is enough space for a new instance of this archetype.
@@ -242,12 +272,19 @@ namespace ECS
             // This erase causes the end ArchetypeInstanceID EntityID to become the pInstanceIndex EntityID.
             void erase(const ArchetypeInstanceID& pInstanceIndex)
             {
+                // Call the destructors for all the components at pInstanceIndex
+                for (size_t componentIndex = 0; componentIndex < mComponentLayout.size(); componentIndex++)
+                {
+                    const auto componentBufferPos = (pInstanceIndex * mInstanceSize) + mComponentLayout[componentIndex].mOffset;
+                    const auto compAddress        = &mBuffer[componentBufferPos];
+                    mComponentLayout[componentIndex].mDestructor.Destroy(compAddress);
+                }
+
                 if (pInstanceIndex != mNextInstanceID - 1) // If erasing off the end, skip the move
                 {
                     const auto eraseIndexStartPosition = mInstanceSize * pInstanceIndex; // Position of the start of the instance at pInstanceIndex.
                     const auto lastIndexStartPosition = mInstanceSize * (mNextInstanceID - 1); // Position of the start of the last instance.
                     const auto lastIndexEndPosition   = lastIndexStartPosition + mInstanceSize; // Position of the end of the last instance.
-
                     // The 'end' positions above are actually 1 index over the range, this is ok as std::move moves the range which contains all the elements
                     // between first and last, including the element pointed by first but not the element pointed by last.
 
@@ -382,7 +419,7 @@ namespace ECS
 
             if (!archetypeID)
             {// No matching archetype was found we add a new one for this ComponentBitset.
-                mArchetypes.push_back(Archetype(Archetype::ArchetypeParameterPack<ComponentTypes...>()));
+                mArchetypes.push_back(Archetype(Meta::PackArgs<ComponentTypes...>()));
                 archetypeID = mArchetypes.size() - 1;
             }
 
