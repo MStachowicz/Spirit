@@ -1,9 +1,16 @@
 #pragma once
 
 #include <tuple>
+#include <vector>
 
 namespace Meta
 {
+    // By leveraging type deduction, PackArg can be used to supply a type only parameter to a function.
+    // Useful for use as a parameter to a constructor which could otherwise not be a template only function.
+    template <typename Arg>
+    struct PackArg
+    {};
+
     // Encapsulates a parameter pack
     // Acts as a container to transfer the parameter types of the function.
     template<typename... Args>
@@ -54,7 +61,8 @@ namespace Meta
         return std::vector<T>(pArray.begin(), pArray.end());
     }
 
-    // Returns the sum of the sizof of each individual argument in the variadic.
+    // Returns the size of a parameter pack in bytes.
+    // Sums each individual argument in the variadic.
     template <typename... Args>
     constexpr static size_t sizeOfVariadic()
     {
