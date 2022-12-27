@@ -1,20 +1,24 @@
 #include "MemoryCorrectnessChecker.hpp"
 
+#include "Logger.hpp"
+
+#include <format>
 #include <iostream>
 
 namespace Test
 {
     MemoryCorrectnessItem::MemoryCorrectnessItem(const int pID /*= 0*/)
-        : mID(pID)
+        : mID(instanceID++)
     {
         if constexpr (verbose)
-            std::cout << "Constructed mID " << mID << " at " << (void*)this << std::endl;
+            LOG_INFO("Constructing {}", toString());
+
         if (mMemoryInitializationToken == 0x2c1dd27f0d59cf3e && mStatus != MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Construction in already initialized memory at " << (void*)(this) << std::endl;
-            print_memory_status();
+            LOG_ERROR("ERROR! Construction in already initialized memory at {}", toStringAndMemoryStatus());
             errorCount += 1;
         }
+
         mStatus                    = MemoryStatus::Constructed;
         mMemoryInitializationToken = 0x2c1dd27f0d59cf3e;
         constructedCount += 1;
@@ -22,153 +26,183 @@ namespace Test
     MemoryCorrectnessItem::~MemoryCorrectnessItem()
     {
         if constexpr (verbose)
-            std::cout << "Deleting mID " << mID << " at " << (void*)(this) << std::endl;
+            LOG_INFO("Deleting {}", toString());
+
         if (mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while deleting at " << (void*)(this) << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while deleting at {}", toString());
             errorCount += 1;
         }
         if (mStatus == MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Double delete detected at " << (void*)(this) << std::endl;
+            LOG_ERROR("ERROR! Double delete detected at {}", toString());
             errorCount += 1;
         }
+
         mStatus = MemoryStatus::Deleted;
         destroyCount += 1;
     }
 
-    MemoryCorrectnessItem::MemoryCorrectnessItem(const MemoryCorrectnessItem& other)
-        : mID(other.mID)
+    MemoryCorrectnessItem::MemoryCorrectnessItem(const MemoryCorrectnessItem& pOther)
+        : mID(instanceID++)
     {
-        if (other.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
+        if constexpr (verbose)
+            LOG_INFO("Copy constructing {} from {}", toString(), pOther.toString());
+
+        if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while copy constructing from " << (void*)(&other)
-                      << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while copy constructing from {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::Deleted)
+        if (pOther.mStatus == MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Copy constructing from deleted memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Copy constructing from deleted memory at {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::MovedFrom)
+        if (pOther.mStatus == MemoryStatus::MovedFrom)
         {
-            std::cout << "ERROR! Copy constructing from moved-from memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Copy constructing from moved-from memory at {}", pOther.toString());
             errorCount += 1;
         }
+
         if (mMemoryInitializationToken == 0x2c1dd27f0d59cf3e && mStatus != MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Copy construction in already initialized memory at " << (void*)(this) << std::endl;
-            print_memory_status();
+            LOG_ERROR("ERROR! Copy construction in already initialized memory at {}", toStringAndMemoryStatus());
             errorCount += 1;
         }
-        if constexpr (verbose)
-            std::cout << "Copy constructed mID " << mID << " from " << (void*)(&other) << " at " << (void*)this << std::endl;
-        mStatus                    = MemoryStatus::Constructed;
+
+        mStatus = MemoryStatus::Constructed;
         mMemoryInitializationToken = 0x2c1dd27f0d59cf3e;
         copyConstructCount += 1;
     }
 
-    MemoryCorrectnessItem::MemoryCorrectnessItem(MemoryCorrectnessItem&& other)
-        : mID(other.mID)
+    MemoryCorrectnessItem::MemoryCorrectnessItem(MemoryCorrectnessItem&& pOther)
+        : mID(instanceID++)
     {
-        if (other.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
+        if constexpr (verbose)
+            LOG_INFO("Move constructing {} from {}", toString(), pOther.toString());
+
+        if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while move constructing from " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while move constructing from {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::Deleted)
+        if (pOther.mStatus == MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Move constructing from deleted memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Move constructing from deleted memory at {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::MovedFrom)
+        if (pOther.mStatus == MemoryStatus::MovedFrom)
         {
-            std::cout << "ERROR! Move constructing from moved-from memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Move constructing from moved-from memory at {}", pOther.toString());
             errorCount += 1;
         }
+
         if (mMemoryInitializationToken == 0x2c1dd27f0d59cf3e && mStatus != MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Move construction in already initialized memory at " << (void*)(this) << std::endl;
-            print_memory_status();
+            LOG_ERROR("ERROR! Move construction in already initialized memory at {}", toStringAndMemoryStatus());
             errorCount += 1;
         }
-        other.mID     = -1;
-        other.mStatus = MemoryStatus::MovedFrom;
-        if constexpr (verbose)
-            std::cout << "Move constructed mID " << mID << " from " << (void*)(&other) << " at " << (void*)this << std::endl;
-        mStatus                    = MemoryStatus::Constructed;
-        mMemoryInitializationToken = 0x2c1dd27f0d59cf3e;
-        moveConstructCount += 1;
+
+        pOther.mStatus              = MemoryStatus::MovedFrom;
+        mStatus                     = MemoryStatus::Constructed;
+        mMemoryInitializationToken  = 0x2c1dd27f0d59cf3e;
+        moveConstructCount         += 1;
     }
 
-    MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(const MemoryCorrectnessItem& other)
+    MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(const MemoryCorrectnessItem& pOther)
     {
-        if (other.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
+        if constexpr (verbose)
+            LOG_INFO("Copy assigning {} from {}", toString(), pOther.toString());
+
+        if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while copy assigning from " << (void*)(&other)
-                      << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while copy assigning from {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::Deleted)
+        if (pOther.mStatus == MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Copy assigning from deleted memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Copy assigning from deleted memory at {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::MovedFrom)
+        if (pOther.mStatus == MemoryStatus::MovedFrom)
         {
-            std::cout << "ERROR! Copy assigning from moved-from memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Copy assigning from moved-from memory at {}", pOther.toString());
             errorCount += 1;
         }
+
         if (mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while copy assigning to " << (void*)(this) << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while copy assigning to {}", toString());
             errorCount += 1;
         }
-        mID = other.mID;
-        if constexpr (verbose)
-            std::cout << "Copy assigning mID " << mID << " from " << (void*)(&other) << " to " << (void*)this << std::endl;
+
         copyAssignCount += 1;
         return *this;
     }
 
-    MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(MemoryCorrectnessItem&& other)
+    MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(MemoryCorrectnessItem&& pOther)
     {
-        if (other.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
+        if constexpr (verbose)
+            LOG_INFO("Move assigning {} from {}", toString(), pOther.toString());
+
+        if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while move assigning from " << (void*)(&other)
-                      << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while move assigning from {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::Deleted)
+        if (pOther.mStatus == MemoryStatus::Deleted)
         {
-            std::cout << "ERROR! Move assigning from deleted memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Move assigning from deleted memory at {}", pOther.toString());
             errorCount += 1;
         }
-        if (other.mStatus == MemoryStatus::MovedFrom)
+        if (pOther.mStatus == MemoryStatus::MovedFrom)
         {
-            std::cout << "ERROR! Move assigning from moved-from memory at " << (void*)(&other) << std::endl;
+            LOG_ERROR("ERROR! Move assigning from moved-from memory at {}", pOther.toString());
             errorCount += 1;
         }
+
         if (mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
-            std::cout << "ERROR! Use of uninitialized memory while move assigning to " << (void*)(this) << std::endl;
+            LOG_ERROR("ERROR! Use of uninitialized memory while move assigning to {}", toString());
             errorCount += 1;
         }
-        mID           = other.mID;
-        other.mID     = -1;
-        other.mStatus = MemoryStatus::MovedFrom;
-        if constexpr (verbose)
-            std::cout << "Move assigning mID " << mID << " from " << (void*)(&other) << " to " << (void*)this << std::endl;
+
+        pOther.mStatus   = MemoryStatus::MovedFrom;
+        mID              = instanceID++;
         moveAssignCount += 1;
         return *this;
     }
 
-    void MemoryCorrectnessItem::print_memory_status()
+    std::string MemoryCorrectnessItem::getMemoryStatus() const
     {
+        const static char* memoryStatusNames[4] = {"Uninitialized", "Constructed", "MovedFrom", "Deleted"};
+
         if ((int)mStatus >= 0 && (int)mStatus <= 3)
-            std::cout << "The memory mStatus was: " << MemoryStatusNames[(int)mStatus] << std::endl;
+            return std::format("Memory status was: {}", memoryStatusNames[(int)mStatus]);
         else
-            std::cout << "The memory mStatus was: " << (int)mStatus << std::endl;
+            return std::format("Memory status was: {}", (int)mStatus);
+    }
+    std::string MemoryCorrectnessItem::toString() const
+    {
+        return std::format("ID: {} ({})", mID, (void*)(this));
+    }
+    std::string MemoryCorrectnessItem::toStringAndMemoryStatus() const
+    {
+        return std::format("{} - {}", toString(), getMemoryStatus());
+    }
+
+    void MemoryCorrectnessItem::reset()
+    {
+        constructedCount   = 0;
+        destroyCount       = 0;
+        copyConstructCount = 0;
+        moveConstructCount = 0;
+        copyAssignCount    = 0;
+        moveAssignCount    = 0;
+        errorCount         = 0;
+
+        if constexpr (verbose)
+            LOG_INFO("RESET MemoryCorrectnessItem");
     }
 } // namespace Test

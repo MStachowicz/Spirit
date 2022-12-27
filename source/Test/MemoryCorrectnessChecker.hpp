@@ -1,10 +1,12 @@
 #pragma once
 
+#include <string>
+
 namespace Test
 {
     class MemoryCorrectnessItem
     {
-        constexpr static bool verbose = false;
+        constexpr static bool verbose = true;
 
         enum class MemoryStatus
         {
@@ -13,7 +15,6 @@ namespace Test
             MovedFrom     = 2,
             Deleted       = 3
         };
-        const char* MemoryStatusNames[4] = {"Uninitialized", "Constructed", "MovedFrom", "Deleted"};
 
         inline static size_t constructedCount   = 0;
         inline static size_t destroyCount       = 0;
@@ -23,7 +24,9 @@ namespace Test
         inline static size_t moveAssignCount    = 0;
         inline static size_t errorCount         = 0;
 
-        int mID;
+        inline static size_t instanceID         = 0; // Unique ID per instance of MemoryCorrectnessItem
+
+        size_t mID;
         volatile MemoryStatus mStatus;
         volatile size_t mMemoryInitializationToken;
         // Padding to push the memory_status back a little
@@ -32,19 +35,11 @@ namespace Test
         // token intact.
         char mPadding[16];
 
-        void print_memory_status();
-
+        std::string toString() const;
+        std::string getMemoryStatus() const;
+        std::string toStringAndMemoryStatus() const;
     public:
-        static void reset()
-        {
-            constructedCount   = 0;
-            destroyCount       = 0;
-            copyConstructCount = 0;
-            moveConstructCount = 0;
-            copyAssignCount    = 0;
-            moveAssignCount    = 0;
-            errorCount         = 0;
-        }
+        static void reset();
         static size_t countAlive()
         {
             return constructedCount + copyConstructCount + moveConstructCount - destroyCount;
