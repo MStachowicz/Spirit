@@ -6,13 +6,14 @@
 
 // Component
 #include "Camera.hpp"
-#include "Transform.hpp"
-#include "RigidBody.hpp"
 #include "Collider.hpp"
-#include "Mesh.hpp"
-#include "PointLight.hpp"
 #include "DirectionalLight.hpp"
+#include "Mesh.hpp"
+#include "Label.hpp"
+#include "PointLight.hpp"
+#include "RigidBody.hpp"
 #include "SpotLight.hpp"
+#include "Transform.hpp"
 
 // Geometry
 #include "Geometry.hpp"
@@ -23,9 +24,12 @@ namespace System
         : mTextureSystem(pTextureSystem)
         , mMeshSystem(pMeshSystem)
     {
-        Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
-        camera.mPrimaryCamera = true;
-        mStorage.addEntity(camera);
+        {
+            Component::Label name    = Component::Label("Camera");
+            Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
+            camera.mPrimaryCamera    = true;
+            mStorage.addEntity(camera, name);
+        }
 
         {// Cubes
             std::array<glm::vec3, 10> cubePositions = {
@@ -44,6 +48,8 @@ namespace System
                 Component::Transform transform;
                 transform.mPosition = cubePositions[i];
 
+                Component::Label name = Component::Label("Cube " + std::to_string(i));
+
                 Component::MeshDraw mesh;
                 mesh.mID                = mMeshSystem.getMeshID("cube");
                 mesh.mName              = "3DCube";
@@ -57,7 +63,7 @@ namespace System
                 Component::RigidBody rigidBody;
                 rigidBody.mMass = 72.f;
                 rigidBody.mInertia = Geometry::CuboidInertia(rigidBody.mMass, 1.f, 1.f, 1.f).x;
-                mStorage.addEntity(mesh, transform, collider, rigidBody);
+                mStorage.addEntity(mesh, transform, collider, rigidBody, name);
             }
         }
         {// Lights
@@ -75,19 +81,22 @@ namespace System
 
                 for (size_t i = 0; i < pointLightPositions.size(); i++)
                 {
+                    Component::Label name = Component::Label("Point light " + std::to_string(i));
                     Component::PointLight pointLight;
                     pointLight.mPosition = pointLightPositions[i];
                     pointLight.mColour   = pointLightColours[i];
-                    mStorage.addEntity(pointLight);
+                    mStorage.addEntity(pointLight, name);
                 }
             }
             {// Directional light
+                Component::Label name = Component::Label("Directional light");
                 Component::DirectionalLight directionalLight;
                 directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
-                mStorage.addEntity(directionalLight);
+                mStorage.addEntity(directionalLight, name);
             }
             {// Spotlight
-                mStorage.addEntity(Component::SpotLight());
+                Component::Label name = Component::Label("Spot light");
+                mStorage.addEntity(Component::SpotLight(), name);
             }
         }
     }
