@@ -18,6 +18,9 @@ namespace Component
 
         glm::mat4 mModel = glm::identity<glm::mat4>();
 
+        // Rotate the object to roll pitch and yaw euler angles in the order XYZ. Angles suppled are in degrees.
+        void rotateEulerDegrees(const glm::vec3& pRollPitchYawDegrees);
+
         void DrawImGui();
     };
 }

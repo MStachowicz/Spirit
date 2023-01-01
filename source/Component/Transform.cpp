@@ -9,6 +9,13 @@
 
 namespace Component
 {
+    void Transform::rotateEulerDegrees(const glm::vec3& pRollPitchYawDegrees)
+    {
+        mRollPitchYaw = pRollPitchYawDegrees;
+        mOrientation = glm::normalize(Utility::toQuaternion(glm::radians(mRollPitchYaw)));
+        mDirection   = glm::normalize(mOrientation * StartingDirection);
+    }
+
     void Transform::DrawImGui()
     {
         if (ImGui::TreeNode("Transform"))
@@ -16,11 +23,9 @@ namespace Component
             ImGui::SliderFloat3("Position (m)", &mPosition.x, -50.f, 50.f);
             ImGui::SliderFloat3("Scale", &mScale.x, 0.1f, 10.f);
 
+            // Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
             if (ImGui::SliderFloat3("Roll Pitch Yaw (degrees)", &mRollPitchYaw.x, -179.999f, 179.999f))
-            { // Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
-                mOrientation = glm::normalize(Utility::toQuaternion(glm::radians(mRollPitchYaw)));
-                mDirection = glm::normalize(mOrientation * StartingDirection);
-            }
+                rotateEulerDegrees(mRollPitchYaw);
 
             ImGui::Separator();
             ImGui::Text(("Directon:    " + std::to_string(mDirection.x) + ", " + std::to_string(mDirection.y) + ", " + std::to_string(mDirection.z)).c_str());
