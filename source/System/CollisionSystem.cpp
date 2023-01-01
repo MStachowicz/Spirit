@@ -73,7 +73,10 @@ namespace System
                 pCollider.mCollided = true;
 
                 if (!nearestIntersectionAlongRay.has_value() || lengthAlongRay < nearestIntersectionAlongRay)
+                {
+                    nearestIntersectionAlongRay = lengthAlongRay;
                     outFirstIntersection = collisionPoint;
+                }
             }
         });
 
