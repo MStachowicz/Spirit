@@ -27,6 +27,44 @@ namespace Geometry
     {
         return (mMin + mMax) / 2.f;
     }
+    glm::vec3 AABB::getNormal(const glm::vec3& pPointOnAABBInWorldSpace) const
+    {
+        // By moving the world space point to AABB space and finding which component of the size we are closest to, we can determine the normal.
+        // Additionally we can leverage the sign of the component in the local space to determine if the normal needs to be reversed.
+
+        // Move the Point to AABB space
+        const auto AABBPosition = pPointOnAABBInWorldSpace - getCenter();
+        const auto size = getSize();
+
+        // Set min and distance to difference between local point and x size
+        float distance = std::abs(size.x - std::abs(AABBPosition.x));
+        float min      = distance;
+        auto normal    = glm::vec3(1.f, 0.f, 0.f);
+        if (AABBPosition.x < 0)
+            normal *= -1.f;
+
+        // Repeat for Y
+        distance = std::abs(size.y - std::abs(AABBPosition.y));
+        if (distance < min)
+        {
+            min = distance;
+            normal = glm::vec3(0.f, 1.f, 0.f);
+            if (AABBPosition.y < 0)
+                normal *= -1.f;
+        }
+
+        // Repeat for Z
+        distance = std::abs(size.z - std::abs(AABBPosition.z));
+        if (distance < min)
+        {
+            min = distance;
+            normal = glm::vec3(0.f, 1.f, 0.f);
+            if (AABBPosition.z < 0)
+                normal *= -1.f;
+        }
+
+        return normal;
+    }
 
     bool AABB::contains(const AABB& pAABB) const
     {
@@ -38,10 +76,6 @@ namespace Geometry
             mMin.z <= pAABB.mMax.z &&
             mMax.z >= pAABB.mMin.z;
     }
-    bool AABB::operator== (const AABB& pOther) const
-    {
-        return mMin == pOther.mMin && mMax == pOther.mMax;
-    };
 
     AABB AABB::unite(const AABB& pAABB, const AABB& pAABB2)
     {

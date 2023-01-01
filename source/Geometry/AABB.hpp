@@ -17,10 +17,11 @@ namespace Geometry
 
         glm::vec3 getSize() const;
         glm::vec3 getCenter() const;
-        bool contains(const AABB& pAABB) const;
-        bool operator== (const AABB& pOther) const;
-        bool operator != (const AABB& pOther) const { return !(*this == pOther); }
+        // Returns the surface normal of the AABB at pPointOnAABBInWorldSpace.
+        // This function does not handle edge points on the AABB and returns only the normal of one of the 6 faces of the cuboid.
+        glm::vec3 getNormal(const glm::vec3& pPointOnAABBInWorldSpace) const;
 
+        bool contains(const AABB& pAABB) const;
         // Return a bounding box encompassing both bounding boxes.
         static AABB unite(const AABB& pAABB, const AABB& pAABB2);
         static AABB unite(const AABB& pAABB, const glm::vec3& pPoint);
