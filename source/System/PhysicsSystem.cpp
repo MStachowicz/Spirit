@@ -54,8 +54,7 @@ namespace System
 
                 // To integrate the new quat orientation we convert the angular velocity into quaternion form - spin.
                 // Spin represents a time derivative of orientation. https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf
-                const glm::quat spin =
-                    0.5f * glm::quat(0.f, pRigidBody.mAngularVelocity.x, pRigidBody.mAngularVelocity.y, pRigidBody.mAngularVelocity.z) * pTransform.mOrientation;
+                const glm::quat spin = 0.5f * glm::quat(0.f, (pRigidBody.mAngularVelocity * pDeltaTime.count())) * pTransform.mOrientation;
 
                 // Integrate spin to find the new orientation
                 pTransform.mOrientation += spin;
