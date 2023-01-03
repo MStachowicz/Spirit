@@ -14,7 +14,7 @@
 // Torque               T    (N m = kg m²/s²)
 // Angular Momentum     L    (N m s kg m²/s)
 // Angular Velocity     ω        (rad/s)
-// Inertia              J        (kg m²)
+// Inertia             J/I       (kg m²)
 
 // All the Geometry functions expect all params and return all values in SI units.
 namespace Geometry
