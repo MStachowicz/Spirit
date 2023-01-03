@@ -21,6 +21,9 @@ namespace System
         Component::Camera* getPrimaryCamera();
 
     private:
+        void constructBouncingBallScene();
+        void constructBoxScene();
+
         ECS::Storage mStorage;
         const TextureSystem& mTextureSystem;
         const MeshSystem& mMeshSystem;
