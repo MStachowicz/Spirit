@@ -34,10 +34,11 @@ namespace Component
             ImGui::SliderFloat3("Angular Momentum (kg m²/s)", &mAngularMomentum.x, -10.f, 10.f);
             ImGui::SliderFloat3("Angular Velocity   (rad/s)", &mAngularVelocity.x, -10.f, 10.f);
 
+            ImGui::Separator();
             const float inertiaLimit = mMass * 100.f;
-            ImGui::SliderFloat3("Angular Tensor 1   (kg m²)", &mInertiaTensor[0][0], -inertiaLimit, inertiaLimit);
-            ImGui::SliderFloat3("Angular Tensor 2   (kg m²)", &mInertiaTensor[1][0], -inertiaLimit, inertiaLimit);
-            ImGui::SliderFloat3("Angular Tensor 3   (kg m²)", &mInertiaTensor[2][0], -inertiaLimit, inertiaLimit);
+            ImGui::SliderFloat3("Angular Tensor 1   (kg m²)", &mInertiaTensor[0][0], 0.001f, inertiaLimit);
+            ImGui::SliderFloat3("Angular Tensor 2   (kg m²)", &mInertiaTensor[1][0], 0.001f, inertiaLimit);
+            ImGui::SliderFloat3("Angular Tensor 3   (kg m²)", &mInertiaTensor[2][0], 0.001f, inertiaLimit);
 
             ImGui::Separator();
             ImGui::Checkbox("Apply Gravity", &mApplyGravity);
