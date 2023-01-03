@@ -107,6 +107,7 @@ source/Geometry/Intersect.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Geometry.hpp
+source/Geometry/Geometry.cpp
 )
 target_include_directories(Geometry
 PUBLIC source/External/GLM
