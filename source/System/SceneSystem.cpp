@@ -62,7 +62,7 @@ namespace System
 
                 Component::RigidBody rigidBody;
                 rigidBody.mMass = 72.f;
-                rigidBody.mInertia = Geometry::CuboidInertia(rigidBody.mMass, 1.f, 1.f, 1.f).x;
+                rigidBody.mInertiaTensor = Geometry::cuboidInertiaTensor(rigidBody.mMass, 1.f, 1.f, 1.f);
                 mStorage.addEntity(mesh, transform, collider, rigidBody, name);
             }
         }

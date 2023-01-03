@@ -49,7 +49,7 @@ namespace System
                 pRigidBody.mAngularMomentum += changeInAngularMomentum;
 
                 // Convert angular momentum to angular velocity by dividing by inertia tensor: L = Iω
-                pRigidBody.mAngularVelocity = pRigidBody.mAngularMomentum / pRigidBody.mInertia; // ω = L / I
+                pRigidBody.mAngularVelocity = pRigidBody.mAngularMomentum / pRigidBody.mInertiaTensor; // ω = L / I
                 //pRigidBody.mAngularVelocity = glm::vec3(0.f, glm::radians(360.f), 0.f) * pDeltaTime.count();
 
                 // To integrate the new quat orientation we convert the angular velocity into quaternion form - spin.
