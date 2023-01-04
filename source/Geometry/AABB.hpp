@@ -26,6 +26,6 @@ namespace Geometry
         static AABB unite(const AABB& pAABB, const AABB& pAABB2);
         static AABB unite(const AABB& pAABB, const glm::vec3& pPoint);
         // Returns an encompassing AABB after translating and transforming pAABB.
-        static AABB transform(const AABB& pAABB, const glm::vec3& pTranslate, const glm::mat4& pTransform);
+        static AABB transform(const AABB& pAABB, const glm::vec3& pPosition, const glm::mat4& pRotation, const glm::vec3& pScale);
     };
 }// namespace Geometry

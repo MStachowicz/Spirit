@@ -580,19 +580,12 @@ namespace OpenGL
             mLightEmitterShader.use(mGLState);
             mGLState.setPolygonMode(mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
 
-            mSceneSystem.getCurrentScene().foreach([this](Component::Collider& pCollider, Component::Transform& pTransform, Component::MeshDraw& pMesh)
+            mSceneSystem.getCurrentScene().foreach([this](Component::Collider& pCollider, Component::Transform& pTransform)
             {
-                // Transform the object-space AABB to world space and render.
-
-                auto& AABB = mMeshSystem.getMesh(pMesh.mID).mAABB;
-                const auto rotateScale = glm::scale(glm::mat4_cast(pTransform.mOrientation), pTransform.mScale);
-                const auto transformedAABB = Geometry::AABB::transform(AABB, pTransform.mPosition, rotateScale);
-
-                auto AABBModelMat = glm::translate(glm::identity<glm::mat4>(), transformedAABB.getCenter());
-                AABBModelMat = glm::scale(AABBModelMat, transformedAABB.getSize());
+                auto AABBModelMat = glm::translate(glm::identity<glm::mat4>(), pCollider.mWorldAABB.getCenter());
+                AABBModelMat = glm::scale(AABBModelMat, pCollider.mWorldAABB.getSize());
 
 			    mLightEmitterShader.setUniform(mGLState, "model", AABBModelMat);
-
    			    mLightEmitterShader.setUniform(mGLState, "colour", pCollider.mCollided ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 1.f, 0.f));
                 draw(mGLMeshData[m3DCubeMeshIndex]);
             });

@@ -2,6 +2,7 @@
 
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
+#include "glm/gtx/transform.hpp"
 
 #include <algorithm>
 
@@ -97,25 +98,26 @@ namespace Geometry
             std::min(pAABB.mMin.z, pPoint.z),
             std::max(pAABB.mMax.z, pPoint.z)};
     }
-    AABB AABB::transform(const AABB& pAABB, const glm::vec3& pTranslate, const glm::mat4& pTransform)
+    AABB AABB::transform(const AABB& pAABB, const glm::vec3& pPosition, const glm::mat4& pRotation, const glm::vec3& pScale)
     {
         // Reference: Real-Time Collision Detection (Christer Ericson)
         // Each vertex of transformedAABB is a combination of three transformed min and max values from pAABB.
         // The minimum extent is the sum of all the smallers terms, the maximum extent is the sum of all the larger terms.
         // Translation doesn't affect the size calculation of the new AABB so can be added in.
         AABB transformedAABB;
+        const auto rotateScale = glm::scale(pRotation, pScale);
 
         // For all 3 axes
         for (int i = 0; i < 3; i++)
         {
             // Apply translation
-            transformedAABB.mMin[i] = transformedAABB.mMax[i] = pTranslate[i];
+            transformedAABB.mMin[i] = transformedAABB.mMax[i] = pPosition[i];
 
             // Form extent by summing smaller and larger terms respectively.
             for (int j = 0; j < 3; j++)
             {
-                const float e = pTransform[j][i] * pAABB.mMin[j];
-                const float f = pTransform[j][i] * pAABB.mMax[j];
+                const float e = rotateScale[j][i] * pAABB.mMin[j];
+                const float f = rotateScale[j][i] * pAABB.mMax[j];
 
                 if (e < f)
                 {

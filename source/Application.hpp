@@ -113,7 +113,6 @@ private:
                 //previousState = currentState;
                 //integrate(currentState, physicsTime, physicsTimestep);
                 mPhysicsSystem.integrate(std::chrono::duration_cast<System::PhysicsSystem::DeltaTime>(physicsTimestep));
-                mCollisionSystem.checkCollisions();
             }
 
             if (durationSinceLastRenderTick >= mRenderTimestep)

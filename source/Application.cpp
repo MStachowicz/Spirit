@@ -6,7 +6,7 @@ Application::Application()
     , mSceneSystem(mTextureSystem, mMeshSystem)
     , mOpenGLRenderer(mSceneSystem, mMeshSystem, mTextureSystem)
     , mCollisionSystem(mSceneSystem, mMeshSystem)
-    , mPhysicsSystem(mSceneSystem)
+    , mPhysicsSystem(mSceneSystem, mCollisionSystem)
     , mInputSystem(mSceneSystem)
     , mEditor(mSceneSystem, mCollisionSystem, mOpenGLRenderer)
 {}

@@ -89,9 +89,9 @@ PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(System
 PUBLIC Component
+PUBLIC Geometry
 PUBLIC ECS #SceneSystem.hpp uses ECS storage
 PRIVATE Platform
-PRIVATE Geometry
 PRIVATE Utility
 PRIVATE assimp
 )

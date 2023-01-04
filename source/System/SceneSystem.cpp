@@ -67,7 +67,8 @@ namespace System
                 mesh.mSpecularTextureID = mTextureSystem.getTextureID("metalContainerSpecular");
                 mesh.mShininess         = 64.f;
 
-                Component::Collider collider;
+                auto meshAABB = mMeshSystem.getMesh(mesh.mID).mAABB;
+                Component::Collider collider = Component::Collider(meshAABB, transform.mPosition, glm::mat4_cast(transform.mOrientation), transform.mScale);
 
                 Component::RigidBody rigidBody;
                 mStorage.addEntity(mesh, transform, collider, rigidBody, name);
@@ -132,7 +133,8 @@ namespace System
             mesh.mSpecularTextureID = mTextureSystem.getTextureID("metalContainerSpecular");
             mesh.mShininess         = 64.f;
 
-            Component::Collider collider;
+            auto meshAABB = mMeshSystem.getMesh(mesh.mID).mAABB;
+            Component::Collider collider = Component::Collider(meshAABB, transform.mPosition, glm::mat4_cast(transform.mOrientation), transform.mScale);
 
             Component::RigidBody rigidBody;
             rigidBody.mMass = 1.f;
@@ -152,7 +154,8 @@ namespace System
             mesh.mSpecularTextureID = mTextureSystem.getTextureID("metalContainerSpecular");
             mesh.mShininess         = 64.f;
 
-            Component::Collider collider;
+            auto meshAABB = mMeshSystem.getMesh(mesh.mID).mAABB;
+            Component::Collider collider = Component::Collider(meshAABB, transform.mPosition, glm::mat4_cast(transform.mOrientation), transform.mScale);
 
             Component::RigidBody rigidBody;
             rigidBody.mMass = 1.f;

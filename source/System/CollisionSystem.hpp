@@ -1,7 +1,11 @@
 #pragma once
 
 #include "glm/fwd.hpp"
+#include "glm/vec3.hpp"
 
+#include "Intersect.hpp"
+
+#include <optional>
 #include <vector>
 
 namespace ECS
@@ -12,6 +16,11 @@ namespace Geometry
 {
     struct Ray;
 }
+namespace Component
+{
+    struct Transform;
+    struct Collider;
+}
 
 namespace System
 {
@@ -20,13 +29,15 @@ namespace System
 
     class CollisionSystem
     {
-       private:
+    private:
         const MeshSystem& mMeshSystem;
         SceneSystem& mSceneSystem;
 
-       public:
+    public:
         CollisionSystem(SceneSystem& pSceneSystem, const MeshSystem& pMeshSystem);
-        void checkCollisions();
+
+        // For a given Transform and Mesh return the collision information
+        std::optional<Geometry::Collision> getCollision(const Component::Transform& pTransform, const Component::Collider& pCollider) const;
 
         bool castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const;
         // Returns all the entities colliding with pRay.

@@ -2,19 +2,22 @@
 
 // System
 #include "SceneSystem.hpp"
+#include "CollisionSystem.hpp"
 
 // Component
-#include "Storage.hpp"
+#include "Collider.hpp"
 #include "RigidBody.hpp"
+#include "Storage.hpp"
 #include "Transform.hpp"
 
 #include "Utility.hpp"
 
 namespace System
 {
-    PhysicsSystem::PhysicsSystem(SceneSystem& pSceneSystem)
+    PhysicsSystem::PhysicsSystem(SceneSystem& pSceneSystem, CollisionSystem& pCollisionSystem)
         : mUpdateCount{0}
         , mSceneSystem{pSceneSystem}
+        , mCollisionSystem{pCollisionSystem}
         , mTotalSimulationTime{DeltaTime::zero()}
         , mGravity{glm::vec3(0.f, -9.81f, 0.f)}
     {}
@@ -24,7 +27,8 @@ namespace System
         mUpdateCount++;
         mTotalSimulationTime += pDeltaTime;
 
-        mSceneSystem.getCurrentScene().foreach([this, &pDeltaTime](Component::RigidBody& pRigidBody, Component::Transform& pTransform)
+        auto& scene = mSceneSystem.getCurrentScene();
+        scene.foreach([this, &pDeltaTime, &scene](ECS::EntityID& pEntity, Component::RigidBody& pRigidBody, Component::Transform& pTransform)
         {
             // F = ma
             if (pRigidBody.mApplyGravity)
@@ -50,7 +54,6 @@ namespace System
 
                 // Convert angular momentum to angular velocity by dividing by inertia tensor: L = Iω
                 pRigidBody.mAngularVelocity = pRigidBody.mAngularMomentum / pRigidBody.mInertiaTensor; // ω = L / I
-                //pRigidBody.mAngularVelocity = glm::vec3(0.f, glm::radians(360.f), 0.f) * pDeltaTime.count();
 
                 // To integrate the new quat orientation we convert the angular velocity into quaternion form - spin.
                 // Spin represents a time derivative of orientation. https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf
@@ -64,9 +67,23 @@ namespace System
                 pTransform.mRollPitchYaw = glm::degrees(Utility::toRollPitchYaw(pTransform.mOrientation));
             }
 
+            const auto rotationMatrix = glm::mat4_cast(pTransform.mOrientation);
+
             pTransform.mModel = glm::translate(glm::identity<glm::mat4>(), pTransform.mPosition);
-            pTransform.mModel *= glm::mat4_cast(pTransform.mOrientation);
+            pTransform.mModel *= rotationMatrix;
             pTransform.mModel = glm::scale(pTransform.mModel, pTransform.mScale);
+
+            // Update the collider AABB to new world space position
+            if (scene.hasComponents<Component::Collider>(pEntity))
+            {
+                auto& collider = scene.getComponentMutable<Component::Collider>(pEntity);
+                collider.mWorldAABB = Geometry::AABB::transform(collider.mObjectAABB, pTransform.mPosition, rotationMatrix, pTransform.mScale);
+
+                // After moving, check for collisions and respond
+                auto collision = mCollisionSystem.getCollision(pTransform, collider);
+                if (collision)
+                    LOG_INFO("Collision occurred for entity {}", pEntity);
+            }
         });
     }
 } // namespace System
