@@ -1,8 +1,10 @@
 #include "Intersect.hpp"
 
 #include "AABB.hpp"
+#include "Plane.hpp"
 #include "Ray.hpp"
 
+#include <glm/glm.hpp>
 #include <limits>
 
 namespace Geometry
@@ -76,5 +78,14 @@ namespace Geometry
         if (pIntersectionPoint) *pIntersectionPoint = pRay.mStart + pRay.mDirection * farthestEntry;
         if (pLengthAlongRay)    *pLengthAlongRay    = farthestEntry;
         return true;
+    }
+
+    bool intersect(const Plane& pPlane1, const Plane& pPlane2)
+    {
+        // If the dot product is equal to zero, the planes are parallel and do not intersect
+        if (glm::dot(pPlane1.mNormal, pPlane2.mNormal) == 0.0f)
+            return false;
+        else
+            return true;
     }
 } // namespace Geometry
