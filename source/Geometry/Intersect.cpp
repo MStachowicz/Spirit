@@ -3,6 +3,7 @@
 #include "AABB.hpp"
 #include "Plane.hpp"
 #include "Ray.hpp"
+#include "Triangle.hpp"
 
 #include <glm/glm.hpp>
 #include <limits>
@@ -87,5 +88,40 @@ namespace Geometry
             return false;
         else
             return true;
+    }
+
+    std::optional<Collision> getCollision(const Triangle& pTriangle1, const Triangle& pTriangle2)
+    {
+        // Uses the Möller-Trumbore intersection algorithm to perform triangle-triangle collision detection
+
+        glm::vec3 e1 = pTriangle1.mPoint2 - pTriangle1.mPoint1;
+        glm::vec3 e2 = pTriangle1.mPoint3 - pTriangle1.mPoint1;
+        glm::vec3 s1 = glm::cross(pTriangle2.mPoint2 - pTriangle2.mPoint1, pTriangle2.mPoint3 - pTriangle2.mPoint1);
+
+        const float divisor = glm::dot(s1, e1);
+        if (divisor == 0.0f)
+            return std::nullopt;
+
+        const float invDivisor = 1.0f / divisor;
+        glm::vec3 d      = pTriangle1.mPoint1 - pTriangle2.mPoint1;
+        float b1         = glm::dot(d, s1) * invDivisor;
+
+        if (b1 < 0.0f || b1 > 1.0f)
+            return std::nullopt;
+
+        glm::vec3 s2 = glm::cross(d, e1);
+        float b2     = glm::dot(pTriangle2.mPoint3 - pTriangle2.mPoint1, s2) * invDivisor;
+        if (b2 < 0.0f || b1 + b2 > 1.0f)
+            return std::nullopt;
+
+        float t = glm::dot(pTriangle2.mPoint2 - pTriangle2.mPoint1, s2) * invDivisor;
+        if (t < 0.0f)
+            return std::nullopt;
+
+        // Calculate point of intersection and normal at point of intersection
+        Collision collision;
+        collision.mPoint = pTriangle1.mPoint1 + e1 * b1 + e2 * b2;
+        collision.mNormal = glm::normalize(glm::cross(e1, e2));
+        return collision;
     }
 } // namespace Geometry
