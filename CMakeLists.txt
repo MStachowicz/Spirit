@@ -108,6 +108,8 @@ source/Geometry/Plane.cpp
 source/Geometry/Plane.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
+source/Geometry/Triangle.hpp
+source/Geometry/Triangle.cpp
 source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
 )
