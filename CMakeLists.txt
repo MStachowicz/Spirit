@@ -104,6 +104,8 @@ source/Geometry/AABB.hpp
 source/Geometry/Cylinder.hpp
 source/Geometry/Intersect.cpp
 source/Geometry/Intersect.hpp
+source/Geometry/Plane.cpp
+source/Geometry/Plane.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Geometry.hpp
