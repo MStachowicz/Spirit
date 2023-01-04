@@ -12,5 +12,8 @@ namespace Geometry
     {
         glm::vec3 mNormal; // Unit length normal of the plane.
         float mDistance;   // The distance of the plane from the origin along mNormal. Represents the 'd' in the plane equation.
+
+        // Constructs a plane from a world space position and direction intialising the normal of the plane to pDirection.
+        Plane(const glm::vec3& pPoint, const glm::vec3& pDirection);
     };
 }
