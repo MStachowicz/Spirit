@@ -21,9 +21,9 @@ namespace System
     InputSystem::InputSystem(System::SceneSystem& pSceneSystem)
         : mSceneSystem(pSceneSystem)
     {
-        Platform::Core::mKeyPressEvent.subscribe(std::bind(&InputSystem::onKeyPressed, this, std::placeholders::_1));
-        Platform::Core::mMouseButtonEvent.subscribe(std::bind(&InputSystem::onMousePressed, this, std::placeholders::_1, std::placeholders::_2));
-        Platform::Core::mMouseMoveEvent.subscribe(std::bind(&InputSystem::onMouseMoved, this, std::placeholders::_1, std::placeholders::_2));
+        Platform::Core::mKeyPressEvent.subscribe(this, &InputSystem::onKeyPressed);
+        Platform::Core::mMouseButtonEvent.subscribe(this, &InputSystem::onMousePressed);
+        Platform::Core::mMouseMoveEvent.subscribe(this, &InputSystem::onMouseMoved);
     }
 
     void InputSystem::onMouseMoved(const float& pXOffset, const float& pYOffset)

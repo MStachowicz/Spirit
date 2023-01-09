@@ -5,22 +5,49 @@
 
 namespace Utility
 {
-    // Supplied a list of arguments, mediates functions subscribing to and receiving callbacks when a specific event occurs.
-    template<class... Args>
+    template <typename... EventTypes>
     class EventDispatcher
     {
     public:
-        void subscribe(const std::function<void(Args&&... pArgs)>& pSubscriber)
+        using EventFunction   = std::function<void(const EventTypes&...)>;
+        using EventFunctionID = size_t;
+
+        template <typename T, typename Func>
+        EventFunctionID subscribe(T* pObject, Func&& pEventHandler)
         {
-            mSubscribers.push_back(pSubscriber);
+            mHandlers.emplace_back(
+                ++mLastFunctionID,
+                std::bind_front(std::forward<Func>(pEventHandler), pObject));
+            return mLastFunctionID;
         }
-        void dispatch(Args&&... pArgs)
+
+        void unsubscribe(const EventFunctionID& pFunctionID)
         {
-            for(const auto& subscriber : mSubscribers)
-                subscriber(std::forward<Args>(pArgs)...);
+            auto it = std::find_if(
+                mHandlers.begin(), mHandlers.end(),
+                [&pFunctionID](const auto& pEventHandler)
+                {
+                    return pEventHandler.first == pFunctionID;
+                });
+            if (it == mHandlers.end())
+            {
+                return;
+            }
+
+            *it = std::move(mHandlers.back());
+            mHandlers.pop_back();
+        }
+
+        void dispatch(const EventTypes&... pEvent)
+        {
+            for (const auto& handler : mHandlers)
+            {
+                handler.second(pEvent...);
+            }
         }
 
     private:
-        std::vector<std::function<void(Args&&...)>> mSubscribers;
+        std::vector<std::pair<EventFunctionID, EventFunction>> mHandlers;
+        EventFunctionID mLastFunctionID = 0;
     };
-}
+} // namespace Utility

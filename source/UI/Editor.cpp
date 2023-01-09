@@ -40,7 +40,7 @@ namespace UI
         , mCollisionSystem{pCollisionSystem}
         , mOpenGLRenderer{pOpenGLRenderer}
     {
-        Platform::Core::mMouseButtonEvent.subscribe(std::bind(&Editor::onMousePressed, this, std::placeholders::_1, std::placeholders::_2));
+        Platform::Core::mMouseButtonEvent.subscribe(this, &Editor::onMousePressed);
     }
 
     void Editor::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)

@@ -98,7 +98,7 @@ namespace OpenGL
             mViewPosition = primaryCamera->getPosition();
         }
 
-        Platform::Core::mWindowResizeEvent.subscribe(std::bind(&OpenGLRenderer::onWindowResize, this, std::placeholders::_1, std::placeholders::_2));
+        Platform::Core::mWindowResizeEvent.subscribe(this, &OpenGLRenderer::onWindowResize);
 
         const auto [width, height] = Platform::Core::getWindow().size();
         mMainScreenFBO.generate();
