@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
+#include <type_traits>
 #include <vector>
 
 namespace Utility
@@ -9,12 +11,14 @@ namespace Utility
     class EventDispatcher
     {
     public:
-        using EventFunction   = std::function<void(const EventTypes&...)>;
+        using EventFunction   = std::function<void(EventTypes...)>;
         using EventFunctionID = size_t;
 
         template <typename T, typename Func>
         EventFunctionID subscribe(T* pObject, Func&& pEventHandler)
         {
+            static_assert(std::is_invocable_v<Func, T*, EventTypes...>, "Func must be callable with the specified EventTypes");
+
             mHandlers.emplace_back(
                 ++mLastFunctionID,
                 std::bind_front(std::forward<Func>(pEventHandler), pObject));
@@ -38,12 +42,10 @@ namespace Utility
             mHandlers.pop_back();
         }
 
-        void dispatch(const EventTypes&... pEvent)
+        void dispatch(EventTypes&&... pEventTypes)
         {
             for (const auto& handler : mHandlers)
-            {
-                handler.second(pEvent...);
-            }
+                handler.second(std::forward<EventTypes>(pEventTypes)...);
         }
 
     private:

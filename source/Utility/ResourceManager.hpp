@@ -1,11 +1,13 @@
 #pragma once
 
+#include "EventDispatcher.hpp"
+
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <optional>
 
 namespace Utility
 {
@@ -64,7 +66,6 @@ namespace Utility
     template <typename Resource>
     class ResourceManager
     {
-    private:
         static_assert(!std::is_pointer_v<Resource> && !std::is_reference_v<Resource>, "Resource must not be a pointer or reference type. ResourceManager manages the memory via the ReferenceRef counters");
         friend class ResourceRef<Resource>; // make ResourceRef a friend class - only ResourceRef can call increment and decrement count.
 
@@ -93,6 +94,7 @@ namespace Utility
                     --mResourcesAndCounts[i].second;
                     if (mResourcesAndCounts[i].second == 0)
                     {
+                        mResourceDeleted.dispatch(*mResourcesAndCounts[i].first.get());
                         mResourcesAndCounts[i] = std::move(mResourcesAndCounts.back());
                         mResourcesAndCounts.pop_back();
                     }
@@ -102,6 +104,9 @@ namespace Utility
         }
 
     public:
+        EventDispatcher<Resource&> mResourceCreated; // Called when a Resource is first constructed.
+        EventDispatcher<Resource&> mResourceDeleted; // Called when the last ResourceRef is deleted and the underlying Resource* is about to be removed.
+
         ResourceManager()  = default;
         ~ResourceManager() = default;
         // Delete the copy constructor and assignment operators.
@@ -155,6 +160,7 @@ namespace Utility
             else
             {
                 mResourcesAndCounts.emplace_back(std::make_unique<Resource>(std::forward<Args>(pConstructionArgs)...), 0);
+                mResourceCreated.dispatch(*mResourcesAndCounts.back().first.get());
                 return ResourceRef<Resource>(mResourcesAndCounts.back().first.get(), this);
             }
         }
