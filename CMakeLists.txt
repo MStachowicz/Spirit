@@ -191,6 +191,7 @@ source/Utility/EventDispatcher.hpp
 source/Utility/JobSystem/JobSystem.cpp
 source/Utility/JobSystem/JobSystem.hpp
 source/Utility/JobSystem/Test.hpp
+source/Utility/ResourceManager.hpp
 source/Utility/File.cpp
 source/Utility/File.hpp
 source/Utility/Logger.hpp
