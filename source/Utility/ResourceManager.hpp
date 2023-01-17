@@ -94,7 +94,6 @@ namespace Utility
                     --mResourcesAndCounts[i].second;
                     if (mResourcesAndCounts[i].second == 0)
                     {
-                        mResourceDeleted.dispatch(*mResourcesAndCounts[i].first.get());
                         mResourcesAndCounts[i] = std::move(mResourcesAndCounts.back());
                         mResourcesAndCounts.pop_back();
                     }
@@ -104,9 +103,6 @@ namespace Utility
         }
 
     public:
-        EventDispatcher<Resource&> mResourceCreated; // Called when a Resource is first constructed.
-        EventDispatcher<Resource&> mResourceDeleted; // Called when the last ResourceRef is deleted and the underlying Resource* is about to be removed.
-
         ResourceManager()  = default;
         ~ResourceManager() = default;
         // Delete the copy constructor and assignment operators.
@@ -147,6 +143,19 @@ namespace Utility
 
             return std::nullopt;
         }
+
+        // Force create a Resource using pConstructionArgs.
+        // This function doesn't check if the Resource already exists therefore can lead to duplicate Resources.
+        // Prefer to use getOrCreate to search the already created Resource objects before adding a new one.
+        template <typename... Args>
+        ResourceRef<Resource> create(Args&&... pConstructionArgs)
+        {
+            static_assert(std::is_constructible_v<Resource, Args...>, "Args given cannot be used to construct a Resource type");
+
+            mResourcesAndCounts.emplace_back(std::make_unique<Resource>(std::forward<Args>(pConstructionArgs)...), 0);
+            return ResourceRef<Resource>(mResourcesAndCounts.back().first.get(), this);
+        }
+
         // Try to get a ResourceRef using pFindIfFunction, if one is not found, uses pConstructionArgs to construct a new Resource and return a ResourceRef to it.
         template <typename Func, typename... Args>
         ResourceRef<Resource> getOrCreate(const Func&& pFindIfFunction, Args&&... pConstructionArgs)
@@ -160,7 +169,6 @@ namespace Utility
             else
             {
                 mResourcesAndCounts.emplace_back(std::make_unique<Resource>(std::forward<Args>(pConstructionArgs)...), 0);
-                mResourceCreated.dispatch(*mResourcesAndCounts.back().first.get());
                 return ResourceRef<Resource>(mResourcesAndCounts.back().first.get(), this);
             }
         }

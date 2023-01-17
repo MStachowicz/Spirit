@@ -2,6 +2,7 @@
 
 // OPENGL
 #include "GLState.hpp"
+#include "Types.hpp"
 #include "Shader.hpp"
 
 // GEOMETRY
@@ -9,15 +10,14 @@
 #include "Sphere.hpp"
 #include "Ray.hpp"
 
-// UTILITY
-#include "Utility.hpp"
-
 // GLM
 #include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"
+#include "glm/vec3.hpp"
 
 // STD
-#include <array>
+#include <filesystem>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -25,13 +25,15 @@ namespace ECS
 {
     class Storage;
 }
+namespace Data
+{
+    class Texture;
+    class Model;
+}
 namespace Component
 {
-    struct Mesh;
-    struct MeshDraw;
-    struct TextureID;
-    struct Texture;
-    struct CubeMapTexture;
+    class Mesh;
+    class Texture;
     struct PointLight;
     struct DirectionalLight;
     struct SpotLight;
@@ -46,14 +48,13 @@ namespace System
 namespace OpenGL
 {
     // OpenGLRenderer renders the state of the ECS::Storage when draw is called.
-    // The components is concerns itself with are Transform, MeshDraw, PointLight, SpotLight, DirectionalLight
-    // At construction, OpenGLRenderer parses all the Component::Texture and Component::Mesh files into an OpenGL::Texture and OpenGL::GLMeshData.
     class OpenGLRenderer
     {
     public:
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-        OpenGLRenderer(System::SceneSystem& pSceneSystem, const System::MeshSystem& pMeshSystem, const System::TextureSystem& pTextureSystem);
+        OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
 
+        // Draw the current state of the ECS.
         void draw();
 
         void setupLights();
@@ -70,10 +71,10 @@ namespace OpenGL
         std::vector<Geometry::Sphere> debugSpheres;
     private:
         GLState mGLState;
-        GLData::FBO mMainScreenFBO;
+        FBO mScreenFramebuffer;
 
         System::SceneSystem& mSceneSystem;
-        const System::MeshSystem& mMeshSystem;
+        System::MeshSystem& mMeshSystem;
 
         glm::mat4 mViewMatrix;
         glm::vec3 mViewPosition;
@@ -114,65 +115,26 @@ namespace OpenGL
         };
         PostProcessingOptions mPostProcessingOptions;
 
-        std::vector<Shader> mAvailableShaders; // Has one of every type of shader usable by DrawCalls. Found in the GLSL folder.
-        size_t mTexture1ShaderIndex;
-        size_t mTexture2ShaderIndex;
-        size_t mMaterialShaderIndex;
-        size_t mUniformShaderIndex;
-        size_t mLightMapIndex;
-        size_t mTexture1InstancedShaderIndex;
+        Shader mUniformColourShader;
+        Shader mTextureShader;
         Shader mScreenTextureShader;
         Shader mSkyBoxShader;
-        Shader mLightEmitterShader;
         Shader mDepthViewerShader;
         Shader mVisualiseNormalShader;
-
-        struct GLMeshData
-        {
-            GLType::PrimitiveMode mDrawMode = GLType::PrimitiveMode::Triangles;
-            int mDrawSize                   = -1; // Cached size of data used in OpenGL draw call, either size of Mesh positions or indices
-            enum class DrawMethod
-            {
-                Indices,
-                Array,
-                Null
-            };
-            DrawMethod mDrawMethod = DrawMethod::Null;
-
-            GLData::VAO mVAO;
-            std::optional<GLData::EBO> mEBO;
-            std::array<std::optional<GLData::VBO>, Utility::toIndex(Shader::Attribute::Count)> mVBOs;
-
-            // Composite mesh
-            std::vector<GLMeshData> mChildMeshes;
-        };
-        std::vector<GLMeshData> mGLMeshData;
-        size_t m3DCubeMeshIndex;
-        size_t mSkyBoxMeshIndex;
-        size_t mScreenQuadMeshIndex;
-        size_t mCylinderIndex;
-        size_t mConeIndex;
-        size_t mSphereIndex;
-
-        std::vector<GLData::Texture> mTextures; // Mapping of Component::Texture to OpenGL::Texture.
-        size_t mMissingTextureID;
-        std::vector<GLData::Texture> mCubeMaps; // Mapping of Component::CubeMapTexture to OpenGL::Texture.
-
-        Shader* getShader(Component::MeshDraw& pMeshDraw);
 
         void setShaderVariables(const Component::PointLight& pPointLight);
         void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
         void setShaderVariables(const Component::SpotLight& pSpotLight);
-        void draw(const GLMeshData& pMesh, const size_t& pInstancedCount = 0); // Recursively draw the GLMeshData and all its children.
+
+        void draw(const Data::Model& pModel);
+        void draw(const Data::CompositeMesh& pComposite);
+        void draw(const Data::Mesh& pMesh);
+
         void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
         void drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw a cylinder with base at pStart and top at pEnd of pDiameter.
         void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
         void drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
         void drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
-
-        void initialiseMesh(const Component::Mesh& pMesh, GLMeshData* pParentMesh = nullptr);
-        void initialiseTexture(const Component::Texture& pTexture);
-        void initialiseCubeMap(const Component::CubeMapTexture& pCubeMap);
 
         void onWindowResize(const int pWidth, const int pHeight);
     };

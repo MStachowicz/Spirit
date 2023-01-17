@@ -1,127 +1,154 @@
 #include "Mesh.hpp"
 
-#include "imgui.h"
+// UTILITY
+#include "Logger.hpp"
+
+// ASSIMP
+#include "assimp/Importer.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
+
+namespace Data
+{
+    Mesh::Mesh(aiMesh& pAssimpMesh) noexcept
+        : mPositions{}
+        , mNormals{}
+        , mTextureCoordinates{}
+        , mIndices{}
+        , mMaterial{}
+        , mAABB{}
+        , mGLData{}
+    {
+        ZEPHYR_ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
+        ZEPHYR_ASSERT(pAssimpMesh.HasNormals(), "Mesh has to have normals");
+
+         // Process positions, normals and texture coordinates
+        for (unsigned int i = 0; i < pAssimpMesh.mNumVertices; i++)
+        {
+            mPositions.emplace_back(glm::vec3{pAssimpMesh.mVertices[i].x, pAssimpMesh.mVertices[i].y, pAssimpMesh.mVertices[i].z});
+            mNormals.emplace_back(glm::vec3{pAssimpMesh.mNormals[i].x, pAssimpMesh.mNormals[i].y, pAssimpMesh.mNormals[i].z});
+            // A vertex can contain up to 8 texture coordinates. We make the assumption that we won't use models where a vertex
+            // can have multiple texture coordinates so we always take the first set (0).
+            mTextureCoordinates.emplace_back(glm::vec2{pAssimpMesh.mTextureCoords[0][i].x, pAssimpMesh.mTextureCoords[0][i].y});
+        }
+
+        // Process indices
+        for (unsigned int i = 0; i < pAssimpMesh.mNumFaces; i++)
+        {
+            aiFace face = pAssimpMesh.mFaces[i];
+            for (unsigned int j = 0; j < face.mNumIndices; j++)
+            {
+                mIndices.push_back(face.mIndices[j]);
+            }
+        }
+
+        // After all the vertex data is initialised, call the OpenGL constructor to push the data to the GPU
+
+        // ADD A MOVE ASSIGNMENT FOR THE MESH CLASS..
+        mGLData = std::move(OpenGL::Mesh(*this));
+    }
+
+    Mesh::Mesh(aiMesh& pAssimpMesh, const aiScene& pAssimpScene, TextureManager& pTextureManager) noexcept
+        : mPositions{}
+        , mNormals{}
+        , mTextureCoordinates{}
+        , mIndices{}
+        , mMaterial{}
+        , mAABB{}
+        , mGLData{}
+    {
+        ZEPHYR_ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
+        ZEPHYR_ASSERT(pAssimpMesh.HasNormals(), "Mesh has to have normals");
+
+        // Process positions, normals and texture coordinates
+        for (unsigned int i = 0; i < pAssimpMesh.mNumVertices; i++)
+        {
+            mPositions.emplace_back(glm::vec3{pAssimpMesh.mVertices[i].x, pAssimpMesh.mVertices[i].y, pAssimpMesh.mVertices[i].z});
+            mNormals.emplace_back(glm::vec3{pAssimpMesh.mNormals[i].x, pAssimpMesh.mNormals[i].y, pAssimpMesh.mNormals[i].z});
+            // A vertex can contain up to 8 texture coordinates. We make the assumption that we won't use models where a vertex
+            // can have multiple texture coordinates so we always take the first set (0).
+            mTextureCoordinates.emplace_back(glm::vec2{pAssimpMesh.mTextureCoords[0][i].x, pAssimpMesh.mTextureCoords[0][i].y});
+        }
+
+        // Process indices
+        for (unsigned int i = 0; i < pAssimpMesh.mNumFaces; i++)
+        {
+            aiFace face = pAssimpMesh.mFaces[i];
+            for (unsigned int j = 0; j < face.mNumIndices; j++)
+            {
+                mIndices.push_back(face.mIndices[j]);
+            }
+        }
+
+        if (aiMaterial* material = pAssimpScene.mMaterials[pAssimpMesh.mMaterialIndex])
+        {
+            auto processTextureType = [&material, &pTextureManager](const aiTextureType& pTextureType)
+            {
+                for (unsigned int i = 0; i < material->GetTextureCount(pTextureType); i++)
+                {
+                    aiString fileName;
+                    material->GetTexture(pTextureType, i, &fileName);
+                    const std::filesystem::path textureFilePath = fileName.C_Str();
+                    ZEPHYR_ASSERT(false, "Need to set textureFilePath to full path for textureSystem loader");
+
+                    return std::make_optional(pTextureManager.getOrCreate([&textureFilePath](const Texture& pTexture)
+                        { return pTexture.mFilePath == textureFilePath; }, textureFilePath));
+                }
+
+                std::nullopt;
+            };
+
+            mMaterial.mDiffuseTexture = std::nullopt; //processTextureType(aiTextureType_DIFFUSE);
+            mMaterial.mSpecularMap    = std::nullopt; //processTextureType(aiTextureType_SPECULAR);
+            mMaterial.mHeightMap      = std::nullopt; //processTextureType(aiTextureType_HEIGHT);
+            mMaterial.mAmbientMap     = std::nullopt; //processTextureType(aiTextureType_AMBIENT);
+        }
+
+        // After all the vertex data is initialised, call the OpenGL constructor to push the data to the GPU
+        mGLData = std::move(OpenGL::Mesh(*this));
+    }
+
+    CompositeMesh::CompositeMesh(aiNode& pAssimpNode, const aiScene& pAssimpScene, TextureManager& pTextureManager) noexcept
+        : mMeshes{}
+        , mChildMeshes{}
+        , mAABB{}
+    {
+        // Process all the node's meshes (if any)
+        for (unsigned int i = 0; i < pAssimpNode.mNumMeshes; i++)
+        {
+            if (aiMesh* mesh = pAssimpScene.mMeshes[pAssimpNode.mMeshes[i]])
+            {
+                mMeshes.emplace_back(Mesh{*mesh, pAssimpScene, pTextureManager});
+            }
+        }
+        // Then do the same for each of its children
+        for (unsigned int i = 0; i < pAssimpNode.mNumChildren; i++)
+            mChildMeshes.emplace_back(CompositeMesh{*pAssimpNode.mChildren[i], pAssimpScene, pTextureManager});
+    }
+
+    Model::Model(const std::filesystem::path& pFilePath, TextureManager& pTextureManager) noexcept
+        : mFilePath{pFilePath}
+        , mCompositeMesh{}
+    {
+        // Create an instance of the Importer class then reads file storings the scene data in the "scene" variable.
+        Assimp::Importer importer;
+        const aiScene* scene = importer.ReadFile(pFilePath.string(), aiProcess_Triangulate);// | aiProcess_FlipUVs);
+
+        // Check for errors
+        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+        {
+            LOG_ERROR("Model load error: {}", std::string(importer.GetErrorString()));
+            ZEPHYR_ASSERT(false, "Failed to load model using ASSIMP");
+            return;
+        }
+
+        mCompositeMesh = CompositeMesh(*scene->mRootNode, *scene, pTextureManager);
+    }
+}
 
 namespace Component
 {
-    void MeshDraw::DrawImGui()
-    {
-        if(ImGui::TreeNode(mName.empty() ? "Mesh" : (mName + "mesh").c_str()))
-        {
-            ImGui::TreePop();
-        }
-
-        // static const std::array<std::string, Utility::toIndex(DrawMode::Count)> drawModes{"Fill", "Wireframe"};
-        // static std::string convert(const DrawMode &pDrawMode) { return drawModes[Utility::toIndex(pDrawMode)]; }
-        // static const std::array<std::string, Utility::toIndex(DrawStyle::Count)> drawStyles{"Textured", "Uniform Colour", "Light Map"};
-        // static std::string convert(const DrawStyle &pDrawStyle) { return drawStyles[Utility::toIndex(pDrawStyle)]; }
-
-    //    { // Draw mode selection
-    //        if (ImGui::BeginCombo("Draw Mode", convert(pDrawCall.mDrawMode).c_str(), ImGuiComboFlags()))
-    //        {
-    //            for (size_t i = 0; i < drawModes.size(); i++)
-    //            {
-    //                if (ImGui::Selectable(drawModes[i].c_str()))
-    //                    pDrawCall.mDrawMode = static_cast<DrawMode>(i);
-    //            }
-    //            ImGui::EndCombo();
-    //        }
-    //    }
-    //    { // Draw style selection
-    //        if (ImGui::BeginCombo("Draw Style", convert(pDrawCall.mDrawStyle).c_str(), ImGuiComboFlags()))
-    //        {
-    //            for (size_t i = 0; i < drawStyles.size(); i++)
-    //            {
-    //                if (ImGui::Selectable(drawStyles[i].c_str()))
-    //                    pDrawCall.mDrawStyle = static_cast<DrawStyle>(i);
-    //            }
-    //            ImGui::EndCombo();
-    //        }
-    //    }
-    //    ImGui::Separator();
-    //    switch (pDrawCall.mDrawStyle)
-    //    {
-    //    case Component::DrawStyle::Textured:
-    //    {
-    //        { // Texture 1
-    //            const std::string currentTexture = pDrawCall.mTexture1.has_value() ? mTextureSystem.getTextureName(pDrawCall.mTexture1.value()) : "Empty";
-    //            if (ImGui::BeginCombo("Texture", currentTexture.c_str(), ImGuiComboFlags()))
-    //            {
-    //                mTextureSystem.ForEach([&](const Texture &texture)
-    //                                        {
-	//			if (ImGui::Selectable(texture.mName.c_str()))
-	//			{
-	//				pDrawCall.mTexture1 = texture.getID();
-	//			} });
-    //                ImGui::EndCombo();
-    //            }
-    //        }
-    //        if (pDrawCall.mTexture1.has_value())
-    //        { // Texture 2
-    //            const std::string currentTexture = pDrawCall.mTexture2.has_value() ? mTextureSystem.getTextureName(pDrawCall.mTexture2.value()) : "Empty";
-    //            if (ImGui::BeginCombo("Texture 2", currentTexture.c_str(), ImGuiComboFlags()))
-    //            {
-    //                if (pDrawCall.mTexture2.has_value())
-    //                    if (ImGui::Selectable("Empty"))
-    //                        pDrawCall.mTexture2 = std::nullopt;
-    //                mTextureSystem.ForEach([&](const Texture &texture)
-    //                                        {
-	//			if (ImGui::Selectable(texture.mName.c_str()))
-	//			{
-	//				pDrawCall.mTexture2 = texture.getID();
-	//			} });
-    //                ImGui::EndCombo();
-    //            }
-    //        }
-    //        if (pDrawCall.mTexture1.has_value() && pDrawCall.mTexture2.has_value())
-    //        { // Only displayed if we have two texture slots set
-    //            if (!pDrawCall.mMixFactor.has_value())
-    //                pDrawCall.mMixFactor = 0.5f;
-    //            ImGui::SliderFloat("Texture mix factor", &pDrawCall.mMixFactor.value(), 0.f, 1.f);
-    //        }
-    //    }
-    //    break;
-    //    case Component::DrawStyle::UniformColour:
-    //    {
-    //        if (!pDrawCall.mColour.has_value())
-    //            pDrawCall.mColour = glm::vec3(1.f, 1.f, 1.f);
-    //        ImGui::ColorEdit3("Colour", &pDrawCall.mColour.value().x);
-    //    }
-    //    break;
-    //    case Component::DrawStyle::LightMap:
-    //    {
-    //        ImGui::Text("Available texture slots");
-    //        {
-    //            const std::string currentTexture = pDrawCall.mDiffuseTextureID.has_value() ? mTextureSystem.getTextureName(pDrawCall.mDiffuseTextureID.value()) : "No texture set";
-    //            if (ImGui::BeginCombo("Diffuse", currentTexture.c_str(), ImGuiComboFlags()))
-    //            {
-    //                mTextureSystem.ForEach([&](const Texture &texture)
-    //                                        {
-	//			if (ImGui::Selectable(texture.mName.c_str()))
-	//				pDrawCall.mDiffuseTextureID = texture.getID(); });
-    //                ImGui::EndCombo();
-    //            }
-    //        }
-    //        {
-    //            const std::string currentTexture = pDrawCall.mSpecularTextureID.has_value() ? mTextureSystem.getTextureName(pDrawCall.mSpecularTextureID.value()) : "No texture set";
-    //            if (ImGui::BeginCombo("Specular", currentTexture.c_str(), ImGuiComboFlags()))
-    //            {
-    //                mTextureSystem.ForEach([&](const Texture &texture)
-    //                                        {
-	//			if (ImGui::Selectable(texture.mName.c_str()))
-	//				pDrawCall.mSpecularTextureID = texture.getID(); });
-    //                ImGui::EndCombo();
-    //            }
-    //        }
-    //        if (!pDrawCall.mShininess.has_value())
-    //            pDrawCall.mShininess = 64.f;
-    //        ImGui::SliderFloat("Shininess", &pDrawCall.mShininess.value(), 0.1f, 128.f);
-    //        if (!pDrawCall.mTextureRepeatFactor.has_value())
-    //            pDrawCall.mTextureRepeatFactor = 1.f;
-    //        ImGui::SliderFloat("Texture repeat factor", &pDrawCall.mTextureRepeatFactor.value(), 1.f, 128.f);
-    //    }
-    //    default:
-    //        break;
-    //    };
-    }
+    Mesh::Mesh(const ModelRef& pModel)
+    : mModel{pModel}
+    {}
 }

@@ -1,14 +1,9 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <vector>
-
-namespace std
-{
-    template <class>
-    class function;
-}
 
 namespace Utility
 {
@@ -20,6 +15,7 @@ namespace Utility
         static std::filesystem::path rootDirectory;
         static std::filesystem::path GLSLShaderDirectory;
         static std::filesystem::path textureDirectory;
+        static std::filesystem::path modelDirectory;
         static void setupDirectories(const std::string& pExecutePath);
 
         static bool exists(const std::filesystem::path& pPath) { return std::filesystem::exists(pPath); }

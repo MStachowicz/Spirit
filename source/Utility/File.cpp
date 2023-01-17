@@ -13,6 +13,7 @@ namespace Utility
     std::filesystem::path File::rootDirectory;
     std::filesystem::path File::GLSLShaderDirectory;
     std::filesystem::path File::textureDirectory;
+    std::filesystem::path File::modelDirectory;
 
     void File::setupDirectories(const std::string& pExecutePath)
     {
@@ -31,6 +32,9 @@ namespace Utility
 
         textureDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Textures");
         LOG_INFO("Texture directory initialised to '{}'", textureDirectory.string());
+
+        modelDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Models");
+        LOG_INFO("Model directory initialised to '{}'", modelDirectory.string());
     };
 
     std::string File::readFromFile(const std::filesystem::path& pPath)

@@ -6,10 +6,14 @@
 
 namespace Component
 {
+    struct Transform;
+    class Mesh;
+
     struct Collider
     {
         // Constructs a collider from an object space AABB and initial world space transformation info.
         Collider(const Geometry::AABB pObjectAABB, const glm::vec3& pPosition, const glm::mat4& pRotation, const glm::vec3& pScale);
+        Collider(const Component::Transform& pTransform, const Component::Mesh& pMesh);
 
         Geometry::AABB mObjectAABB; // AABB used for broad phase collision checking with other colliders.
         Geometry::AABB mWorldAABB; // mObjectAABB but translated into world space position. Usually using the Component::Transform.

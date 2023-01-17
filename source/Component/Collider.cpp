@@ -1,15 +1,21 @@
 #include "Collider.hpp"
 
+// Component
+#include "Mesh.hpp"
+#include "Transform.hpp"
+
+// IMGUI
 #include "imgui.h"
 
+// STD
 #include <format>
 
 namespace Component
 {
-    Collider::Collider(const Geometry::AABB pAABB, const glm::vec3& pPosition, const glm::mat4& pRotation, const glm::vec3& pScale)
+    Collider::Collider(const Component::Transform& pTransform, const Component::Mesh& pMesh)
         : mCollided(false)
-        , mObjectAABB(pAABB)
-        , mWorldAABB(Geometry::AABB::transform(mObjectAABB, pPosition, pRotation, pScale))
+        , mObjectAABB{pMesh.mModel->mCompositeMesh.mAABB}
+        , mWorldAABB{Geometry::AABB::transform(mObjectAABB, pTransform.mPosition, glm::mat4_cast(pTransform.mOrientation), pTransform.mScale)}
     {}
 
     void Collider::DrawImGui()

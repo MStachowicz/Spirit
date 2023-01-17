@@ -15,7 +15,7 @@ namespace System
     class SceneSystem
     {
     public:
-        SceneSystem(const TextureSystem& pTextureSystem, const MeshSystem& pMeshSystem);
+        SceneSystem(TextureSystem& pTextureSystem, MeshSystem& pMeshSystem);
         ECS::Storage& getCurrentScene() { return mStorage; }
 
         Component::Camera* getPrimaryCamera();
@@ -23,9 +23,10 @@ namespace System
     private:
         void constructBouncingBallScene();
         void constructBoxScene();
+        void primitiveMeshScene();
 
         ECS::Storage mStorage;
-        const TextureSystem& mTextureSystem;
-        const MeshSystem& mMeshSystem;
+        TextureSystem& mTextureSystem;
+        MeshSystem& mMeshSystem;
     };
 } // namespace System

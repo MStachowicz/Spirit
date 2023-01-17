@@ -3,8 +3,6 @@
 #include "glm/mat4x4.hpp"
 #include "glm/vec3.hpp"
 
-#include <functional>
-
 namespace Component
 {
     // Camera operating using Euler angles to calculate the corresponding Vectors and Matrices to define a view in 3D space.
@@ -23,23 +21,6 @@ namespace Component
         const glm::mat4& getViewMatrix() const { return mView; };
         const glm::vec3& getPosition() const { return mPosition; };
         const glm::vec3& getForwardDirection() const { return mFront; };
-
-        void DrawImGui() {};
-        bool operator== (const Camera& pOther) const
-        {
-            return mPosition == pOther.mPosition &&
-                mYaw == pOther.mYaw &&
-                mPitch == pOther.mPitch &&
-                mFront == pOther.mFront &&
-                mUp == pOther.mUp &&
-                mRight == pOther.mRight &&
-                mView == pOther.mView &&
-                mMovementSpeed == pOther.mMovementSpeed &&
-                mMouseSensitivity == pOther.mMouseSensitivity &&
-                mPrimaryCamera == pOther.mPrimaryCamera &&
-                mZoom == pOther.mZoom;
-        };
-        bool operator != (const Camera& pOther) const { return !(*this == pOther); }
 
     private:
         // Calculates mFront, mRight, mUp and mView members from the Camera's Euler angles mYaw and mPitch.

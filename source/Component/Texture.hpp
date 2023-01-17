@@ -1,6 +1,12 @@
 #pragma once
 
-#include <array>
+// OPENGL
+#include "Types.hpp"
+
+// UTILITY
+#include "ResourceManager.hpp"
+
+// STD
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -10,52 +16,40 @@ namespace System
     class TextureSystem;
 }
 
-namespace Component
+namespace Data
 {
-    // Unique ID of a texture, represents the index of the Texture in the Texture container.
-    struct TextureID
+    // Represents a texture file on the disk. Constructing a Texture with a valid filepath to a texture file will load it using stb_image.
+    // Texture also holds handle for the GPU data.
+    class Texture
     {
-        size_t Get() const { return mID.value(); }
-        void Set(size_t pID) { mID = pID; }
+    public:
+        Texture(const std::filesystem::path& pFilePath);
+        ~Texture();
 
-        bool operator==(const TextureID& rhs) const { return mID == rhs.mID; }
+        std::filesystem::path mFilePath;
+        std::string mName;
+        int mWidth;
+        int mHeight;
+        int mNumberOfChannels;
 
-    private:
-        std::optional<size_t> mID;
-    };
-
-    // Texture represents a texture file on the disk. Texture are created and owned by TextureSystem to store loaded textures.
-    struct Texture
-    {
-        friend class System::TextureSystem;
-
-        TextureID mID;
-        std::string mName               = "";
-        std::filesystem::path mFilePath = "";
-
-        int mWidth            = -1;
-        int mHeight           = -1;
-        int mNumberOfChannels = -1;
-        enum class Purpose { Diffuse, Normal, Specular, Height, Cubemap, None };
-        Purpose mPurpose = Purpose::None;
+        OpenGL::Texture mGLTexture;
 
         const unsigned char* getData() const { return mData; }
 
     private:
-        unsigned char* mData; // Raw pointer deleted in using stbi_image_free().
+        unsigned char* mData; // Raw pointer initialised and deleted Texture constructor and destructor using stbi.
     };
+}
 
-    // Represents 6 textures defining the faces of a cube.
-    struct CubeMapTexture
+using TextureManager = Utility::ResourceManager<Data::Texture>;
+using TextureRef     = Utility::ResourceRef<Data::Texture>;
+
+namespace Component
+{
+    class Texture
     {
-        std::string mName = "";
-        std::filesystem::path mFilePath;
-
-        Texture mRight;
-        Texture mLeft;
-        Texture mTop;
-        Texture mBottom;
-        Texture mBack;
-        Texture mFront;
+    public:
+        std::optional<TextureRef> mDiffuse;
+        std::optional<TextureRef> mSpecular;
     };
 }; // namespace Component

@@ -53,17 +53,22 @@ source/Component/RigidBody.hpp
 source/Component/SpotLight.cpp
 source/Component/SpotLight.hpp
 source/Component/Texture.hpp
+source/Component/Texture.cpp
 source/Component/Transform.cpp
 source/Component/Transform.hpp
 )
 target_include_directories(Component
 PUBLIC source/Component
 PUBLIC source/External/GLM
+PRIVATE source/External/stb
+PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Component
 PUBLIC Geometry
+PUBLIC OpenGL
+PUBLIC Utility
 PRIVATE ImGui
-PRIVATE Utility
+PRIVATE assimp
 )
 # Component end -------------------------------------------------------------------------------
 
@@ -84,16 +89,13 @@ source/System/TextureSystem.hpp
 )
 target_include_directories(System
 PUBLIC source/System
-PRIVATE source/External/stb
-PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(System
 PUBLIC Component
 PUBLIC Geometry
+PUBLIC Utility
 PUBLIC ECS #SceneSystem.hpp uses ECS storage
 PRIVATE Platform
-PRIVATE Utility
-PRIVATE assimp
 )
 # System end ----------------------------------------------------------------------------------
 
@@ -133,6 +135,7 @@ PUBLIC source/UI
 target_link_libraries(UI
 PRIVATE System
 PRIVATE Platform
+PRIVATE Geometry
 PRIVATE OpenGL
 PRIVATE ECS
 PRIVATE Utility
@@ -164,6 +167,8 @@ source/OpenGL/OpenGLRenderer.hpp
 source/OpenGL/OpenGLRenderer.cpp
 source/OpenGL/GLState.hpp
 source/OpenGL/GLState.cpp
+source/OpenGL/Types.hpp
+source/OpenGL/Types.cpp
 source/OpenGL/Shader.hpp
 source/OpenGL/Shader.cpp
 )

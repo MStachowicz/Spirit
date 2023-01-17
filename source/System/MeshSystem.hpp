@@ -1,70 +1,34 @@
 #pragma once
 
+// Component
 #include "Mesh.hpp"
 
-#include "glm/vec3.hpp" // vec3, bvec3, dvec3, ivec3 and uvec3
+// Utility
+#include "ResourceManager.hpp"
 
-#include <functional>
-#include <unordered_map>
-
-namespace std
-{
-    namespace filesystem
-    {
-        class path;
-    }
-} // namespace std
-
-struct aiNode;
-struct aiScene;
-struct aiMesh;
-struct aiMaterial;
+// STD
+#include <filesystem>
 
 namespace System
 {
     class TextureSystem;
 
-    // MeshSystem is a container of the raw Mesh data.
     class MeshSystem
     {
-        std::vector<Component::Mesh> mMeshes;
-        std::unordered_map<std::string, size_t> mMeshNames;
         System::TextureSystem& mTextureSystem;
 
     public:
-        MeshSystem(TextureSystem& pTextureSystem)
-            : mTextureSystem(pTextureSystem)
-        {
-            buildMeshes();
-        }
+        MeshSystem(TextureSystem& pTextureSystem) noexcept;
 
-        inline void ForEach(const std::function<void(const Component::Mesh&)>& pFunction) const
-        {
-            for (const auto& mesh : mMeshes)
-                pFunction(mesh);
-        }
+        std::vector<std::filesystem::path> mAvailableModels;
+        ModelManager mModelManager;
 
-        Component::MeshID getMeshID(const std::string& pMeshName) const;
+        ModelRef getModel(const std::filesystem::path& pFilePath);
 
-        // Loads model data using ASSIMP from pFilePath.
-        Component::MeshID loadModel(const std::filesystem::path& pFilePath);
-
-        const Component::Mesh& getMesh(const Component::MeshID& pMeshID) const { return mMeshes[pMeshID.Get()]; }
-
-    private:
-        // Set the mID of the mesh and its children recursively.
-        void setIDRecursively(Component::Mesh& pMesh, const bool& pRootMesh);
-        void uniteBoundsRecursively(Component::Mesh& pMesh, Geometry::AABB& AABB);
-
-        void addMesh(Component::Mesh& pMesh);
-        void buildMeshes();
-        bool isMeshValid(const Component::Mesh& pMesh);
-
-        // Recursively travel all the aiNodes and extract the per-vertex data into a Zephyr mesh object.
-        void processNode(Component::Mesh& pParentMesh, aiNode* pNode, const aiScene* pScene);
-        // Load assimp mesh data into a Zephyr Mesh.
-        void processData(Component::Mesh& pMesh, const aiMesh* pAssimpMesh, const aiScene* pAssimpScene);
-        // Returns all the textures for this material and purpose.
-        void processTextures(Component::Mesh& pMesh, aiMaterial* pMaterial, const Component::Texture::Purpose& pPurpose);
+        ModelRef mConePrimitive;
+        ModelRef mCubePrimitive;
+        ModelRef mCylinderPrimitive;
+        ModelRef mPlanePrimitive;
+        ModelRef mSpherePrimitive;
     };
 } // namespace System

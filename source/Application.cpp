@@ -8,7 +8,7 @@ Application::Application()
     , mCollisionSystem(mSceneSystem, mMeshSystem)
     , mPhysicsSystem(mSceneSystem, mCollisionSystem)
     , mInputSystem(mSceneSystem)
-    , mEditor(mSceneSystem, mCollisionSystem, mOpenGLRenderer)
+    , mEditor(mTextureSystem, mMeshSystem, mSceneSystem, mCollisionSystem, mOpenGLRenderer)
 {}
 
 void Application::simulationLoop()
