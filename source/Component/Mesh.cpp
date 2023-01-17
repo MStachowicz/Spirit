@@ -26,6 +26,7 @@ namespace Data
         for (unsigned int i = 0; i < pAssimpMesh.mNumVertices; i++)
         {
             mPositions.emplace_back(glm::vec3{pAssimpMesh.mVertices[i].x, pAssimpMesh.mVertices[i].y, pAssimpMesh.mVertices[i].z});
+            mAABB.unite(mPositions.back());
             mNormals.emplace_back(glm::vec3{pAssimpMesh.mNormals[i].x, pAssimpMesh.mNormals[i].y, pAssimpMesh.mNormals[i].z});
             // A vertex can contain up to 8 texture coordinates. We make the assumption that we won't use models where a vertex
             // can have multiple texture coordinates so we always take the first set (0).
@@ -64,6 +65,7 @@ namespace Data
         for (unsigned int i = 0; i < pAssimpMesh.mNumVertices; i++)
         {
             mPositions.emplace_back(glm::vec3{pAssimpMesh.mVertices[i].x, pAssimpMesh.mVertices[i].y, pAssimpMesh.mVertices[i].z});
+            mAABB.unite(mPositions.back());
             mNormals.emplace_back(glm::vec3{pAssimpMesh.mNormals[i].x, pAssimpMesh.mNormals[i].y, pAssimpMesh.mNormals[i].z});
             // A vertex can contain up to 8 texture coordinates. We make the assumption that we won't use models where a vertex
             // can have multiple texture coordinates so we always take the first set (0).
@@ -119,11 +121,15 @@ namespace Data
             if (aiMesh* mesh = pAssimpScene.mMeshes[pAssimpNode.mMeshes[i]])
             {
                 mMeshes.emplace_back(Mesh{*mesh, pAssimpScene, pTextureManager});
+                mAABB.unite(mMeshes.back().mAABB);
             }
         }
         // Then do the same for each of its children
         for (unsigned int i = 0; i < pAssimpNode.mNumChildren; i++)
+        {
             mChildMeshes.emplace_back(CompositeMesh{*pAssimpNode.mChildren[i], pAssimpScene, pTextureManager});
+            mAABB.unite(mChildMeshes.back().mAABB);
+        }
     }
 
     Model::Model(const std::filesystem::path& pFilePath, TextureManager& pTextureManager) noexcept
