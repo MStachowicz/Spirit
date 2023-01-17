@@ -78,11 +78,14 @@ namespace System
             {
                 auto& collider = scene.getComponentMutable<Component::Collider>(pEntity);
                 collider.mWorldAABB = Geometry::AABB::transform(collider.mObjectAABB, pTransform.mPosition, rotationMatrix, pTransform.mScale);
-
+                collider.mCollided = false;
                 // After moving, check for collisions and respond
                 auto collision = mCollisionSystem.getCollision(pTransform, collider);
                 if (collision)
+                {
+                    collider.mCollided = true;
                     LOG_INFO("Collision occurred for entity {}", pEntity);
+                }
             }
         });
     }

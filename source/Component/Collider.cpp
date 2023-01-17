@@ -7,6 +7,9 @@
 // IMGUI
 #include "imgui.h"
 
+// GLM
+#include "glm/glm.hpp"
+
 // STD
 #include <format>
 
@@ -17,6 +20,14 @@ namespace Component
         , mObjectAABB{pMesh.mModel->mCompositeMesh.mAABB}
         , mWorldAABB{Geometry::AABB::transform(mObjectAABB, pTransform.mPosition, glm::mat4_cast(pTransform.mOrientation), pTransform.mScale)}
     {}
+
+    glm::mat4 Collider::getWorldAABBModel() const
+    {
+        glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), mWorldAABB.getCenter());
+        glm::vec3 scale = mWorldAABB.getSize() / mObjectAABB.getSize();
+        model = glm::scale(model, scale);
+        return model;
+    }
 
     void Collider::DrawImGui()
     {

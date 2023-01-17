@@ -171,32 +171,45 @@ namespace OpenGL
                 shader.setUniform(mGLState, "model", pTransform.mModel);
                 shader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
             }
-
             draw(*pMesh.mModel);
         });
 
-       { // Draw the colour output to the from mScreenFramebuffer texture to the default FBO
-           // Unbind after completing draw to ensure all subsequent actions apply to the default FBO and not mScreenFrameBuffer.
-           // Disable depth testing to not cull the screen quad the screen texture will be applied onto.
-           FBO::unbind();
-           mGLState.toggleDepthTest(false);
-           mGLState.toggleCullFaces(false);
-           glClear(GL_COLOR_BUFFER_BIT);
+        if (mShowBoundingBoxes)
+        {
+            mGLState.setPolygonMode(mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
+            mUniformColourShader.use(mGLState);
 
-           mScreenTextureShader.use(mGLState);
-           { // PostProcessing setters
-               mScreenTextureShader.setUniform(mGLState, "invertColours", mPostProcessingOptions.mInvertColours);
-               mScreenTextureShader.setUniform(mGLState, "grayScale", mPostProcessingOptions.mGrayScale);
-               mScreenTextureShader.setUniform(mGLState, "sharpen", mPostProcessingOptions.mSharpen);
-               mScreenTextureShader.setUniform(mGLState, "blur", mPostProcessingOptions.mBlur);
-               mScreenTextureShader.setUniform(mGLState, "edgeDetection", mPostProcessingOptions.mEdgeDetection);
-               mScreenTextureShader.setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
-           }
+            scene.foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh, Component::Collider& pCollider)
+            {
+                mUniformColourShader.setUniform(mGLState, "model", pCollider.getWorldAABBModel());
+                mUniformColourShader.setUniform(mGLState, "colour", pCollider.mCollided ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 1.f, 0.f));
+                draw(*mMeshSystem.mCubePrimitive);
+            });
+        }
 
-           mGLState.setActiveTextureUnit(0);
-           mScreenFramebuffer.bindColourTexture();
-           draw(*mMeshSystem.mPlanePrimitive);
-       }
+        { // Draw the colour output to the from mScreenFramebuffer texture to the default FBO
+            // Unbind after completing draw to ensure all subsequent actions apply to the default FBO and not mScreenFrameBuffer.
+            // Disable depth testing to not cull the screen quad the screen texture will be applied onto.
+            FBO::unbind();
+            mGLState.toggleDepthTest(false);
+            mGLState.toggleCullFaces(false);
+            mGLState.setPolygonMode(GLType::PolygonMode::Fill);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            mScreenTextureShader.use(mGLState);
+            { // PostProcessing setters
+                mScreenTextureShader.setUniform(mGLState, "invertColours", mPostProcessingOptions.mInvertColours);
+                mScreenTextureShader.setUniform(mGLState, "grayScale", mPostProcessingOptions.mGrayScale);
+                mScreenTextureShader.setUniform(mGLState, "sharpen", mPostProcessingOptions.mSharpen);
+                mScreenTextureShader.setUniform(mGLState, "blur", mPostProcessingOptions.mBlur);
+                mScreenTextureShader.setUniform(mGLState, "edgeDetection", mPostProcessingOptions.mEdgeDetection);
+                mScreenTextureShader.setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
+            }
+
+            mGLState.setActiveTextureUnit(0);
+            mScreenFramebuffer.bindColourTexture();
+            draw(*mMeshSystem.mPlanePrimitive);
+        }
 
         //ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
         //ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
