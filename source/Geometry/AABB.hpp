@@ -21,6 +21,9 @@ namespace Geometry
         // This function does not handle edge points on the AABB and returns only the normal of one of the 6 faces of the cuboid.
         glm::vec3 getNormal(const glm::vec3& pPointOnAABBInWorldSpace) const;
 
+        void unite(const glm::vec3& pPoint);
+        void unite(const AABB& pAABB);
+
         bool contains(const AABB& pAABB) const;
         // Return a bounding box encompassing both bounding boxes.
         static AABB unite(const AABB& pAABB, const AABB& pAABB2);

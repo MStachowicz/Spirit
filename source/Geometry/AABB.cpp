@@ -67,6 +67,25 @@ namespace Geometry
         return normal;
     }
 
+    void AABB::unite(const glm::vec3& pPoint)
+    {
+        mMin.x = std::min(mMin.x, pPoint.x);
+        mMin.y = std::min(mMin.y, pPoint.y);
+        mMin.z = std::min(mMin.z, pPoint.z);
+        mMax.x = std::max(mMax.x, pPoint.x);
+        mMax.y = std::max(mMax.y, pPoint.y);
+        mMax.z = std::max(mMax.z, pPoint.z);
+    }
+    void AABB::unite(const AABB& pAABB)
+    {
+        mMin.x = std::min(mMin.x, pAABB.mMin.x);
+        mMin.y = std::min(mMin.y, pAABB.mMin.y);
+        mMin.z = std::min(mMin.z, pAABB.mMin.z);
+        mMax.x = std::max(mMax.x, pAABB.mMax.x);
+        mMax.y = std::max(mMax.y, pAABB.mMax.y);
+        mMax.z = std::max(mMax.z, pAABB.mMax.z);
+    }
+
     bool AABB::contains(const AABB& pAABB) const
     {
         return
