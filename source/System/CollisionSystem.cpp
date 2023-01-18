@@ -10,9 +10,13 @@
 // Component
 #include "Transform.hpp"
 #include "Collider.hpp"
+#include "Mesh.hpp"
 
 // Geometry
 #include "Ray.hpp"
+#include "Triangle.hpp"
+
+#include "glm/gtx/string_cast.hpp"
 
 namespace System
 {
@@ -21,18 +25,56 @@ namespace System
         , mMeshSystem{pMeshSystem}
     {}
 
-    std::optional<Geometry::Collision> CollisionSystem::getCollision(const Component::Transform& pTransform, const Component::Collider& pCollider) const
+    std::optional<Geometry::Collision> CollisionSystem::getCollision(const ECS::EntityID& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const
     {
         std::optional<Geometry::Collision> collision;
 
-        mSceneSystem.getCurrentScene().foreach([&](Component::Transform& pTransformOther, Component::Collider& pColliderOther)
+        auto& currentScene = mSceneSystem.getCurrentScene();
+        currentScene.foreach([&](const ECS::EntityID& pEntityOther, Component::Transform& pTransformOther, Component::Collider& pColliderOther)
         {
             if (&pCollider != &pColliderOther)
             {
                 if (Geometry::intersect(pCollider.mWorldAABB, pColliderOther.mWorldAABB)) // Quick cull AABB check
                 {
-                    // Now test at with higher accuracy
-                    collision = Geometry::Collision();
+                    // If the AABBs of the geometries are found to collide but also have Mesh components, then they can be tested with a higher accuracy
+                    // using mesh-aware collision testing.
+
+                    // Go through both mesh trees of both models and check every combination triangle for triangle.
+                    // The points are in object space so additionally transform the triangles before checking them.
+                    if (currentScene.hasComponents<Component::Mesh>(pEntity) && currentScene.hasComponents<Component::Mesh>(pEntityOther))
+                    {
+                        auto& composite      = currentScene.getComponent<Component::Mesh>(pEntity).mModel->mCompositeMesh;
+                        const auto& model    = pTransform.mModel;
+
+                        auto& compositeOther = currentScene.getComponent<Component::Mesh>(pEntityOther).mModel->mCompositeMesh;
+                        const auto& modelOther    = pTransform.mModel;
+
+                        composite.forEachMesh([&compositeOther, &composite, &collision, &model, &modelOther](const Data::Mesh& pMesh)
+                        {
+                            compositeOther.forEachMesh([&composite, &pMesh, &collision, &model, &modelOther](const Data::Mesh& pMeshOther)
+                            {
+                                for (int i = 0; i < pMesh.mPositions.size(); i += 3)
+                                {
+                                    Geometry::Triangle meshTriangle = {pMesh.mPositions[i], pMesh.mPositions[i + 1], pMesh.mPositions[i + 2]};
+                                    meshTriangle.transform(model);
+
+                                    for (int j = 0; j < pMeshOther.mPositions.size(); j += 3)
+                                    {
+                                        Geometry::Triangle meshTriangleOther = {pMeshOther.mPositions[j], pMeshOther.mPositions[j + 1], pMeshOther.mPositions[j + 2]};
+                                        meshTriangleOther.transform(modelOther);
+
+                                        collision = Geometry::getCollision(meshTriangle, meshTriangleOther);
+                                        if (collision)
+                                            return;
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    else
+                    {
+                        collision = Geometry::Collision();
+                    }
                 }
             }
         });

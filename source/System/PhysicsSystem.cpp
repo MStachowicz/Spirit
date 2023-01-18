@@ -80,7 +80,7 @@ namespace System
                 collider.mWorldAABB = Geometry::AABB::transform(collider.mObjectAABB, pTransform.mPosition, rotationMatrix, pTransform.mScale);
                 collider.mCollided = false;
                 // After moving, check for collisions and respond
-                auto collision = mCollisionSystem.getCollision(pTransform, collider);
+                auto collision = mCollisionSystem.getCollision(pEntity, pTransform, collider);
                 if (collision)
                 {
                     collider.mCollided = true;

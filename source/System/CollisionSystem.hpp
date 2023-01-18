@@ -37,7 +37,7 @@ namespace System
         CollisionSystem(SceneSystem& pSceneSystem, const MeshSystem& pMeshSystem);
 
         // For a given Transform and Mesh return the collision information
-        std::optional<Geometry::Collision> getCollision(const Component::Transform& pTransform, const Component::Collider& pCollider) const;
+        std::optional<Geometry::Collision> getCollision(const ECS::EntityID& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const;
 
         bool castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const;
         // Returns all the entities colliding with pRay.
