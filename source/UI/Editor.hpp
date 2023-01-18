@@ -26,7 +26,7 @@ namespace OpenGL
 }
 namespace ECS
 {
-    typedef size_t EntityID;
+    class Entity;
 }
 
 namespace ImGui
@@ -57,7 +57,7 @@ namespace UI
 
         OpenGL::OpenGLRenderer&  mOpenGLRenderer;
 
-        std::vector<ECS::EntityID> mSelectedEntities;
+        std::vector<ECS::Entity> mSelectedEntities;
 
         void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
 

@@ -108,17 +108,19 @@ namespace UI
                 {
                     if (pAction == Platform::Action::PRESS)
                     {
-                        auto entitiesUnderMouse      = mCollisionSystem.getEntitiesAlongRay(mOpenGLRenderer.getCursorWorldRay());
+                        auto cursorRay          = mOpenGLRenderer.getCursorWorldRay();
+                        auto entitiesUnderMouse = mCollisionSystem.getEntitiesAlongRay(cursorRay);
 
                         if (!entitiesUnderMouse.empty())
                         {
                             std::sort(entitiesUnderMouse.begin(), entitiesUnderMouse.end(),[](const auto& left, const auto& right) { return left.second < right.second; });
-                            mSelectedEntities.push_back(entitiesUnderMouse.front().first);
-                            LOG_INFO("Entity{} has been selected", entitiesUnderMouse.front().first);
+                            auto entityCollided = entitiesUnderMouse.front().first;
+
+                            mSelectedEntities.push_back(entityCollided);
+                            LOG_INFO("Entity{} has been selected", entityCollided);
                             }
 
-                        const auto mouseRayDirection = mOpenGLRenderer.getCursorWorldDirection();
-                        const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->getPosition(), mSceneSystem.getPrimaryCamera()->getPosition() + (mouseRayDirection * 1000.f), 0.02f);
+                            const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->getPosition(), mSceneSystem.getPrimaryCamera()->getPosition() + (cursorRay.mDirection * 1000.f), 0.02f);
                             mOpenGLRenderer.debugCylinders.push_back(mouseRayCylinder);
                     }
                     break;
@@ -165,9 +167,9 @@ namespace UI
                 availableModelNames.push_back(path.stem().string());
 
             auto& scene = mSceneSystem.getCurrentScene();
-            scene.foreachEntity([&](ECS::EntityID& pEntity)
+            scene.foreachEntity([&](ECS::Entity& pEntity)
             {
-                std::string title = "Entity " + std::to_string(pEntity);
+                std::string title = "Entity " + std::to_string(pEntity.ID);
                 if (scene.hasComponents<Component::Label>(pEntity))
                 {
                     auto label = scene.getComponentMutable<Component::Label&>(pEntity);

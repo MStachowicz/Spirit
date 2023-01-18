@@ -25,12 +25,12 @@ namespace System
         , mMeshSystem{pMeshSystem}
     {}
 
-    std::optional<Geometry::Collision> CollisionSystem::getCollision(const ECS::EntityID& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const
+    std::optional<Geometry::Collision> CollisionSystem::getCollision(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const
     {
         std::optional<Geometry::Collision> collision;
 
         auto& currentScene = mSceneSystem.getCurrentScene();
-        currentScene.foreach([&](const ECS::EntityID& pEntityOther, Component::Transform& pTransformOther, Component::Collider& pColliderOther)
+        currentScene.foreach([&](const ECS::Entity& pEntityOther, Component::Transform& pTransformOther, Component::Collider& pColliderOther)
         {
             if (&pCollider != &pColliderOther)
             {
@@ -105,11 +105,11 @@ namespace System
         return nearestIntersectionAlongRay.has_value();
     }
 
-    std::vector<std::pair<ECS::EntityID, float>> CollisionSystem::getEntitiesAlongRay(const Geometry::Ray& pRay) const
+    std::vector<std::pair<ECS::Entity, float>> CollisionSystem::getEntitiesAlongRay(const Geometry::Ray& pRay) const
     {
-        std::vector<std::pair<ECS::EntityID, float>> entitiesAndDistance;
+        std::vector<std::pair<ECS::Entity, float>> entitiesAndDistance;
 
-        mSceneSystem.getCurrentScene().foreach([&](ECS::EntityID& pEntity, Component::Collider& pCollider)
+        mSceneSystem.getCurrentScene().foreach([&](ECS::Entity& pEntity, Component::Collider& pCollider)
         {
             glm::vec3 collisionPoint;
             float lengthAlongRay;

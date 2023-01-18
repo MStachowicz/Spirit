@@ -28,7 +28,7 @@ namespace System
         mTotalSimulationTime += pDeltaTime;
 
         auto& scene = mSceneSystem.getCurrentScene();
-        scene.foreach([this, &pDeltaTime, &scene](ECS::EntityID& pEntity, Component::RigidBody& pRigidBody, Component::Transform& pTransform)
+        scene.foreach([this, &pDeltaTime, &scene](ECS::Entity& pEntity, Component::RigidBody& pRigidBody, Component::Transform& pTransform)
         {
             // F = ma
             if (pRigidBody.mApplyGravity)

@@ -142,7 +142,7 @@ namespace OpenGL
             // mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
         }
         auto scene = mSceneSystem.getCurrentScene();
-        scene.foreach([&](ECS::EntityID& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh)
+        scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh)
         {
             if (scene.hasComponents<Component::Texture>(pEntity))
             {
