@@ -75,6 +75,27 @@ namespace Data
         {}
         // Recursively construct many CompositeMeshes by navigating the assimp nodes.
         CompositeMesh(aiNode& pAssimpNode, const aiScene& pAssimpScene, TextureManager& pTextureManager) noexcept;
+
+        // Recursively call pFunction on every Mesh in the mesh tree.
+        // pFunction will only be applied on meshes on this level and deeper.
+        template<typename Func>
+        void forEachMesh(const Func&& pFunction)
+        {
+            for (auto& mesh : mMeshes)
+                pFunction(mesh);
+            for (auto& mesh : mChildMeshes)
+                mesh.forEachMesh(std::forward<const Func>(pFunction));
+        }
+        // Recursively call pFunction on every Mesh in the mesh tree.
+        // pFunction will only be applied on meshes on this level and deeper.
+        template<typename Func>
+        void forEachMesh(const Func&& pFunction) const
+        {
+            for (const auto& mesh : mMeshes)
+                pFunction(mesh);
+            for (const auto& mesh : mChildMeshes)
+                mesh.forEachMesh(std::forward<const Func>(pFunction));
+        }
     };
     // A Model is a tree structure of Mesh objects.
     // The Model acts as the root node owning the first CompositeMesh.
