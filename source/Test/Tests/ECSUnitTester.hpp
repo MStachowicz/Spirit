@@ -1,10 +1,13 @@
 #pragma once
 
+#include "UnitTest.hpp"
+
 namespace Test
 {
-    class ECSUnitTester
+    class ECSUnitTester : public UnitTest
     {
     public:
-        static void runTest();
+        ECSUnitTester() : UnitTest(std::string("ECS")) {}
+        void runAllTests() override;
     };
 } // namespace Test

@@ -1,4 +1,4 @@
-#include "MemoryCorrectnessChecker.hpp"
+#include "MemoryCorrectnessItem.hpp"
 
 #include "Logger.hpp"
 
