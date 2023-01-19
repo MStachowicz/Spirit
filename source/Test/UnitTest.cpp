@@ -18,7 +18,7 @@ namespace Test
         ECSUnitTester tester;
         tester.run();
 
-        LOG_INFO("{} All Unit tests complete - Time taken: {}\n{}{}", seperator, stopwatch.getTime<std::milli, float>(), seperator, seperator);
+        LOG_INFO("{} All Unit tests complete - Time taken: {}ms\n{}{}", seperator, stopwatch.getTime<std::milli, float>(), seperator, seperator);
     }
 
     Test::Test(const bool& pCondition, const std::string& pName, const std::string& pFailMessage)
@@ -45,7 +45,7 @@ namespace Test
     void UnitTest::run()
     {
         Utility::Stopwatch stopwatch;
-        std::string output = seperator + std::format("{} UNIT TEST STARTING", mName);
+        std::string output = seperator + std::format("\n----------------- {} UNIT TEST STARTING -----------------\n", mName);
 
         runAllTests(); // Run all the tests and fill mTests here.
 
@@ -53,17 +53,15 @@ namespace Test
         for (const auto& test : mTests)
         {
             if (test.mPassed)
-                output += std::format("TEST: {} PASSED", test.mName);
+                output += std::format("TEST '{}' - PASSED\n", test.mName);
             else
-                output += std::format("TEST: {} FAILED - {}", test.mName, test.mFailMessage);
+                output += std::format("TEST '{}' - FAILED - {}\n", test.mName, test.mFailMessage);
         }
 
-        output += seperator + std::format("{} UNIT TEST SUMMARY", mName);
-        if (mFailed == 0)
-            output += std::format("{} UNIT TEST PASSED\nPASSED: {}\nFAILED: {}\nTOTAL TESTS: {}\nTIME TAKEN: {}", mName, mPassed, mFailed, mPassed + mFailed, stopwatch.getTime<std::milli, float>());
-        else
-            output += std::format("{} UNIT TEST FAILED\nPASSED: {}\nFAILED: {}\nTOTAL TESTS: {}\nTIME TAKEN: {}", mName, mPassed, mFailed, mPassed + mFailed, stopwatch.getTime<std::milli, float>());
-        output += seperator + seperator;
+        output += std::format("----------------- {} UNIT TEST SUMMARY ({}) -----------------\n", mName, mFailed == 0 ? "PASSED" : "FAILED");
+
+        output += std::format("PASSED: {}\nFAILED: {}\nTOTAL TESTS: {}\nTIME TAKEN: {}ms\n", mPassed, mFailed, mPassed + mFailed, stopwatch.getTime<std::milli, float>());
+        output += seperator;
 
         LOG_INFO(output);
     }

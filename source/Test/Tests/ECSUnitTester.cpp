@@ -35,15 +35,24 @@ namespace Test
                 float componentFloat = 13;
                 storage.addEntity(componentFloat);
                 runTest({countEntities(storage) == 2, "Add second entity", "Storage doesnt contain 2 entities"});
-            }
-            {
-                ECS::Storage storage;
 
+                storage.addEntity(1);
+                runTest({countEntities(storage) == 3, "Add entity in function", "Storage doesnt contain 3 entities"});
+
+                for (size_t i = 0; i < 100; i++)
+                    storage.addEntity(componentFloat);
+
+                runTest({countEntities(storage) == 103, "Add 100 more entities", "Storage should contain 103 entities"});
+            }
+            { // AddEntity memory correctness
+                ECS::Storage storage;
                 MemoryCorrectnessItem comp;
                 storage.addEntity(comp);
-
-                runTest({MemoryCorrectnessItem::countErrors() == 0, "AddEntity memory correctness", "Memory correctness error occurred adding 1 entity"});
+                runTest({MemoryCorrectnessItem::countErrors() == 0, "AddEntity memory correctness", "Memory correctness errors occurred adding 1 entity"});
             }
+        }
+    }
+} // namespace Test
 
            // { // deleteEntity tests
            //     ECS::Storage storage;
@@ -278,7 +287,7 @@ namespace Test
            //     }
            // }
            // { // getComponentMutable tests
-            }
+           // }
            // { // getComponent tests
            //     ECS::Storage storage;
            //     { // TEST 1: get front middle and end component.
@@ -538,6 +547,5 @@ namespace Test
            //     }
            // }
            // LOG_INFO("ECS unit tests all passed!");
-        }
-    }
-} // namespace Test
+    //     }
+    // }
