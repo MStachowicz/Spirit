@@ -11,330 +11,326 @@
 
 // STD
 #include <set>
+#include <algorithm>    // std::shuffle
+#include <vector>       // std::vector
+#include <random>       // std::default_random_engine
+#include <chrono>       // std::chrono::system_clock
 
 namespace Test
 {
-    size_t countEntities(ECS::Storage& pStorage)
+    size_t ECSUnitTester::countEntities(ECS::Storage& pStorage)
     {
         size_t count = 0;
         pStorage.foreach([&count](const ECS::Entity& pEntity){ count++;});
         return count;
     }
 
+    // Tests if any MemoryCorrectnessErrors occurred and if the number of items alive matches pAliveCountExpected
+    void ECSUnitTester::runMemoryTests(const std::string& pTestName, const size_t& pAliveCountExpected)
+    {
+        runTest({MemoryCorrectnessItem::countErrors() == 0, pTestName, "Mem Errors found"});
+        runTest({MemoryCorrectnessItem::countAlive() == pAliveCountExpected, pTestName + " memory test", std::format("Expected {} MemItems alive, was {}", pAliveCountExpected, MemoryCorrectnessItem::countAlive())});
+    }
+
     void ECSUnitTester::runAllTests()
     {
-        { // ECS UNIT TESTS
-            { // addEntity tests
+        { // addEntity
+            { // addEntity basic
+                MemoryCorrectnessItem::reset(); // Reset before starting new tests
                 ECS::Storage storage;
-                runTest({countEntities(storage) == 0, "Start Empty", "Storage should initialise empty"});
+                const float floatComponent = 42.f;
+                const double doubleComponent = 13.0;
 
-                int component = 42;
-                storage.addEntity(component);
-                runTest({countEntities(storage) == 1, "Add entity", "Storage doesnt contain 1 entity"});
+                runTest({countEntities(storage) == 0, "AddEntity - Start Empty", "Storage should initialise empty"});
+                runMemoryTests("AddEntity - Start empty", 0);
+
+                storage.addEntity(floatComponent);
+                runTest({countEntities(storage) == 1, "AddEntity - Add single component entity", "Storage should contain 1 entity"});
+
+                storage.addEntity(doubleComponent);
+                runTest({countEntities(storage) == 2, "AddEntity - Add another single component entity", "Storage should contain 2 entities"});
+
+                storage.addEntity(doubleComponent, floatComponent);
+                runTest({countEntities(storage) == 3, "AddEntity - Add another entity with both component types", "Storage should contain 3 entities"});
+            }
+            {
+                MemoryCorrectnessItem::reset(); // Reset before starting new tests
+                ECS::Storage storage;
+                MemoryCorrectnessItem comp;
+
+                storage.addEntity(comp);
+                runTest({countEntities(storage) == 1, "AddEntity - Add 1 entity by copy", "Storage should contain 1 entity"});
+                runMemoryTests("AddEntity - Add 1 entity by copy", 2);
 
                 float componentFloat = 13;
                 storage.addEntity(componentFloat);
-                runTest({countEntities(storage) == 2, "Add second entity", "Storage doesnt contain 2 entities"});
+                runTest({countEntities(storage) == 2, "AddEntity - Add second entity new component", "Storage doesnt contain 2 entities"});
+                runTest({MemoryCorrectnessItem::countErrors() == 0, "AddEntity - Add second entity new component", "Memory correctness errors found"});
 
-                storage.addEntity(1);
-                runTest({countEntities(storage) == 3, "Add entity in function", "Storage doesnt contain 3 entities"});
+                storage.addEntity(MemoryCorrectnessItem());
+                runTest({countEntities(storage) == 3, "AddEntity - Add by rvalue", "Storage doesnt contain 3 entities"});
+                runMemoryTests("AddEntity - Add by rvalue", 3);
 
                 for (size_t i = 0; i < 100; i++)
-                    storage.addEntity(componentFloat);
+                    storage.addEntity(MemoryCorrectnessItem());
 
-                runTest({countEntities(storage) == 103, "Add 100 more entities", "Storage should contain 103 entities"});
+                runTest({countEntities(storage) == 103, "AddEntity - Add 100 more entities", "Storage should contain 103 entities"});
+                runMemoryTests("AddEntity - Add by rvalue", 103);
             }
-            { // AddEntity memory correctness
+        }
+        { // deleteEntity - These rely on addEntity working correctly.
+            {
+                MemoryCorrectnessItem::reset(); // Reset before starting new tests
                 ECS::Storage storage;
-                MemoryCorrectnessItem comp;
-                storage.addEntity(comp);
-                runTest({MemoryCorrectnessItem::countErrors() == 0, "AddEntity memory correctness", "Memory correctness errors occurred adding 1 entity"});
+                auto item = MemoryCorrectnessItem();
+
+                auto ent = storage.addEntity(item);
+                storage.deleteEntity(ent);
+
+                runTest({countEntities(storage) == 0, "deleteEntity - Add 1 entity by copy then delete", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Add 1 entity by copy then delete", 1);
             }
+            {
+                MemoryCorrectnessItem::reset(); // Reset before starting new tests
+                ECS::Storage storage;
+                auto ent = storage.addEntity(MemoryCorrectnessItem());
+                storage.deleteEntity(ent);
+
+                runTest({countEntities(storage) == 0, "deleteEntity - Add 1 entity by rvalue then delete", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Add 1 entity by rvalue then delete", 0);
+            }
+            {
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+                auto ent = storage.addEntity(MemoryCorrectnessItem());
+            }
+            runMemoryTests("deleteEntity - Storage out of scope cleanup", 0); // Dangling memory check
+
+            {// Add 3 delete back to front
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+                auto frontEnt  = storage.addEntity(MemoryCorrectnessItem());
+                auto middleEnt = storage.addEntity(MemoryCorrectnessItem());
+                auto backEnt   = storage.addEntity(MemoryCorrectnessItem());
+
+                storage.deleteEntity(backEnt);
+                runTest({countEntities(storage) == 2, "deleteEntity - Delete 3 back-to-front first delete", "Storage should contain 2 entities"});
+                runMemoryTests("deleteEntity - Delete 3 back-to-front first delete", 2);
+
+                storage.deleteEntity(middleEnt);
+                runTest({countEntities(storage) == 1, "deleteEntity - Delete 3 back-to-front second delete", "Storage should contain 1 entity"});
+                runMemoryTests("deleteEntity - Delete 3 back-to-front second delete", 1);
+
+                storage.deleteEntity(frontEnt);
+                runTest({countEntities(storage) == 0, "deleteEntity - Delete 3 back-to-front third delete", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Delete 3 back-to-front third delete", 0);
+            }
+            {// Add 3 delete front to back
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+                auto frontEnt  = storage.addEntity(MemoryCorrectnessItem());
+                auto middleEnt = storage.addEntity(MemoryCorrectnessItem());
+                auto backEnt   = storage.addEntity(MemoryCorrectnessItem());
+
+                storage.deleteEntity(frontEnt);
+                runTest({countEntities(storage) == 2, "deleteEntity - Delete 3 front-to-back first delete", "Storage should contain 2 entities"});
+                runMemoryTests("deleteEntity - Delete 3 front-to-back first delete", 2);
+
+                storage.deleteEntity(middleEnt);
+                runTest({countEntities(storage) == 1, "deleteEntity - Delete 3 front-to-back second delete", "Storage should contain 1 entity"});
+                runMemoryTests("deleteEntity - Delete 3 front-to-back second delete", 1);
+
+                storage.deleteEntity(backEnt);
+                runTest({countEntities(storage) == 0, "deleteEntity - Delete 3 front-to-back third delete", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Delete 3 front-to-back third delete", 0);
+            }
+            {// Add 3 delete middle -> front -> back
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+                auto frontEnt  = storage.addEntity(MemoryCorrectnessItem());
+                auto middleEnt = storage.addEntity(MemoryCorrectnessItem());
+                auto backEnt   = storage.addEntity(MemoryCorrectnessItem());
+
+                storage.deleteEntity(middleEnt);
+                runTest({countEntities(storage) == 2, "deleteEntity - Add 3, delete middle -> front -> back", "Storage should contain 2 entities"});
+                runMemoryTests("deleteEntity - Add 3, delete middle -> front -> back", 2);
+
+                storage.deleteEntity(frontEnt);
+                runTest({countEntities(storage) == 1, "deleteEntity - Add 3, delete middle -> front -> back", "Storage should contain 1 entity"});
+                runMemoryTests("deleteEntity - Add 3, delete middle -> front -> back", 1);
+
+                storage.deleteEntity(backEnt);
+                runTest({countEntities(storage) == 0, "deleteEntity - Add 3, delete middle -> front -> back", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Add 3, delete middle -> front -> back", 0);
+            }
+            {// Add 100 delete 100 in random order
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+
+                std::vector<ECS::Entity> entities;
+                for (size_t i = 0; i < 100; i++)
+                    entities.push_back(storage.addEntity(MemoryCorrectnessItem()));
+
+                // shuffle the order of entities
+                auto seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
+                auto e = std::default_random_engine(seed);
+                std::shuffle(entities.begin(), entities.end(), e);
+
+                for (auto& ent : entities)
+                    storage.deleteEntity(ent);
+
+                runTest({countEntities(storage) == 0, "deleteEntity - Delete 100 entities in random order", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Delete 100 entities in random order", 0);
+            }
+            { // Overwrite memory test
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+
+                auto ent = storage.addEntity(MemoryCorrectnessItem());
+                storage.deleteEntity(ent);
+                storage.addEntity(MemoryCorrectnessItem());
+
+                runTest({countEntities(storage) == 1, "deleteEntity - overwrite Add -> Delete -> Add", "Storage should contain 1 entity"});
+                runMemoryTests("deleteEntity - overwrite Add -> Delete -> Add", 1);
+            }
+            { // Overwrite memory test 100
+                MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
+                ECS::Storage storage;
+
+                std::vector<ECS::Entity> entities;
+                for (size_t i = 0; i < 100; i++)
+                    entities.push_back(storage.addEntity(MemoryCorrectnessItem()));
+                for (auto& ent : entities)
+                    storage.deleteEntity(ent);
+                for (size_t i = 0; i < 100; i++)
+                    entities.push_back(storage.addEntity(MemoryCorrectnessItem()));
+
+                runTest({countEntities(storage) == 100, "deleteEntity - Add 100, Delete 100, Add 100", "Storage should contain 0 entities"});
+                runMemoryTests("deleteEntity - Add 100, Delete 100, Add 100", 100);
+            }
+        }
+        { // getComponent tests
+            {
+                ECS::Storage storage;
+                auto entity = storage.addEntity(42.0);
+                runTest({storage.getComponent<double>(entity) == 42.0,  "getComponent - single component entity", "Incorrect value returned for single component (double)"});
+
+                // Signature variations
+                runTest({storage.getComponent<double&>(entity) == 42.0, "getComponent - non-const & get", "Incorrect value returned for single component (double)"});
+                runTest({storage.getComponent<const double&>(entity) == 42.0, "getComponent - const & get", "Incorrect value returned for single component (double)"});
+
+                // std::decay doesnt work on * so the below dont compile for now.
+                // runTest({storage.getComponent<double*>(entity) == 42.0, "getComponent - single component* entity", "Incorrect value returned for single component (double)"});
+                // runTest({storage.getComponent<const double*>(entity) == 42.0, "getComponent - single 'const component*' entity", "Incorrect value returned for single component (double)"});
+            }
+            { // This series of tests reuses the same storage instance
+                ECS::Storage storage;
+                { // get front middle and end component.
+                    auto entity = storage.addEntity(1.0, 2.f, true);
+                    runTest({storage.getComponent<double>(entity) == 1.0, "getComponent - 3 component entity 1", "Incorrect value returned for front (double) component"});
+                    runTest({storage.getComponent<float>(entity) == 2.0f, "getComponent - 3 component entity 2", "Incorrect value returned for middle (float) component"});
+                    runTest({storage.getComponent<bool>(entity) == true,  "getComponent - 3 component entity 3", "Incorrect value returned for back (bool) component"});
+                }
+                { // Add an entity with the same component makeup but in a reverse order.
+                    auto entityreverse = storage.addEntity(false, 1.f, 2.0);
+                    runTest({storage.getComponent<double>(entityreverse) == 2.0, "getComponent - 3 component entity - same types, reverse order 1", "Incorrect value returned for double component"});
+                    runTest({storage.getComponent<float>(entityreverse) == 1.0f, "getComponent - 3 component entity - same types, reverse order 2", "Incorrect value returned for float component"});
+                    runTest({storage.getComponent<bool>(entityreverse) == false, "getComponent - 3 component entity - same types, reverse order 3", "Incorrect value returned for bool component"});
+                }
+                { // Add an entity with the same component makeup but in a new order.
+                    auto entityNew = storage.addEntity(13.f, true, 42.0);
+                    runTest({storage.getComponent<double>(entityNew) == 42.0, "getComponent - 3 component entity - same types, new order 1", "Incorrect value returned for double component"});
+                    runTest({storage.getComponent<float>(entityNew) == 13.0f, "getComponent - 3 component entity - same types, new order 2", "Incorrect value returned for float component"});
+                    runTest({storage.getComponent<bool>(entityNew) == true,   "getComponent - 3 component entity - same types, new order 3", "Incorrect value returned for bool component"});
+                }
+                { // Add an entity with a new combination of components.
+                    auto entityNew = storage.addEntity('G');
+                    runTest({storage.getComponent<char>(entityNew) == 'G', "getComponent - new component combination", "Incorrect value returned for char component"});
+                }
+
+                {// Data type limits - setting as many bits as possible
+                    constexpr double maxDouble = std::numeric_limits<double>::max();
+                    constexpr double minDouble = std::numeric_limits<double>::min();
+
+                    auto entityMaxDouble1 = storage.addEntity(maxDouble);
+                    auto entityMinDouble1 = storage.addEntity(minDouble);
+                    auto entityMaxDouble2 = storage.addEntity(maxDouble);
+                    auto entityMaxDouble3 = storage.addEntity(maxDouble);
+                    auto entityMinDouble2 = storage.addEntity(minDouble);
+                    auto entityMinDouble3 = storage.addEntity(minDouble);
+                    auto entityMinDouble4 = storage.addEntity(minDouble);
+                    auto entityMaxDouble4 = storage.addEntity(maxDouble);
+
+                    runTest({storage.getComponent<double>(entityMaxDouble1) == maxDouble, "getComponent - Data type limits 1", "Incorrect value returned for max double component"});
+                    runTest({storage.getComponent<double>(entityMaxDouble2) == maxDouble, "getComponent - Data type limits 2", "Incorrect value returned for max double component"});
+                    runTest({storage.getComponent<double>(entityMaxDouble3) == maxDouble, "getComponent - Data type limits 3", "Incorrect value returned for max double component"});
+                    runTest({storage.getComponent<double>(entityMaxDouble4) == maxDouble, "getComponent - Data type limits 4", "Incorrect value returned for max double component"});
+                    runTest({storage.getComponent<double>(entityMinDouble1) == minDouble, "getComponent - Data type limits 1", "Incorrect value returned for min double component"});
+                    runTest({storage.getComponent<double>(entityMinDouble2) == minDouble, "getComponent - Data type limits 2", "Incorrect value returned for min double component"});
+                    runTest({storage.getComponent<double>(entityMinDouble3) == minDouble, "getComponent - Data type limits 3", "Incorrect value returned for min double component"});
+                    runTest({storage.getComponent<double>(entityMinDouble4) == minDouble, "getComponent - Data type limits 4", "Incorrect value returned for min double component"});
+                }
+                { // getComponent MemoryCorrectness
+                    MemoryCorrectnessItem::reset();
+                    auto memCorrectEntity = storage.addEntity(MemoryCorrectnessItem());
+
+                    auto& compRef = storage.getComponent<MemoryCorrectnessItem>(memCorrectEntity);
+                    runMemoryTests("getComponent - get by reference no new items", 1);
+
+                    // No &, copy comp
+                    auto compCopy = storage.getComponent<MemoryCorrectnessItem>(memCorrectEntity);
+                    runMemoryTests("getComponent - get by copy 1 new item", 2);
+                }
+            }
+        }
+        { // getComponentMutable tests
+            { // edit component value
+                ECS::Storage storage;
+
+                { // Add -> get -> set -> check
+                    auto entity     = storage.addEntity(42.0);
+                    auto& comp      = storage.getComponentMutable<double>(entity);
+                    comp            = 69.0;
+                    auto& compAgain = storage.getComponent<double>(entity);
+                    runTest({compAgain == 69.0, "getComponentMutable - get and set", "Assigned value not correct"});
+
+                    storage.getComponentMutable<double>(entity) += 10.0;
+                    runTest({compAgain == 79.0, "getComponentMutable - get and set one liner", "Assigned value not correct"});
+                }
+                { // Add second ent to same archetype -> get -> set -> check
+                    auto entity = storage.addEntity(27.0);
+                    storage.getComponentMutable<double>(entity) += 3.0;
+                    runTest({storage.getComponent<double>(entity) == 30.0, "getComponentMutable - get and set to same archetype", "Assigned value not correct"});
+                }
+                { // Add to new archetype -> get -> set -> check
+                    auto entity = storage.addEntity(27.0, 49.f);
+                    storage.getComponentMutable<double>(entity) += 3.0;
+                    runTest({storage.getComponent<double>(entity) == 30.0, "getComponentMutable - Add to new archetype -> get -> set -> check", "Assigned value not correct"});
+
+                    storage.getComponentMutable<float>(entity) += 1.0f;
+                    runTest({storage.getComponent<float>(entity) == 50.0f, "getComponentMutable - Add to new archetype -> get -> set -> check 2", "Assigned value not correct"});
+                }
+                { // Add 3 component entity and edit in reverse order in memory
+                    auto entity = storage.addEntity(1.0, 2.f, 3);
+                    storage.getComponentMutable<int>(entity) += 1;
+                    runTest({storage.getComponent<int>(entity) == 4, "getComponentMutable - Add 3 component entity -> edit each comp in reverse 1", "Assigned value not correct"});
+
+                    storage.getComponentMutable<float>(entity) += 19.0f;
+                    runTest({storage.getComponent<float>(entity) == 21.f, "getComponentMutable - Add 3 component entity -> edit each comp in reverse 2", "Assigned value not correct"});
+
+                    storage.getComponentMutable<double>(entity) += 13.0;
+                    runTest({storage.getComponent<double>(entity) == 14.0, "getComponentMutable - Add 3 component entity -> edit each comp in reverse 3", "Assigned value not correct"});
+                }
+            }
+        }
+        {// foreach tests
         }
     }
 } // namespace Test
 
-           // { // deleteEntity tests
-           //     ECS::Storage storage;
-           //     size_t count = 0;
-//
-           //     { // TEST 1: Add then delete 1 entity
-           //         size_t val = 0;
-           //         const auto entity = storage.addEntity(val);
-           //         storage.deleteEntity(entity);
-           //         storage.foreach ([&count](size_t& pComponent) { count++; });
-           //         runTest({count == 0, "deleteEntity", "archetype of size_t's should be empty after 1 add and 1 delete."});
-           //     }
-           //     { // TEST 2: Add 3 entities - remove front back then middle.
-           //         const size_t frontVal   = std::numeric_limits<size_t>::min();
-           //         const auto frontEntity  = storage.addEntity(frontVal);
-           //         const size_t middleVal  = 0;
-           //         const auto middleEntity = storage.addEntity(middleVal);
-           //         const size_t backVal    = std::numeric_limits<size_t>::max();
-           //         const auto backEntity   = storage.addEntity(backVal);
-//
-           //         storage.deleteEntity(frontEntity);
-           //         runTest({storage.getComponent<size_t>(middleEntity) == middleVal, "deleteEntity", "middle entity didn't conserve value after removing entity ahead"});
-           //         runTest({storage.getComponent<size_t>(backEntity) == backVal, "deleteEntity", "back entity didn't conserve value after removing entity ahead"});
-           //         count = 0;
-           //         storage.foreach ([&count](size_t& pComponent) { count++; });
-           //         runTest({count == 2, "deleteEntity", "archetype of size_t's should be size 2 after delete 1"});
-//
-           //         storage.deleteEntity(backEntity);
-           //         runTest({storage.getComponent<size_t>(middleEntity) == middleVal, "deleteEntity", "middle entity didn't conserve value after removing entity ahead"});
-           //         count = 0;
-           //         storage.foreach ([&count](size_t& pComponent) { count++; });
-           //         runTest({count == 1, "deleteEntity", "archetype of size_t's should be size 1 after 2 deletes"});
-//
-           //         storage.deleteEntity(middleEntity);
-           //         count = 0;
-           //         storage.foreach ([&count](size_t& pComponent) { count++; });
-           //         runTest({count == 0, "deleteEntity", "archetype of size_t's should be size 0 after 3 deletes"});
-           //     }
-           //     { // TEST 3: Add delete add (overwrite previous data)
-           //         size_t componentValue = 0;
-           //         const auto entity0    = storage.addEntity(componentValue++);
-           //         const auto entity1    = storage.addEntity(componentValue++);
-           //         const auto entity2    = storage.addEntity(componentValue++);
-           //         const auto entity3    = storage.addEntity(componentValue++);
-//
-           //         storage.deleteEntity(entity3); // Delete end entity - order unchanged
-           //         count = 0;
-           //         storage.foreach ([&count, this](size_t& pComponent)
-           //         {
-           //             runTest({pComponent == count++, "deleteEntity", "Missmatch value - Order didnt change, values in archetype should be 0-1-2"});
-           //         });
-           //         runTest({count == 3, "deleteEntity", "Missmatch value - There should be 3 remaining entities after 1 remove."});
-//
-           //         storage.deleteEntity(entity0); // Delete front entity - order changed: entity2 moved into entity0 position.
-           //         // Add a new entity to the end of the archetype.
-           //         // Required to overwrite the data that is still in index position 2 where entity2 used to be.
-           //         // This prevents a potential false positive when testing getComponent on entity2.
-           //         const auto entity4 = storage.addEntity(componentValue++);
-//
-           //         runTest({storage.getComponent<size_t>(entity1) == 1, "deleteEntity: Missmatch value: entity1 should have value 1 as before delete."});
-           //         runTest({storage.getComponent<size_t>(entity2) == 2, "deleteEntity: Missmatch value: entity2 should have value 2 as before delete."});
-           //         runTest({storage.getComponent<size_t>(entity4) == 4, "deleteEntity: Missmatch value: entity4 should have value 4."});
-           //         count = 0;
-           //         storage.foreach ([&count](size_t& pComponent) { count++; });
-           //         runTest({count == 3, "deleteEntity: Missmatch value: Should be 3 entities after 5 addEntity and 2 deleteEntity calls"});
-//
-           //         // Delete the remaining entities
-           //         storage.deleteEntity(entity1);
-           //         storage.deleteEntity(entity2);
-           //         storage.deleteEntity(entity4);
-           //         count = 0;
-           //         storage.foreach ([&count](size_t& pComponent) { count++; });
-           //         runTest({count == 0, "deleteEntity: Missmatch value"});
-           //     }
-           // }
-           // { // Memory correctness tests
-           //     { // Test 1: Construct -> add to storage -> delete from storage -> add to storage (overwrite) -> delete again.
-           //         {
-           //             MemoryCorrectnessItem::reset();
-           //             ECS::Storage testStorage;
-//
-           //             // Construct
-           //             auto comp = MemoryCorrectnessItem();
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive, is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Copy-construct - Add to storage.
-           //             auto ent = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Destruct - Delete from storage.
-           //             testStorage.deleteEntity(ent);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Copy-construct - Overwrite original in storage.
-           //             ent = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Destruct - Delete overwritten from storage.
-           //             testStorage.deleteEntity(ent);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //         } // Destruct - Comp out of scope delete.
-           //         runTest({MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //     }
-           //     { // Test 2: Add to storage then delete front to back.
-           //         {
-           //             MemoryCorrectnessItem::reset();
-           //             ECS::Storage testStorage;
-//
-           //             // Construct
-           //             auto comp = MemoryCorrectnessItem();
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive, is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Copy-construct Front and Back instances.
-           //             auto entFront = testStorage.addEntity(comp);
-           //             auto entBack  = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Destruct - Delete Front ent in storage.
-           //             testStorage.deleteEntity(entFront);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //             // Destruct - Delete Back ent in storage.
-           //             testStorage.deleteEntity(entBack);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Copy-construct Front and Back instances. Overwrites the original Front and Back components in memory.
-           //             entFront = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //             entBack = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Destruct - Delete Front ent in storage.
-           //             testStorage.deleteEntity(entFront);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //             // Destruct - Delete Back ent in storage.
-           //             testStorage.deleteEntity(entBack);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //         } // Destruct - Comp out of scope delete.
-           //         runTest({MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //     }
-           //     { // Test 3: Add to storage then delete back to front.
-           //         {
-           //             MemoryCorrectnessItem::reset();
-           //             ECS::Storage testStorage;
-//
-           //             // Construct
-           //             auto comp = MemoryCorrectnessItem();
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive, is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Copy-construct Front and Back instances.
-           //             auto entFront = testStorage.addEntity(comp);
-           //             auto entBack  = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Destruct - Delete Back ent in storage.
-           //             testStorage.deleteEntity(entBack);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //             // Destruct - Delete Front ent in storage.
-           //             testStorage.deleteEntity(entFront);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Copy-construct Front and Back instances. Overwrites the original Front and Back components in memory.
-           //             entFront = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //             entBack = testStorage.addEntity(comp);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 3, "Should be 3 components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //             // Destruct - Delete Back ent in storage.
-           //             testStorage.deleteEntity(entBack);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 2, "Should be 2 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //             // Destruct - Delete Front ent in storage.
-           //             testStorage.deleteEntity(entFront);
-           //             runTest({MemoryCorrectnessItem::countAlive() == 1, "Should be 1 component alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //             runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //         } // Destruct - Comp out of scope delete.
-           //         runTest({MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //     }
-           //     { // Test 3: Create X Delete X Overwrite X
-           //         MemoryCorrectnessItem::reset();
-           //         const size_t entityCount = 100;
-           //         std::vector<ECS::Entity> entities;
-           //         ECS::Storage testStorage;
-//
-           //         // ADD
-           //         for (size_t i = 0; i < entityCount; i++)
-           //         {
-           //             auto comp = MemoryCorrectnessItem();
-           //             entities.push_back(testStorage.addEntity(comp));
-           //         }
-           //         runTest({MemoryCorrectnessItem::countAlive() == entityCount, "Should be {} components alive is: {}.", entityCount, MemoryCorrectnessItem::countAlive()});
-           //         runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //         // DELETE
-           //         for (size_t i = 0; i < entities.size(); i++)
-           //             testStorage.deleteEntity(entities[i]);
-           //         entities.clear();
-           //         runTest({MemoryCorrectnessItem::countAlive() == 0, "Should be no components alive is: {}.", MemoryCorrectnessItem::countAlive()});
-           //         runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-//
-           //         // OVERWRITE
-           //         for (size_t i = 0; i < entityCount; i++)
-           //         {
-           //             auto comp = MemoryCorrectnessItem();
-           //             entities.push_back(testStorage.addEntity(comp));
-           //         }
-           //         runTest({MemoryCorrectnessItem::countAlive() == entityCount, "Should be {} components alive is: {}.", entityCount, MemoryCorrectnessItem::countAlive()});
-           //         runTest({MemoryCorrectnessItem::countErrors() == 0, "{} memory errors occurred! read log for more info.", MemoryCorrectnessItem::countErrors()});
-           //     }
-           //     { // Test 4: Create X Delete in random order.
-           //     }
-           // }
-           // { // getComponentMutable tests
-           // }
-           // { // getComponent tests
-           //     ECS::Storage storage;
-           //     { // TEST 1: get front middle and end component.
-           //         const auto entity = storage.addEntity(1.0, 2.f, true);
-           //         runTest({storage.getComponent<double&>(entity) == 1.0, "getComponent: incorrect"});
-           //         runTest({storage.getComponent<float&>(entity) == 2.0f, "getComponent: incorrect"});
-           //         runTest({storage.getComponent<bool&>(entity) == true, "getComponent: incorrect"});
-           //     }
-           //     { // TEST 4: get single-component-archetype component.
-           //         const auto entity = storage.addEntity(69.f);
-           //         runTest({storage.getComponent<float&>(entity) == 69.f, "getComponent: incorrect"});
-           //     }
-           //     { // TEST 1: get front and back from a new archetype.
-           //         const auto entity = storage.addEntity(69.69, 1.33f);
-           //         runTest({storage.getComponent<double&>(entity) == 69.69, "getComponent: Missmatch value"});
-           //         runTest({storage.getComponent<float&>(entity) == 1.33f, "getComponent: Missmatch value"});
-           //     }
-           //     { // TEST 2: Add another entity to same archetype and get.
-           //         const auto entity = storage.addEntity(1.0, 4.5f);
-           //         runTest({storage.getComponent<double&>(entity) == 1.0, "getComponent: Missmatch value"});
-           //         runTest({storage.getComponent<float&>(entity) == 4.5f, "getComponent: Missmatch value"});
-           //     }
-           //     { // TEST 3: Add another entity to same archetype in different order and get.
-           //         const auto entity = storage.addEntity(4.2f, 42.0);
-           //         runTest({storage.getComponent<double&>(entity) == 42.0, "getComponent: Missmatch value"});
-           //         runTest({storage.getComponent<float&>(entity) == 4.2f, "getComponent: Missmatch value"});
-           //     }
-           //     { // TEST 3: Add another entity to new archetype and get.
-           //         const auto entity = storage.addEntity(true);
-           //         runTest({storage.getComponent<bool&>(entity) == true, "getComponent: Missmatch value"});
-           //     }
-           //     { // TEST 3: Add another entity to new archetype and get.
-           //         size_t val        = 69;
-           //         const auto entity = storage.addEntity(val);
-           //         runTest({storage.getComponent<size_t&>(entity) == 69, "getComponent: Missmatch value"});
-           //     }
-           // }
-           // { // getComponentMutable tests
-           //     {
-           //      // TEST 1: edit component value
-           //      // const auto entity2   = storage.addEntity(69.f);
-           //      // auto& floatComponent = storage.getComponent<float&>(entity2);
-           //      // floatComponent -= 69.f;
-           //      // auto& floatComponentAgain = storage.getComponent<float&>(entity2);
-           //      // runTest({floatComponentAgain == 0.f, "getComponent: incorrect"});
-           //     }
-           // }
+
+
+
            // { // forEach tests
            //     ECS::Storage storage;
            //     size_t count = 0;
