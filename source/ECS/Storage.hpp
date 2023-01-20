@@ -506,8 +506,8 @@ namespace ECS
             }
         };
 
-        // Get a const reference to component of ComponentType belonging to EntityID.
-        // If EntityID doesn't own one exception will be thrown. Owned ComponentTypes can be queried using hasComponents.
+        // Get a const reference to component of ComponentType belonging to Entity.
+        // If Entity doesn't own one exception will be thrown. Owned ComponentTypes can be queried using hasComponents.
         template <typename ComponentType>
         const std::decay_t<ComponentType>& getComponent(const Entity& pEntity) const
         {
@@ -515,8 +515,8 @@ namespace ECS
             return *mArchetypes[archetype].getComponent<ComponentType>(index);
         }
 
-        // Get a reference to component of ComponentType belonging to EntityID.
-        // If EntityID doesn't own one exception will be thrown. Owned ComponentTypes can be queried using hasComponents.
+        // Get a reference to component of ComponentType belonging to Entity.
+        // If Entity doesn't own one exception will be thrown. Owned ComponentTypes can be queried using hasComponents.
         template <typename ComponentType>
         std::decay_t<ComponentType>& getComponentMutable(const Entity& pEntity)
         {
@@ -524,7 +524,7 @@ namespace ECS
             return *mArchetypes[archetype].getComponentMutable<ComponentType>(index);
         }
 
-        // Check if EntityID has been assigned all of the ComponentTypes queried.
+        // Check if Entity has been assigned all of the ComponentTypes queried.
         template <typename... ComponentTypes>
         bool hasComponents(const Entity& pEntity) const
         {
