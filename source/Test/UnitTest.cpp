@@ -1,5 +1,6 @@
 #include "UnitTest.hpp"
 #include "ECSUnitTester.hpp"
+#include "GeometryTester.hpp"
 
 #include "Logger.hpp"
 #include "Stopwatch.hpp"
@@ -17,6 +18,9 @@ namespace Test
 
         ECSUnitTester tester;
         tester.run();
+
+        GeometryTester geometryTester;
+        geometryTester.run();
 
         LOG_INFO("{} All Unit tests complete - Time taken: {}ms\n{}{}", seperator, stopwatch.getTime<std::milli, float>(), seperator, seperator);
     }

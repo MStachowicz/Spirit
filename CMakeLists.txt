@@ -224,14 +224,18 @@ source/Test/UnitTest.hpp
 source/Test/UnitTest.cpp
 source/Test/Tests/ECSUnitTester.hpp
 source/Test/Tests/ECSUnitTester.cpp
+source/Test/Tests/GeometryTester.hpp
+source/Test/Tests/GeometryTester.cpp
 )
 target_include_directories(Test
 PUBLIC source/Test
 PUBLIC source/Test/Tests
+PUBLIC source/External/GLM
 )
 target_link_libraries(Test
 PRIVATE Utility
 PRIVATE ECS
+PRIVATE Geometry
 )
 # Test end ---------------------------------------------------------------------------------
 
