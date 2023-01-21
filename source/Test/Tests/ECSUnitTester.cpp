@@ -281,6 +281,7 @@ namespace Test
                     auto compCopy = storage.getComponent<MemoryCorrectnessItem>(memCorrectEntity);
                     runMemoryTests("getComponent - get by copy 1 new item", 2);
                 }
+                runMemoryTests("getComponent - copy out of scope 1 remaining inside storage", 1);
             }
         }
         { // getComponentMutable tests
@@ -321,227 +322,215 @@ namespace Test
                     storage.getComponentMutable<double>(entity) += 13.0;
                     runTest({storage.getComponent<double>(entity) == 14.0, "getComponentMutable - Add 3 component entity -> edit each comp in reverse 3", "Assigned value not correct"});
                 }
+                { // getComponentMutable MemoryCorrectness
+                    MemoryCorrectnessItem::reset();
+                    auto memCorrectEntity = storage.addEntity(MemoryCorrectnessItem());
+
+                    auto& compRef = storage.getComponentMutable<MemoryCorrectnessItem>(memCorrectEntity);
+                    runMemoryTests("getComponentMutable - get by reference no new items", 1);
+
+                    // No &, copy comp
+                    auto compCopy = storage.getComponentMutable<MemoryCorrectnessItem>(memCorrectEntity);
+                    runMemoryTests("getComponentMutable - get by copy 1 new item", 2);
+                }
+                runMemoryTests("getComponentMutable - copy out of scope 1 remaining inside storage", 1);
+            }
+        }
+        {// hasComponent tests
+            ECS::Storage storage;
+            { // HasComponents exact match multiple types
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<double, float, bool>(entity);
+                runTest({hasComponents == true, "hasComponents - exact match multiple types" , "hasComponents: incorrect"});
+            }
+            { // HasComponents exact match multiple types different order
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<bool, float, double>(entity);
+                runTest({hasComponents == true, "hasComponents - exact match different order multiple types" , "hasComponents: incorrect"});
+            }
+            { // HasComponents exact match single type multiple component
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<float>(entity);
+                runTest({hasComponents == true, "hasComponents - single type match from multiple component middle" , "hasComponents: incorrect"});
+            }
+            { // HasComponents exact match single type single component
+                const auto entity  = storage.addEntity(1.0);
+                auto hasComponents = storage.hasComponents<double>(entity);
+                runTest({hasComponents == true, "hasComponents - exact match single type single component" , "hasComponents: incorrect"});
+            }
+            { // HasComponents subset match
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<double, bool>(entity);
+                runTest({hasComponents == true, "hasComponents - subset match" , "hasComponents: incorrect"});
+            }
+            { // HasComponents subset match different order
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<bool, double>(entity);
+                runTest({hasComponents == true, "hasComponents - subset match different order" , "hasComponents: incorrect"});
+            }
+            { //  HasComponents subset match single type
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<double>(entity);
+                runTest({hasComponents == true, "hasComponents - subset match single type" , "hasComponents: incorrect"});
+            }
+            { //  HasComponents no match single type
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<std::string>(entity);
+                runTest({hasComponents == false, "hasComponents - no match single type" , "hasComponents: incorrect"});
+            }
+            { //  HasComponents no match multiple types
+                const auto entity  = storage.addEntity(1.0, 2.f, true);
+                auto hasComponents = storage.hasComponents<std::string, size_t>(entity);
+                runTest({hasComponents == false, "hasComponents - no match multiple types" , "hasComponents: incorrect"});
             }
         }
         {// foreach tests
+            ECS::Storage storage;
+            const auto entity  = storage.addEntity(13.69, 1.33f, 2);
+            const auto entity2 = storage.addEntity(13.69, 1.33f, 2);
+            const auto entity3 = storage.addEntity(13.69, 1.33f, 2);
+
+            { // Exact match and order to archetype
+                size_t count = 0;
+                storage.foreach ([this, &count](double& pDouble, float& pFloat, int& pInt)
+                {
+                    runTest({pDouble == 13.69, "foreach - Exact match and order to archetype 1", "foreach: Missmatch value"});
+                    runTest({pInt == 2, "foreach - Exact match and order to archetype 2", "foreach: Missmatch value"});
+                    runTest({pFloat == 1.33f, "foreach - Exact match and order to archetype 3", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count Exact match and order to archetype", "foreach: Missmatch value"});
+            }
+            { // Exact match different order to archetype
+                size_t count = 0;
+                storage.foreach ([this, &count](float& pFloat, int& pInt, double& pDouble)
+                {
+                    runTest({pDouble == 13.69, "foreach - Exact match different order to archetype 1", "foreach: Missmatch value"});
+                    runTest({pInt == 2, "foreach - Exact match function arguments different order to archetype 2", "foreach: Missmatch value"});
+                    runTest({pFloat == 1.33f, "foreach - Exact match function arguments different order to archetype 3", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count Exact match different order to archetype", "foreach: Missmatch value"});
+            }
+            { // Subset match same order to archetype
+                size_t count = 0;
+                storage.foreach ([this, &count](double& pDouble, float& pFloat)
+                {
+                    runTest({pDouble == 13.69, "foreach - subset match same order to archetype 1", "foreach: Missmatch value"});
+                    runTest({pFloat == 1.33f, "foreach - subset match same order to archetype 2", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count subset match same order to archetype", "foreach: Missmatch value"});
+            }
+            { // Subset match different order to archetype
+                size_t count = 0;
+                storage.foreach ([this, &count](int& pInt, float& pFloat)
+                {
+                    runTest({pInt == 2, "foreach - Subset match different order to archetype 1", "foreach: Missmatch value"});
+                    runTest({pFloat == 1.33f, "foreach - Subset match different order to archetype 2", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count - Subset match different order to archetype", "foreach: Missmatch value"});
+            }
+            { // Single argument match to archetype
+                size_t count = 0;
+                storage.foreach ([this, &count](double& pDouble)
+                {
+                    runTest({pDouble == 13.69, "foreach - Single argument match to archetype", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count - Single argument match to archetype", "foreach: Missmatch value"});
+            }
+            { // Single argument match to archetype - back component
+                size_t count = 0;
+                storage.foreach ([this, &count](int& pInt)
+                {
+                    runTest({pInt == 2, "foreach - Single argument match to archetype - back component", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count - Single argument match to archetype - back component", "foreach: Missmatch value"});
+            }
+            { // Single argument match to archetype back component
+                size_t count = 0;
+                storage.foreach ([this, &count](float& pFloat)
+                {
+                    runTest({pFloat == 1.33f, "foreach - Single argument match to archetype back component", "foreach: Missmatch value"});
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count - Single argument match to archetype back component", "foreach: Missmatch value"});
+            }
+            { // Exact match change data
+                size_t count = 0;
+                storage.foreach ([&count](double& pDouble, float& pFloat, int& pInt)
+                {
+                    pDouble += 1.0;
+                    pFloat += 1.0f;
+                    pInt += 1;
+                    count++;
+                });
+                runTest({count == 3, "foreach - iterate count - Exact match change data", "foreach: Missmatch value"});
+            }
+            { // Exact match check changed data
+                storage.foreach ([this](double& pDouble, float& pFloat, int& pInt)
+                {
+                    runTest({pDouble == 14.69, "foreach - Exact match check changed data", "foreach: Missmatch value"});
+                    runTest({pInt == 3, "foreach - Exact match check changed data", "foreach: Missmatch value"});
+                    runTest({pFloat == 2.33f, "foreach - Exact match check changed data", "foreach: Missmatch value"});
+                });
+            }
+            { // Add a new entity to a new archetype
+                storage.addEntity(13.0);
+                size_t count = 0;
+                storage.foreach ([&count](double& pDouble){ count++; });
+                runTest({count == 4, "foreach - iterate a component inside two archetypes", "Expected 4 components of type double"});
+            }
+        }
+        { // foreach with Entity
+            ECS::Storage storage;
+            std::vector<ECS::Entity> entities;
+
+            {// Iterate empty before add
+                size_t count = 0;
+                storage.foreach ([&count](ECS::Entity& pEntity, double& pDouble, float& pFloat, bool& pInt) { count++; });
+                runTest({count == 0, "foreach(Entity)", "Entity count should be 0 before any add"});
+            }
+
+            for (size_t i = 0; i < 12; i++)
+                entities.push_back(storage.addEntity(1.0, 2.f, true));
+
+            { // Iterate exact match archetype and count the same unique set of entities returned
+                std::set<ECS::Entity> entitySet;
+                storage.foreach ([&entitySet](ECS::Entity& pEntity, double& pDouble, float& pFloat, bool& pInt)
+                {
+                    entitySet.insert(pEntity);
+                });
+
+                runTest({entitySet.size() == 12, "foreach(Entity)", "Set size should match the 12 entities added"});
+                for (const auto& entity : entities)
+                    runTest({entitySet.contains(entity), "foreach(Entity)", "Entity missing from foreach"});
+            }
+            { // Iterate partial match archetype and count the same unique set of entities returned
+                std::set<ECS::Entity> entitySet;
+                storage.foreach ([&entitySet](ECS::Entity& pEntity, float& pFloat, double& pDouble)
+                {
+                    entitySet.insert(pEntity);
+                });
+
+                runTest({entitySet.size() == 12, "foreach(Entity)", "Set size should match the 12 entities added"});
+                for (const auto& entity : entities)
+                    runTest({entitySet.contains(entity), "foreach(Entity)", "Entity missing from foreach"});
+            }
+
+            // Remove all the entities in storage
+            for (const auto& entity : entities)
+                storage.deleteEntity(entity);
+            entities.clear();
+
+            {// Iterate empty after delete
+                size_t count = 0;
+                storage.foreach ([&count](ECS::Entity& pEntity, double& pDouble, float& pFloat, bool& pInt) { count++; });
+                runTest({count == 0, "foreach(Entity)", "Entity count should be 0 after all entities deleted"});
+            }
         }
     }
 } // namespace Test
-
-
-
-
-           // { // forEach tests
-           //     ECS::Storage storage;
-           //     size_t count = 0;
-//
-           //     const auto entity  = storage.addEntity(13.69, 1.33f, 2);
-           //     const auto entity2 = storage.addEntity(13.69, 1.33f, 2);
-           //     const auto entity3 = storage.addEntity(13.69, 1.33f, 2);
-           //     { // TEST 1: Exact match - same order as archetype.
-           //         storage.foreach ([&count](double& pDouble, float& pFloat, int& pInt)
-           //         {
-           //             runTest({pDouble == 13.69, "foreach: Missmatch value"});
-           //             runTest({pInt == 2, "foreach: Missmatch value"});
-           //             runTest({pFloat == 1.33f, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 2: Exact match - different order to archetype.
-           //         storage.foreach ([&count](float& pFloat, int& pInt, double& pDouble)
-           //         {
-           //             runTest({pDouble == 13.69, "foreach: Missmatch value"});
-           //             runTest({pInt == 2, "foreach: Missmatch value"});
-           //             runTest({pFloat == 1.33f, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 3: Subset match - same order as archetype.
-           //         storage.foreach ([&count](double& pDouble, float& pFloat)
-           //         {
-           //             runTest({pDouble == 13.69, "foreach: Missmatch value"});
-           //             runTest({pFloat == 1.33f, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 4: Subset match - different order to archetype.
-           //         storage.foreach ([&count](int& pInt, float& pFloat)
-           //         {
-           //             runTest({pInt == 2, "foreach: Missmatch value"});
-           //             runTest({pFloat == 1.33f, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 4: Subset match single type - front of archetype.
-           //         storage.foreach ([&count](double& pDouble)
-           //         {
-           //             runTest({pDouble == 13.69, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 4: Subset match single type - back of archetype.
-           //         storage.foreach ([&count](int& pInt)
-           //         {
-           //             runTest({pInt == 2, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 4: Subset match single type - middle of archetype.
-           //         storage.foreach ([&count](float& pFloat)
-           //                          {
-           //                 runTest({pFloat == 1.33f, "foreach: Missmatch value"});
-           //         count++; });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           //     { // TEST 1: Exact match change ECS data.
-           //         storage.foreach ([&count](double& pDouble, float& pFloat, int& pInt)
-           //         {
-           //             pDouble += 1.0;
-           //             pInt += 1;
-           //             pFloat += 1.0f;
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-//
-           //         storage.foreach ([&count](double& pDouble, float& pFloat, int& pInt)
-           //         {
-           //             runTest({pDouble == 14.69, "foreach: Missmatch value"});
-           //             runTest({pInt == 3, "foreach: Missmatch value"});
-           //             runTest({pFloat == 2.33f, "foreach: Missmatch value"});
-           //             count++;
-           //         });
-           //         runTest({count == 3, "foreach: Missmatch value"});
-           //         count = 0;
-           //     }
-           // }
-           // { // hasComponents tests
-           //     ECS::Storage storage;
-           //     { // TEST 4: HasComponents exact match multiple types.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<double, float, bool>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 5: HasComponents exact match multiple types different order.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<bool, float, double>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 6: HasComponents exact match single type multiple component archetype.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<float>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 7: HasComponents exact match single type single component archetype.
-           //         const auto entity  = storage.addEntity(1.0);
-           //         auto hasComponents = storage.hasComponents<double>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 8: HasComponents subset match.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<double, bool>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 9: HasComponents subset match different order.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<bool, double>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 10: HasComponents subset match single type.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<double>(entity);
-           //         runTest({hasComponents == true, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 11: HasComponents no match single type.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<std::string>(entity);
-           //         runTest({hasComponents == false, "hasComponents: incorrect"});
-           //     }
-           //     { // TEST 12: HasComponents no match multiple types.
-           //         const auto entity  = storage.addEntity(1.0, 2.f, true);
-           //         auto hasComponents = storage.hasComponents<std::string, size_t>(entity);
-           //         runTest({hasComponents == false, "hasComponents: incorrect"});
-           //     }
-           // }
-           // { // foreach with Entity
-           //     ECS::Storage storage;
-           //     std::vector<ECS::Entity> entities;
-//
-           //     for (size_t i = 0; i < 12; i++)
-           //         entities.push_back(storage.addEntity(1.0, 2.f, true));
-//
-           //     { // TEST 1: Iterate exact match archetype and count the same unique set of entities returned
-           //         std::set<ECS::Entity> entitySet;
-           //         storage.foreach ([&entitySet](ECS::Entity& pEntity, double& pDouble, float& pFloat, bool& pInt) { entitySet.insert(pEntity); });
-           //         runTest({entitySet.size() == 12, "foreach with Entitys failed"});
-           //         for (const auto& entity : entities)
-           //             runTest({entitySet.contains(entity), "Entity not encountered in foreach"});
-           //     }
-           //     { // TEST 2: Iterate partial match archetype and count the same unique set of entities returned
-           //         std::set<ECS::Entity> entitySet;
-           //         storage.foreach ([&entitySet](ECS::Entity& pEntity, float& pFloat, double& pDouble) { entitySet.insert(pEntity); });
-           //         runTest({entitySet.size() == 12, "foreach with Entitys failed"});
-           //         for (const auto& entity : entities)
-           //             runTest({entitySet.contains(entity), "Entity not encountered in foreach"});
-           //     }
-//
-           //     // Remove all the entities in storage
-           //     for (const auto& entity : entities)
-           //         storage.deleteEntity(entity);
-           //     entities.clear();
-//
-           //     { // TEST 3: foreach with no entities matching component list
-           //         size_t count = 0;
-           //         storage.foreach ([&count](ECS::Entity& pEntity, float& pFloat, double& pDouble) { count++; });
-           //         runTest({count == 0, "There should be no entities in foreach"});
-           //     }
-           //     { // TEST 4: 1 entity
-           //         std::set<ECS::Entity> entitySet;
-           //         entities.push_back(storage.addEntity(2.0, 4.f, false)); // Add entity with different values to previously deleted data
-//
-           //         storage.foreach ([&entitySet](ECS::Entity& pEntity, float& pFloat, double& pDouble, bool& pBool)
-           //         {
-           //             entitySet.insert(pEntity);
-           //             runTest({pDouble == 2.0, "foreach with Entity: missmatch value"});
-           //             runTest({pFloat == 4.f, "foreach with Entity: missmatch value"});
-           //             runTest({pBool == false, "foreach with Entity: missmatch value"});
-           //         });
-           //         runTest({entitySet.size() == 1, "There should be 1 entities in foreach"});
-//
-           //         for (const auto& entity : entities)
-           //             runTest({entitySet.contains(entity), "Entity not encountered in foreach"});
-//
-           //         // Remove all the entities in storage
-           //         for (const auto& entity : entities)
-           //             storage.deleteEntity(entity);
-           //         entities.clear();
-           //     }
-           //     { // TEST 4: only Entity in list
-           //         std::set<ECS::Entity> entitySet;
-           //         runTest({entities.size() == 0, "Test requires entities to be 0"});
-//
-           //         for (size_t i = 0; i < 24; i++)
-           //             entities.push_back(storage.addEntity(2.0, 4.f, false)); // Add entity with different values to previously deleted data
-           //         storage.foreach ([&entitySet](ECS::Entity& pEntity) { entitySet.insert(pEntity); });
-//
-           //         runTest({entitySet.size() == 24, "There should be 1 entities in foreach"});
-           //         for (const auto& entity : entities)
-           //             runTest({entitySet.contains(entity), "Entity not encountered in foreach"});
-           //     }
-           // }
-           // LOG_INFO("ECS unit tests all passed!");
-    //     }
-    // }
