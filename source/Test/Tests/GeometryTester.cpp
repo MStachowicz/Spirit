@@ -1,6 +1,9 @@
 #include "GeometryTester.hpp"
 
+// GEOMETRY
+#include "Intersect.hpp"
 #include "AABB.hpp"
+#include "Triangle.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/mat4x4.hpp"
@@ -9,6 +12,12 @@
 namespace Test
 {
     void GeometryTester::runAllTests()
+    {
+        runAABBTests();
+        runTriangleTests();
+    }
+
+    void GeometryTester::runAABBTests()
     {
         { // Default intiailise
             Geometry::AABB aabb;
@@ -40,5 +49,8 @@ namespace Test
 
         }
 
+    }
+    void GeometryTester::runTriangleTests()
+    {
     }
 } // namespace Test

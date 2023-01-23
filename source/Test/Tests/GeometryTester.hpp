@@ -9,5 +9,9 @@ namespace Test
     public:
         GeometryTester() : UnitTest(std::string("Geometry")) {}
         void runAllTests() override;
+
+    private:
+        void runAABBTests();
+        void runTriangleTests();
     };
 } // namespace Test
