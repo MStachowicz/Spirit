@@ -49,7 +49,7 @@ namespace OpenGL
         EBO& operator=(EBO&& pOther) noexcept;
 
         void bind() const;
-        void pushData(const std::vector<int>& pIndexData) const;
+        void setData(const std::vector<int>& pIndexData) const;
 
     private:
         GLHandle mHandle;
@@ -66,11 +66,15 @@ namespace OpenGL
         VBO& operator=(VBO&& pOther) noexcept;
 
         void bind() const;
-        void pushData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType) const;
-        void pushData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType) const;
+        void setData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType);
+        void setData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType);
 
+        // Copy the contents of pSource into pDestination. Any data pDestination owned before is deleted.
+        // Implemented as a static of VBO to only allow explicit copying.
+        static void copy(const VBO& pSource, VBO& pDestination);
     private:
         GLHandle mHandle;
+        size_t mSize; // Size in bytes of the data this VBO holds in GPU memory.
     };
 
     class Texture

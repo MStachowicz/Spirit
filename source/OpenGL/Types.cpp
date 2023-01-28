@@ -102,7 +102,7 @@ namespace OpenGL
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
     }
-    void EBO::pushData(const std::vector<int>& pIndexData) const
+    void EBO::setData(const std::vector<int>& pIndexData) const
     {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndexData.size() * sizeof(int), &pIndexData.front(), GL_STATIC_DRAW);
     }
@@ -111,6 +111,7 @@ namespace OpenGL
 
     VBO::VBO() noexcept
     : mHandle{0}
+    , mSize{0}
     {
         glGenBuffers(1, &mHandle);
 
@@ -125,8 +126,10 @@ namespace OpenGL
     }
     VBO::VBO(VBO&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
+        , mSize{std::move(pOther.mSize)}
     {
         pOther.mHandle = 0;
+        pOther.mSize = 0;
 
         if constexpr (LogGLTypeEvents) LOG_INFO("VBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
@@ -140,8 +143,10 @@ namespace OpenGL
 
             // Copy the data pointer from the source object.
             mHandle = pOther.mHandle;
+            mSize = pOther.mSize;
             // Release the handle so ~VBO doesnt call glDeleteBuffers on mHandle.
             pOther.mHandle = 0;
+            pOther.mSize = 0;
         }
 
         if constexpr (LogGLTypeEvents) LOG_INFO("VBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
@@ -151,24 +156,39 @@ namespace OpenGL
     {
         glBindBuffer(GL_ARRAY_BUFFER, mHandle);
     }
-    void VBO::pushData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType) const
+    void VBO::setData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType)
     {
-        glBufferData(GL_ARRAY_BUFFER, pVec3Data.size() * sizeof(glm::vec3), &pVec3Data.front(), GL_STATIC_DRAW);
+        mSize = pVec3Data.size() * sizeof(glm::vec3);
+        glBufferData(GL_ARRAY_BUFFER, mSize, &pVec3Data.front(), GL_STATIC_DRAW);
+
         auto index = Shader::getAttributeLocation(pAttributeType);
         auto count = Shader::getAttributeComponentCount(pAttributeType);
-
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
         glEnableVertexAttribArray(index);
     }
-    void VBO::pushData(const std::vector<glm::vec2>& pVec2Data,  const Shader::Attribute& pAttributeType) const
+    void VBO::setData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType)
     {
-        glBufferData(GL_ARRAY_BUFFER, pVec2Data.size() * sizeof(glm::vec2), &pVec2Data.front(), GL_STATIC_DRAW);
+        mSize = pVec2Data.size() * sizeof(glm::vec2);
+        glBufferData(GL_ARRAY_BUFFER, mSize, &pVec2Data.front(), GL_STATIC_DRAW);
+
         auto index = Shader::getAttributeLocation(pAttributeType);
         auto count = Shader::getAttributeComponentCount(pAttributeType);
-
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
         glEnableVertexAttribArray(index);
     }
+    void VBO::copy(const VBO& pSource, VBO& pDestination)
+    {
+        glBindBuffer(GL_COPY_WRITE_BUFFER, pDestination.mHandle);
+        // glBufferData deletes pre-existing data, we additionally call with pData as NULL which
+        // gives us a buffer of pSource.mSize uninitialised.
+        glBufferData(GL_COPY_WRITE_BUFFER, pSource.mSize, NULL, GL_STREAM_COPY);
+
+        glBindBuffer(GL_COPY_READ_BUFFER, pSource.mHandle);
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, pSource.mSize);
+
+        pDestination.mSize = pSource.mSize;
+    }
+
 
 
 
@@ -478,7 +498,7 @@ namespace OpenGL
         {
             mEBO = EBO();
             mEBO->bind();
-            mEBO->pushData(pMeshData.mIndices);
+            mEBO->setData(pMeshData.mIndices);
             mDrawSize = static_cast<int>(pMeshData.mIndices.size());
         }
         else
@@ -488,19 +508,19 @@ namespace OpenGL
         {
             mVertexPositions = VBO();
             mVertexPositions->bind();
-            mVertexPositions->pushData(pMeshData.mPositions, Shader::Attribute::Position3D);
+            mVertexPositions->setData(pMeshData.mPositions, Shader::Attribute::Position3D);
         }
         if (!pMeshData.mNormals.empty())
         {
             mVertexNormals = VBO();
             mVertexNormals->bind();
-            mVertexNormals->pushData(pMeshData.mNormals, Shader::Attribute::Normal3D);
+            mVertexNormals->setData(pMeshData.mNormals, Shader::Attribute::Normal3D);
         }
         if (!pMeshData.mTextureCoordinates.empty())
         {
             mVertexTextureCoordinates = VBO();
             mVertexTextureCoordinates->bind();
-            mVertexTextureCoordinates->pushData(pMeshData.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
+            mVertexTextureCoordinates->setData(pMeshData.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
         }
 
         if constexpr (LogGLTypeEvents) LOG_INFO("OpenGL::Mesh constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
