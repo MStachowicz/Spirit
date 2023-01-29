@@ -54,6 +54,8 @@ namespace OpenGL
     private:
         GLHandle mHandle;
     };
+
+    // Handle for an OpenGL VBO. Data can be pushed to the GPU by calling setData with the type of vertex attribute being pushed.
     class VBO
     {
     public:
@@ -68,6 +70,7 @@ namespace OpenGL
         void bind() const;
         void setData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType);
         void setData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType);
+        void clear();
 
         // Copy the contents of pSource into pDestination. Any data pDestination owned before is deleted.
         // Implemented as a static of VBO to only allow explicit copying.

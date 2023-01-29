@@ -176,6 +176,12 @@ namespace OpenGL
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
         glEnableVertexAttribArray(index);
     }
+    void VBO::clear()
+    {
+        bind();
+        mSize = 0;
+        glBufferData(GL_ARRAY_BUFFER, mSize, NULL, GL_STATIC_DRAW);
+    }
     void VBO::copy(const VBO& pSource, VBO& pDestination)
     {
         glBindBuffer(GL_COPY_WRITE_BUFFER, pDestination.mHandle);

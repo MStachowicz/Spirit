@@ -7,8 +7,9 @@
 
 // GEOMETRY
 #include "Cylinder.hpp"
-#include "Sphere.hpp"
 #include "Ray.hpp"
+#include "Sphere.hpp"
+#include "Triangle.hpp"
 
 // GLM
 #include "glm/fwd.hpp"
@@ -56,8 +57,6 @@ namespace OpenGL
 
         // Draw the current state of the ECS.
         void draw();
-
-        void setupLights();
         void renderImGui();
 
         // Returns the current cursor screen position as a normalised direction vector in world-space.
@@ -69,9 +68,16 @@ namespace OpenGL
         // List of cylinders to draw for debugging purposes.
         std::vector<Geometry::Cylinder> debugCylinders;
         std::vector<Geometry::Sphere> debugSpheres;
+        void addDebugTriangle(const Geometry::Triangle& pTriangle);
+        void clearDebugTriangles();
     private:
         GLState mGLState;
         FBO mScreenFramebuffer;
+
+        // Debug triangles are drawn directly from a buffer since they are GL primtives. Thus they are added and removed by addDebugTriangle and clearDebugTriangles.
+        std::vector<glm::vec3> mDebugTriangles;
+        VAO mTriangleVAO;
+        VBO mTriangleBuffer;
 
         System::SceneSystem& mSceneSystem;
         System::MeshSystem& mMeshSystem;
@@ -125,11 +131,13 @@ namespace OpenGL
         void setShaderVariables(const Component::PointLight& pPointLight);
         void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
         void setShaderVariables(const Component::SpotLight& pSpotLight);
+        void setupLights();
 
         void draw(const Data::Model& pModel);
         void draw(const Data::CompositeMesh& pComposite);
         void draw(const Data::Mesh& pMesh);
 
+        void renderDebug();
         void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
         void drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw a cylinder with base at pStart and top at pEnd of pDiameter.
         void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
