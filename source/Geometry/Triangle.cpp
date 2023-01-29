@@ -13,8 +13,8 @@ namespace Geometry
 
     void Triangle::transform(const glm::mat4& pTransformMatrix)
     {
-        mPoint1 = glm::vec4(mPoint1, 1.f) * pTransformMatrix;
-        mPoint2 = glm::vec4(mPoint2, 1.f) * pTransformMatrix;
-        mPoint3 = glm::vec4(mPoint3, 1.f) * pTransformMatrix;
+        mPoint1 = glm::vec3(pTransformMatrix * glm::vec4(mPoint1, 1.f));
+        mPoint2 = glm::vec3(pTransformMatrix * glm::vec4(mPoint2, 1.f));
+        mPoint3 = glm::vec3(pTransformMatrix * glm::vec4(mPoint3, 1.f));
     }
 }
