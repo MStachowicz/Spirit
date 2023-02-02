@@ -11,6 +11,7 @@ namespace Geometry
 
         // Transform all the points in the triangle by the matrix.
         void transform(const glm::mat4& pTransformMatrix);
+        void translate(const glm::vec3& pTranslation);
 
         glm::vec3 mPoint1;
         glm::vec3 mPoint2;

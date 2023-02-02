@@ -17,4 +17,10 @@ namespace Geometry
         mPoint2 = glm::vec3(pTransformMatrix * glm::vec4(mPoint2, 1.f));
         mPoint3 = glm::vec3(pTransformMatrix * glm::vec4(mPoint3, 1.f));
     }
+    void Triangle::translate(const glm::vec3& pTranslation)
+    {
+        mPoint1 += pTranslation;
+        mPoint2 += pTranslation;
+        mPoint3 += pTranslation;
+    }
 }
