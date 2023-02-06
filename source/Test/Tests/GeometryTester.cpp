@@ -68,6 +68,21 @@ namespace Test
     {
         auto control = Geometry::Triangle(glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, -1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f));
 
+        {// No Collision / Coplanar
+            auto t1 = Geometry::Triangle(glm::vec3(0.f, 3.5f, 0.f), glm::vec3(1.f, 1.5f, 0.f), glm::vec3(-1.f, 1.5f, 0.f));
+            auto t2 = Geometry::Triangle(glm::vec3(0.f, -1.5f, 0.f), glm::vec3(1.f, -3.5f, 0.f), glm::vec3(-1.f, -3.5f, 0.f));
+            auto t3 = Geometry::Triangle(glm::vec3(-2.5f, 1.f, 0.f), glm::vec3(-1.5f, -1.f, 0.f), glm::vec3(-3.5f, -1.f, 0.f));
+            auto t4 = Geometry::Triangle(glm::vec3(2.5f, 1.f, 0.f), glm::vec3(3.5f, -1.f, 0.f), glm::vec3(1.5f, -1.f, 0.f));
+            auto t5 = Geometry::Triangle(glm::vec3(0.f, 1.f, 1.f), glm::vec3(1.f, -1.f, 1.f), glm::vec3(-1.f, -1.f, 1.f));
+            auto t6 = Geometry::Triangle(glm::vec3(0.f, 1.f, -1.f), glm::vec3(1.f, -1.f, -1.f), glm::vec3(-1.f, -1.f, -1.f));
+
+            runTest({!Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Coplanar - no collision 1", "Expected no collision"});
+            runTest({!Geometry::IntersectTriangleTriangle(control, t2), "Triangle v Triangle - Coplanar - no collision 2", "Expected no collision"});
+            runTest({!Geometry::IntersectTriangleTriangle(control, t3), "Triangle v Triangle - Coplanar - no collision 3", "Expected no collision"});
+            runTest({!Geometry::IntersectTriangleTriangle(control, t4), "Triangle v Triangle - Coplanar - no collision 4", "Expected no collision"});
+            runTest({!Geometry::IntersectTriangleTriangle(control, t5), "Triangle v Triangle - Coplanar - no collision 5", "Expected no collision"});
+            runTest({!Geometry::IntersectTriangleTriangle(control, t6), "Triangle v Triangle - Coplanar - no collision 6", "Expected no collision"});
+        }
         {// Collision = true / Coplanar / edge-edge
             auto t1 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(-2.f, 1.f, 0.f));
             auto t2 = Geometry::Triangle(glm::vec3(1.f, 3.f, 0.f), glm::vec3(2.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
@@ -160,11 +175,33 @@ namespace Test
             // Triangle passes under control without collision
             auto t3 = Geometry::Triangle(glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
             runTest({!Geometry::IntersectTriangleTriangle(control, t3), "Triangle v Triangle - off-axis - pass under no collision", "Expected no collision"});
-
-            // Triangle passes under control touching the bottom side
-            auto t4 = Geometry::Triangle(glm::vec3(0.f, 1.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
-            runTest({Geometry::IntersectTriangleTriangle(control, t4), "Triangle v Triangle - off-axis - pass under touch", "Expected collision to be true"});
         }
+        { // Epsilon tests
+            // Place test triangles touching control then move them away by epsilon and check no collision.
+            { // Coplanar to control touching edge to edge
+                // t1 bottom-right edge touches the control top edge
+                auto t1 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(-2.f, 1.f, 0.f));
+                runTest({Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Epsilon co-planar edge-edge", "Expected collision to be true"});
+                t1.translate({-std::numeric_limits<float>::epsilon() * 2.f, 0.f, 0.f});
+                runTest({!Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Epsilon co-planar edge-edge", "Expected no collision after moving left"});
+            }
+            {
+                // Perpendicular to control (non-coplanar), touching the bottom.
+                auto t1 = Geometry::Triangle(glm::vec3(0.f, -1.f, -1.f), glm::vec3(1.f, -1.f, 1.f), glm::vec3(-1.f, -1.f, 1.f));
+                runTest({Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Epsilon perpendicular", "Expected collision to be true"});
+                t1.translate({0.f, -std::numeric_limits<float>::epsilon(), 0.f});
+                runTest({!Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Epsilon perpendicular", "Expected no collision after moving down"});
+            }
+            {
+                // Triangle passes under control touching the bottom side at an angle
+                auto t1 = Geometry::Triangle(glm::vec3(0.f, 1.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
+                runTest({Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Epsilon off-axis - pass under touch", "Expected collision to be true"});
+                // Triangle moved below control by epsilon to no longer collide
+                t1.translate({0.f, -std::numeric_limits<float>::epsilon(), 0.f});
+                runTest({!Geometry::IntersectTriangleTriangle(control, t1), "Triangle v Triangle - Epsilon off-axis - pass under epsilon distance", "Expected no collision after moving down"});
+            }
+        }
+
         {// Edge cases
             runTest({Geometry::IntersectTriangleTriangle(control, control), "Triangle v Triangle - equal triangles", "Expected collision to be true"});
         }
