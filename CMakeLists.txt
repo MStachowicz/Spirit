@@ -220,10 +220,10 @@ PUBLIC spdlog # Logger.hpp uses spdlog in the header.
 add_library(Test
 source/Test/MemoryCorrectnessItem.hpp
 source/Test/MemoryCorrectnessItem.cpp
-source/Test/UnitTest.hpp
-source/Test/UnitTest.cpp
-source/Test/Tests/ECSUnitTester.hpp
-source/Test/Tests/ECSUnitTester.cpp
+source/Test/TestManager.hpp
+source/Test/TestManager.cpp
+source/Test/Tests/ECSTester.hpp
+source/Test/Tests/ECSTester.cpp
 source/Test/Tests/GeometryTester.hpp
 source/Test/Tests/GeometryTester.cpp
 )

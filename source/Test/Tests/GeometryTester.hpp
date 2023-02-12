@@ -1,14 +1,16 @@
 #pragma once
 
-#include "UnitTest.hpp"
+#include "TestManager.hpp"
 
 namespace Test
 {
-    class GeometryTester : public UnitTest
+    class GeometryTester : public TestManager
     {
     public:
-        GeometryTester() : UnitTest(std::string("Geometry")) {}
-        void runAllTests() override;
+        GeometryTester() : TestManager(std::string("GEOMETRY")) {}
+
+        void runUnitTests()        override;
+        void runPerformanceTests() override;
 
     private:
         void runAABBTests();
