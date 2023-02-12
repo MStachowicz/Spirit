@@ -7,7 +7,8 @@ namespace Geometry
 {
     struct Triangle
     {
-        Triangle(const glm::vec3& pPoint1, const glm::vec3& pPoint2, const glm::vec3& pPoint3);
+        Triangle() noexcept;
+        Triangle(const glm::vec3& pPoint1, const glm::vec3& pPoint2, const glm::vec3& pPoint3) noexcept;
 
         // Transform all the points in the triangle by the matrix.
         void transform(const glm::mat4& pTransformMatrix);

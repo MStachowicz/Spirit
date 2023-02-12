@@ -5,7 +5,13 @@
 
 namespace Geometry
 {
-    Triangle::Triangle(const glm::vec3& pPoint1, const glm::vec3& pPoint2, const glm::vec3& pPoint3)
+    Triangle::Triangle() noexcept
+        : mPoint1{0.0f}
+        , mPoint2{0.0f}
+        , mPoint3{0.0f}
+    {}
+
+    Triangle::Triangle(const glm::vec3& pPoint1, const glm::vec3& pPoint2, const glm::vec3& pPoint3) noexcept
         : mPoint1(pPoint1)
         , mPoint2(pPoint2)
         , mPoint3(pPoint3)
