@@ -28,6 +28,12 @@ namespace Utility
             return static_cast<Type>(counted_time);
         }
 
+        template <typename Type, typename Period>
+        std::chrono::duration<Type, Period> duration_since_start() const
+        {
+            return std::chrono::duration_cast<std::chrono::duration<Type, Period>>(Clock::now() - start_point);
+        }
+
     private:
         const typename Clock::time_point start_point;
     };
