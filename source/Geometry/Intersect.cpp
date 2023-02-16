@@ -230,7 +230,7 @@ namespace Geometry
             return true;
     }
 
-    bool intersect_triangle_triangle_static(const Triangle& pTriangle1, const Triangle& pTriangle2)
+    bool intersect_triangle_triangle_static(const Triangle& pTriangle1, const Triangle& pTriangle2, bool pTestCoPlaner)
     {
         // Uses the Möller-Trumbore intersection algorithm to perform triangle-triangle collision detection. Adapted from:
         // https://github.com/erich666/jgt-code/blob/master/Volume_08/Number_1/Shen2003/tri_tri_test/include/Moller97.c
@@ -313,9 +313,19 @@ namespace Geometry
         // compute interval for triangle 1 and triangle 2. If the interval check comes back false
         // the triangles are coplanar and we can early out by checking for collision between coplanar triangles.
         if (!compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2, isect1[0], isect1[1]))
-            return coplanar_tri_tri(N1, pTriangle1, pTriangle2);
+        {
+            if (pTestCoPlaner)
+                return coplanar_tri_tri(N1, pTriangle1, pTriangle2);
+            else
+                return false;
+        }
         if (!compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2, isect2[0], isect2[1]))
-            return coplanar_tri_tri(N1, pTriangle1, pTriangle2);
+        {
+            if (pTestCoPlaner)
+                return coplanar_tri_tri(N1, pTriangle1, pTriangle2);
+            else
+                return false;
+        }
 
         // Sort so isect 1 and 2 are in ascending order by index
         if (isect1[0] > isect1[1])

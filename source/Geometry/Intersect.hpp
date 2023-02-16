@@ -28,5 +28,5 @@ namespace Geometry
     bool intersect(const Plane& pPlane1, const Plane& pPlane2); // Plane v Plane
     bool intersect(const AABB& pAABB, const AABB& pOtherAABB);
     bool intersect(const AABB& pAABB, const Ray& pRay, glm::vec3* pIntersectionPoint = nullptr, float* pLengthAlongRay = nullptr);
-    bool intersect_triangle_triangle_static(const Triangle& pTriangle1, const Triangle& pTriangle2);
+    bool intersect_triangle_triangle_static(const Triangle& pTriangle1, const Triangle& pTriangle2, bool pTestCoPlaner = true);
 }
