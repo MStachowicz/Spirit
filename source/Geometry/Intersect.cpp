@@ -16,7 +16,7 @@ namespace Geometry
     static constexpr bool  UseEpsilonTest = true;
 
     // This edge to edge test is based on Franlin Antonio's gem: Faster Line Segment Intersection - Graphics Gems III pp. 199-202
-    static bool edge_edge_test(glm::vec3& V0, glm::vec3& U0, glm::vec3& U1, float& Ax, float& Ay, int& i0, int& i1)
+    static bool edge_edge_test(const glm::vec3& V0, const glm::vec3& U0, const glm::vec3& U1, float& Ax, float& Ay, int& i0, int& i1)
     {
         float Bx = U0[i0] - U1[i0];
         float By = U0[i1] - U1[i1];
@@ -40,7 +40,7 @@ namespace Geometry
         }
         return false;
     }
-    static bool edge_against_tri_edges(glm::vec3& V0, glm::vec3& V1, glm::vec3& U0, glm::vec3& U1, glm::vec3& U2, int& i0, int& i1)
+    static bool edge_against_tri_edges(const glm::vec3& V0, const glm::vec3& V1, const glm::vec3& U0, const glm::vec3& U1, const glm::vec3& U2, int& i0, int& i1)
     {
         float Ax = V1[i0] - V0[i0];
         float Ay = V1[i1] - V0[i1];
@@ -53,7 +53,7 @@ namespace Geometry
             return false;
 
     }
-    static bool point_in_tri(glm::vec3& V0, glm::vec3& U0, glm::vec3& U1, glm::vec3& U2, int& i0, int& i1)
+    static bool point_in_tri(const glm::vec3& V0, const glm::vec3& U0, const glm::vec3& U1, const glm::vec3& U2, int i0, int i1)
     {
         float a, b, c, d0, d1, d2;
         /* is T1 completly inside T2? */
@@ -80,10 +80,10 @@ namespace Geometry
         }
         return false;
     }
-    static bool coplanar_tri_tri(glm::vec3& N, Triangle& pTriangle1, Triangle& pTriangle2)
+    static bool coplanar_tri_tri(const glm::vec3& N, const Triangle& pTriangle1, const Triangle& pTriangle2)
     {
         int i0, i1;
-        glm::vec3 A = glm::abs(N);
+        const glm::vec3 A = glm::abs(N);
         // first project onto an axis-aligned plane, that maximizes the area of the triangles, compute indices: i0,i1.
 
         if (A[0] > A[1])
@@ -230,7 +230,7 @@ namespace Geometry
             return true;
     }
 
-    bool intersect_triangle_triangle_static(Triangle& pTriangle1, Triangle& pTriangle2)
+    bool intersect_triangle_triangle_static(const Triangle& pTriangle1, const Triangle& pTriangle2)
     {
         // Uses the Möller-Trumbore intersection algorithm to perform triangle-triangle collision detection. Adapted from:
         // https://github.com/erich666/jgt-code/blob/master/Volume_08/Number_1/Shen2003/tri_tri_test/include/Moller97.c
