@@ -63,17 +63,22 @@ namespace System
                                         Geometry::Triangle meshTriangleOther = {pMeshOther.mPositions[j], pMeshOther.mPositions[j + 1], pMeshOther.mPositions[j + 2]};
                                         meshTriangleOther.transform(modelOther);
 
-                                        collision = Geometry::getCollision(meshTriangle, meshTriangleOther);
-                                        if (collision)
+                                        if (Geometry::intersect_triangle_triangle_static(meshTriangle, meshTriangleOther))
+                                        {
+                                            collision = std::make_optional<Geometry::Collision>();
                                             return;
+                                            throw std::logic_error("Have to return collision point and normal here.");
+                                        }
                                     }
                                 }
                             });
+
+                            if (collision.has_value())
+                                return;
                         });
-                    }
-                    else
-                    {
-                        collision = Geometry::Collision();
+
+                        if (collision.has_value())
+                            return;
                     }
                 }
             }
