@@ -16,7 +16,7 @@ namespace Data
 
 namespace OpenGL
 {
-    constexpr inline static bool LogGLTypeEvents = true;
+    constexpr inline static bool LogGLTypeEvents = false;
     // A GLHandle is a pointer to memory owned by this OpenGL context on the GPU.
     // Classes that own a GLHandle require memory management as if having an owning pointer.
     using GLHandle = unsigned int;
