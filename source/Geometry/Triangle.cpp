@@ -2,6 +2,7 @@
 
 #include "glm/vec4.hpp"
 #include "glm/mat4x4.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 namespace Geometry
 {
@@ -17,12 +18,23 @@ namespace Geometry
         , mPoint3(pPoint3)
     {}
 
-    void Triangle::transform(const glm::mat4& pTransformMatrix)
+    glm::vec3 Triangle::centroid() const
     {
-        mPoint1 = glm::vec3(pTransformMatrix * glm::vec4(mPoint1, 1.f));
-        mPoint2 = glm::vec3(pTransformMatrix * glm::vec4(mPoint2, 1.f));
-        mPoint3 = glm::vec3(pTransformMatrix * glm::vec4(mPoint3, 1.f));
+        // calculates the arithmetic mean of the three points of the triangle, which gives the center of the triangle.
+        return (mPoint1 + mPoint2 + mPoint3) / 3.0f;
     }
+
+    void Triangle::transform(const glm::mat4& pTransformation)
+    {
+        // First calculates the centroid of the triangle. Then transforms each point of the triangle relative to the centroid by first subtracting the centroid
+        // from the point, applying the transformation matrix to the resulting vector, and then adding the centroid back to the result.
+        glm::vec3 c = centroid();
+
+        mPoint1 = glm::vec3(pTransformation * glm::vec4(mPoint1 - c, 1.f)) + c;
+        mPoint2 = glm::vec3(pTransformation * glm::vec4(mPoint2 - c, 1.f)) + c;
+        mPoint3 = glm::vec3(pTransformation * glm::vec4(mPoint3 - c, 1.f)) + c;
+    }
+
     void Triangle::translate(const glm::vec3& pTranslation)
     {
         mPoint1 += pTranslation;
