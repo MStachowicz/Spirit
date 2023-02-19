@@ -5,6 +5,7 @@
 
 // Geometry
 #include "AABB.hpp"
+#include "Triangle.hpp"
 
 // OpenGL
 #include "Types.hpp"
@@ -46,10 +47,11 @@ namespace Data
         std::vector<glm::vec2> mTextureCoordinates;
         std::vector<int> mIndices;
 
-        Geometry::AABB mAABB;
+        Geometry::AABB mAABB; // Object space AABB encompassing all the mPositions of the mesh.
+        std::vector<Geometry::Triangle> mTriangles; // Object space triangles of the mesh.
 
         Material mMaterial;
-        OpenGL::Mesh mGLData;
+        OpenGL::Mesh mGLData; // The GPU representation of the data.
 
         Mesh() noexcept = default;
         Mesh(aiMesh& pAssimpMesh) noexcept;
@@ -103,6 +105,15 @@ namespace Data
     {
     public:
         Model(const std::filesystem::path& pFilePath, TextureManager& pTextureManager) noexcept;
+
+
+        // Recursively call pFunction on every Mesh in the mesh tree.
+        // pFunction will only be applied on meshes on this level and deeper.
+        template<typename Func>
+        void forEachMesh(const Func&& pFunction) const
+        {
+            mCompositeMesh.forEachMesh(std::forward<const Func>(pFunction));
+        }
 
         std::filesystem::path mFilePath;
         CompositeMesh mCompositeMesh; // The root node of a mesh tree.

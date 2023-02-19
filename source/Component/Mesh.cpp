@@ -17,6 +17,7 @@ namespace Data
         , mIndices{}
         , mMaterial{}
         , mAABB{}
+        , mTriangles{}
         , mGLData{}
     {
         ZEPHYR_ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
@@ -43,8 +44,19 @@ namespace Data
             }
         }
 
-        // After all the vertex data is initialised, call the OpenGL constructor to push the data to the GPU
+        // Iterate the mPositions, (in mIndices order if they exist) to extract the object space triangles of the mesh.
+        if (!mIndices.empty())
+        {
+            for (size_t i = 0; i < mIndices.size(); i+= 3)
+                mTriangles.emplace_back<Geometry::Triangle>({mPositions[mIndices[i]], mPositions[mIndices[i + 1]], mPositions[mIndices[i + 2]]});
+        }
+        else
+        {
+            for (size_t i = 0; i < mPositions.size(); i+= 3)
+                mTriangles.emplace_back<Geometry::Triangle>({mPositions[i], mPositions[i + 1], mPositions[i + 2]});
+        }
 
+        // After all the vertex data is initialised, call the OpenGL constructor to push the data to the GPU
         // ADD A MOVE ASSIGNMENT FOR THE MESH CLASS..
         mGLData = std::move(OpenGL::Mesh(*this));
     }
@@ -56,6 +68,7 @@ namespace Data
         , mIndices{}
         , mMaterial{}
         , mAABB{}
+        , mTriangles{}
         , mGLData{}
     {
         ZEPHYR_ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
@@ -80,6 +93,18 @@ namespace Data
             {
                 mIndices.push_back(face.mIndices[j]);
             }
+        }
+
+        // Iterate the mPositions, (in mIndices order if they exist) to extract the object space triangles of the mesh.
+        if (!mIndices.empty())
+        {
+            for (size_t i = 0; i < mIndices.size(); i+= 3)
+                mTriangles.emplace_back<Geometry::Triangle>({mPositions[mIndices[i]], mPositions[mIndices[i + 1]], mPositions[mIndices[i + 2]]});
+        }
+        else
+        {
+            for (size_t i = 0; i < mPositions.size(); i+= 3)
+                mTriangles.emplace_back<Geometry::Triangle>({mPositions[i], mPositions[i + 1], mPositions[i + 2]});
         }
 
         if (aiMaterial* material = pAssimpScene.mMaterials[pAssimpMesh.mMaterialIndex])
