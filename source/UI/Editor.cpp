@@ -88,12 +88,14 @@ namespace ImGui
 namespace UI
 {
     Editor::Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
-        : mDrawCount{0}
-        , mTextureSystem{pTextureSystem}
+        : mTextureSystem{pTextureSystem}
         , mMeshSystem{pMeshSystem}
         , mSceneSystem{pSceneSystem}
         , mCollisionSystem{pCollisionSystem}
         , mOpenGLRenderer{pOpenGLRenderer}
+        , mSelectedEntities{}
+        , mWindowsToDisplay{}
+        , mDrawCount{0}
     {
         Platform::Core::mMouseButtonEvent.subscribe(this, &Editor::onMousePressed);
     }
@@ -144,9 +146,47 @@ namespace UI
     {
         Platform::Core::startImGuiFrame();
 
-        drawEntityPanel();
-        drawGraphicsPanel();
-        drawPerformancePanel();
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("View"))
+            {
+                ImGui::MenuItem("Entity hierarchy", NULL, &mWindowsToDisplay.Entity);
+
+                if (ImGui::BeginMenu("Debug"))
+                {
+                    ImGui::MenuItem("Performance", NULL, &mWindowsToDisplay.Performance);
+                    ImGui::MenuItem("Graphics", NULL, &mWindowsToDisplay.Graphics);
+
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("ImGui"))
+                {
+                    ImGui::MenuItem("Demo", NULL, &mWindowsToDisplay.ImGuiDemo);
+                    ImGui::MenuItem("Metrics/Debugger", NULL, &mWindowsToDisplay.ImGuiMetrics);
+                    ImGui::MenuItem("Stack", NULL, &mWindowsToDisplay.ImGuiStack);
+                    ImGui::MenuItem("About", NULL, &mWindowsToDisplay.ImGuiAbout);
+                    ImGui::MenuItem("Style Editor", NULL, &mWindowsToDisplay.ImGuiStyleEditor);
+
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        if (mWindowsToDisplay.Entity)           drawEntityPanel();
+        if (mWindowsToDisplay.Performance)      drawPerformancePanel();
+        if (mWindowsToDisplay.Graphics)         drawGraphicsPanel();
+        if (mWindowsToDisplay.ImGuiDemo)        ImGui::ShowDemoWindow(&mWindowsToDisplay.ImGuiDemo);
+        if (mWindowsToDisplay.ImGuiMetrics)     ImGui::ShowMetricsWindow(&mWindowsToDisplay.ImGuiMetrics);
+        if (mWindowsToDisplay.ImGuiStack)       ImGui::ShowStackToolWindow(&mWindowsToDisplay.ImGuiStack);
+        if (mWindowsToDisplay.ImGuiAbout)       ImGui::ShowAboutWindow(&mWindowsToDisplay.ImGuiAbout);
+        if (mWindowsToDisplay.ImGuiStyleEditor)
+        {
+            ImGui::Begin("Dear ImGui Style Editor", &mWindowsToDisplay.ImGuiStyleEditor);
+            ImGui::ShowStyleEditor();
+            ImGui::End();
+        }
 
         Platform::Core::endImGuiFrame();
         mDrawCount++;
@@ -154,7 +194,7 @@ namespace UI
 
     void Editor::drawEntityPanel()
     {
-        if (ImGui::Begin("Entities"))
+        if (ImGui::Begin("Entities", &mWindowsToDisplay.Entity))
         {
             auto& availableTextures = mTextureSystem.mAvailableTextures;
             std::vector<std::string> availableTextureNames;
@@ -243,41 +283,16 @@ namespace UI
 
     void Editor::drawGraphicsPanel()
     {
-        if (ImGui::Begin("Graphics"))
-        {
-            if (ImGui::TreeNode("ImGui"))
-            {
-                ImGuiIO& io = ImGui::GetIO();
-                ImGui::Text("DisplaySize: %.fx%.f", io.DisplaySize.x, io.DisplaySize.y);
-                ImGui::Text("MainViewport()->DpiScale: %.3f", ImGui::GetMainViewport()->DpiScale);
-                ImGui::DragFloat("FontGlobalScale", &io.FontGlobalScale, 0.005f, 0.3f, 4.0f, "%.1f");
-                ImGui::Checkbox("WantCaptureMouse", &io.WantCaptureMouse);
-
-                if (ImGui::TreeNode("Style editor"))
-                {
-                    ImGui::ShowStyleEditor();
-                    ImGui::TreePop();
-                }
-
-                ImGui::TreePop();
-            }
-
-            if (ImGui::TreeNode("OpenGL"))
+        if (ImGui::Begin("Graphics", &mWindowsToDisplay.Graphics))
             {
                 mOpenGLRenderer.renderImGui();
-                ImGui::TreePop();
-            }
         }
         ImGui::End();
-
-        ImGui::ShowDemoWindow();
     }
 
     void Editor::drawPerformancePanel()
     {
-        ImGui::ShowMetricsWindow();
-
-        if (ImGui::Begin("Performance"))
+        if (ImGui::Begin("Performance", &mWindowsToDisplay.Performance))
         {
         }
         ImGui::End();

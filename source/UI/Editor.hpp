@@ -38,17 +38,21 @@ namespace ImGui
 
 namespace UI
 {
-    // The engine editor overlaying the window/scene when in non-release mode.
-    // Allows editing all entity components via ImGui windows and popups.
+    // Editor is a Debug-build only overlay for Zephyr that provides a UI for interaction.
     class Editor
     {
-    public:
-        Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
+        struct Windows
+        {
+            bool Entity           = false;
+            bool Performance      = false;
+            bool Graphics         = false;
+            bool ImGuiDemo        = false;
+            bool ImGuiMetrics     = false;
+            bool ImGuiStack       = false;
+            bool ImGuiAbout       = false;
+            bool ImGuiStyleEditor = false;
+        };
 
-        void draw();
-
-        int mDrawCount;
-    private:
         System::TextureSystem&   mTextureSystem;
         System::MeshSystem&      mMeshSystem;
 
@@ -58,9 +62,15 @@ namespace UI
         OpenGL::OpenGLRenderer&  mOpenGLRenderer;
 
         std::vector<ECS::Entity> mSelectedEntities;
+        Windows mWindowsToDisplay; // All the windows currently being displayed
+    public:
+        int mDrawCount;
+
+        Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
+        void draw();
+    private:
 
         void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
-
         void drawEntityPanel();
         void drawGraphicsPanel();
         void drawPerformancePanel();
