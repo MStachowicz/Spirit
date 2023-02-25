@@ -49,21 +49,19 @@ namespace System
                         auto& compositeOther = currentScene.getComponent<Component::Mesh>(pEntityOther).mModel->mCompositeMesh;
                         const auto& modelOther    = pTransform.mModel;
 
-                        composite.forEachMesh([&compositeOther, &composite, &collision, &model, &modelOther](const Data::Mesh& pMesh)
+                        composite.forEachMesh([this, &compositeOther, &composite, &collision, &model, &modelOther](const Data::Mesh& pMesh)
                         {
-                            compositeOther.forEachMesh([&composite, &pMesh, &collision, &model, &modelOther](const Data::Mesh& pMeshOther)
+                            compositeOther.forEachMesh([this, &pMesh, &collision, &model, &modelOther](const Data::Mesh& pMeshOther)
                             {
-                                for (int i = 0; i < pMesh.mPositions.size(); i += 3)
+                                for (auto triangle : pMesh.mTriangles) // #Perf Copying mesh triangle here to be able to transform it.
                                 {
-                                    Geometry::Triangle meshTriangle = {pMesh.mPositions[i], pMesh.mPositions[i + 1], pMesh.mPositions[i + 2]};
-                                    meshTriangle.transform(model);
+                                    triangle.transform(model);
 
-                                    for (int j = 0; j < pMeshOther.mPositions.size(); j += 3)
+                                    for (auto triangleOther : pMeshOther.mTriangles) // #Perf Copying mesh triangle here to be able to transform it.
                                     {
-                                        Geometry::Triangle meshTriangleOther = {pMeshOther.mPositions[j], pMeshOther.mPositions[j + 1], pMeshOther.mPositions[j + 2]};
-                                        meshTriangleOther.transform(modelOther);
+                                        triangleOther.transform(modelOther);
 
-                                        if (Geometry::intersect_triangle_triangle_static(meshTriangle, meshTriangleOther))
+                                        if (Geometry::intersect_triangle_triangle_static(triangle, triangleOther))
                                         {
                                             collision = std::make_optional<Geometry::Collision>();
                                             return;
