@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
     Utility::File::setupDirectories(argv[0]);
     JobSystem::initialise();
 
-    Test::runUnitTests(true);
+    Test::runUnitTests(false);
 
     LOG_INFO("Number of arguments passed on launch: {}", argc);
     for (int index{}; index != argc; ++index)
