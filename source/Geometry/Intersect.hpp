@@ -2,8 +2,6 @@
 
 #include "glm/vec3.hpp"
 
-#include <optional>
-
 // The functions in this file can be categorised in two ways.
 // 1. Interference detection functions: whether two (static) objects are overlapping at their given positions and orientations.
 // 2. Closest point functions: Finding the closest point on object 1 to object 2.
@@ -14,13 +12,6 @@ namespace Geometry
     struct Ray;
     struct Plane;
     struct Triangle;
-
-    // Information about the point of contact between objects.
-    struct Collision
-    {
-        glm::vec3 mPoint;
-        glm::vec3 mNormal;
-    };
 
     // Interference detection
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

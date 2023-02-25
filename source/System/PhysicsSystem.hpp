@@ -20,6 +20,8 @@ namespace System
         void integrate(const DeltaTime& pDeltaTime);
 
         size_t mUpdateCount;
+        float mRestitution; // Coefficient of restitution applied in collision response.
+        bool mApplyCollisionResponse;
     private:
         SceneSystem& mSceneSystem;
         CollisionSystem& mCollisionSystem;

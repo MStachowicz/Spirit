@@ -25,9 +25,9 @@ namespace System
         , mMeshSystem{pMeshSystem}
     {}
 
-    std::optional<Geometry::Collision> CollisionSystem::getCollision(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const
+    std::optional<Collision> CollisionSystem::getCollision(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const
     {
-        std::optional<Geometry::Collision> collision;
+        std::optional<Collision> collision;
 
         auto& currentScene = mSceneSystem.getCurrentScene();
         currentScene.foreach([&](const ECS::Entity& pEntityOther, Component::Transform& pTransformOther, Component::Collider& pColliderOther)
@@ -49,9 +49,9 @@ namespace System
                         auto& compositeOther = currentScene.getComponent<Component::Mesh>(pEntityOther).mModel->mCompositeMesh;
                         const auto& modelOther    = pTransform.mModel;
 
-                        composite.forEachMesh([this, &compositeOther, &composite, &collision, &model, &modelOther](const Data::Mesh& pMesh)
+                        composite.forEachMesh([this, &compositeOther, &collision, &model, &modelOther, &pEntityOther](const Data::Mesh& pMesh)
                         {
-                            compositeOther.forEachMesh([this, &pMesh, &collision, &model, &modelOther](const Data::Mesh& pMeshOther)
+                            compositeOther.forEachMesh([this, &pMesh, &collision, &model, &modelOther, &pEntityOther](const Data::Mesh& pMeshOther)
                             {
                                 for (auto triangle : pMesh.mTriangles) // #Perf Copying mesh triangle here to be able to transform it.
                                 {
@@ -63,9 +63,9 @@ namespace System
 
                                         if (Geometry::intersect_triangle_triangle_static(triangle, triangleOther))
                                         {
-                                            collision = std::make_optional<Geometry::Collision>();
+                                            collision = std::make_optional<Collision>({glm::vec3(0.f),glm::vec3(0.f), pEntityOther });
+                                            // #TODO Set the Collision info before returning.
                                             return;
-                                            throw std::logic_error("Have to return collision point and normal here.");
                                         }
                                     }
                                 }

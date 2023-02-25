@@ -1,21 +1,27 @@
 #include "PhysicsSystem.hpp"
 
-// System
+// SYSTEM
 #include "SceneSystem.hpp"
 #include "CollisionSystem.hpp"
 
-// Component
+// COMPONENT
 #include "Collider.hpp"
 #include "RigidBody.hpp"
 #include "Storage.hpp"
 #include "Transform.hpp"
 
+// GEOMETRY
+#include "Geometry.hpp"
+
+// UTILITY
 #include "Utility.hpp"
 
 namespace System
 {
     PhysicsSystem::PhysicsSystem(SceneSystem& pSceneSystem, CollisionSystem& pCollisionSystem)
         : mUpdateCount{0}
+        , mRestitution{0.8f}
+        , mApplyCollisionResponse{true}
         , mSceneSystem{pSceneSystem}
         , mCollisionSystem{pCollisionSystem}
         , mTotalSimulationTime{DeltaTime::zero()}
@@ -79,12 +85,35 @@ namespace System
                 auto& collider = scene.getComponentMutable<Component::Collider>(pEntity);
                 collider.mWorldAABB = Geometry::AABB::transform(collider.mObjectAABB, pTransform.mPosition, rotationMatrix, pTransform.mScale);
                 collider.mCollided = false;
-                // After moving, check for collisions and respond
-                auto collision = mCollisionSystem.getCollision(pEntity, pTransform, collider);
-                if (collision)
+
+                // After moving and updating the Collider, check for collisions and respond
+                if (auto collision = mCollisionSystem.getCollision(pEntity, pTransform, collider))
                 {
                     collider.mCollided = true;
-                    LOG_INFO("Collision occurred for entity {}", pEntity);
+
+                    if (mApplyCollisionResponse)
+                    {
+                        // A collision has occurred at the new position, the response depends on the collided entity having a rigibBody to apply a response to.
+                        // We already know the collided Entity has a Transform component from CollisionSystem::getCollision so we dont have to check it here.
+                        // The collision data returned is original-Entity-centric this convention is carried over in the response here when calling angularImpulse.
+                        if (scene.hasComponents<Component::RigidBody>(collision->mEntity))
+                        {
+                            auto& rigidBody2 = mSceneSystem.getCurrentScene().getComponentMutable<Component::RigidBody>(collision->mEntity);
+                            auto& transform2 = mSceneSystem.getCurrentScene().getComponentMutable<Component::Transform>(collision->mEntity);
+
+                            auto impulse = Geometry::angularImpulse(collision->mPoint, collision->mNormal, mRestitution,
+                                                                    pTransform.mPosition, pRigidBody.mVelocity, pRigidBody.mAngularVelocity, pRigidBody.mMass, pRigidBody.mInertiaTensor,
+                                                                    transform2.mPosition, rigidBody2.mVelocity, rigidBody2.mAngularVelocity, rigidBody2.mMass, rigidBody2.mInertiaTensor);
+
+                            const auto r             = collision->mPoint - pTransform.mPosition;
+                            const auto inverseTensor = glm::inverse(pRigidBody.mInertiaTensor);
+
+                            pRigidBody.mVelocity        = pRigidBody.mVelocity + (impulse / pRigidBody.mMass);
+                            pRigidBody.mAngularVelocity = pRigidBody.mAngularVelocity + (glm::cross(r, impulse) * inverseTensor);
+
+                            // #TODO: Apply a response to collision.mEntity
+                        }
+                    }
                 }
             }
         });
