@@ -29,6 +29,7 @@ namespace ECS
     class Entity;
 }
 
+// ImGui extenders.
 namespace ImGui
 {
     bool ComboContainer(const char* pLabel, const char* pCurrentValue, const std::vector<std::string>& pItems, size_t& outSelectedIndex);
@@ -46,6 +47,7 @@ namespace UI
             bool Entity           = false;
             bool Performance      = false;
             bool Graphics         = false;
+            bool Physics          = false;
             bool ImGuiDemo        = false;
             bool ImGuiMetrics     = false;
             bool ImGuiStack       = false;
@@ -68,11 +70,12 @@ namespace UI
 
         Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
         void draw();
-    private:
 
+    private:
         void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
-        void drawEntityPanel();
-        void drawGraphicsPanel();
-        void drawPerformancePanel();
+        void drawEntityTreeWindow();
+        void drawGraphicsWindow();
+        void drawPerformanceWindow();
+        void drawPhysicsWindow();
     };
 } // namespace UI

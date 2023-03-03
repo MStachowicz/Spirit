@@ -829,10 +829,6 @@ public:
     void UniformBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint);
     void ShaderStorageBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint);
 
-    // Outputs the current GLState with options to change flags.
-    void renderImGui();
-
-
     int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
     int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const;
     GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;

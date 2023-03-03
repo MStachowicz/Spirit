@@ -186,7 +186,6 @@ PRIVATE Component
 PRIVATE ECS
 PRIVATE glad_GL
 PRIVATE glfw
-PRIVATE ImGui
 )
 # OpenGL end ----------------------------------------------------------------------------------
 

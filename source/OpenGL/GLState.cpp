@@ -6,7 +6,6 @@
 #include "glm/mat4x4.hpp" // mat4, dmat4
 #include "glm/gtc/type_ptr.hpp" //  glm::value_ptr
 #include "glad/gl.h"
-#include "imgui.h"
 
 // STD
 #include <set>
@@ -126,105 +125,6 @@ bool GLState::validateState()
     }
 
     return true;
-}
-
-// Outputs the current GLState with options to change flags.
-void GLState::renderImGui()
-{
-    if (ImGui::ColorEdit4("Window clear colour", mWindowClearColour.data()))
-        setClearColour(mWindowClearColour);
-
-    { // Depth testing options
-        if (ImGui::Checkbox("Depth test", &mDepthTest))
-            toggleDepthTest(mDepthTest);
-
-        if (mDepthTest)
-        {
-            ImGui::SameLine();
-            if (ImGui::BeginCombo("Depth test type", GLType::toString(mDepthTestType).c_str(), ImGuiComboFlags()))
-            {
-                static const size_t depthTestEnumCount = 8; // This has to match the number of enums in GLType::DepthTestType
-                for (size_t i = 0; i < depthTestEnumCount; i++)
-                {
-                    const auto depthTestType = static_cast<GLType::DepthTestType>(i);
-                    if (ImGui::Selectable(GLType::toString(depthTestType).c_str()))
-                        setDepthTestType(depthTestType);
-                }
-
-                ImGui::EndCombo();
-            }
-        }
-    }
-
-    {// Blending options
-        if (ImGui::Checkbox("Blending", &mBlend))
-            toggleBlending(mBlend);
-
-        if (mBlend)
-        {
-            ImGui::Text("Blend function:");
-            ImGui::SameLine();
-            static const size_t blendFactorEnumCount = 14; // This has to match the number of enums in GLType::BlendFactorType
-
-            const float width = ImGui::GetWindowWidth() * 0.25f;
-            ImGui::SetNextItemWidth(width);
-            if (ImGui::BeginCombo("Source", GLType::toString(mSourceBlendFactor).c_str()))
-            {
-                for (size_t i = 0; i < blendFactorEnumCount; i++)
-                {
-                    const auto blendFactorType = static_cast<GLType::BlendFactorType>(i);
-                    if (ImGui::Selectable(GLType::toString(blendFactorType).c_str()))
-                        setBlendFunction(blendFactorType, mDestinationBlendFactor);
-                }
-
-                ImGui::EndCombo();
-            }
-
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(width);
-            if (ImGui::BeginCombo("Destination", GLType::toString(mDestinationBlendFactor).c_str(), ImGuiComboFlags()))
-            {
-                for (size_t i = 0; i < blendFactorEnumCount; i++)
-                {
-                    const auto blendFactorType = static_cast<GLType::BlendFactorType>(i);
-                    if (ImGui::Selectable(GLType::toString(blendFactorType).c_str()))
-                        setBlendFunction(mSourceBlendFactor, blendFactorType);
-                }
-                ImGui::EndCombo();
-            }
-        }
-    }
-
-    {// Cull face options
-        if (ImGui::Checkbox("Cull faces", &mCullFaces))
-            toggleCullFaces(mCullFaces);
-
-        if (mCullFaces)
-        {
-            if (ImGui::BeginCombo("Mode", GLType::toString(mCullFacesType).c_str()))
-            {
-                static const size_t frontFaceEnumCount = 3; // This has to match the number of enums in GLType::FrontFaceOrientation
-                for (size_t i = 0; i < frontFaceEnumCount; i++)
-                {
-                    const auto cullFaceType = static_cast<GLType::CullFacesType>(i);
-                    if (ImGui::Selectable(GLType::toString(cullFaceType).c_str()))
-                        setCullFacesType(cullFaceType);
-                }
-                ImGui::EndCombo();
-            }
-            if (ImGui::BeginCombo("Front face orientation", GLType::toString(mFrontFaceOrientation).c_str()))
-            {
-                static const size_t frontFaceEnumCount = 2; // This has to match the number of enums in GLType::FrontFaceOrientation
-                for (size_t i = 0; i < frontFaceEnumCount; i++)
-                {
-                    const auto frontFace = static_cast<GLType::FrontFaceOrientation>(i);
-                    if (ImGui::Selectable(GLType::toString(frontFace).c_str()))
-                        setFrontFaceOrientation(frontFace);
-                }
-                ImGui::EndCombo();
-            }
-        }
-    }
 }
 
 void GLState::toggleDepthTest(const bool& pDepthTest)
@@ -1500,7 +1400,7 @@ namespace GLType
             case BufferType::QueryBuffer :            return "Query Buffer";
             case BufferType::ShaderStorageBuffer :    return "Shader Storage Buffer";
             case BufferType::TextureBuffer :          return "Texture Buffer";
-            case BufferType::TransformFeedbackBuffer :return "Transform Feedback Buffer";
+            case BufferType::TransformFeedbackBuffer: return "Transform Feedback Buffer";
             case BufferType::UniformBuffer :          return "Uniform Buffer";
             default:
                 ZEPHYR_ASSERT(false, "Unknown BufferType requested");

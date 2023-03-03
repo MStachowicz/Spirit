@@ -25,13 +25,11 @@
 // PLATFORM
 #include "Core.hpp"
 
-// IMGUI
-#include "imgui.h"
-
 //GLM
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "glm/gtx/string_cast.hpp"
 
 // STD
 #include <algorithm>
@@ -40,37 +38,57 @@
 
 namespace OpenGL
 {
+    OpenGLRenderer::DebugOptions::DebugOptions(GLState& pGLState)
+        : mRendering{false}
+        , mShowLightPositions{false}
+        , mVisualiseNormals{false}
+        , mClearColour{0.f, 0.f, 0.f, 0.f}
+        , mForceDepthTestType{false}
+        , mForcedDepthTestType{GLType::DepthTestType::Less}
+        , mForceBlendType{false}
+        , mForcedSourceBlendType{GLType::BlendFactorType::SourceAlpha}
+        , mForcedDestinationBlendType{GLType::BlendFactorType::OneMinusSourceAlpha}
+        , mForceCullFacesType{false}
+        , mForcedCullFacesType{GLType::CullFacesType::Back}
+        , mForceFrontFaceOrientationType{false}
+        , mForcedFrontFaceOrientationType{GLType::FrontFaceOrientation::CounterClockwise}
+        , mPhysics{false}
+        , mShowOrientations{false}
+        , mShowBoundingBoxes{false}
+        , mFillBoundingBoxes{false}
+        , mCylinders{}
+        , mSpheres{}
+        , mTriangles{}
+        , mTriangleVAO{}
+        , mTriangleVBO{}
+        , mLinearDepthView{false}
+        , mDepthViewerShader{"depthView", pGLState}
+        , mVisualiseNormalShader{"visualiseNormal", pGLState}
+    {}
+    OpenGLRenderer::ViewInformation::ViewInformation()
+        : mViewMatrix{glm::identity<glm::mat4>()}
+        , mViewPosition{0.f}
+        , mProjection{glm::identity<glm::mat4>()}
+        , mZNearPlane{0.1f}
+        , mZFarPlane{100.f}
+        , mFOV{45.f}
+    {}
+
     OpenGLRenderer::OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)
         : mGLState{}
         , mScreenFramebuffer{}
-        , mDebugTriangles{}
-        , mTriangleVAO{}
-        , mTriangleBuffer{}
-        , mSceneSystem(pSceneSystem)
-        , mMeshSystem(pMeshSystem)
-        , mViewMatrix{}
-        , mViewPosition{}
-        , mProjection{}
-        , mLinearDepthView(false)
-        , mVisualiseNormals(false)
-        , mShowOrientations(true)
-        , mShowLightPositions(true)
-        , mShowBoundingBoxes(true)
-        , mFillBoundingBoxes(false)
-        , mZNearPlane(0.1f)
-        , mZFarPlane(100.0f)
-        , mFOV(45.f)
-        , pointLightDrawCount(0)
-        , spotLightDrawCount(0)
-        , directionalLightDrawCount(0)
-        , mBufferDrawType(BufferDrawType::Colour)
+        , mSceneSystem{pSceneSystem}
+        , mMeshSystem{pMeshSystem}
+        , pointLightDrawCount{0}
+        , spotLightDrawCount{0}
+        , directionalLightDrawCount{0}
         , mPostProcessingOptions{}
         , mUniformColourShader{"uniformColour" , mGLState}
         , mTextureShader{"texture1" , mGLState}
-        , mScreenTextureShader("screenTexture", mGLState)
-        , mSkyBoxShader("skybox", mGLState)
-        , mDepthViewerShader("depthView", mGLState)
-        , mVisualiseNormalShader("visualiseNormal", mGLState)
+        , mScreenTextureShader{"screenTexture", mGLState}
+        , mSkyBoxShader{"skybox", mGLState}
+        , mViewInformation{}
+        , mDebugOptions{mGLState}
     {
         Platform::Core::mWindowResizeEvent.subscribe(this, &OpenGLRenderer::onWindowResize);
 
@@ -117,21 +135,12 @@ namespace OpenGL
         { // Set global shader uniforms.
             if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
             {
-                mViewMatrix   = primaryCamera->getViewMatrix();
-                mViewPosition = primaryCamera->getPosition();
+                mViewInformation.mViewMatrix   = primaryCamera->getViewMatrix();
+                mViewInformation.mViewPosition = primaryCamera->getPosition();
             }
-            mProjection = glm::perspective(glm::radians(mFOV), Platform::Core::getWindow().aspectRatio(), mZNearPlane, mZFarPlane);
-            mGLState.setUniformBlockVariable("ViewProperties.view", mViewMatrix);
-            mGLState.setUniformBlockVariable("ViewProperties.projection", mProjection);
-
-            if (mBufferDrawType == BufferDrawType::Depth)
-            {
-                mDepthViewerShader.use(mGLState);
-                mDepthViewerShader.setUniform(mGLState, "near", mZNearPlane);
-                mDepthViewerShader.setUniform(mGLState, "far", mZFarPlane);
-                mDepthViewerShader.setUniform(mGLState, "linearDepthView", mLinearDepthView);
-            }
-            //setupLights();
+            mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), Platform::Core::getWindow().aspectRatio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
+            mGLState.setUniformBlockVariable("ViewProperties.view", mViewInformation.mViewMatrix);
+            mGLState.setUniformBlockVariable("ViewProperties.projection", mViewInformation.mProjection);
         }
 
         { // Setup the GL state for rendering the scene
@@ -143,6 +152,7 @@ namespace OpenGL
             mGLState.setDepthTestType(GLType::DepthTestType::Less);
             // mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
         }
+
         auto scene = mSceneSystem.getCurrentScene();
         scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh)
         {
@@ -159,12 +169,11 @@ namespace OpenGL
                     mGLState.setActiveTextureUnit(0);
                     texComponent.mDiffuse.value()->mGLTexture.bind();
                 }
-           //   if (texComponent.mSpecular.has_value())
-           //   {
-           //       mGLState.setActiveTextureUnit(1);
-           //       texComponent.mSpecular.value()->mGLTexture.bind();
-           //   }
-
+                //   if (texComponent.mSpecular.has_value())
+                //   {
+                //       mGLState.setActiveTextureUnit(1);
+                //       texComponent.mSpecular.value()->mGLTexture.bind();
+                //   }
             }
             else
             {
@@ -173,10 +182,34 @@ namespace OpenGL
                 shader.setUniform(mGLState, "model", pTransform.mModel);
                 shader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
             }
-            draw(*pMesh.mModel);
+
+            if (mDebugOptions.mPhysics)
+            {
+                if (mDebugOptions.mShowCollisionTriangles)
+                {
+                    static bool firstTime = true;
+                    if (firstTime)
+                    {
+                        firstTime = false;
+
+                        pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
+                        {
+                            for (auto triangle : pMesh.mTriangles)
+                            {
+                                triangle.transform(pTransform.mModel);
+                                addDebugTriangle(triangle);
+                            }
+                        });
+                    }
+                }
+            }
+
+            // if (!debugCollisions)
+                draw(*pMesh.mModel);
         });
 
         renderDebug();
+        //mGLState.renderImGui();
 
         { // Draw the colour output to the from mScreenFramebuffer texture to the default FBO
             // Unbind after completing draw to ensure all subsequent actions apply to the default FBO and not mScreenFrameBuffer.
@@ -297,25 +330,26 @@ namespace OpenGL
 
     void OpenGLRenderer::addDebugTriangle(const Geometry::Triangle& pTriangle)
     {
-        mDebugTriangles.insert(mDebugTriangles.end(), {pTriangle.mPoint1, pTriangle.mPoint2, pTriangle.mPoint3});
-        mTriangleVAO.bind();
+        LOG_INFO("Adding debug triangle: ({}, {}, {})", glm::to_string(pTriangle.mPoint1), glm::to_string(pTriangle.mPoint2), glm::to_string(pTriangle.mPoint3));
+        mDebugOptions.mTriangles.insert(mDebugOptions.mTriangles.end(), {pTriangle.mPoint1, pTriangle.mPoint2, pTriangle.mPoint3});
+        mDebugOptions.mTriangleVAO.bind();
 
-        mTriangleBuffer = VBO();
-        mTriangleBuffer.bind();
-        mTriangleBuffer.setData(mDebugTriangles, Shader::Attribute::Position3D);
+        mDebugOptions.mTriangleVBO = VBO();
+        mDebugOptions.mTriangleVBO.bind();
+        mDebugOptions.mTriangleVBO.setData(mDebugOptions.mTriangles, Shader::Attribute::Position3D);
     }
     void OpenGLRenderer::clearDebugTriangles()
     {
-        mDebugTriangles.clear();
-        mTriangleVAO.bind();
-        mTriangleBuffer.clear();
+        mDebugOptions.mTriangles.clear();
+        mDebugOptions.mTriangleVAO.bind();
+        mDebugOptions.mTriangleVBO.clear();
     }
 
     void OpenGLRenderer::renderDebug()
     {
         mGLState.toggleCullFaces(true);
 
-        if (mShowLightPositions)
+        if (mDebugOptions.mShowLightPositions)
         {
             mUniformColourShader.use(mGLState);
 
@@ -327,7 +361,7 @@ namespace OpenGL
             });
         }
 
-        if (mShowOrientations)
+        if (mDebugOptions.mShowOrientations)
         {
             mSceneSystem.getCurrentScene().foreach([this](Component::Transform& pTransform)
             {
@@ -340,24 +374,24 @@ namespace OpenGL
 
 
         {// Draw debug shapes
-            for (const auto& cylinder : debugCylinders)
+            for (const auto& cylinder : mDebugOptions.mCylinders)
                 drawCylinder(cylinder);
-            for (const auto& sphere : debugSpheres)
+            for (const auto& sphere : mDebugOptions.mSpheres)
                 drawSphere(sphere);
 
-            if (!mDebugTriangles.empty())
+            if (!mDebugOptions.mTriangles.empty())
             {
                 mGLState.toggleCullFaces(false); // Disable culling since triangles are flat 2D shapes
                 mUniformColourShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
                 mUniformColourShader.setUniform(mGLState, "model", glm::mat4(1.f));
-                mTriangleVAO.bind();
-                mGLState.drawArrays(GLType::PrimitiveMode::Triangles, static_cast<int>(mDebugTriangles.size()));
+                mDebugOptions.mTriangleVAO.bind();
+                mGLState.drawArrays(GLType::PrimitiveMode::Triangles, static_cast<int>(mDebugOptions.mTriangles.size()));
             }
         }
 
-        if (mShowBoundingBoxes)
+        if (mDebugOptions.mShowBoundingBoxes)
         {
-            mGLState.setPolygonMode(mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
+            mGLState.setPolygonMode(mDebugOptions.mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
             mUniformColourShader.use(mGLState);
             auto scene = mSceneSystem.getCurrentScene();
 
@@ -432,61 +466,6 @@ namespace OpenGL
         spotLightDrawCount++;
     }
 
-    void OpenGLRenderer::renderImGui()
-    {
-        auto& window         = Platform::Core::getWindow();
-        auto [width, height] = window.size();
-
-        ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
-        ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
-        ImGui::Text(("View position: " + std::to_string(mViewPosition.x) + "," + std::to_string(mViewPosition.y) + "," + std::to_string(mViewPosition.z)).c_str());
-        ImGui::SliderFloat("Field of view", &mFOV, 1.f, 120.f);
-        ImGui::SliderFloat("Z near plane", &mZNearPlane, 0.001f, 15.f);
-        ImGui::SliderFloat("Z far plane", &mZFarPlane, 15.f, 300.f);
-        ImGui::Separator();
-
-        static const std::array<std::string, Utility::toIndex(BufferDrawType::Count)> bufferDrawTypes{"Colour", "Depth"};
-        if (ImGui::BeginCombo("Buffer draw style", bufferDrawTypes[static_cast<size_t>(mBufferDrawType)].c_str(), ImGuiComboFlags()))
-        {
-            for (size_t i = 0; i < bufferDrawTypes.size(); i++)
-            {
-                if (ImGui::Selectable(bufferDrawTypes[i].c_str()))
-                    mBufferDrawType = static_cast<BufferDrawType>(i);
-            }
-            ImGui::EndCombo();
-        }
-
-        if (mBufferDrawType == BufferDrawType::Depth)
-            ImGui::Checkbox("Show linear depth testing", &mLinearDepthView);
-
-        ImGui::Checkbox("Visualise normals", &mVisualiseNormals);
-        ImGui::Checkbox("Show orientations", &mShowOrientations);
-        ImGui::Checkbox("Show light positions", &mShowLightPositions);
-        ImGui::Checkbox("Show bounding boxes", &mShowBoundingBoxes);
-        if (mShowBoundingBoxes)
-            ImGui::Checkbox("Fill bounding boxes ", &mFillBoundingBoxes);
-
-        ImGui::Separator();
-        mGLState.renderImGui();
-        ImGui::Separator();
-
-        ImGui::Separator();
-        if (ImGui::TreeNode("PostProcessing"))
-        {
-            ImGui::Checkbox("Invert", &mPostProcessingOptions.mInvertColours);
-            ImGui::Checkbox("Grayscale", &mPostProcessingOptions.mGrayScale);
-            ImGui::Checkbox("Sharpen", &mPostProcessingOptions.mSharpen);
-            ImGui::Checkbox("Blur", &mPostProcessingOptions.mBlur);
-            ImGui::Checkbox("Edge detection", &mPostProcessingOptions.mEdgeDetection);
-
-            if (mPostProcessingOptions.mSharpen || mPostProcessingOptions.mBlur || mPostProcessingOptions.mEdgeDetection)
-                ImGui::SliderFloat("Kernel offset", &mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
-
-            ImGui::TreePop();
-        }
-        ImGui::Separator();
-    }
-
     void OpenGLRenderer::onWindowResize(const int pWidth, const int pHeight)
     {
         mScreenFramebuffer.resize(pWidth, pHeight);
@@ -506,11 +485,11 @@ namespace OpenGL
         const glm::vec4 clipSpaceRay = glm::vec4(normalizedDisplayCoords.x, -normalizedDisplayCoords.y, -1.f, 1.f);
 
         // CLIPSPACE to EYE SPACE
-        auto eyeSpaceRay = glm::inverse(mProjection) * clipSpaceRay;
+        auto eyeSpaceRay = glm::inverse(mViewInformation.mProjection) * clipSpaceRay;
         eyeSpaceRay      = glm::vec4(eyeSpaceRay.x, eyeSpaceRay.y, -1.f, 0.f); // Set the direction into the screen -1.f
 
         // EYE SPACE to WORLD SPACE
-        const glm::vec3 worldSpaceRay = glm::normalize(glm::vec3(glm::inverse(mViewMatrix) * eyeSpaceRay));
+        const glm::vec3 worldSpaceRay = glm::normalize(glm::vec3(glm::inverse(mViewInformation.mViewMatrix) * eyeSpaceRay));
         return worldSpaceRay;
     }
     Geometry::Ray OpenGLRenderer::getCursorWorldRay() const

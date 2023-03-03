@@ -36,6 +36,7 @@
 
 // GLM
 #include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 // IMGUI
 #define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
@@ -59,6 +60,36 @@ namespace ImGui
                 if (ImGui::Selectable(pItems[i].c_str()))
                 {
                     outSelectedIndex = i;
+                    result = true;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        return result;
+    }
+
+    // Given a pCurrent and a list of pOptions and their labels, creates an ImGui selectable dropdown and assigns the selected option to pCurrent.
+    // Returns true if pCurrent has been assigned a new value.
+    template <typename Type>
+    bool ComboContainer(const char* pLabel, Type& pCurrent, const std::vector<std::pair<Type, const char*>>& pOptions)
+    {
+        if (pOptions.empty())
+            return false;
+
+        const auto it = std::find_if(pOptions.begin(), pOptions.end(), [&pCurrent](const auto& pElement) { return pCurrent == pElement.first; });
+        ZEPHYR_ASSERT(it != pOptions.end(), "pCurrent not found in the list pOptions, pOptions should be a complete list of all types of Type.");
+
+        bool result = false;
+
+        if (ImGui::BeginCombo(pLabel, it->second))
+        {
+            for (const auto& selectable : pOptions)
+            {
+                auto& [type, label] = selectable;
+
+                if (ImGui::Selectable(label))
+                {
+                    pCurrent = type;
                     result = true;
                 }
             }
@@ -123,13 +154,13 @@ namespace UI
                             }
 
                             const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->getPosition(), mSceneSystem.getPrimaryCamera()->getPosition() + (cursorRay.mDirection * 1000.f), 0.02f);
-                            mOpenGLRenderer.debugCylinders.push_back(mouseRayCylinder);
+                            mOpenGLRenderer.mDebugOptions.mCylinders.push_back(mouseRayCylinder);
                     }
                     break;
                 }
                 case Platform::MouseButton::MOUSE_MIDDLE:
                 {
-                    mOpenGLRenderer.debugCylinders.clear();
+                    mOpenGLRenderer.mDebugOptions.mCylinders.clear();
                     break;
                 }
                 case Platform::MouseButton::MOUSE_RIGHT:
@@ -156,6 +187,7 @@ namespace UI
                 {
                     ImGui::MenuItem("Performance", NULL, &mWindowsToDisplay.Performance);
                     ImGui::MenuItem("Graphics", NULL, &mWindowsToDisplay.Graphics);
+                    ImGui::MenuItem("Physics", NULL, &mWindowsToDisplay.Physics);
 
                     ImGui::EndMenu();
                 }
@@ -174,9 +206,10 @@ namespace UI
             ImGui::EndMenuBar();
         }
 
-        if (mWindowsToDisplay.Entity)           drawEntityPanel();
-        if (mWindowsToDisplay.Performance)      drawPerformancePanel();
-        if (mWindowsToDisplay.Graphics)         drawGraphicsPanel();
+        if (mWindowsToDisplay.Entity)           drawEntityTreeWindow();
+        if (mWindowsToDisplay.Performance)      drawPerformanceWindow();
+        if (mWindowsToDisplay.Graphics)         drawGraphicsWindow();
+        if (mWindowsToDisplay.Physics)          drawPhysicsWindow();
         if (mWindowsToDisplay.ImGuiDemo)        ImGui::ShowDemoWindow(&mWindowsToDisplay.ImGuiDemo);
         if (mWindowsToDisplay.ImGuiMetrics)     ImGui::ShowMetricsWindow(&mWindowsToDisplay.ImGuiMetrics);
         if (mWindowsToDisplay.ImGuiStack)       ImGui::ShowStackToolWindow(&mWindowsToDisplay.ImGuiStack);
@@ -192,7 +225,7 @@ namespace UI
         mDrawCount++;
     }
 
-    void Editor::drawEntityPanel()
+    void Editor::drawEntityTreeWindow()
     {
         if (ImGui::Begin("Entities", &mWindowsToDisplay.Entity))
         {
@@ -281,20 +314,148 @@ namespace UI
         ImGui::End();
     }
 
-    void Editor::drawGraphicsPanel()
+    void Editor::drawGraphicsWindow()
     {
         if (ImGui::Begin("Graphics", &mWindowsToDisplay.Graphics))
-            {
-                mOpenGLRenderer.renderImGui();
+        {
+                auto& window         = Platform::Core::getWindow();
+                auto [width, height] = window.size();
+
+                ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
+                ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
+                ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
+                ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
+                ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
+                ImGui::SliderFloat("Z far plane", &mOpenGLRenderer.mViewInformation.mZFarPlane, 15.f, 300.f);
+                ImGui::Separator();
+
+                if (ImGui::TreeNode("PostProcessing"))
+                {
+                    ImGui::Checkbox("Invert", &mOpenGLRenderer.mPostProcessingOptions.mInvertColours);
+                    ImGui::Checkbox("Grayscale", &mOpenGLRenderer.mPostProcessingOptions.mGrayScale);
+                    ImGui::Checkbox("Sharpen", &mOpenGLRenderer.mPostProcessingOptions.mSharpen);
+                    ImGui::Checkbox("Blur", &mOpenGLRenderer.mPostProcessingOptions.mBlur);
+                    ImGui::Checkbox("Edge detection", &mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection);
+
+                    const bool isPostProcessingOn = mOpenGLRenderer.mPostProcessingOptions.mInvertColours
+                        || mOpenGLRenderer.mPostProcessingOptions.mGrayScale || mOpenGLRenderer.mPostProcessingOptions.mSharpen
+                        || mOpenGLRenderer.mPostProcessingOptions.mBlur      || mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection;
+
+                    if (!isPostProcessingOn) ImGui::BeginDisabled();
+                       ImGui::SliderFloat("Kernel offset", &mOpenGLRenderer.mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
+                    if (!isPostProcessingOn) ImGui::EndDisabled();
+
+                    ImGui::TreePop();
+                }
+                ImGui::Separator();
+
+            ImGui::ColorEdit4("Window clear colour", glm::value_ptr(mOpenGLRenderer.mDebugOptions.mClearColour));
+                ImGui::Checkbox("Show light positions", &mOpenGLRenderer.mDebugOptions.mShowLightPositions);
+                ImGui::Checkbox("Visualise normals", &mOpenGLRenderer.mDebugOptions.mVisualiseNormals);
+                ImGui::Checkbox("Visualise inear depth testing", &mOpenGLRenderer.mDebugOptions.mLinearDepthView);
+
+            { // Depth options
+                ImGui::Checkbox("Force depth test type", &mOpenGLRenderer.mDebugOptions.mForceDepthTestType);
+
+                if (!mOpenGLRenderer.mDebugOptions.mForceDepthTestType) ImGui::BeginDisabled();
+                {
+                    const std::vector<std::pair<GLType::DepthTestType, const char*>> depthTestOptions =
+                    {
+                        { GLType::DepthTestType::Always, "Always" },
+                        { GLType::DepthTestType::Never, "Never" },
+                        { GLType::DepthTestType::Less, "Less" },
+                        { GLType::DepthTestType::Equal, "Equal" },
+                        { GLType::DepthTestType::NotEqual, "NotEqual" },
+                        { GLType::DepthTestType::Greater, "Greater" },
+                        { GLType::DepthTestType::LessEqual, "LessEqual" },
+                        { GLType::DepthTestType::GreaterEqual, "GreaterEqual" }
+                    };
+                    ImGui::ComboContainer("Forced depth test type", mOpenGLRenderer.mDebugOptions.mForcedDepthTestType, depthTestOptions );
+                }
+                if (!mOpenGLRenderer.mDebugOptions.mForceDepthTestType) ImGui::EndDisabled();
+            }
+            { // Blending options
+                ImGui::Checkbox("Force blend type", &mOpenGLRenderer.mDebugOptions.mForceBlendType);
+
+                const std::vector<std::pair<GLType::BlendFactorType, const char*>> blendOptions =
+                {
+                    { GLType::BlendFactorType::Zero, "Zero" },
+                    { GLType::BlendFactorType::One, "One" },
+                    { GLType::BlendFactorType::SourceColour, "SourceColour" },
+                    { GLType::BlendFactorType::OneMinusSourceColour, "OneMinusSourceColour" },
+                    { GLType::BlendFactorType::DestinationColour, "DestinationColour" },
+                    { GLType::BlendFactorType::OneMinusDestinationColour, "OneMinusDestinationColour" },
+                    { GLType::BlendFactorType::SourceAlpha, "SourceAlpha" },
+                    { GLType::BlendFactorType::OneMinusSourceAlpha, "OneMinusSourceAlpha" },
+                    { GLType::BlendFactorType::DestinationAlpha, "DestinationAlpha" },
+                    { GLType::BlendFactorType::OneMinusDestinationAlpha, "OneMinusDestinationAlpha" },
+                    { GLType::BlendFactorType::ConstantColour, "ConstantColour" },
+                    { GLType::BlendFactorType::OneMinusConstantColour, "OneMinusConstantColour" },
+                    { GLType::BlendFactorType::ConstantAlpha, "ConstantAlpha" },
+                    { GLType::BlendFactorType::OneMinusConstantAlpha, "OneMinusConstantAlpha" }
+                };
+                if (!mOpenGLRenderer.mDebugOptions.mForceBlendType) ImGui::BeginDisabled();
+                {
+                    ImGui::ComboContainer("Source", mOpenGLRenderer.mDebugOptions.mForcedSourceBlendType, blendOptions );
+                    ImGui::ComboContainer("Destination", mOpenGLRenderer.mDebugOptions.mForcedDestinationBlendType, blendOptions );
+                }
+                if (!mOpenGLRenderer.mDebugOptions.mForceBlendType) ImGui::EndDisabled();
+            }
+            { // Cull face options
+                const std::vector<std::pair<GLType::CullFacesType, const char*>> cullFaceOptions =
+                {
+                    { GLType::CullFacesType::Back, "Back" },
+                    { GLType::CullFacesType::Front, "Front" },
+                    { GLType::CullFacesType::FrontAndBack, "FrontAndBack" }
+                };
+
+                ImGui::Checkbox("Force cull face type", &mOpenGLRenderer.mDebugOptions.mForceCullFacesType);
+                if (!mOpenGLRenderer.mDebugOptions.mForceCullFacesType) ImGui::BeginDisabled();
+                {
+                    ImGui::ComboContainer("Forced cull faces type", mOpenGLRenderer.mDebugOptions.mForcedCullFacesType, cullFaceOptions );
+                }
+                if (!mOpenGLRenderer.mDebugOptions.mForceCullFacesType) ImGui::EndDisabled();
+
+                const std::vector<std::pair<GLType::FrontFaceOrientation, const char*>> frontFaceOrientationOptions =
+                {
+                    { GLType::FrontFaceOrientation::Clockwise, "Clockwise" },
+                    { GLType::FrontFaceOrientation::CounterClockwise, "CounterClockwise" }
+                };
+
+                ImGui::Checkbox("Force front face type", &mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType);
+                if (!mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType) ImGui::BeginDisabled();
+                {
+                    ImGui::ComboContainer("Forced front face type", mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType, frontFaceOrientationOptions );
+                }
+                if (!mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType) ImGui::EndDisabled();
+            }
+
+                // TODO: Draw depth buffer in a box #45
+                //mBufferDrawType = static_cast<BufferDrawType>(i);
         }
         ImGui::End();
     }
 
-    void Editor::drawPerformancePanel()
+    void Editor::drawPerformanceWindow()
     {
         if (ImGui::Begin("Performance", &mWindowsToDisplay.Performance))
         {
         }
         ImGui::End();
     }
+
+    void Editor::drawPhysicsWindow()
+    {
+        if (ImGui::Begin("Physics", &mWindowsToDisplay.Physics))
+        {
+            ImGui::Checkbox("Show orientations", &mOpenGLRenderer.mDebugOptions.mShowOrientations);
+            ImGui::Checkbox("Show bounding boxes", &mOpenGLRenderer.mDebugOptions.mShowBoundingBoxes);
+
+            if (!mOpenGLRenderer.mDebugOptions.mShowBoundingBoxes) ImGui::BeginDisabled();
+            ImGui::Checkbox("Fill bounding boxes ", &mOpenGLRenderer.mDebugOptions.mFillBoundingBoxes);
+            if (!mOpenGLRenderer.mDebugOptions.mShowBoundingBoxes) ImGui::EndDisabled();
+        }
+        ImGui::End();
+    }
+
 } // namespace UI

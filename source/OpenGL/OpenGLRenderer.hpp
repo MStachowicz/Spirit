@@ -51,65 +51,47 @@ namespace OpenGL
     // OpenGLRenderer renders the state of the ECS::Storage when draw is called.
     class OpenGLRenderer
     {
-    public:
-        // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-        OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
-
-        // Draw the current state of the ECS.
-        void draw();
-        void renderImGui();
-
-        // Returns the current cursor screen position as a normalised direction vector in world-space.
-        // This function is OpenGL specific as it makes assumptions on NDC coordinate system and forward direction in world space.
-        glm::vec3 getCursorWorldDirection() const;
-        // Returns a ray cast from the primary camera view position in the direction of the cursor.
-        Geometry::Ray getCursorWorldRay() const;
-
-        // List of cylinders to draw for debugging purposes.
-        std::vector<Geometry::Cylinder> debugCylinders;
-        std::vector<Geometry::Sphere> debugSpheres;
-        void addDebugTriangle(const Geometry::Triangle& pTriangle);
-        void clearDebugTriangles();
-    private:
-        GLState mGLState;
-        FBO mScreenFramebuffer;
-
-        // Debug triangles are drawn directly from a buffer since they are GL primtives. Thus they are added and removed by addDebugTriangle and clearDebugTriangles.
-        std::vector<glm::vec3> mDebugTriangles;
-        VAO mTriangleVAO;
-        VBO mTriangleBuffer;
-
-        System::SceneSystem& mSceneSystem;
-        System::MeshSystem& mMeshSystem;
-
-        glm::mat4 mViewMatrix;
-        glm::vec3 mViewPosition;
-        glm::mat4 mProjection;
-
-        // By default, OpenGL projection uses non-linear depth values (they have a very high precision for small z-values and a low precision for large z-values).
-        // By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
-        bool mLinearDepthView;
-        bool mVisualiseNormals;
-        bool mShowOrientations;
-        bool mShowLightPositions;
-        bool mShowBoundingBoxes;
-        bool mFillBoundingBoxes;
-        float mZNearPlane;
-        float mZFarPlane;
-        float mFOV;
-
-        int pointLightDrawCount;
-        int spotLightDrawCount;
-        int directionalLightDrawCount;
-
-        enum BufferDrawType
+        struct DebugOptions
         {
-            Colour,
-            Depth,
-            Count
-        };
-        BufferDrawType mBufferDrawType;
+            DebugOptions(GLState& pGLState);
 
+            bool mRendering; // Toggle this flag to display rendering visualisation aids.
+                bool mShowLightPositions;
+                bool mVisualiseNormals;
+                glm::vec4 mClearColour;
+
+                bool mForceDepthTestType;
+                GLType::DepthTestType mForcedDepthTestType;
+
+                bool mForceBlendType;
+                GLType::BlendFactorType mForcedSourceBlendType;
+                GLType::BlendFactorType mForcedDestinationBlendType;
+
+                bool mForceCullFacesType;
+                GLType::CullFacesType mForcedCullFacesType;
+
+                bool mForceFrontFaceOrientationType;
+                GLType::FrontFaceOrientation mForcedFrontFaceOrientationType;
+
+            bool mPhysics; // Toggle this flag to display physics and collision visualisation aids.
+                bool mShowOrientations;
+                bool mShowBoundingBoxes;
+                    bool mFillBoundingBoxes;
+                bool mShowCollisionTriangles;
+
+            std::vector<Geometry::Cylinder> mCylinders;
+            std::vector<Geometry::Sphere> mSpheres;
+            // Debug triangles are drawn directly from a buffer since they are GL primtives. Thus they are added and removed by addDebugTriangle and clearDebugTriangles.
+            std::vector<glm::vec3> mTriangles;
+            VAO mTriangleVAO;
+            VBO mTriangleVBO;
+
+            // By default, OpenGL projection uses non-linear depth values (they have a very high precision for small z-values and a low precision for large z-values).
+            // By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
+            bool mLinearDepthView;
+            Shader mDepthViewerShader;
+            Shader mVisualiseNormalShader;
+        };
         struct PostProcessingOptions
         {
             bool mInvertColours = false;
@@ -119,15 +101,54 @@ namespace OpenGL
             bool mEdgeDetection = false;
             float mKernelOffset = 1.0f / 300.0f;
         };
-        PostProcessingOptions mPostProcessingOptions;
+        struct ViewInformation
+        {
+            ViewInformation();
+
+            glm::mat4 mViewMatrix;
+            glm::vec3 mViewPosition;
+            glm::mat4 mProjection;
+            float mZNearPlane;
+            float mZFarPlane;
+            float mFOV;
+        };
+
+        GLState mGLState;
+        FBO mScreenFramebuffer;
+
+        System::SceneSystem& mSceneSystem;
+        System::MeshSystem& mMeshSystem;
 
         Shader mUniformColourShader;
         Shader mTextureShader;
         Shader mScreenTextureShader;
         Shader mSkyBoxShader;
-        Shader mDepthViewerShader;
-        Shader mVisualiseNormalShader;
 
+        int pointLightDrawCount;
+        int spotLightDrawCount;
+        int directionalLightDrawCount;
+    public:
+        ViewInformation mViewInformation;
+        PostProcessingOptions mPostProcessingOptions;
+        DebugOptions mDebugOptions;
+        void addDebugTriangle(const Geometry::Triangle& pTriangle);
+        void clearDebugTriangles();
+        void showGraphicsOptions();
+        void showPhysicsOptions();
+
+
+        // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
+        OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
+        // Draw the current state of the ECS.
+        void draw();
+
+        // Returns the current cursor screen position as a normalised direction vector in world-space.
+        // This function is OpenGL specific as it makes assumptions on NDC coordinate system and forward direction in world space.
+        glm::vec3 getCursorWorldDirection() const;
+        // Returns a ray cast from the primary camera view position in the direction of the cursor.
+        Geometry::Ray getCursorWorldRay() const;
+
+    private:
         void setShaderVariables(const Component::PointLight& pPointLight);
         void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
         void setShaderVariables(const Component::SpotLight& pSpotLight);
