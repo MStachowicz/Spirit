@@ -349,10 +349,16 @@ namespace UI
                 }
                 ImGui::Separator();
 
-            ImGui::ColorEdit4("Window clear colour", glm::value_ptr(mOpenGLRenderer.mDebugOptions.mClearColour));
+            ImGui::Checkbox("Force clear colour", &mOpenGLRenderer.mDebugOptions.mForceClearColour);
+            if (!mOpenGLRenderer.mDebugOptions.mForceClearColour) ImGui::BeginDisabled();
+            {
+                ImGui::ColorEdit4("Window clear colour", glm::value_ptr(mOpenGLRenderer.mDebugOptions.mClearColour) );
+            }
+            if (!mOpenGLRenderer.mDebugOptions.mForceClearColour) ImGui::EndDisabled();
+
                 ImGui::Checkbox("Show light positions", &mOpenGLRenderer.mDebugOptions.mShowLightPositions);
                 ImGui::Checkbox("Visualise normals", &mOpenGLRenderer.mDebugOptions.mVisualiseNormals);
-                ImGui::Checkbox("Visualise inear depth testing", &mOpenGLRenderer.mDebugOptions.mLinearDepthView);
+            ImGui::Checkbox("Visualise linear depth testing", &mOpenGLRenderer.mDebugOptions.mLinearDepthView);
 
             { // Depth options
                 ImGui::Checkbox("Force depth test type", &mOpenGLRenderer.mDebugOptions.mForceDepthTestType);

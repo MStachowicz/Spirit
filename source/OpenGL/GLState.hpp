@@ -694,6 +694,9 @@ public:
 
     // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
     void setClearColour(const std::array<float, 4>& pColour);
+    // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
+    void setClearColour(const glm::vec4& pColour);
+
     // Controls the interpretation of polygons for rasterization.
     // pPolygonMode: Specifies how polygons will be rasterized.
     // Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.

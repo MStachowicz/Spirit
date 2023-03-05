@@ -55,29 +55,32 @@ namespace OpenGL
         {
             DebugOptions(GLState& pGLState);
 
-            bool mRendering; // Toggle this flag to display rendering visualisation aids.
-                bool mShowLightPositions;
-                bool mVisualiseNormals;
-                glm::vec4 mClearColour;
+            // Rendering
+            bool mShowLightPositions;
+            bool mVisualiseNormals;
 
-                bool mForceDepthTestType;
-                GLType::DepthTestType mForcedDepthTestType;
+            bool mForceClearColour;
+            glm::vec4 mClearColour;
 
-                bool mForceBlendType;
-                GLType::BlendFactorType mForcedSourceBlendType;
-                GLType::BlendFactorType mForcedDestinationBlendType;
+            bool mForceDepthTestType;
+            GLType::DepthTestType mForcedDepthTestType;
 
-                bool mForceCullFacesType;
-                GLType::CullFacesType mForcedCullFacesType;
+            bool mForceBlendType;
+            GLType::BlendFactorType mForcedSourceBlendType;
+            GLType::BlendFactorType mForcedDestinationBlendType;
 
-                bool mForceFrontFaceOrientationType;
-                GLType::FrontFaceOrientation mForcedFrontFaceOrientationType;
+            bool mForceCullFacesType;
+            GLType::CullFacesType mForcedCullFacesType;
 
-            bool mPhysics; // Toggle this flag to display physics and collision visualisation aids.
-                bool mShowOrientations;
-                bool mShowBoundingBoxes;
-                    bool mFillBoundingBoxes;
-                bool mShowCollisionTriangles;
+            bool mForceFrontFaceOrientationType;
+            GLType::FrontFaceOrientation mForcedFrontFaceOrientationType;
+
+            // Physics
+            bool mShowOrientations;
+            bool mShowBoundingBoxes;
+                bool mFillBoundingBoxes;
+            bool mShowCollisionTriangles;
+
 
             std::vector<Geometry::Cylinder> mCylinders;
             std::vector<Geometry::Sphere> mSpheres;

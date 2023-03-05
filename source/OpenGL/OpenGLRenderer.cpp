@@ -39,9 +39,9 @@
 namespace OpenGL
 {
     OpenGLRenderer::DebugOptions::DebugOptions(GLState& pGLState)
-        : mRendering{false}
-        , mShowLightPositions{false}
+        :  mShowLightPositions{false}
         , mVisualiseNormals{false}
+        , mForceClearColour{false}
         , mClearColour{0.f, 0.f, 0.f, 0.f}
         , mForceDepthTestType{false}
         , mForcedDepthTestType{GLType::DepthTestType::Less}
@@ -52,7 +52,6 @@ namespace OpenGL
         , mForcedCullFacesType{GLType::CullFacesType::Back}
         , mForceFrontFaceOrientationType{false}
         , mForcedFrontFaceOrientationType{GLType::FrontFaceOrientation::CounterClockwise}
-        , mPhysics{false}
         , mShowOrientations{false}
         , mShowBoundingBoxes{false}
         , mFillBoundingBoxes{false}
@@ -143,15 +142,37 @@ namespace OpenGL
             mGLState.setUniformBlockVariable("ViewProperties.projection", mViewInformation.mProjection);
         }
 
-        { // Setup the GL state for rendering the scene
+        { // Setup the GL state for rendering the scene, the default setup can be overriden by the Debug options struct
             mGLState.setPolygonMode(GLType::PolygonMode::Fill);
+
+            if (mDebugOptions.mForceClearColour)
+                mGLState.setClearColour(mDebugOptions.mClearColour);
+            else
+                mGLState.setClearColour(glm::vec4(0.f));
+
             mGLState.toggleCullFaces(true);
-            mGLState.setCullFacesType(GLType::CullFacesType::Back);
-            mGLState.setFrontFaceOrientation(GLType::FrontFaceOrientation::CounterClockwise);
+            if (mDebugOptions.mForceCullFacesType)
+                mGLState.setCullFacesType(mDebugOptions.mForcedCullFacesType);
+            else
+                mGLState.setCullFacesType(GLType::CullFacesType::Back);
+
+            if (mDebugOptions.mForceFrontFaceOrientationType)
+                mGLState.setFrontFaceOrientation(mDebugOptions.mForcedFrontFaceOrientationType);
+            else
+                mGLState.setFrontFaceOrientation(GLType::FrontFaceOrientation::CounterClockwise);
+
             mGLState.toggleDepthTest(true);
-            mGLState.setDepthTestType(GLType::DepthTestType::Less);
-            // mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
+            if (mDebugOptions.mForceDepthTestType)
+                mGLState.setDepthTestType(mDebugOptions.mForcedDepthTestType);
+            else
+                mGLState.setDepthTestType(GLType::DepthTestType::Less);
+
+            if (mDebugOptions.mForceBlendType)
+                mGLState.setBlendFunction(mDebugOptions.mForcedSourceBlendType, mDebugOptions.mForcedDestinationBlendType);
+            else
+                mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
         }
+
 
         auto scene = mSceneSystem.getCurrentScene();
         scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh)
@@ -183,29 +204,25 @@ namespace OpenGL
                 shader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
             }
 
-            if (mDebugOptions.mPhysics)
+            if (mDebugOptions.mShowCollisionTriangles)
             {
-                if (mDebugOptions.mShowCollisionTriangles)
+                static bool firstTime = true;
+                if (firstTime)
                 {
-                    static bool firstTime = true;
-                    if (firstTime)
-                    {
-                        firstTime = false;
+                    firstTime = false;
 
-                        pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
+                    pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
+                    {
+                        for (auto triangle : pMesh.mTriangles)
                         {
-                            for (auto triangle : pMesh.mTriangles)
-                            {
-                                triangle.transform(pTransform.mModel);
-                                addDebugTriangle(triangle);
-                            }
-                        });
-                    }
+                            triangle.transform(pTransform.mModel);
+                            addDebugTriangle(triangle);
+                        }
+                    });
                 }
             }
 
-            // if (!debugCollisions)
-                draw(*pMesh.mModel);
+            draw(*pMesh.mModel);
         });
 
         renderDebug();

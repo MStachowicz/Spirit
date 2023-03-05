@@ -201,6 +201,10 @@ void GLState::setClearColour(const std::array<float, 4> &pColour)
     mWindowClearColour = pColour;
     glClearColor(mWindowClearColour[0], mWindowClearColour[1], mWindowClearColour[2], mWindowClearColour[3]);
 }
+void GLState::setClearColour(const glm::vec4& pColour)
+{
+    glClearColor(pColour[0], pColour[1], pColour[2], pColour[3]);
+}
 
 void GLState::setPolygonMode(const GLType::PolygonMode& pPolygonMode)
 {
