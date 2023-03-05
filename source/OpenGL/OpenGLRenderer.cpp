@@ -55,6 +55,7 @@ namespace OpenGL
         , mShowOrientations{false}
         , mShowBoundingBoxes{false}
         , mFillBoundingBoxes{false}
+        , mShowCollisionGeometry{false}
         , mCylinders{}
         , mSpheres{}
         , mTriangles{}
@@ -172,7 +173,6 @@ namespace OpenGL
                 mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
         }
 
-
         auto scene = mSceneSystem.getCurrentScene();
         scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh)
         {
@@ -201,24 +201,6 @@ namespace OpenGL
                 shader.use(mGLState);
                 shader.setUniform(mGLState, "model", pTransform.mModel);
                 shader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
-            }
-
-            if (mDebugOptions.mShowCollisionTriangles)
-            {
-                static bool firstTime = true;
-                if (firstTime)
-                {
-                    firstTime = false;
-
-                    pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
-                    {
-                        for (auto triangle : pMesh.mTriangles)
-                        {
-                            triangle.transform(pTransform.mModel);
-                            addDebugTriangle(triangle);
-                        }
-                    });
-                }
             }
 
             draw(*pMesh.mModel);
@@ -364,6 +346,25 @@ namespace OpenGL
     void OpenGLRenderer::renderDebug()
     {
         mGLState.toggleCullFaces(true);
+        clearDebugTriangles(); // Clearing and rebuilding all debug triangles every frame.
+
+        mSceneSystem.getCurrentScene().foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh)
+        {
+            if (mDebugOptions.mShowCollisionGeometry)
+            { // Render all the collision geometry by pushing all the mesh triangles transformed in world-space.
+                pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
+                {
+                    for (auto triangle : pMesh.mTriangles)
+                    {
+                        triangle.transform(pTransform.mModel);
+                        addDebugTriangle(triangle);
+                    }
+                });
+            }
+
+            if (mDebugOptions.mShowOrientations)
+                drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
+        });
 
         if (mDebugOptions.mShowLightPositions)
         {
@@ -377,17 +378,9 @@ namespace OpenGL
             });
         }
 
-        if (mDebugOptions.mShowOrientations)
-        {
-            mSceneSystem.getCurrentScene().foreach([this](Component::Transform& pTransform)
-            {
-                drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
-            });
-        }
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 1.f, glm::vec3(1.f, 0.f, 0.f));
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, glm::vec3(0.f, 1.f, 0.f));
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 1.f, glm::vec3(0.f, 0.f, 1.f));
-
 
         {// Draw debug shapes
             for (const auto& cylinder : mDebugOptions.mCylinders)

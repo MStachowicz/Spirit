@@ -79,7 +79,7 @@ namespace OpenGL
             bool mShowOrientations;
             bool mShowBoundingBoxes;
                 bool mFillBoundingBoxes;
-            bool mShowCollisionTriangles;
+            bool mShowCollisionGeometry; // Display all Meshes according to their collision geometry
 
 
             std::vector<Geometry::Cylinder> mCylinders;

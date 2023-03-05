@@ -470,6 +470,7 @@ namespace UI
     {
         if (ImGui::Begin("Physics", &mWindowsToDisplay.Physics))
         {
+            ImGui::Checkbox("Show collision geometry", &mOpenGLRenderer.mDebugOptions.mShowCollisionGeometry);
             ImGui::Checkbox("Show orientations", &mOpenGLRenderer.mDebugOptions.mShowOrientations);
             ImGui::Checkbox("Show bounding boxes", &mOpenGLRenderer.mDebugOptions.mShowBoundingBoxes);
 
