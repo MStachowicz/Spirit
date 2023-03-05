@@ -39,7 +39,7 @@
 namespace OpenGL
 {
     OpenGLRenderer::DebugOptions::DebugOptions(GLState& pGLState)
-        :  mShowLightPositions{false}
+        : mShowLightPositions{false}
         , mVisualiseNormals{false}
         , mForceClearColour{false}
         , mClearColour{0.f, 0.f, 0.f, 0.f}
@@ -60,7 +60,6 @@ namespace OpenGL
         , mTriangles{}
         , mTriangleVAO{}
         , mTriangleVBO{}
-        , mLinearDepthView{false}
         , mDepthViewerShader{"depthView", pGLState}
         , mVisualiseNormalShader{"visualiseNormal", pGLState}
     {}

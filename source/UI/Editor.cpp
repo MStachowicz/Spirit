@@ -358,7 +358,6 @@ namespace UI
 
                 ImGui::Checkbox("Show light positions", &mOpenGLRenderer.mDebugOptions.mShowLightPositions);
                 ImGui::Checkbox("Visualise normals", &mOpenGLRenderer.mDebugOptions.mVisualiseNormals);
-            ImGui::Checkbox("Visualise linear depth testing", &mOpenGLRenderer.mDebugOptions.mLinearDepthView);
 
             { // Depth options
                 ImGui::Checkbox("Force depth test type", &mOpenGLRenderer.mDebugOptions.mForceDepthTestType);
@@ -434,6 +433,23 @@ namespace UI
                     ImGui::ComboContainer("Forced front face type", mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType, frontFaceOrientationOptions );
                 }
                 if (!mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType) ImGui::EndDisabled();
+            }
+
+            if (ImGui::Button("Reset"))
+            {
+                mOpenGLRenderer.mDebugOptions.mShowLightPositions = false;
+                mOpenGLRenderer.mDebugOptions.mVisualiseNormals = false;
+                mOpenGLRenderer.mDebugOptions.mForceClearColour = false;
+                mOpenGLRenderer.mDebugOptions.mClearColour = glm::vec4(0.f, 0.f, 0.f, 0.f);
+                mOpenGLRenderer.mDebugOptions.mForceDepthTestType = false;
+                mOpenGLRenderer.mDebugOptions.mForcedDepthTestType = GLType::DepthTestType::Less;
+                mOpenGLRenderer.mDebugOptions.mForceBlendType = false;
+                mOpenGLRenderer.mDebugOptions.mForcedSourceBlendType = GLType::BlendFactorType::SourceAlpha;
+                mOpenGLRenderer.mDebugOptions.mForcedDestinationBlendType = GLType::BlendFactorType::OneMinusSourceAlpha;
+                mOpenGLRenderer.mDebugOptions.mForceCullFacesType = false;
+                mOpenGLRenderer.mDebugOptions.mForcedCullFacesType = GLType::CullFacesType::Back;
+                mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType = false;
+                mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType = GLType::FrontFaceOrientation::CounterClockwise;
             }
 
                 // TODO: Draw depth buffer in a box #45

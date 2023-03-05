@@ -89,9 +89,6 @@ namespace OpenGL
             VAO mTriangleVAO;
             VBO mTriangleVBO;
 
-            // By default, OpenGL projection uses non-linear depth values (they have a very high precision for small z-values and a low precision for large z-values).
-            // By setting this to true, BufferDrawType::Depth will visualise the values in a linear fashion from mZNearPlane to mZFarPlane.
-            bool mLinearDepthView;
             Shader mDepthViewerShader;
             Shader mVisualiseNormalShader;
         };
