@@ -108,7 +108,73 @@ namespace Test
 
     void GeometryTester::runTriangleTests()
     {
-        auto control = Geometry::Triangle(glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, -1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f));
+        const auto control = Geometry::Triangle(glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, -1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f));
+
+        { // Transform tests
+            { // Identity
+                auto transform = glm::identity<glm::mat4>();
+                auto t1 = control;
+                t1.transform(transform);
+                runUnitTest({t1 == control, "Triangle - Transform - Identity", "Expected identity transform matrix to not change triangle"});
+            }
+            { // Transform - Translate
+                auto transformed = control;
+                const glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), glm::vec3(3.f, 0.f, 0.f)); // Keep translating right
+
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(3.f, 1.f, 0.f), glm::vec3(4.f, -1.f, 0.f), glm::vec3(2.f, -1.f, 0.f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 1", "Not matching expected result"});
+                }
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(6.f, 1.f, 0.f), glm::vec3(7.f, -1.f, 0.f), glm::vec3(5.f, -1.f, 0.f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 2", "Not matching expected result"});
+                }
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(9.f, 1.f, 0.f), glm::vec3(10.f, -1.f, 0.f), glm::vec3(8.f, -1.f, 0.f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 3", "Not matching expected result"});
+                }
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(12.f, 1.f, 0.f), glm::vec3(13.f, -1.f, 0.f), glm::vec3(11.f, -1.f, 0.f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 4", "Not matching expected result"});
+                }
+            }
+            { // Transform - Rotate
+                auto transformed = control;
+                const glm::mat4 transform = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(0.f, -0.33333337f, 1.3333334f), glm::vec3(0.99999994f, -0.3333333f, -0.6666666f), glm::vec3(-0.99999994f, -0.3333333f, -0.6666666f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 1", "Not matching expected result"});
+                }
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(0.f, -1.6666667f, -5.9604645e-08f), glm::vec3(0.9999999f, 0.3333333f, 8.940697e-08f), glm::vec3(-0.9999999f, 0.3333333f, 8.940697e-08f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 2", "Not matching expected result"});
+                }
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(0.f, -0.33333325f, -1.3333333f), glm::vec3(0.9999998f, -0.33333346f, 0.66666675f), glm::vec3(-0.9999998f, -0.33333346f, 0.66666675f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 3", "Not matching expected result"});
+                }
+                {
+                    transformed.transform(transform);
+                    auto expected = Geometry::Triangle(glm::vec3(0.f, 0.9999999f, 2.9802322e-07f), glm::vec3(0.99999976f, -1.0000001f, 0.f), glm::vec3(-0.99999976f, -1.0000001f, 0.f));
+                    runUnitTest({transformed == expected, "Triangle - Transform - Translate right 4", "Not matching expected result"});
+                }
+            }
+
+            { // Transform - Scale
+                //transform = glm::scale(transform, glm::vec3(2.0f));
+            }
+            { // Transform - Combined
+
+            }
+        }
 
         {// No Collision / Coplanar
             auto t1 = Geometry::Triangle(glm::vec3(0.f, 3.5f, 0.f), glm::vec3(1.f, 1.5f, 0.f), glm::vec3(-1.f, 1.5f, 0.f));

@@ -84,13 +84,14 @@ namespace OpenGL
 
             std::vector<Geometry::Cylinder> mCylinders;
             std::vector<Geometry::Sphere> mSpheres;
-            // Debug triangles are drawn directly from a buffer since they are GL primtives. Thus they are added and removed by addDebugTriangle and clearDebugTriangles.
-            std::vector<glm::vec3> mTriangles;
-            VAO mTriangleVAO;
-            VBO mTriangleVBO;
 
             Shader mDepthViewerShader;
             Shader mVisualiseNormalShader;
+
+            Shader mCollisionGeometryShader;
+            std::vector<glm::vec3> mDebugPoints;
+            VAO mDebugPointsVAO;
+            VBO mDebugPointsVBO;
         };
         struct PostProcessingOptions
         {
@@ -130,12 +131,10 @@ namespace OpenGL
     public:
         ViewInformation mViewInformation;
         PostProcessingOptions mPostProcessingOptions;
+
         DebugOptions mDebugOptions;
-        void addDebugTriangle(const Geometry::Triangle& pTriangle);
-        void clearDebugTriangles();
         void showGraphicsOptions();
         void showPhysicsOptions();
-
 
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
         OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);

@@ -26,13 +26,9 @@ namespace Geometry
 
     void Triangle::transform(const glm::mat4& pTransformation)
     {
-        // First calculates the centroid of the triangle. Then transforms each point of the triangle relative to the centroid by first subtracting the centroid
-        // from the point, applying the transformation matrix to the resulting vector, and then adding the centroid back to the result.
-        glm::vec3 c = centroid();
-
-        mPoint1 = glm::vec3(pTransformation * glm::vec4(mPoint1 - c, 1.f)) + c;
-        mPoint2 = glm::vec3(pTransformation * glm::vec4(mPoint2 - c, 1.f)) + c;
-        mPoint3 = glm::vec3(pTransformation * glm::vec4(mPoint3 - c, 1.f)) + c;
+        mPoint1 = glm::vec3(pTransformation * glm::vec4(mPoint1, 1.f));
+        mPoint2 = glm::vec3(pTransformation * glm::vec4(mPoint2, 1.f));
+        mPoint3 = glm::vec3(pTransformation * glm::vec4(mPoint3, 1.f));
     }
 
     void Triangle::translate(const glm::vec3& pTranslation)

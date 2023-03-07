@@ -129,6 +129,15 @@ namespace UI
         , mDrawCount{0}
     {
         Platform::Core::mMouseButtonEvent.subscribe(this, &Editor::onMousePressed);
+
+        auto writeTriangleConstructor = [](const Geometry::Triangle& pTriangle)
+        {
+            auto constructor = std::format("Geometry::Triangle(glm::vec3({}f, {}f, {}f), glm::vec3({}f, {}f, {}f), glm::vec3({}f, {}f, {}f))"
+            , pTriangle.mPoint1.x, pTriangle.mPoint1.y, pTriangle.mPoint1.z
+            , pTriangle.mPoint2.x, pTriangle.mPoint2.y, pTriangle.mPoint2.z
+            , pTriangle.mPoint3.x, pTriangle.mPoint3.y, pTriangle.mPoint3.z);
+            std::cout << constructor << std::endl;
+        };
     }
 
     void Editor::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)
@@ -318,36 +327,36 @@ namespace UI
     {
         if (ImGui::Begin("Graphics", &mWindowsToDisplay.Graphics))
         {
-                auto& window         = Platform::Core::getWindow();
-                auto [width, height] = window.size();
+            auto& window         = Platform::Core::getWindow();
+            auto [width, height] = window.size();
 
-                ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
-                ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
-                ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
-                ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
-                ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
-                ImGui::SliderFloat("Z far plane", &mOpenGLRenderer.mViewInformation.mZFarPlane, 15.f, 300.f);
-                ImGui::Separator();
+            ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
+            ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
+            ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
+            ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
+            ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
+            ImGui::SliderFloat("Z far plane", &mOpenGLRenderer.mViewInformation.mZFarPlane, 15.f, 300.f);
+            ImGui::Separator();
 
-                if (ImGui::TreeNode("PostProcessing"))
-                {
-                    ImGui::Checkbox("Invert", &mOpenGLRenderer.mPostProcessingOptions.mInvertColours);
-                    ImGui::Checkbox("Grayscale", &mOpenGLRenderer.mPostProcessingOptions.mGrayScale);
-                    ImGui::Checkbox("Sharpen", &mOpenGLRenderer.mPostProcessingOptions.mSharpen);
-                    ImGui::Checkbox("Blur", &mOpenGLRenderer.mPostProcessingOptions.mBlur);
-                    ImGui::Checkbox("Edge detection", &mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection);
+            if (ImGui::TreeNode("PostProcessing"))
+            {
+                ImGui::Checkbox("Invert", &mOpenGLRenderer.mPostProcessingOptions.mInvertColours);
+                ImGui::Checkbox("Grayscale", &mOpenGLRenderer.mPostProcessingOptions.mGrayScale);
+                ImGui::Checkbox("Sharpen", &mOpenGLRenderer.mPostProcessingOptions.mSharpen);
+                ImGui::Checkbox("Blur", &mOpenGLRenderer.mPostProcessingOptions.mBlur);
+                ImGui::Checkbox("Edge detection", &mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection);
 
-                    const bool isPostProcessingOn = mOpenGLRenderer.mPostProcessingOptions.mInvertColours
-                        || mOpenGLRenderer.mPostProcessingOptions.mGrayScale || mOpenGLRenderer.mPostProcessingOptions.mSharpen
-                        || mOpenGLRenderer.mPostProcessingOptions.mBlur      || mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection;
+                const bool isPostProcessingOn = mOpenGLRenderer.mPostProcessingOptions.mInvertColours
+                    || mOpenGLRenderer.mPostProcessingOptions.mGrayScale || mOpenGLRenderer.mPostProcessingOptions.mSharpen
+                    || mOpenGLRenderer.mPostProcessingOptions.mBlur      || mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection;
 
-                    if (!isPostProcessingOn) ImGui::BeginDisabled();
-                       ImGui::SliderFloat("Kernel offset", &mOpenGLRenderer.mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
-                    if (!isPostProcessingOn) ImGui::EndDisabled();
+                if (!isPostProcessingOn) ImGui::BeginDisabled();
+                    ImGui::SliderFloat("Kernel offset", &mOpenGLRenderer.mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
+                if (!isPostProcessingOn) ImGui::EndDisabled();
 
-                    ImGui::TreePop();
-                }
-                ImGui::Separator();
+                ImGui::TreePop();
+            }
+            ImGui::Separator();
 
             ImGui::Checkbox("Force clear colour", &mOpenGLRenderer.mDebugOptions.mForceClearColour);
             if (!mOpenGLRenderer.mDebugOptions.mForceClearColour) ImGui::BeginDisabled();
@@ -356,8 +365,8 @@ namespace UI
             }
             if (!mOpenGLRenderer.mDebugOptions.mForceClearColour) ImGui::EndDisabled();
 
-                ImGui::Checkbox("Show light positions", &mOpenGLRenderer.mDebugOptions.mShowLightPositions);
-                ImGui::Checkbox("Visualise normals", &mOpenGLRenderer.mDebugOptions.mVisualiseNormals);
+            ImGui::Checkbox("Show light positions", &mOpenGLRenderer.mDebugOptions.mShowLightPositions);
+            ImGui::Checkbox("Visualise normals", &mOpenGLRenderer.mDebugOptions.mVisualiseNormals);
 
             { // Depth options
                 ImGui::Checkbox("Force depth test type", &mOpenGLRenderer.mDebugOptions.mForceDepthTestType);
@@ -452,8 +461,8 @@ namespace UI
                 mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType = GLType::FrontFaceOrientation::CounterClockwise;
             }
 
-                // TODO: Draw depth buffer in a box #45
-                //mBufferDrawType = static_cast<BufferDrawType>(i);
+            // TODO: Draw depth buffer in a box #45
+            //mBufferDrawType = static_cast<BufferDrawType>(i);
         }
         ImGui::End();
     }

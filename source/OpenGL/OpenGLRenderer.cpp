@@ -43,7 +43,7 @@ namespace OpenGL
         , mVisualiseNormals{false}
         , mForceClearColour{false}
         , mClearColour{0.f, 0.f, 0.f, 0.f}
-        , mForceDepthTestType{false}
+        , mForceDepthTestType{true}
         , mForcedDepthTestType{GLType::DepthTestType::Less}
         , mForceBlendType{false}
         , mForcedSourceBlendType{GLType::BlendFactorType::SourceAlpha}
@@ -55,14 +55,15 @@ namespace OpenGL
         , mShowOrientations{false}
         , mShowBoundingBoxes{false}
         , mFillBoundingBoxes{false}
-        , mShowCollisionGeometry{false}
+        , mShowCollisionGeometry{true}
         , mCylinders{}
         , mSpheres{}
-        , mTriangles{}
-        , mTriangleVAO{}
-        , mTriangleVBO{}
         , mDepthViewerShader{"depthView", pGLState}
         , mVisualiseNormalShader{"visualiseNormal", pGLState}
+        , mCollisionGeometryShader{"collisionGeometry", pGLState}
+        , mDebugPoints{}
+        , mDebugPointsVAO{}
+        , mDebugPointsVBO{}
     {}
     OpenGLRenderer::ViewInformation::ViewInformation()
         : mViewMatrix{glm::identity<glm::mat4>()}
@@ -326,45 +327,47 @@ namespace OpenGL
         draw(*mMeshSystem.mSpherePrimitive);
     }
 
-    void OpenGLRenderer::addDebugTriangle(const Geometry::Triangle& pTriangle)
-    {
-        LOG_INFO("Adding debug triangle: ({}, {}, {})", glm::to_string(pTriangle.mPoint1), glm::to_string(pTriangle.mPoint2), glm::to_string(pTriangle.mPoint3));
-        mDebugOptions.mTriangles.insert(mDebugOptions.mTriangles.end(), {pTriangle.mPoint1, pTriangle.mPoint2, pTriangle.mPoint3});
-        mDebugOptions.mTriangleVAO.bind();
-
-        mDebugOptions.mTriangleVBO = VBO();
-        mDebugOptions.mTriangleVBO.bind();
-        mDebugOptions.mTriangleVBO.setData(mDebugOptions.mTriangles, Shader::Attribute::Position3D);
-    }
-    void OpenGLRenderer::clearDebugTriangles()
-    {
-        mDebugOptions.mTriangles.clear();
-        mDebugOptions.mTriangleVAO.bind();
-        mDebugOptions.mTriangleVBO.clear();
-    }
-
     void OpenGLRenderer::renderDebug()
     {
+        auto scene = mSceneSystem.getCurrentScene();
         mGLState.toggleCullFaces(true);
-        clearDebugTriangles(); // Clearing and rebuilding all debug triangles every frame.
 
-        mSceneSystem.getCurrentScene().foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh)
-        {
+        {// Render all the collision geometry by pushing all the mesh triangles transformed in world-space.
+            mDebugOptions.mDebugPoints.clear();
+            mDebugOptions.mDebugPointsVAO.bind();
+            mDebugOptions.mDebugPointsVBO.clear();
+
             if (mDebugOptions.mShowCollisionGeometry)
-            { // Render all the collision geometry by pushing all the mesh triangles transformed in world-space.
-                pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
+            {
+                mSceneSystem.getCurrentScene().foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh)
                 {
-                    for (auto triangle : pMesh.mTriangles)
-                    {
-                        triangle.transform(pTransform.mModel);
-                        addDebugTriangle(triangle);
-                    }
-                });
-            }
+                    mDebugOptions.mCollisionGeometryShader.use(mGLState);
 
-            if (mDebugOptions.mShowOrientations)
-                drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
-        });
+                    pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
+                    {
+                        for (auto triangle : pMesh.mTriangles)
+                        {
+                            triangle.transform(pTransform.mModel);
+                            mDebugOptions.mDebugPoints.insert(mDebugOptions.mDebugPoints.end(), {triangle.mPoint1, triangle.mPoint2, triangle.mPoint3});
+                        }
+                    });
+                });
+
+                if (!mDebugOptions.mDebugPoints.empty())
+                {
+                    mDebugOptions.mDebugPointsVAO.bind();
+                    mDebugOptions.mDebugPointsVBO = VBO();
+                    mDebugOptions.mDebugPointsVBO.bind();
+                    mDebugOptions.mDebugPointsVBO.setData(mDebugOptions.mDebugPoints, Shader::Attribute::Position3D);
+
+                    mGLState.toggleCullFaces(false); // Disable culling to show exact geometry
+                    mDebugOptions.mCollisionGeometryShader.setUniform(mGLState, "viewPosition", mViewInformation.mViewPosition);
+                    mDebugOptions.mCollisionGeometryShader.setUniform(mGLState, "colour", glm::vec4(0.f, 1.f, 0.f, 0.5f));
+                    mDebugOptions.mCollisionGeometryShader.setUniform(mGLState, "model", glm::mat4(1.f));
+                    mGLState.drawArrays(GLType::PrimitiveMode::Triangles, static_cast<int>(mDebugOptions.mDebugPoints.size()));
+                }
+            }
+        }
 
         if (mDebugOptions.mShowLightPositions)
         {
@@ -387,28 +390,26 @@ namespace OpenGL
                 drawCylinder(cylinder);
             for (const auto& sphere : mDebugOptions.mSpheres)
                 drawSphere(sphere);
-
-            if (!mDebugOptions.mTriangles.empty())
-            {
-                mGLState.toggleCullFaces(false); // Disable culling since triangles are flat 2D shapes
-                mUniformColourShader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
-                mUniformColourShader.setUniform(mGLState, "model", glm::mat4(1.f));
-                mDebugOptions.mTriangleVAO.bind();
-                mGLState.drawArrays(GLType::PrimitiveMode::Triangles, static_cast<int>(mDebugOptions.mTriangles.size()));
-            }
         }
 
         if (mDebugOptions.mShowBoundingBoxes)
         {
             mGLState.setPolygonMode(mDebugOptions.mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
             mUniformColourShader.use(mGLState);
-            auto scene = mSceneSystem.getCurrentScene();
 
             scene.foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh, Component::Collider& pCollider)
             {
                 mUniformColourShader.setUniform(mGLState, "model", pCollider.getWorldAABBModel());
                 mUniformColourShader.setUniform(mGLState, "colour", pCollider.mCollided ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 1.f, 0.f));
                 draw(*mMeshSystem.mCubePrimitive);
+            });
+        }
+
+        if (mDebugOptions.mShowOrientations)
+        {
+            scene.foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh)
+            {
+                drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
             });
         }
     }
