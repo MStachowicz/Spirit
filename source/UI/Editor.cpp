@@ -114,6 +114,118 @@ namespace ImGui
         ).c_str());
     }
 
+    // This console is based on the ImGui.h example widget "Log".
+    // The defitinition is cpp only to avoid #including ImGui headers in the Editor.hpp.
+    class Console
+    {
+        ImGuiTextBuffer mBuffer;
+        ImGuiTextFilter mFilter;
+        ImVector<int> mLineOffsets; // Index to lines offset. We maintain this with AddLog() calls.
+        bool mAutoScroll;           // Keep scrolling if already at the bottom.
+
+    public:
+        Console()
+            : mBuffer{}
+            , mFilter{}
+            , mLineOffsets{}
+            , mAutoScroll{true}
+        {
+            Clear();
+        }
+
+        void Clear()
+        {
+            mBuffer.clear();
+            mLineOffsets.clear();
+            mLineOffsets.push_back(0);
+        }
+
+        void AddLog(const char* fmt, ...) IM_FMTARGS(2)
+        {
+            int old_size = mBuffer.size();
+            va_list args;
+            va_start(args, fmt);
+            mBuffer.appendfv(fmt, args);
+            va_end(args);
+            for (int new_size = mBuffer.size(); old_size < new_size; old_size++)
+                if (mBuffer[old_size] == '\n')
+                    mLineOffsets.push_back(old_size + 1);
+        }
+
+        void Draw(const char* title, bool* p_open = NULL)
+        {
+            if (!ImGui::Begin(title, p_open))
+            {
+                ImGui::End();
+                return;
+            }
+
+            { // Options menu
+                if (ImGui::BeginPopup("Options"))
+                {
+                    ImGui::Checkbox("Auto-scroll", &mAutoScroll);
+                    ImGui::EndPopup();
+                }
+                if (ImGui::Button("Options"))
+                    ImGui::OpenPopup("Options");
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Clear"))
+                Clear();
+
+            ImGui::SameLine();
+            if (ImGui::Button("Copy"))
+                ImGui::LogToClipboard();
+
+            ImGui::SameLine();
+            mFilter.Draw("mFilter", -100.0f);
+
+            ImGui::Separator();
+            ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            const char* buf     = mBuffer.begin();
+            const char* buf_end = mBuffer.end();
+
+            if (mFilter.IsActive())
+            {
+                // In this example we don't use the clipper when mFilter is enabled.
+                // This is because we don't have a random access on the result on our filter.
+                // A real application processing logs with ten of thousands of entries may want to store the result of
+                // search/filter.. especially if the filtering function is not trivial (e.g. reg-exp).
+                for (int line_no = 0; line_no < mLineOffsets.Size; line_no++)
+                {
+                    const char* line_start = buf + mLineOffsets[line_no];
+                    const char* line_end   = (line_no + 1 < mLineOffsets.Size) ? (buf + mLineOffsets[line_no + 1] - 1) : buf_end;
+                    if (mFilter.PassFilter(line_start, line_end))
+                        ImGui::TextUnformatted(line_start, line_end);
+                }
+            }
+            else
+            {
+                ImGuiListClipper clipper;
+                clipper.Begin(mLineOffsets.Size);
+                while (clipper.Step())
+                {
+                    for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
+                    {
+                        const char* line_start = buf + mLineOffsets[line_no];
+                        const char* line_end   = (line_no + 1 < mLineOffsets.Size) ? (buf + mLineOffsets[line_no + 1] - 1) : buf_end;
+                        ImGui::TextUnformatted(line_start, line_end);
+                    }
+                }
+                clipper.End();
+            }
+            ImGui::PopStyleVar();
+
+            if (mAutoScroll)// && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+                ImGui::SetScrollHereY(1.0f);
+
+            ImGui::EndChild();
+            ImGui::End();
+        }
+    };
 } // namespace ImGui
 
 namespace UI
@@ -191,6 +303,7 @@ namespace UI
             if (ImGui::BeginMenu("View"))
             {
                 ImGui::MenuItem("Entity hierarchy", NULL, &mWindowsToDisplay.Entity);
+                ImGui::MenuItem("Log", NULL, &mWindowsToDisplay.Log);
 
                 if (ImGui::BeginMenu("Debug"))
                 {
@@ -216,6 +329,7 @@ namespace UI
         }
 
         if (mWindowsToDisplay.Entity)           drawEntityTreeWindow();
+        if (mWindowsToDisplay.Log)              drawLog();
         if (mWindowsToDisplay.Performance)      drawPerformanceWindow();
         if (mWindowsToDisplay.Graphics)         drawGraphicsWindow();
         if (mWindowsToDisplay.Physics)          drawPhysicsWindow();
@@ -321,6 +435,12 @@ namespace UI
             });
         }
         ImGui::End();
+    }
+
+    void Editor::drawLog()
+    {
+        static auto console = ImGui::Console();
+        console.Draw("Console", &mWindowsToDisplay.Log);
     }
 
     void Editor::drawGraphicsWindow()

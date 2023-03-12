@@ -53,6 +53,7 @@ namespace UI
             bool ImGuiStack       = false;
             bool ImGuiAbout       = false;
             bool ImGuiStyleEditor = false;
+            bool Log              = false;
         };
 
         System::TextureSystem&   mTextureSystem;
@@ -77,5 +78,6 @@ namespace UI
         void drawGraphicsWindow();
         void drawPerformanceWindow();
         void drawPhysicsWindow();
+        void drawLog();
     };
 } // namespace UI
