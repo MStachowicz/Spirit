@@ -66,7 +66,7 @@ namespace Platform
                 break;
             case CursorMode::UNKNOWN:
             default:
-                LOG_ERROR("Could not convert cursor mode requested ({}) to GLFW cursor mode", pCursorMode);
+                LOG_ERROR("UNKNOWN cursor mode requested for input mode");
                 break;
         }
     }
@@ -321,7 +321,7 @@ namespace Platform
 
             case GLFW_KEY_UNKNOWN:
             default:
-                LOG_ERROR("Could not convert GLFW key ({}) to Key", pKeyInput);
+                LOG_ERROR("Could not convert GLFW key '{}' to Key", pKeyInput);
                 return Key::KEY_UNKNOWN;
         }
     }
@@ -338,7 +338,7 @@ namespace Platform
             case GLFW_MOUSE_BUTTON_7:      return MouseButton::MOUSE_BUTTON_4;
             case GLFW_MOUSE_BUTTON_8:      return MouseButton::MOUSE_BUTTON_5;
             default:
-                LOG_ERROR("Could not convert GLFW mouse button ({}) to MouseButton", pMouseButton);
+                LOG_ERROR("Could not convert GLFW mouse button '{}' to MouseButton", pMouseButton);
                 return MouseButton::MOUSE_UNKNOWN;
         }
     }
@@ -350,7 +350,7 @@ namespace Platform
             case GLFW_RELEASE: return Action::RELEASE;
             case GLFW_REPEAT:  return Action::REPEAT;
             default:
-                LOG_ERROR("Could not convert GLFW action ({}) to Action", pAction);
+                LOG_ERROR("Could not convert GLFW action '{}' to Action", pAction);
                 return Action::UNKNOWN;
         }
     }

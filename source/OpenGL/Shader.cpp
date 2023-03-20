@@ -216,7 +216,7 @@ namespace OpenGL
         else if (pAttribute == Attribute::TextureCoordinate2D)
             return "VertexTexCoord";
         else
-            ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", pAttribute);
+            ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", static_cast<unsigned int>(pAttribute));
         return "";
     }
 

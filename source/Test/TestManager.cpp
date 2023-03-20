@@ -22,7 +22,7 @@ namespace Test
         GeometryTester geometryTester;
         geometryTester.run(pRunPerformanceTests);
 
-        LOG("All Unit tests complete - Time taken: {}ms\n{}{}", stopwatch.getTime<std::milli, float>(), seperator);
+        LOG("All Unit tests complete - Time taken: {}\n{}", stopwatch.duration_since_start<float, std::milli>(), seperator);
     }
 
     UnitTest::UnitTest(const bool& pCondition, const std::string& pName, const std::string& pFailMessage) noexcept
@@ -92,8 +92,7 @@ namespace Test
             output += seperator;
         }
 
-
-        LOG(output);
+        LOG("{}", output);
     }
 
 } // namespace Test

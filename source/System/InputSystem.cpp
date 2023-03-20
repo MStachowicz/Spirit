@@ -54,7 +54,7 @@ namespace System
                 }
                     break;
                 default:
-                    LOG_WARN("Unknown mouse press {}", pMouseButton);
+                    LOG_WARN("Unknown mouse press");
                     break;
             }
         }
@@ -107,7 +107,7 @@ namespace System
                 break;
             case Platform::Key::KEY_UNKNOWN:
             default:
-                LOG_WARN("Unknown key press of value");
+                LOG_WARN("Unknown key press");
                 break;
         }
     }
