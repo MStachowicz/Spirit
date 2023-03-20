@@ -72,6 +72,10 @@ namespace UI
         Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
         void draw();
 
+        void log(const std::string& p_message);
+        void log_warning(const std::string& p_message);
+        void log_error(const std::string& p_message);
+
     private:
         void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
         void drawEntityTreeWindow();
