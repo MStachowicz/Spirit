@@ -145,7 +145,7 @@ namespace OpenGL
         if (geometryShader.has_value())
             pGLState.DeleteShader(geometryShader.value());
 
-        LOG_INFO("OpenGL::Shader '{}' loaded given ID: {}", mName, mHandle);
+        LOG("OpenGL::Shader '{}' loaded given ID: {}", mName, mHandle);
     }
 
     void Shader::scanForAttributes(const std::string& pSourceCode)

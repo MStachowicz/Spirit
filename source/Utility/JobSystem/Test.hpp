@@ -24,7 +24,7 @@ namespace JobSystem
             ~Timer()
             {
                 auto end = std::chrono::high_resolution_clock::now();
-                LOG_INFO("{}: took {} milliseconds to complete", mTestName, std::chrono::duration_cast<std::chrono::milliseconds>(end - mStartTime).count());
+                LOG("{}: took {} milliseconds to complete", mTestName, std::chrono::duration_cast<std::chrono::milliseconds>(end - mStartTime).count());
             }
         };
 
@@ -133,7 +133,7 @@ namespace JobSystem
 
         void run()
         {
-            LOG_INFO("--------------------------------------------Starting a Job System test");
+            LOG("--------------------------------------------Starting a Job System test");
 
             controlSpinTest(4);
             parallelSpinTest(12);
@@ -151,7 +151,7 @@ namespace JobSystem
             parallelDataTest(dataCount, 10);
             parallelDataTest(dataCount, 1);
 
-            LOG_INFO("--------------------------------------------Job System test complete");
+            LOG("--------------------------------------------Job System test complete");
         }
     }
 }

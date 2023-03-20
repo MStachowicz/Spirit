@@ -397,7 +397,7 @@ namespace UI
                             auto entityCollided = entitiesUnderMouse.front().first;
 
                             mSelectedEntities.push_back(entityCollided);
-                            LOG_INFO("Entity{} has been selected", entityCollided.ID);
+                            LOG("Entity{} has been selected", entityCollided.ID);
                             }
 
                             const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->getPosition(), mSceneSystem.getPrimaryCamera()->getPosition() + (cursorRay.mDirection * 1000.f), 0.02f);

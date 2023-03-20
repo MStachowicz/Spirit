@@ -25,12 +25,12 @@ namespace Data
 
         mGLTexture = OpenGL::Texture(*this);
 
-        LOG_INFO("Data::Texture '{}' loaded", mName);
+        LOG("Data::Texture '{}' loaded", mName);
     }
 
     Texture::~Texture()
     {
         stbi_image_free(mData);
-        LOG_INFO("Data::Texture '{}' destroyed", mName);
+        LOG("Data::Texture '{}' destroyed", mName);
     }
 }

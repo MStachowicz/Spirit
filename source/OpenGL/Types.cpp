@@ -17,7 +17,7 @@ namespace OpenGL
         : mHandle{0}
     {
         glGenVertexArrays(1, &mHandle);
-        if constexpr (LogGLTypeEvents) LOG_INFO("VAO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     VAO::~VAO() noexcept
     {
@@ -27,14 +27,14 @@ namespace OpenGL
         if (mHandle != 0)
             glDeleteVertexArrays(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VAO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     VAO::VAO(VAO&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
     { // Steal the handle of the other VAO and set it to 0 to prevent the pOther destructor calling glDeleteVertexArrays
         pOther.mHandle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VAO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     VAO& VAO::operator=(VAO&& pOther) noexcept
     {
@@ -50,7 +50,7 @@ namespace OpenGL
             pOther.mHandle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VAO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
     }
     void VAO::bind() const
@@ -65,21 +65,21 @@ namespace OpenGL
     {
         glGenBuffers(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("EBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     EBO::~EBO() noexcept
     {
         if (mHandle != 0)
             glDeleteBuffers(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("EBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     EBO::EBO(EBO&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
     {
         pOther.mHandle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("EBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     EBO& EBO::operator=(EBO&& pOther) noexcept
     {
@@ -95,7 +95,7 @@ namespace OpenGL
             pOther.mHandle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("EBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
     }
     void EBO::bind() const
@@ -115,14 +115,14 @@ namespace OpenGL
     {
         glGenBuffers(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VBO created with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO created with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     VBO::~VBO() noexcept
     {
         if (mHandle != 0)
             glDeleteBuffers(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     VBO::VBO(VBO&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
@@ -131,7 +131,7 @@ namespace OpenGL
         pOther.mHandle = 0;
         pOther.mSize = 0;
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     VBO& VBO::operator=(VBO&& pOther) noexcept
     {
@@ -149,7 +149,7 @@ namespace OpenGL
             pOther.mSize = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("VBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
     }
     void VBO::bind() const
@@ -203,20 +203,20 @@ namespace OpenGL
         if (mHandle != 0)
             glDeleteTextures(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("Texture destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     Texture::Texture()
         : mHandle{0}
     {
         glGenTextures(1, &mHandle);
-        if constexpr (LogGLTypeEvents) LOG_INFO("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     Texture::Texture(Texture&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
     {
         pOther.mHandle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("Texture move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     Texture& Texture::operator=(Texture&& pOther) noexcept
     {
@@ -232,7 +232,7 @@ namespace OpenGL
             pOther.mHandle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("Texture move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
     }
     Texture::Texture(const Data::Texture& pTextureData)
@@ -256,7 +256,7 @@ namespace OpenGL
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     void Texture::bind() const
     {
@@ -268,21 +268,21 @@ namespace OpenGL
     {
         glGenRenderbuffers(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("RBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     RBO::~RBO() noexcept
     {
         if (mHandle != 0)
             glDeleteRenderbuffers(1, &mHandle);
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("RBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     RBO::RBO(RBO&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
     {
         pOther.mHandle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("RBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     RBO& RBO::operator=(RBO&& pOther) noexcept
     {
@@ -298,7 +298,7 @@ namespace OpenGL
             pOther.mHandle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("RBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
     }
     void RBO::bind() const
@@ -315,7 +315,7 @@ namespace OpenGL
         , mBufferClearBitField{0}
     {
         glGenFramebuffers(1, &mHandle);
-        if constexpr (LogGLTypeEvents) LOG_INFO("FBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("FBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     FBO::~FBO() noexcept
     {
@@ -327,7 +327,7 @@ namespace OpenGL
         //if (mDepthAttachment.has_value() && mDepthAttachment->getHandle() != 0)
         //    glDeleteRenderbuffers(1, &mDepthAttachment->getHandle());
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("FBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("FBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
 
     FBO::FBO(FBO&& pOther) noexcept
@@ -337,7 +337,7 @@ namespace OpenGL
         , mBufferClearBitField{std::move(pOther.mBufferClearBitField)}
     {
         pOther.mHandle = 0;
-        if constexpr (LogGLTypeEvents) LOG_INFO("FBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("FBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     FBO& FBO::operator=(FBO&& pOther) noexcept
     {
@@ -353,7 +353,7 @@ namespace OpenGL
             pOther.mHandle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("FBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("FBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
     }
 
@@ -472,7 +472,7 @@ namespace OpenGL
         , mEBO{std::move(pOther.mEBO)}
         , mDrawSize{std::move(pOther.mDrawSize)}
     {
-        if constexpr (LogGLTypeEvents) LOG_INFO("OpenGL::Mesh move-constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh move-constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
     }
     Mesh& Mesh::operator=(Mesh&& pOther) noexcept
     {
@@ -486,7 +486,7 @@ namespace OpenGL
             mDrawSize                 = std::move(pOther.mDrawSize);
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("OpenGL::Mesh move-assigned with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh move-assigned with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
         return *this;
     }
 
@@ -529,6 +529,6 @@ namespace OpenGL
             mVertexTextureCoordinates->setData(pMeshData.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
         }
 
-        if constexpr (LogGLTypeEvents) LOG_INFO("OpenGL::Mesh constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
     }
 }

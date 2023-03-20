@@ -13,7 +13,7 @@ namespace Test
 
     void runUnitTests(const bool& pRunPerformanceTests)
     {
-        LOG_INFO("{} Starting Unit tests", seperator);
+        LOG("{} Starting Unit tests", seperator);
         Utility::Stopwatch stopwatch;
 
         ECSTester tester;
@@ -22,7 +22,7 @@ namespace Test
         GeometryTester geometryTester;
         geometryTester.run(pRunPerformanceTests);
 
-        LOG_INFO("All Unit tests complete - Time taken: {}ms\n{}{}", stopwatch.getTime<std::milli, float>(), seperator);
+        LOG("All Unit tests complete - Time taken: {}ms\n{}{}", stopwatch.getTime<std::milli, float>(), seperator);
     }
 
     UnitTest::UnitTest(const bool& pCondition, const std::string& pName, const std::string& pFailMessage) noexcept
@@ -93,7 +93,7 @@ namespace Test
         }
 
 
-        LOG_INFO(output);
+        LOG(output);
     }
 
 } // namespace Test

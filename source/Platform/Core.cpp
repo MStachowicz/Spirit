@@ -31,7 +31,7 @@ namespace Platform
         glfwSetWindowUserPointer(mHandle, this);
         glfwMakeContextCurrent(mHandle);
         glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        LOG_INFO("Created GLFW Window with resolution {}x{}",mWidth, mHeight);
+        LOG("Created GLFW Window with resolution {}x{}",mWidth, mHeight);
     }
     void Window::requestClose()
     {
@@ -40,7 +40,7 @@ namespace Platform
     Window::~Window()
     {
         glfwDestroyWindow(mHandle);
-        LOG_INFO("Destroyed GLFW Window");
+        LOG("Destroyed GLFW Window");
     }
 
     void Window::setInputMode(const CursorMode& pCursorMode)
@@ -116,11 +116,11 @@ namespace Platform
             mOpenGLContext = (GladGLContext*)malloc(sizeof(GladGLContext));
             int version    = gladLoadGLContext(mOpenGLContext, glfwGetProcAddress);
             ASSERT(mOpenGLContext && version != 0, "Failed to initialise GLAD OpenGL");
-            LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+            LOG("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
         }
 
-        LOG_INFO("OpenGL {}.{} context created", OpenGLMajorVersion, OpenGLMinorVersion);
-        LOG_INFO("Core initialised");
+        LOG("OpenGL {}.{} context created", OpenGLMajorVersion, OpenGLMinorVersion);
+        LOG("Core initialised");
     }
     void Core::cleanup()
     {
@@ -137,7 +137,7 @@ namespace Platform
 
         free(mOpenGLContext);
 
-        LOG_INFO("Core cleanup");
+        LOG("Core cleanup");
     }
 
     void Core::pollEvents()

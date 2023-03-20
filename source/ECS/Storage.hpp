@@ -44,7 +44,7 @@ namespace ECS
         {
             typedef typename std::decay_t<ComponentType> DecayedComponentType;
 
-            //LOG_INFO("ECS: Component '{}' ECS::ComponentID: {}",  std::type_index(typeid(DecayedComponentType)).name(), perComponentTypeID<DecayedComponentType>);
+            //LOG("ECS: Component '{}' ECS::ComponentID: {}",  std::type_index(typeid(DecayedComponentType)).name(), perComponentTypeID<DecayedComponentType>);
             return perComponentTypeID<DecayedComponentType>;
         }
     };
@@ -178,7 +178,7 @@ namespace ECS
                     }
                     componentLayout += '|';
                 }
-                //LOG_INFO("ECS: New Archetype created out of component combination ({}). Memory layout: {}", components, componentLayout);
+                //LOG("ECS: New Archetype created out of component combination ({}). Memory layout: {}", components, componentLayout);
             }
 
             // Search the mComponentLayout vector for the ComponentType and return its ComponentLayout.

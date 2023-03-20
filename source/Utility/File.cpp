@@ -25,16 +25,16 @@ namespace Utility
         ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string());
 
         rootDirectory = executablePath.string().substr(0, found + 6); // offset substr by length of "Zephyr"
-        LOG_INFO("Root directory initialised to '{}'", rootDirectory.string());
+        LOG("Root directory initialised to '{}'", rootDirectory.string());
 
         GLSLShaderDirectory = std::filesystem::path(rootDirectory / "source" / "OpenGL" / "GLSL");
-        LOG_INFO("Shader directory initialised to '{}'", GLSLShaderDirectory.string());
+        LOG("Shader directory initialised to '{}'", GLSLShaderDirectory.string());
 
         textureDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Textures");
-        LOG_INFO("Texture directory initialised to '{}'", textureDirectory.string());
+        LOG("Texture directory initialised to '{}'", textureDirectory.string());
 
         modelDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Models");
-        LOG_INFO("Model directory initialised to '{}'", modelDirectory.string());
+        LOG("Model directory initialised to '{}'", modelDirectory.string());
     };
 
     std::string File::readFromFile(const std::filesystem::path& pPath)

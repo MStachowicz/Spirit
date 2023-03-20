@@ -11,7 +11,7 @@ namespace Test
         : mID(instanceID++)
     {
         if constexpr (verbose)
-            LOG_INFO("Constructing {}", toString());
+            LOG("Constructing {}", toString());
 
         if (mMemoryInitializationToken == 0x2c1dd27f0d59cf3e && mStatus != MemoryStatus::Deleted)
         {
@@ -26,7 +26,7 @@ namespace Test
     MemoryCorrectnessItem::~MemoryCorrectnessItem()
     {
         if constexpr (verbose)
-            LOG_INFO("Deleting {}", toString());
+            LOG("Deleting {}", toString());
 
         if (mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
@@ -47,7 +47,7 @@ namespace Test
         : mID(instanceID++)
     {
         if constexpr (verbose)
-            LOG_INFO("Copy constructing {} from {}", toString(), pOther.toString());
+            LOG("Copy constructing {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
@@ -80,7 +80,7 @@ namespace Test
         : mID(instanceID++)
     {
         if constexpr (verbose)
-            LOG_INFO("Move constructing {} from {}", toString(), pOther.toString());
+            LOG("Move constructing {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
@@ -113,7 +113,7 @@ namespace Test
     MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(const MemoryCorrectnessItem& pOther)
     {
         if constexpr (verbose)
-            LOG_INFO("Copy assigning {} from {}", toString(), pOther.toString());
+            LOG("Copy assigning {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
@@ -144,7 +144,7 @@ namespace Test
     MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(MemoryCorrectnessItem&& pOther)
     {
         if constexpr (verbose)
-            LOG_INFO("Move assigning {} from {}", toString(), pOther.toString());
+            LOG("Move assigning {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
         {
@@ -203,6 +203,6 @@ namespace Test
         errorCount         = 0;
 
         if constexpr (verbose)
-            LOG_INFO("RESET MemoryCorrectnessItem");
+            LOG("RESET MemoryCorrectnessItem");
     }
 } // namespace Test

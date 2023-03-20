@@ -74,7 +74,7 @@ namespace JobSystem
 
 		auto numCores = std::thread::hardware_concurrency(); // Number of hardware threads in this system
 		mThreads = std::max(1u, numCores); // Actual number of worker threads we want
-		LOG_INFO("Job System found {} available cores and {} threads for hardware", numCores, mThreads);
+		LOG("Job System found {} available cores and {} threads for hardware", numCores, mThreads);
 
 		// Create all our worker threads while immediately starting them:
 		for (uint32_t threadID = 0; threadID < mThreads; ++threadID)
@@ -168,7 +168,7 @@ namespace JobSystem
 		// Calculate the amount of job groups to dispatch (overestimate, or "ceil")
 		const uint32_t groupCount = (pJobCount + pGroupSize - 1) / pGroupSize;
 		// The main thread label state is updated
-		mCurrentLabel += groupCount; 
+		mCurrentLabel += groupCount;
 
 		for (uint32_t groupIndex = 0; groupIndex < groupCount; ++groupIndex)
 		{

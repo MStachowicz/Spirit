@@ -64,10 +64,10 @@ private:
     {
         auto physicsTimestep = std::chrono::duration<Clock::rep, std::ratio<1, pPhysicsTicksPerSecond>>{1};
 
-        LOG_INFO("Physics ticks per second: {}" , pPhysicsTicksPerSecond);
-        LOG_INFO("Physics fixed timestep: {}ms" , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count());
-        LOG_INFO("Renderer FPS: {}"             , mRendersPerSecond);
-        LOG_INFO("Render timestep: {}ms"        , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(mRenderTimestep).count());
+        LOG("Physics ticks per second: {}" , pPhysicsTicksPerSecond);
+        LOG("Physics fixed timestep: {}ms" , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count());
+        LOG("Renderer FPS: {}"             , mRendersPerSecond);
+        LOG("Render timestep: {}ms"        , std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(mRenderTimestep).count());
 
         // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both
         // a Clock::duration and 1/60 of a second. Time-based arithmetic will have no truncation error, or any round-off error
@@ -140,12 +140,12 @@ private:
         const double renderFPS = static_cast<double>(mEditor.mDrawCount) / totalTimeSeconds;
         const double physicsFPS = static_cast<double>(mPhysicsSystem.mUpdateCount) / totalTimeSeconds;
 
-        LOG_INFO("------------------------------------------------------------------------");
-        LOG_INFO("Total simulation time: {}s", totalTimeSeconds);
-        LOG_INFO("Total physics updates: {}", mPhysicsSystem.mUpdateCount);
-        LOG_INFO("Averaged physics updates per second: {}/s", physicsFPS);
-        LOG_INFO("Total rendered frames: {}", mEditor.mDrawCount);
-        LOG_INFO("Averaged render frames per second: {}/s", renderFPS);
+        LOG("------------------------------------------------------------------------");
+        LOG("Total simulation time: {}s", totalTimeSeconds);
+        LOG("Total physics updates: {}", mPhysicsSystem.mUpdateCount);
+        LOG("Averaged physics updates per second: {}/s", physicsFPS);
+        LOG("Total rendered frames: {}", mEditor.mDrawCount);
+        LOG("Averaged render frames per second: {}/s", renderFPS);
     }
 };
 
@@ -160,12 +160,12 @@ int main(int argc, char *argv[])
 
     Test::runUnitTests(false);
 
-    LOG_INFO("Number of arguments passed on launch: {}", argc);
+    LOG("Number of arguments passed on launch: {}", argc);
     for (int index{}; index != argc; ++index)
-        LOG_INFO("Argument {}: {}", index + 1, argv[index]);
+        LOG("Argument {}: {}", index + 1, argv[index]);
 
     Application app;
-    LOG_INFO("Zephyr initialisation took {0:.3f}ms", stopwatch.getTime<std::ratio<1>, float>());
+    LOG("Zephyr initialisation took {0:.3f}ms", stopwatch.getTime<std::ratio<1>, float>());
 
     app.simulationLoop();
 

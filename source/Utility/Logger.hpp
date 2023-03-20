@@ -16,7 +16,7 @@ public:
 
 #ifndef ZEPHYR_CONFIG_RELEASE
 // Logging macros
-#define LOG_INFO(...)       Logger::GetLogger()->info(__VA_ARGS__)
+#define LOG(...)       Logger::GetLogger()->info(__VA_ARGS__)
 #define LOG_WARN(...)       Logger::GetLogger()->warn(__VA_ARGS__)
 #define LOG_ERROR(...)      Logger::GetLogger()->error(__VA_ARGS__)
 
@@ -37,7 +37,7 @@ void ZephyrAssertImplementation(const std::string& pCondition, const char* pFile
 
 #else
 // Disable logging for release builds
-#define LOG_INFO(...)              (void)0
+#define LOG(...)              (void)0
 #define LOG_WARN(...)              (void)0
 #define LOG_ERROR(...)             (void)0
 #define ASSERT(x, ...)      (void)0

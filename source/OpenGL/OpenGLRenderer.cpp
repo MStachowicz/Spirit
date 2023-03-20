@@ -97,7 +97,7 @@ namespace OpenGL
         mScreenFramebuffer.attachDepthBuffer(width, height);
         mGLState.setViewport(width, height);
 
-        LOG_INFO("Constructed new OpenGLRenderer instance");
+        LOG("Constructed new OpenGLRenderer instance");
     }
 
     void OpenGLRenderer::draw(const Data::Model& pModel)
