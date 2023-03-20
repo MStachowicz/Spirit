@@ -212,6 +212,7 @@ PRIVATE source/External/spdlog/include
 )
 target_link_libraries(Utility
 PUBLIC spdlog # Logger.hpp uses spdlog in the header.
+PRIVATE UI
 )
 # Utility end ---------------------------------------------------------------------------------
 

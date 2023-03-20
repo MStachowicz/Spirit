@@ -1,45 +1,43 @@
 #pragma once
 
-#include "spdlog/spdlog.h"
-#include "stdexcept"
+#include <string>
+#include <format>
+#include <source_location>
 
-// Static logger using spdlog via macros
-class Logger
+namespace UI
 {
-    static std::shared_ptr<spdlog::logger> sLogger;
-    static constexpr bool LogToConsole = true;
-    static constexpr bool LogToEditor  = true;
-public:
-    static void initialise();
-    inline static std::shared_ptr<spdlog::logger>& GetLogger() { return sLogger; }
-};
-
-#ifndef ZEPHYR_CONFIG_RELEASE
-// Logging macros
-#define LOG(...)       Logger::GetLogger()->info(__VA_ARGS__)
-#define LOG_WARN(...)       Logger::GetLogger()->warn(__VA_ARGS__)
-#define LOG_ERROR(...)      Logger::GetLogger()->error(__VA_ARGS__)
-
-#define ASSERT(x, ...) if ((x)) {} else { ZephyrAssertImplementation(#x, __FILE__, __LINE__, __VA_ARGS__); }
-
-template <typename ...Args>
-void ZephyrAssertImplementation(const std::string& pCondition, const char* pFile, const int& pLine, Args&& ...pArgs)
-{
-    // Parses all the params and outputs them via SPDLOG
-    // #C++20 - Migrate the fmt::format to std::format
-    //        - use std::source_location (non-macro function name)
-    // Once migrated to std::format, additional std types get formatting e.g. std::filesystem::path
-    // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1636r0.pdf
-    const std::string message = fmt::format(std::forward<Args>(pArgs)...);
-    Logger::GetLogger()->critical(fmt::format("ASSERT FAILED\nMESSAGE:   {}\nCONDITION: {}\nFILE: {}:{}", message, pCondition, pFile, pLine));
-    throw std::logic_error(message);
+    class Editor;
 }
 
-#else
-// Disable logging for release builds
-#define LOG(...)              (void)0
-#define LOG_WARN(...)              (void)0
-#define LOG_ERROR(...)             (void)0
-#define ASSERT(x, ...)      (void)0
+class Logger
+{
+public:
+    void log_info(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+    void log_warning(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+    void log_error(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+    void assert_fail(const std::string& p_conditional, const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+    UI::Editor* m_editor_sink; // If pointing to an Editor && s_log_to_editor is true, the editor will output the Log message to its console.
+private:
+    static constexpr bool s_log_to_file    = false;
+    static constexpr bool s_log_to_console = false;
+    static constexpr bool s_log_to_editor  = true;
 
+    static std::string to_string(const std::source_location& p_location);
+};
+static Logger s_logger; // Global instance of logger, prefer using macros to call Log functions (LOG, LOG_WARN, LOG_ERROR)
+
+// Logging is implemented via macros for two reasons.
+// 1. The syntax makes very clear the LOG is seperate to the functional code.
+// 2. It allows __VA_ARGS__ / parameter packs to be passed as the non-terminal parameter.
+//    This is required to make the defaulted source_location::current() param to be at the end.
+#ifndef RELEASE
+#define LOG(...)       s_logger.log_info(std::format(__VA_ARGS__),                  std::source_location::current());
+#define LOG_WARN(...)  s_logger.log_warning(std::format(__VA_ARGS__),               std::source_location::current());
+#define LOG_ERROR(...) s_logger.log_error(std::format(__VA_ARGS__),                 std::source_location::current());
+#define ASSERT(x, ...) if (!(x)) { s_logger.assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
+#else
+#define LOG(...)       (void)0
+#define LOG_WARN(...)  (void)0
+#define LOG_ERROR(...) (void)0
+#define ASSERT(x, ...) (void)0
 #endif

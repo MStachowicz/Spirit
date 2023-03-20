@@ -1,15 +1,68 @@
 #include "Logger.hpp"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/sinks/wincolor_sink.h"
 
-std::shared_ptr<spdlog::logger> Logger::sLogger;
+// UI
+#include "Editor.hpp"
 
-void Logger::initialise()
+// STD
+#include <iostream>
+#include <stdexcept>
+
+void Logger::log_info(const std::string& p_message, const std::source_location& p_location)
 {
-    auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    consoleSink->set_pattern("%^[%H:%M:%S.%e] %v%$");
+    const auto info_str = std::format("[INFO] {}\n{}", p_message, to_string(p_location));
 
-    sLogger = std::make_shared<spdlog::logger>("Zephyr Logger", consoleSink);
-    sLogger->set_level(spdlog::level::trace); // Trace is lowest level = output all log messages
-    sLogger->flush_on(spdlog::level::trace);
+    if constexpr (s_log_to_editor)
+    {
+        if (m_editor_sink)
+            m_editor_sink->log(info_str);
+    }
+
+    if constexpr (s_log_to_console)
+        std::cout << info_str << std::endl;
+
+    //if constexpr (s_log_to_file)
+        // TODO
+}
+void Logger::log_warning(const std::string& p_message, const std::source_location& p_location)
+{
+    const auto warn_str = std::format("[WARNING] {}\n{}", p_message, to_string(p_location));
+
+    if constexpr (s_log_to_editor)
+    {
+        if (m_editor_sink)
+            m_editor_sink->log_warning(warn_str);
+    }
+
+    if constexpr (s_log_to_console)
+        std::cout << warn_str << std::endl;
+
+    //if constexpr (s_log_to_file)
+        // TODO
+}
+void Logger::log_error(const std::string& p_message, const std::source_location& p_location)
+{
+    const auto error_str = std::format("[ERROR] {}\n{}", p_message, to_string(p_location));
+
+    if constexpr (s_log_to_editor)
+    {
+        if (m_editor_sink)
+            m_editor_sink->log_error(error_str);
+    }
+
+    if constexpr (s_log_to_console)
+        std::cout << error_str << std::endl;
+
+    //if constexpr (s_log_to_file)
+        // TODO
+}
+void Logger::assert_fail(const std::string& p_conditional, const std::string& p_message, const std::source_location& p_location)
+{
+    const auto assert_fail_str = std::format("ASSERT FAILED: '{}' - {}", p_conditional, p_message);
+    log_error(assert_fail_str, p_location);
+    throw std::logic_error(assert_fail_str);
+}
+
+std::string Logger::to_string(const std::source_location& p_location)
+{
+    return std::format("SOURCE: {} ({}:{})", p_location.function_name(), p_location.file_name(), p_location.line());
 }
