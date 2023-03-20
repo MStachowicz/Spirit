@@ -858,15 +858,15 @@ public:
 
            if (foundVariable != std::end(bindingPoint.mVariables))
            {
-               ZEPHYR_ASSERT(bindingPoint.mUBO == (*foundVariable).mBufferBacking , "Variable buffer backing doesnt match the binding point assigned to the parent UniformBlock. Check the RegisterUniformBlock function.");
-               ZEPHYR_ASSERT((*foundVariable).mBufferBacking != nullptr, "Setting a UniformBlockVariable with no Buffer backing.");
+               ASSERT(bindingPoint.mUBO == (*foundVariable).mBufferBacking , "Variable buffer backing doesnt match the binding point assigned to the parent UniformBlock. Check the RegisterUniformBlock function.");
+               ASSERT((*foundVariable).mBufferBacking != nullptr, "Setting a UniformBlockVariable with no Buffer backing.");
                bindingPoint.mUBO->Bind(*this);
                (*foundVariable).Set(*this, pValue);
                return;
            }
        }
 
-       ZEPHYR_ASSERT(false, "No uniform block variable found with name '{}'", pName);
+       ASSERT(false, "No uniform block variable found with name '{}'", pName);
     }
 
     // #GLHelperFunction
@@ -882,15 +882,15 @@ public:
 
            if (foundVariable != std::end(bindingPoint.mVariables))
            {
-               ZEPHYR_ASSERT(bindingPoint.mSSBO == (*foundVariable).mBufferBacking , "Variable buffer backing doesnt match the binding point assigned to the parent ShaderStorageBlock. Check the RegisterShaderStorageBlock function.");
-               ZEPHYR_ASSERT((*foundVariable).mBufferBacking != nullptr, "Setting a ShaderStorageBlockVariable with no Buffer backing.");
+               ASSERT(bindingPoint.mSSBO == (*foundVariable).mBufferBacking , "Variable buffer backing doesnt match the binding point assigned to the parent ShaderStorageBlock. Check the RegisterShaderStorageBlock function.");
+               ASSERT((*foundVariable).mBufferBacking != nullptr, "Setting a ShaderStorageBlockVariable with no Buffer backing.");
                bindingPoint.mSSBO->Bind(*this);
                (*foundVariable).Set(*this, pValue);
                return;
            }
        }
 
-       ZEPHYR_ASSERT(false, "No shader storage block variable found with name '{}'", pName)
+       ASSERT(false, "No shader storage block variable found with name '{}'", pName)
     }
 
     // GLState acts as a factory for Buffers allowing single responsibility and access to memory that does not move.

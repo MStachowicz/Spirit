@@ -245,7 +245,7 @@ namespace OpenGL
         if (pTextureData.mNumberOfChannels == 1)      format = GL_RED;
         else if (pTextureData.mNumberOfChannels == 3) format = GL_RGB;
         else if (pTextureData.mNumberOfChannels == 4) format = GL_RGBA;
-        ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels");
+        ASSERT(format != 0, "Could not find channel type for this number of texture channels");
 
         glTexImage2D(GL_TEXTURE_2D, 0, format, pTextureData.mWidth, pTextureData.mHeight, 0, format, GL_UNSIGNED_BYTE, pTextureData.getData());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -368,12 +368,12 @@ namespace OpenGL
     }
     void FBO::bindColourTexture() const
     {
-        ZEPHYR_ASSERT(mColourAttachment.has_value(), "Attempting to bind colour texture of an FBO with no colour attatchment");
+        ASSERT(mColourAttachment.has_value(), "Attempting to bind colour texture of an FBO with no colour attatchment");
         mColourAttachment->bind();
     }
     void FBO::attachColourBuffer(const int& pWidth, const int& pHeight)
     {
-        ZEPHYR_ASSERT(!mColourAttachment.has_value(), "FBO already has an attached colour");
+        ASSERT(!mColourAttachment.has_value(), "FBO already has an attached colour");
 
         bind();
         mColourAttachment = Texture();
@@ -407,13 +407,13 @@ namespace OpenGL
     }
     void FBO::detachColourBuffer()
     {
-        ZEPHYR_ASSERT(mColourAttachment.has_value(), "There is no attached colour to remove from FBO");
+        ASSERT(mColourAttachment.has_value(), "There is no attached colour to remove from FBO");
         mColourAttachment.reset();
         mBufferClearBitField &= ~GL_COLOR_BUFFER_BIT;
     }
     void FBO::attachDepthBuffer(const int& pWidth, const int& pHeight)
     {
-        ZEPHYR_ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached depth buffer");
+        ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached depth buffer");
 
         bind();
         mDepthAttachment = RBO();
@@ -430,7 +430,7 @@ namespace OpenGL
     }
     void FBO::detachDepthBuffer()
     {
-        ZEPHYR_ASSERT(mDepthAttachment.has_value(), "There is no attached depth buffer to remove from FBO");
+        ASSERT(mDepthAttachment.has_value(), "There is no attached depth buffer to remove from FBO");
         mDepthAttachment.reset();
         mBufferClearBitField &= ~GL_DEPTH_BUFFER_BIT;
     }

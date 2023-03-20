@@ -17,12 +17,12 @@ namespace Utility
 
     void File::setupDirectories(const std::string& pExecutePath)
     {
-        ZEPHYR_ASSERT(!pExecutePath.empty(), "Cannot initialise directories with no executable path given");
-        ZEPHYR_ASSERT(exists(pExecutePath), "path to exe not found");
+        ASSERT(!pExecutePath.empty(), "Cannot initialise directories with no executable path given");
+        ASSERT(exists(pExecutePath), "path to exe not found");
         executablePath = pExecutePath;
 
         const auto& found = executablePath.string().find("Zephyr");
-        ZEPHYR_ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string());
+        ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string());
 
         rootDirectory = executablePath.string().substr(0, found + 6); // offset substr by length of "Zephyr"
         LOG_INFO("Root directory initialised to '{}'", rootDirectory.string());
@@ -68,14 +68,14 @@ namespace Utility
 
     void File::forEachFile(const std::filesystem::path& pDirectory, const std::function<void(const std::filesystem::directory_entry& pEntry)>& pFunction)
     {
-        ZEPHYR_ASSERT(Utility::File::exists(pDirectory), "Directory {} doesn't exist, cannot iterate over its contents.", pDirectory.string());
+        ASSERT(Utility::File::exists(pDirectory), "Directory {} doesn't exist, cannot iterate over its contents.", pDirectory.string());
 
         for (const auto& entry : std::filesystem::directory_iterator(pDirectory))
             pFunction(entry);
     }
     void File::forEachFileRecursive(const std::filesystem::path& pDirectory, const std::function<void(const std::filesystem::directory_entry& pEntry)>& pFunction)
     {
-        ZEPHYR_ASSERT(Utility::File::exists(pDirectory), "Directory {} doesn't exist, cannot iterate over its contents.", pDirectory.string());
+        ASSERT(Utility::File::exists(pDirectory), "Directory {} doesn't exist, cannot iterate over its contents.", pDirectory.string());
 
         for (const auto& entry : std::filesystem::recursive_directory_iterator(pDirectory))
             pFunction(entry);

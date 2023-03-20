@@ -18,7 +18,7 @@ namespace OpenGL
         unsigned int vertexShader;
         auto vertexShaderPath = shaderPath;
         vertexShaderPath.replace_extension("vert");
-        ZEPHYR_ASSERT(Utility::File::exists(vertexShaderPath), "Vertex shader does not exist at path '{}'", vertexShaderPath.string());
+        ASSERT(Utility::File::exists(vertexShaderPath), "Vertex shader does not exist at path '{}'", vertexShaderPath.string());
         std::string vertexSource = Utility::File::readFromFile(vertexShaderPath);
         {
             vertexShader = pGLState.CreateShader(GLType::ShaderProgramType::Vertex);
@@ -31,7 +31,7 @@ namespace OpenGL
         {
             auto fragmentShaderPath = shaderPath;
             fragmentShaderPath.replace_extension("frag");
-            ZEPHYR_ASSERT(Utility::File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath.string());
+            ASSERT(Utility::File::exists(fragmentShaderPath), "Fragment shader does not exist at path {}", fragmentShaderPath.string());
             fragmentShader     = pGLState.CreateShader(GLType::ShaderProgramType::Fragment);
             std::string source = Utility::File::readFromFile(fragmentShaderPath);
             pGLState.ShaderSource(fragmentShader, source);
@@ -106,7 +106,7 @@ namespace OpenGL
                     if (uniformVariable.mDataType == GLType::DataType::Sampler2D || uniformVariable.mDataType == GLType::DataType::SamplerCube)
                         mTextureUnits++;
                 }
-                ZEPHYR_ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
+                ASSERT(mTextureUnits <= maxTextureUnits, "Texture units available must be below the max.");
             }
 
             if (vertexSource.find(".models[gl_InstanceID]") != std::string::npos)
@@ -166,7 +166,7 @@ namespace OpenGL
             if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
                 mAttributes.insert(Attribute::TextureCoordinate2D);
 
-        ZEPHYR_ASSERT(!mAttributes.empty() && mAttributes.size() <= Utility::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mAttributes.size());
+        ASSERT(!mAttributes.empty() && mAttributes.size() <= Utility::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mAttributes.size());
     }
 
     void Shader::use(GLState& pGLState) const
@@ -183,7 +183,7 @@ namespace OpenGL
         // consistent across all Zephyr GLSL shaders.
 
         // const GLint location = glGetAttribLocation(mHandle, getAttributeName(pAttribute).c_str());
-        // ZEPHYR_ASSERT(location != -1, "Failed to find the location of {} in shader {}.", getAttributeName(pAttribute).c_str(), mName);
+        // ASSERT(location != -1, "Failed to find the location of {} in shader {}.", getAttributeName(pAttribute).c_str(), mName);
         // return static_cast<int>(location);
     }
 
@@ -200,7 +200,7 @@ namespace OpenGL
             case Attribute::TextureCoordinate2D:
                 return 2; // X and Y components
             default:
-                ZEPHYR_ASSERT(false, "Could not determine the size of the attribute pAttribute");
+                ASSERT(false, "Could not determine the size of the attribute pAttribute");
                 return 0;
         }
     }
@@ -216,7 +216,7 @@ namespace OpenGL
         else if (pAttribute == Attribute::TextureCoordinate2D)
             return "VertexTexCoord";
         else
-            ZEPHYR_ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", pAttribute);
+            ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", pAttribute);
         return "";
     }
 

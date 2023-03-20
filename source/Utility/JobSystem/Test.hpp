@@ -24,7 +24,7 @@ namespace JobSystem
             ~Timer()
             {
                 auto end = std::chrono::high_resolution_clock::now();
-                LOG_TRACE("{}: took {} milliseconds to complete", mTestName, std::chrono::duration_cast<std::chrono::milliseconds>(end - mStartTime).count());
+                LOG_INFO("{}: took {} milliseconds to complete", mTestName, std::chrono::duration_cast<std::chrono::milliseconds>(end - mStartTime).count());
             }
         };
 

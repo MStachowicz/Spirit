@@ -51,7 +51,7 @@ GLState::GLState()
         glGetIntegerv(GL_VIEWPORT, mViewport.data());
     }
 
-    ZEPHYR_ASSERT(validateState(), "GLState is inconsistant with actual OpenGL state.");
+    ASSERT(validateState(), "GLState is inconsistant with actual OpenGL state.");
 }
 
 bool GLState::validateState()
@@ -166,14 +166,14 @@ void GLState::setDepthTestType(const GLType::DepthTestType& pType)
 void GLState::setBlendFunction(const GLType::BlendFactorType &pSourceFactor, const GLType::BlendFactorType &pDestinationFactor)
 {
     GLboolean enabled = glIsEnabled(GL_BLEND);
-    ZEPHYR_ASSERT(enabled, "Blending has to be enabled to set blend function.");
+    ASSERT(enabled, "Blending has to be enabled to set blend function.");
 
     mSourceBlendFactor = pSourceFactor;
     mDestinationBlendFactor = pDestinationFactor;
     glBlendFunc(convert(mSourceBlendFactor), convert(mDestinationBlendFactor)); // It is also possible to set individual RGBA factors using glBlendFuncSeparate().
 
     // BlendFactors using constant require glBlendColor() to be called to set the RGBA constant values.
-    ZEPHYR_ASSERT((pSourceFactor    != GLType::BlendFactorType::ConstantColour
+    ASSERT((pSourceFactor    != GLType::BlendFactorType::ConstantColour
     && pSourceFactor                != GLType::BlendFactorType::OneMinusConstantColour
     && pSourceFactor                != GLType::BlendFactorType::ConstantAlpha
     && pSourceFactor                != GLType::BlendFactorType::OneMinusConstantAlpha
@@ -222,29 +222,24 @@ void GLState::setActiveTextureUnit(const int& pTextureUnitPosition)
 void GLState::drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize)
 {
     glDrawArrays(convert(pPrimitiveMode), 0, pArraySize);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawArrays));
 }
 void GLState::drawArraysInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize, const int& pInstanceCount)
 {
 	glDrawArraysInstanced(GLType::convert(pPrimitiveMode), 0, pArraySize, pInstanceCount);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawArraysInstanced));
 }
 void GLState::drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize)
 {
     glDrawElements(GLType::convert(pPrimitiveMode), pElementsSize, GL_UNSIGNED_INT, 0);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawElements));
 }
 void GLState::drawElementsInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize, const int& pInstanceCount)
 {
 	glDrawElementsInstanced(GLType::convert(pPrimitiveMode), pElementsSize, GL_UNSIGNED_INT, 0, pInstanceCount);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DrawElementsInstanced));
 }
 
 void GLState::bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle)
 {
     mActiveFramebuffer = pFBOHandle;
     glBindFramebuffer(convert(pFramebufferTargetType), pFBOHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindFramebuffer));
 }
 void GLState::unbindFramebuffer()
 {
@@ -253,8 +248,8 @@ void GLState::unbindFramebuffer()
 }
 void GLState::checkFramebufferBufferComplete()
 {
-    ZEPHYR_ASSERT(mActiveFramebuffer != 0, "Checking default framebuffer. Default FBO is always valid.");
-    ZEPHYR_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
+    ASSERT(mActiveFramebuffer != 0, "Checking default framebuffer. Default FBO is always valid.");
+    ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Currently bound FBO not complete, have you called attachColourBuffer and/or attachDepthBuffer");
 }
 
 unsigned int GLState::GenBuffers() const
@@ -267,20 +262,17 @@ unsigned int GLState::GenBuffers() const
 void GLState::BindBuffer(const GLType::BufferType& pBufferType, const unsigned int& pBufferHandle) const
 {
     glBindBuffer(convert(pBufferType), pBufferHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindBuffer));
 }
 
 void GLState::DeleteBuffer(const unsigned int& pBufferHandle) const
 {
     glDeleteBuffers(1, &pBufferHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteBuffer));
 }
 
 unsigned int GLState::CreateShader(const GLType::ShaderProgramType& pProgramType)
 {
     unsigned int shaderID = glCreateShader(GLType::convert(pProgramType));
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::CreateShader));
-    ZEPHYR_ASSERT(shaderID != 0, "Error occurred creating the shader object");
+    ASSERT(shaderID != 0, "Error occurred creating the shader object");
     return shaderID;
 }
 
@@ -288,13 +280,11 @@ void GLState::ShaderSource(const unsigned int& pShaderHandle, const std::string&
 {
     const char* programSource = pShaderSource.c_str();
     glShaderSource(pShaderHandle, 1, &programSource, NULL);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::ShaderSource));
 }
 
 void GLState::CompileShader(const unsigned int& pShaderHandle)
 {
     glCompileShader(pShaderHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::CompileShader));
 
     GLint success;
     glGetShaderiv(pShaderHandle, GL_COMPILE_STATUS, &success);
@@ -306,21 +296,20 @@ void GLState::CompileShader(const unsigned int& pShaderHandle)
         infoLog.resize(infoLogCharCount);
         glGetShaderInfoLog(pShaderHandle, infoLogCharCount, NULL, infoLog.data());
         infoLog.pop_back();
-        ZEPHYR_ASSERT(false, "Shader compilation failed\n{}", infoLog);
+        ASSERT(false, "Shader compilation failed\n{}", infoLog);
     }
 }
 
 unsigned int GLState::CreateProgram()
 {
     unsigned int programHandle = glCreateProgram();
-    ZEPHYR_ASSERT(programHandle != 0, "Error occurred creating the shader program object");
+    ASSERT(programHandle != 0, "Error occurred creating the shader program object");
     return programHandle;
 }
 
 void GLState::AttachShader(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderHandle)
 {
     glAttachShader(pShaderProgramHandle, pShaderHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::AttachShader));
 }
 
 void GLState::LinkProgram(const unsigned int& pShaderProgramHandle)
@@ -331,7 +320,6 @@ void GLState::LinkProgram(const unsigned int& pShaderProgramHandle)
     // but no executable will be installed on the fragment processor.
     // The results of rasterizing primitives with such a program will be UNDEFINED.
     glLinkProgram(pShaderProgramHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::LinkProgram));
 
     GLint success;
     glGetProgramiv(pShaderProgramHandle, GL_LINK_STATUS, &success);
@@ -343,20 +331,18 @@ void GLState::LinkProgram(const unsigned int& pShaderProgramHandle)
         infoLog.resize(infoLogCharCount);
         glGetShaderInfoLog(pShaderProgramHandle, infoLogCharCount, NULL, infoLog.data());
         infoLog.pop_back();
-        ZEPHYR_ASSERT(false, "Shader program linking failed\n{}", infoLog);
+        ASSERT(false, "Shader program linking failed\n{}", infoLog);
     }
 }
 
 void GLState::DeleteShader(const unsigned int& pShaderHandle)
 {
     glDeleteShader(pShaderHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::DeleteShader));
 }
 
 void GLState::UseProgram(const unsigned int& pShaderProgramHandle)
 {
     glUseProgram(pShaderProgramHandle);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::UseProgram));
 }
 
 void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
@@ -388,7 +374,7 @@ void GLState::RegisterUniformBlock(GLData::UniformBlock& pUniformBlock)
         bindingPoint->mUBO->Bind(*this);
     }
 
-    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for GLSL Uniform Block '{}'", pUniformBlock.mName);
+    ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for GLSL Uniform Block '{}'", pUniformBlock.mName);
     pUniformBlock.mBindingPoint = bindingPoint->mBindingPoint;
     UniformBlockBinding(pUniformBlock.mParentShaderHandle, pUniformBlock.mBlockIndex, bindingPoint->mBindingPoint);
 }
@@ -426,7 +412,7 @@ void GLState::RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderStor
         bindingPoint->mSSBO->AssignBindingPoint(*this, bindingPoint->mBindingPoint);
     }
 
-    ZEPHYR_ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderStorageBlock.mName);
+    ASSERT(bindingPoint != nullptr, "Could not find a valid binding point for shader buffer block '{}'", pShaderStorageBlock.mName);
     pShaderStorageBlock.mBindingPoint = bindingPoint->mBindingPoint;
     ShaderStorageBlockBinding(pShaderStorageBlock.mParentShaderHandle, pShaderStorageBlock.mBlockIndex, bindingPoint->mBindingPoint);
 }
@@ -435,7 +421,6 @@ int GLState::getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle
 {
     GLint blockCount = 0;
     glGetProgramInterfaceiv(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &blockCount);
-    ZEPHYR_ASSERT_MSG(getErrorMessage());
     return blockCount;
 }
 
@@ -464,7 +449,7 @@ GLData::UniformBlock GLState::getUniformBlock(const unsigned int& pShaderProgram
     { // Get the name of the uniform block
         uniformBlock.mName.resize(uniformBlockValues[0]);
         glGetProgramResourceName(pShaderProgramHandle, GL_UNIFORM_BLOCK, pUniformBlockIndex, uniformBlockValues[0], NULL, uniformBlock.mName.data());
-        ZEPHYR_ASSERT(!uniformBlock.mName.empty(), "Failed to get name of uniform block in shader with handle {}", pShaderProgramHandle);
+        ASSERT(!uniformBlock.mName.empty(), "Failed to get name of uniform block in shader with handle {}", pShaderProgramHandle);
         uniformBlock.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
     }
     uniformBlock.mBlockIndex           = glGetProgramResourceIndex(pShaderProgramHandle, GL_UNIFORM_BLOCK, uniformBlock.mName.c_str());
@@ -501,7 +486,7 @@ GLData::ShaderStorageBlock GLState::getShaderStorageBlock(const unsigned int& pS
     { // Get the name of the shader storage block
         shaderStorageBlock.mName.resize(bufferBlockValues[0]);
         glGetProgramResourceName(pShaderProgramHandle, GL_SHADER_STORAGE_BLOCK, pShaderBufferBlockIndex, bufferBlockValues[0], NULL, shaderStorageBlock.mName.data());
-        ZEPHYR_ASSERT(!shaderStorageBlock.mName.empty(), "Failed to get name of shader storage block in shader with handle {}", pShaderProgramHandle);
+        ASSERT(!shaderStorageBlock.mName.empty(), "Failed to get name of shader storage block in shader with handle {}", pShaderProgramHandle);
         shaderStorageBlock.mName.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
     }
 
@@ -532,61 +517,54 @@ void GLState::setViewport(const int& pWidth, const int& pHeight)
     mViewport[2] = pWidth;
     mViewport[3] = pHeight;
     glViewport(0, 0, pWidth, pHeight);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::Viewport));
 }
 
 void GLState::BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void* pData, const GLType::BufferUsage& pBufferUsage)
 {
     glBufferData(convert(pBufferType), pSizeInBytes, pData, convert(pBufferUsage));
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferData));
 }
 
 void GLState::BufferSubData(const GLType::BufferType& pBufferType, const size_t& pOffset, const size_t& pSizeInBytes, const void* pData)
 {
     glBufferSubData(convert(pBufferType), pOffset, pSizeInBytes, pData);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BufferSubData));
 }
 
 void GLState::CopyBufferSubData(const GLType::BufferType& pSourceTarget, const GLType::BufferType& pDestinationTarget, const long long int& pSourceOffset, const long long int& pDestinationOffset, const long long int& pSize)
 {
     glCopyBufferSubData(GLType::convert(pSourceTarget), GLType::convert(pDestinationTarget), pSourceOffset, pDestinationOffset, pSize);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::CopyBufferSubData));
 }
 
 void GLState::BindBufferRange(const GLType::BufferType& pType, const unsigned int& pBufferHandle, const unsigned int& pBindingPoint, const unsigned int& pOffset, const size_t& pBindSizeInBytes)
 {
     glBindBufferRange(convert(pType), pBindingPoint, pBufferHandle, pOffset, pBindSizeInBytes);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::BindBufferRange));
 }
 
 void GLState::UniformBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint)
 {
     glUniformBlockBinding(pShaderHandle, pUniformBlockIndexShader, pBindingPoint);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::UniformBlockBinding));
 }
 
 void GLState::ShaderStorageBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pShaderStorageBlockIndexShader, const unsigned int& pBindingPoint)
 {
     glShaderStorageBlockBinding(pShaderHandle, pShaderStorageBlockIndexShader, pBindingPoint);
-    ZEPHYR_ASSERT_MSG(getErrorMessage(GLType::Function::ShaderStorageBlockBinding));
 }
 
 namespace GLData
 {
     void VAO::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated VAO");
+        ASSERT(!mInitialised, "Calling generate on an already generated VAO");
         glGenVertexArrays(1, &mHandle);
         mInitialised = true;
     }
     void VAO::bind() const
     {
-        ZEPHYR_ASSERT(mInitialised, "VAO has not been generated before bind, call generate before bind");
+        ASSERT(mInitialised, "VAO has not been generated before bind, call generate before bind");
         glBindVertexArray(mHandle);
     }
     void VAO::release()
     {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised VAO");
+        ASSERT(mInitialised, "Calling release on an uninitialised VAO");
         glDeleteVertexArrays(1, &mHandle);
         mInitialised = false;
     }
@@ -609,7 +587,7 @@ namespace GLData
     }
     void Buffer::Reserve(GLState& pGLState, const size_t& pBytesToReserve)
     {
-        ZEPHYR_ASSERT(mType == GLType::BufferType::ShaderStorageBuffer || mReservedSize == 0, "Reserving buffer memory on an already reserved buffer.");
+        ASSERT(mType == GLType::BufferType::ShaderStorageBuffer || mReservedSize == 0, "Reserving buffer memory on an already reserved buffer.");
         mReservedSize = pBytesToReserve;
         pGLState.BufferData(mType, mReservedSize, NULL, mUsage); // Supplying NULL as Data to BufferData reserves the Bytes but does not assign to them.
     }
@@ -619,7 +597,7 @@ namespace GLData
         if (mReservedSize == 0)
             mReservedSize = mUsedSize;
 
-        ZEPHYR_ASSERT(mUsedSize <= mReservedSize, "Attempting to push more bytes of data than allocated to the Buffer.");
+        ASSERT(mUsedSize <= mReservedSize, "Attempting to push more bytes of data than allocated to the Buffer.");
         pGLState.BufferData(mType, mUsedSize, &pData.front(), mUsage);
     }
     void Buffer::PushData(GLState& pGLState, const std::vector<float>& pData)
@@ -628,7 +606,7 @@ namespace GLData
         if (mReservedSize == 0)
             mReservedSize = mUsedSize;
 
-        ZEPHYR_ASSERT(mUsedSize <= mReservedSize, "Attempting to push more bytes of data than allocated to the Buffer.");
+        ASSERT(mUsedSize <= mReservedSize, "Attempting to push more bytes of data than allocated to the Buffer.");
         pGLState.BufferData(mType, mUsedSize, &pData.front(), mUsage);
     }
 
@@ -644,7 +622,7 @@ namespace GLData
         mName.emplace();
         mName->resize(propertyValues[0]);
         glGetProgramResourceName(pShaderProgramHandle, GL_UNIFORM, pVariableIndex, propertyValues[0], NULL, mName->data());
-        ZEPHYR_ASSERT(!mName->empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderProgramHandle);
+        ASSERT(!mName->empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderProgramHandle);
         mName->pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
 
         mDataType     = GLType::convert(propertyValues[1]);
@@ -669,7 +647,7 @@ namespace GLData
         mName.emplace();
         mName->resize(propertyValues[0]);
         glGetProgramResourceName(pShaderProgramHandle, GL_UNIFORM, pVariableIndex, propertyValues[0], NULL, mName->data());
-        ZEPHYR_ASSERT(!mName->empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderProgramHandle);
+        ASSERT(!mName->empty(), "Failed to get name of uniform variable in shader with handle {}", pShaderProgramHandle);
         mName->pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
 
         mDataType     = GLType::convert(propertyValues[1]);
@@ -695,7 +673,7 @@ namespace GLData
         mName.emplace();
         mName->resize(propertyValues[0]);
         glGetProgramResourceName(pShaderProgramHandle, GL_BUFFER_VARIABLE, pVariableIndex, propertyValues[0], NULL, mName->data());
-        ZEPHYR_ASSERT(!mName->empty(), "Failed to get name of shader buffer block variable in shader with handle {}", pShaderProgramHandle);
+        ASSERT(!mName->empty(), "Failed to get name of shader buffer block variable in shader with handle {}", pShaderProgramHandle);
         mName->pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
 
         mDataType            = GLType::convert(propertyValues[1]);
@@ -714,18 +692,18 @@ namespace GLData
 
     void UniformVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniform1i(mLocation.value(), (GLint)pValue); // Setting a boolean is treated as integer
     }
     void UniformBlockVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, &pValue);
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Bool, "Attempting to set bool data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
     }
@@ -734,7 +712,7 @@ namespace GLData
     {
         // Setting texture sampler types uses int to set their bound texture unit.
         // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Int
+        ASSERT(mDataType.value() == GLType::DataType::Int
                    || mDataType.value() == GLType::DataType::Sampler2D
                    || mDataType.value() == GLType::DataType::SamplerCube
                    , "Attempting to set int data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
@@ -744,7 +722,7 @@ namespace GLData
     {
         // Setting texture sampler types uses int to set their bound texture unit.
         // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Int
+        ASSERT(mDataType.value() == GLType::DataType::Int
                    || mDataType.value() == GLType::DataType::Sampler2D
                    || mDataType.value() == GLType::DataType::SamplerCube
                    , "Attempting to set int data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
@@ -757,7 +735,7 @@ namespace GLData
     {
         // Setting texture sampler types uses int to set their bound texture unit.
         // The actual texture being sampled is set by setting active an texture unit and using bindTexture.
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Int
+        ASSERT(mDataType.value() == GLType::DataType::Int
                    || mDataType.value() == GLType::DataType::Sampler2D
                    || mDataType.value() == GLType::DataType::SamplerCube
                    , "Attempting to set int data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
@@ -768,108 +746,108 @@ namespace GLData
 
     void UniformVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniform1f(mLocation.value(), pValue);
     }
     void UniformBlockVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, &pValue);
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Float, "Attempting to set float data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, &pValue);
     }
 
     void UniformVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniform2fv(mLocation.value(), 1, &pValue[0]);
     }
     void UniformBlockVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec2, "Attempting to set vec2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
 
     void UniformVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniform3fv(mLocation.value(), 1, &pValue[0]);
     }
     void UniformBlockVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec3, "Attempting to set vec3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
 
     void UniformVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniform4fv(mLocation.value(), 1, &pValue[0]);
     }
     void UniformBlockVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Vec4, "Attempting to set vec4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
 
     void UniformVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniformMatrix2fv(mLocation.value(), 1, GL_FALSE, &pValue[0][0]);
     }
     void UniformBlockVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat2, "Attempting to set mat2 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
 
     void UniformVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         glUniformMatrix3fv(mLocation.value(), 1, GL_FALSE, &pValue[0][0]);
     }
     void UniformBlockVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat3, "Attempting to set mat3 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::ShaderStorageBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
@@ -877,17 +855,17 @@ namespace GLData
     void UniformVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
         glUniformMatrix4fv(mLocation.value(), 1, GL_FALSE, glm::value_ptr(pValue));
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
     }
     void UniformBlockVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         pGLState.BufferSubData(GLType::BufferType::UniformBuffer, mOffset.value(), size, glm::value_ptr(pValue));
     }
     void ShaderStorageBlockVariable::Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex/*= 0*/)
     {
-        ZEPHYR_ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
+        ASSERT(mDataType.value() == GLType::DataType::Mat4, "Attempting to set mat4 data on {} {} ({})", GLType::toString(mDataType.value()), mName.value(), GLType::toString(mVariableType));
         static const auto size = sizeof(pValue);
         mBufferBacking->Bind(pGLState);
 
@@ -895,7 +873,7 @@ namespace GLData
         if(mIsVariableArray && variableOffset >= mBufferBacking->GetReservedSize())
         {
             mBufferBacking->Extend(pGLState);
-            ZEPHYR_ASSERT(!(variableOffset >= mBufferBacking->GetReservedSize()),
+            ASSERT(!(variableOffset >= mBufferBacking->GetReservedSize()),
                           "Extending SSBO didn't reserve enough space to set variable. Extend should take a minimum extend size instead of only doubling already reserved size.");
         }
 
@@ -968,40 +946,40 @@ namespace GLData
         if (mBindingPoint.has_value())
             AssignBindingPoint(pGLState, mBindingPoint.value());
 
-        ZEPHYR_ASSERT(mReservedSize == newSize, "Failed to resize the current buffer.");
+        ASSERT(mReservedSize == newSize, "Failed to resize the current buffer.");
     }
 
     void RBO::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated RBO");
+        ASSERT(!mInitialised, "Calling generate on an already generated RBO");
         glGenRenderbuffers(1, &mHandle);
         mInitialised = true;
     }
     void RBO::bind() const
     {
-        ZEPHYR_ASSERT(mInitialised, "RBO has not been generated before bind, call generate before bind");
+        ASSERT(mInitialised, "RBO has not been generated before bind, call generate before bind");
         glBindRenderbuffer(GL_RENDERBUFFER, mHandle);
     }
     void RBO::release()
     {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised RBO");
+        ASSERT(mInitialised, "Calling release on an uninitialised RBO");
         glDeleteRenderbuffers(1, &mHandle);
         mInitialised = false;
     }
     void FBO::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated FBO");
+        ASSERT(!mInitialised, "Calling generate on an already generated FBO");
         glGenFramebuffers(1, &mHandle);
         mInitialised = true;
     }
     void FBO::bind(GLState& pGLState) const
     {
-        ZEPHYR_ASSERT(mInitialised, "FBO has not been generated before bind, call generate before bind");
+        ASSERT(mInitialised, "FBO has not been generated before bind, call generate before bind");
         pGLState.bindFramebuffer(GLType::FramebufferTarget::Framebuffer, mHandle);
     }
     void FBO::release()
     {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised FBO");
+        ASSERT(mInitialised, "Calling release on an uninitialised FBO");
         glDeleteFramebuffers(1, &mHandle);
 
         if (mColourAttachment.has_value())
@@ -1013,9 +991,9 @@ namespace GLData
     }
     Texture& FBO::getColourTexture()
     {
-        ZEPHYR_ASSERT(mInitialised, "Attempting to get texture handle on uninitialised FBO");
-        ZEPHYR_ASSERT(mColourAttachment.has_value(), "Attempting to get texture on FBO with no attached texture");
-        ZEPHYR_ASSERT(mColourAttachment->mInitialised, "Attempting to get uninitialised texture of FBO");
+        ASSERT(mInitialised, "Attempting to get texture handle on uninitialised FBO");
+        ASSERT(mColourAttachment.has_value(), "Attempting to get texture on FBO with no attached texture");
+        ASSERT(mColourAttachment->mInitialised, "Attempting to get uninitialised texture of FBO");
 
         return mColourAttachment.value();
     }
@@ -1039,8 +1017,8 @@ namespace GLData
 
     void FBO::attachColourBuffer(const int& pWidth, const int& pHeight, GLState& pGLState)
     {
-        ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching texture");
-        ZEPHYR_ASSERT(!mColourAttachment.has_value(), "FBO already has an attached texture");
+        ASSERT(mInitialised, "Must initialise FBO before attaching texture");
+        ASSERT(!mColourAttachment.has_value(), "FBO already has an attached texture");
 
         bind(pGLState);
         mColourAttachment = { Texture::Type::Texture2D };
@@ -1078,15 +1056,15 @@ namespace GLData
     }
     void FBO::detachColourBuffer()
     {
-        ZEPHYR_ASSERT(mColourAttachment.has_value(), "There is no attached texture to remove from FBO");
+        ASSERT(mColourAttachment.has_value(), "There is no attached texture to remove from FBO");
         mColourAttachment->release();
         mColourAttachment.reset();
         mBufferClearBitField &= ~GL_COLOR_BUFFER_BIT;
     }
     void FBO::attachDepthBuffer(const int& pWidth, const int& pHeight, GLState& pGLState)
     {
-        ZEPHYR_ASSERT(mInitialised, "Must initialise FBO before attaching buffer");
-        ZEPHYR_ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached buffer");
+        ASSERT(mInitialised, "Must initialise FBO before attaching buffer");
+        ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached buffer");
 
         bind(pGLState);
         mDepthAttachment = RBO();
@@ -1104,20 +1082,20 @@ namespace GLData
     }
     void FBO::detachDepthBuffer()
     {
-        ZEPHYR_ASSERT(mDepthAttachment.has_value(), "There is no attached RBO to remove from FBO");
+        ASSERT(mDepthAttachment.has_value(), "There is no attached RBO to remove from FBO");
         mDepthAttachment->release();
         mDepthAttachment.reset();
         mBufferClearBitField &= ~GL_DEPTH_BUFFER_BIT;
     }
     void Texture::generate()
     {
-        ZEPHYR_ASSERT(!mInitialised, "Calling generate on an already generated Texture");
+        ASSERT(!mInitialised, "Calling generate on an already generated Texture");
         glGenTextures(1, &mHandle);
         mInitialised = true;
     }
     void Texture::bind() const
     {
-        ZEPHYR_ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind.");
+        ASSERT(mInitialised, "Texture has not been generated before bind, call generate before bind.");
 
         if (mType == Type::Texture2D)
             glBindTexture(GL_TEXTURE_2D, mHandle);
@@ -1126,17 +1104,17 @@ namespace GLData
     }
     void Texture::pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData, const int& pCubeMapIndexOffset /*= -1*/)
 	{
-        ZEPHYR_ASSERT(pData, "Invalid Texture data.");
+        ASSERT(pData, "Invalid Texture data.");
 
         GLenum format = 0;
         if (pNumberOfChannels == 1)      format = GL_RED;
         else if (pNumberOfChannels == 3) format = GL_RGB;
         else if (pNumberOfChannels == 4) format = GL_RGBA;
-        ZEPHYR_ASSERT(format != 0, "Could not find channel type for this number of texture channels");
+        ASSERT(format != 0, "Could not find channel type for this number of texture channels");
 
         if (pCubeMapIndexOffset == -1)
         {
-            ZEPHYR_ASSERT(mType == Type::Texture2D, "Trying to push Texture 2D data to non Texture 2D object.");
+            ASSERT(mType == Type::Texture2D, "Trying to push Texture 2D data to non Texture 2D object.");
             glTexImage2D(GL_TEXTURE_2D, 0, format, pWidth, pHeight, 0, format, GL_UNSIGNED_BYTE, pData);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1148,7 +1126,7 @@ namespace GLData
         }
         else
         {
-            ZEPHYR_ASSERT(mType == Type::CubeMap, "Trying to push CubeMap data to non-CubeMap object.");
+            ASSERT(mType == Type::CubeMap, "Trying to push CubeMap data to non-CubeMap object.");
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + pCubeMapIndexOffset, 0, format, pWidth, pHeight, 0, format, GL_UNSIGNED_BYTE, pData);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1159,7 +1137,7 @@ namespace GLData
     }
     void Texture::release()
     {
-        ZEPHYR_ASSERT(mInitialised, "Calling release on an uninitialised Texture");
+        ASSERT(mInitialised, "Calling release on an uninitialised Texture");
         glDeleteTextures(1, &mHandle);
         mInitialised = false;
     }
@@ -1245,7 +1223,7 @@ namespace GLType
             case GL_UNSIGNED_INT_SAMPLER_BUFFER :               return DataType::UsamplerBuffer;
             case GL_UNSIGNED_INT_SAMPLER_2D_RECT :              return DataType::Usampler2DRect;
             default:
-                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                ASSERT(false, "Unknown DataType requested");
                 return DataType::Unknown;
         }
     }
@@ -1277,7 +1255,7 @@ namespace GLType
             case Function::ShaderStorageBlockBinding : return "ShaderStorageBlockBinding";
             case Function::CopyBufferSubData :         return "CopyBufferSubData";
             default:
-                ZEPHYR_ASSERT(false, "Unknown Function requested");
+                ASSERT(false, "Unknown Function requested");
                 return "";
         }
     }
@@ -1289,7 +1267,7 @@ namespace GLType
             case ShaderProgramType::Geometry: return "GeometryShader";
             case ShaderProgramType::Fragment: return "FragmentShader";
             default:
-                ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
+                ASSERT(false, "Unknown ShaderProgramType requested");
                 return "";
         }
     }
@@ -1372,7 +1350,7 @@ namespace GLType
             case DataType::Usampler2DRect :       return "Usampler2DRect";
             case DataType::Unknown :              return "Unknown";
             default:
-                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                ASSERT(false, "Unknown DataType requested");
                 return "";
         }
     }
@@ -1384,7 +1362,7 @@ namespace GLType
             case GLSLVariableType::UniformBlock : return "Uniform block variable";
             case GLSLVariableType::BufferBlock :  return "Buffer block variable";
             default:
-                ZEPHYR_ASSERT(false, "Unknown GLSLVariableType requested");
+                ASSERT(false, "Unknown GLSLVariableType requested");
                 return "";
         }
     }
@@ -1407,7 +1385,7 @@ namespace GLType
             case BufferType::TransformFeedbackBuffer: return "Transform Feedback Buffer";
             case BufferType::UniformBuffer :          return "Uniform Buffer";
             default:
-                ZEPHYR_ASSERT(false, "Unknown BufferType requested");
+                ASSERT(false, "Unknown BufferType requested");
                 return "";
         }
     }
@@ -1425,7 +1403,7 @@ namespace GLType
             case BufferUsage::DynamicRead: return "Dynamic Read";
             case BufferUsage::DynamicCopy: return "Dynamic Copy";
             default:
-                ZEPHYR_ASSERT(false, "Unknown pBufferUsage requested");
+                ASSERT(false, "Unknown pBufferUsage requested");
                 return "";
         }
     }
@@ -1451,7 +1429,7 @@ namespace GLType
             case ShaderResourceType::TransformFeedbackBuffer :         return "TransformFeedbackBuffer";
             case ShaderResourceType::TransformFeedbackVarying :        return "TransformFeedbackVarying";
             default:
-                ZEPHYR_ASSERT(false, "Unknown ShaderResourceType requested");
+                ASSERT(false, "Unknown ShaderResourceType requested");
                 return "";
     }
     }
@@ -1490,7 +1468,7 @@ namespace GLType
             case ShaderResourceProperty::TransformFeedbackBufferIndex :     return "TransformFeedbackBufferIndex";
             case ShaderResourceProperty::TransformFeedbackBufferStride :    return "TransformFeedbackBufferStride";
             default:
-                ZEPHYR_ASSERT(false, "Unknown ShaderResourceProperty requested");
+                ASSERT(false, "Unknown ShaderResourceProperty requested");
                 return "";
         }
     }
@@ -1507,7 +1485,7 @@ namespace GLType
             case DepthTestType::LessEqual :    return "Less than or equal";
             case DepthTestType::GreaterEqual : return "Greater than or equal";
             default:
-                ZEPHYR_ASSERT(false, "Unknown DepthTestType requested");
+                ASSERT(false, "Unknown DepthTestType requested");
                 return "";
     }
     }
@@ -1530,7 +1508,7 @@ namespace GLType
             case BlendFactorType::ConstantAlpha :             return "Constant Alpha";
             case BlendFactorType::OneMinusConstantAlpha :     return "One Minus Constant Alpha";
             default:
-                ZEPHYR_ASSERT(false, "Unknown BlendFactorType requested");
+                ASSERT(false, "Unknown BlendFactorType requested");
                 return "";
         }
     }
@@ -1542,7 +1520,7 @@ namespace GLType
             case CullFacesType::Front :        return "Front";
             case CullFacesType::FrontAndBack : return "Front and Back";
             default:
-                ZEPHYR_ASSERT(false, "Unknown CullFacesType requested");
+                ASSERT(false, "Unknown CullFacesType requested");
                 return "";
     }
     }
@@ -1553,7 +1531,7 @@ namespace GLType
             case FrontFaceOrientation::Clockwise :        return "Clockwise";
             case FrontFaceOrientation::CounterClockwise : return "CounterClockwise";
             default:
-                ZEPHYR_ASSERT(false, "Unknown FrontFaceOrientation requested");
+                ASSERT(false, "Unknown FrontFaceOrientation requested");
                 return "";
     }
     }
@@ -1565,7 +1543,7 @@ namespace GLType
             case PolygonMode::Line :  return "Line";
             case PolygonMode::Fill :  return "Fill";
             default:
-                ZEPHYR_ASSERT(false, "Unknown PolygonMode requested");
+                ASSERT(false, "Unknown PolygonMode requested");
                 return "";
     }
     }
@@ -1586,7 +1564,7 @@ namespace GLType
             case PrimitiveMode::TrianglesAdjacency:     return "TrianglesAdjacency";
             case PrimitiveMode::Patches:                return "Patches";
             default:
-                ZEPHYR_ASSERT(false, "Unknown PrimitiveMode requested");
+                ASSERT(false, "Unknown PrimitiveMode requested");
                 return "";
         }
     }
@@ -1598,7 +1576,7 @@ namespace GLType
             case FramebufferTarget::ReadFramebuffer: return "ReadFramebuffer";
             case FramebufferTarget::Framebuffer:     return "Framebuffer";
             default:
-                ZEPHYR_ASSERT(false, "Unknown FramebufferTarget requested");
+                ASSERT(false, "Unknown FramebufferTarget requested");
                 return "";
     }
     }
@@ -1615,7 +1593,7 @@ namespace GLType
             case ErrorType::StackUnderflow:              return "GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow";
             case ErrorType::StackOverflow:               return "GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow";
             default:
-                ZEPHYR_ASSERT(false, "Unknown ErrorType requested");
+                ASSERT(false, "Unknown ErrorType requested");
                 return 0;
         }
     }
@@ -1698,7 +1676,7 @@ namespace GLType
             case DataType::UsamplerBuffer :       return GL_UNSIGNED_INT_SAMPLER_BUFFER;
             case DataType::Usampler2DRect :       return GL_UNSIGNED_INT_SAMPLER_2D_RECT;
             default:
-                ZEPHYR_ASSERT(false, "Unknown DataType requested");
+                ASSERT(false, "Unknown DataType requested");
                 return 0;
         }
     }
@@ -1711,7 +1689,7 @@ namespace GLType
             case GLSLVariableType::UniformBlock: return GL_UNIFORM;
             case GLSLVariableType::BufferBlock:  return GL_BUFFER_VARIABLE;
             default:
-                ZEPHYR_ASSERT(false, "Unknown GLSLVariableType requested");
+                ASSERT(false, "Unknown GLSLVariableType requested");
                 return 0;
         }
     }
@@ -1734,7 +1712,7 @@ namespace GLType
             case BufferType::TransformFeedbackBuffer : return GL_TRANSFORM_FEEDBACK_BUFFER;
             case BufferType::UniformBuffer :           return GL_UNIFORM_BUFFER;
             default:
-                ZEPHYR_ASSERT(false, "Unknown BufferType requested");
+                ASSERT(false, "Unknown BufferType requested");
                 return 0;
         }
     }
@@ -1752,7 +1730,7 @@ namespace GLType
             case BufferUsage::DynamicRead: return GL_DYNAMIC_READ;
             case BufferUsage::DynamicCopy: return GL_DYNAMIC_COPY;
             default:
-                ZEPHYR_ASSERT(false, "Unknown pBufferUsage requested");
+                ASSERT(false, "Unknown pBufferUsage requested");
                 return 0;
         }
     }
@@ -1764,7 +1742,7 @@ namespace GLType
             case ShaderProgramType::Geometry: return GL_GEOMETRY_SHADER;
             case ShaderProgramType::Fragment: return GL_FRAGMENT_SHADER;
             default:
-                ZEPHYR_ASSERT(false, "Unknown ShaderProgramType requested");
+                ASSERT(false, "Unknown ShaderProgramType requested");
                 return 0;
         }
     }
@@ -1790,7 +1768,7 @@ namespace GLType
             case ShaderResourceType::TransformFeedbackBuffer:         return GL_TRANSFORM_FEEDBACK_BUFFER;
             case ShaderResourceType::TransformFeedbackVarying:        return GL_TRANSFORM_FEEDBACK_VARYING;
             default:
-                ZEPHYR_ASSERT(false, "Unknown ShaderResourceType requested");
+                ASSERT(false, "Unknown ShaderResourceType requested");
                 return 0;
         }
     }
@@ -1829,7 +1807,7 @@ namespace GLType
             case ShaderResourceProperty::TransformFeedbackBufferIndex:     return GL_TRANSFORM_FEEDBACK_BUFFER_INDEX;
             case ShaderResourceProperty::TransformFeedbackBufferStride:    return GL_TRANSFORM_FEEDBACK_BUFFER_STRIDE;
             default:
-                ZEPHYR_ASSERT(false, "Unknown ShaderResourceProperty requested");
+                ASSERT(false, "Unknown ShaderResourceProperty requested");
                 return 0;
         }
     }
@@ -1846,7 +1824,7 @@ namespace GLType
 	        case DepthTestType::NotEqual:	  return GL_NOTEQUAL;
 	        case DepthTestType::GreaterEqual: return GL_GEQUAL;
             default:
-                ZEPHYR_ASSERT(false, "Unknown DepthTestType requested");
+                ASSERT(false, "Unknown DepthTestType requested");
                 return 0;
         }
     }
@@ -1869,7 +1847,7 @@ namespace GLType
     		case BlendFactorType::ConstantAlpha:		 	 return GL_CONSTANT_ALPHA;
     		case BlendFactorType::OneMinusConstantAlpha: 	 return GL_ONE_MINUS_CONSTANT_ALPHA;
             default:
-                ZEPHYR_ASSERT(false, "Unknown BlendFactorType requested");
+                ASSERT(false, "Unknown BlendFactorType requested");
                 return 0;
         }
     }
@@ -1881,7 +1859,7 @@ namespace GLType
             case CullFacesType::Front:        return GL_FRONT;
             case CullFacesType::FrontAndBack: return GL_FRONT_AND_BACK;
             default:
-                ZEPHYR_ASSERT(false, "Unknown CullFacesType requested");
+                ASSERT(false, "Unknown CullFacesType requested");
                 return 0;
         }
     }
@@ -1892,7 +1870,7 @@ namespace GLType
             case FrontFaceOrientation::Clockwise:        return GL_CW;
             case FrontFaceOrientation::CounterClockwise: return GL_CCW;
             default:
-                ZEPHYR_ASSERT(false, "Unknown FrontFaceOrientation requested");
+                ASSERT(false, "Unknown FrontFaceOrientation requested");
                 return 0;
         }
     }
@@ -1904,7 +1882,7 @@ namespace GLType
             case PolygonMode::Line:  return GL_LINE;
             case PolygonMode::Fill:  return GL_FILL;
             default:
-                ZEPHYR_ASSERT(false, "Unknown PolygonMode requested");
+                ASSERT(false, "Unknown PolygonMode requested");
                 return 0;
         }
     }
@@ -1925,7 +1903,7 @@ namespace GLType
             case PrimitiveMode::TrianglesAdjacency:     return GL_TRIANGLES_ADJACENCY;
             case PrimitiveMode::Patches:                return GL_PATCHES;
             default:
-                ZEPHYR_ASSERT(false, "Unknown PrimitiveMode requested");
+                ASSERT(false, "Unknown PrimitiveMode requested");
                 return 0;
         }
     }
@@ -1937,7 +1915,7 @@ namespace GLType
             case FramebufferTarget::ReadFramebuffer: return GL_READ_FRAMEBUFFER;
             case FramebufferTarget::Framebuffer:     return GL_FRAMEBUFFER;
             default:
-                ZEPHYR_ASSERT(false, "Unknown FramebufferTarget requested");
+                ASSERT(false, "Unknown FramebufferTarget requested");
                 return 0;
         }
     }

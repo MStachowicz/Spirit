@@ -48,7 +48,7 @@ namespace OpenGL
                 return;
             }
             else
-                ZEPHYR_ASSERT(false, "Uniform variable '{}' not found in shader '{}'", pVariableName, mName);
+                ASSERT(false, "Uniform variable '{}' not found in shader '{}'", pVariableName, mName);
         }
 
         GLData::ShaderStorageBlockVariable* getShaderBlockVariable(const std::string& pVariableName)
@@ -63,7 +63,7 @@ namespace OpenGL
                     return &(*variable);
             }
 
-            ZEPHYR_ASSERT(false, "ShaderStorageBlockVariable '{}' not found in shader '{}'", pVariableName, mName);
+            ASSERT(false, "ShaderStorageBlockVariable '{}' not found in shader '{}'", pVariableName, mName);
             return nullptr;
         }
 

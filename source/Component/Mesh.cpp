@@ -20,8 +20,8 @@ namespace Data
         , mTriangles{}
         , mGLData{}
     {
-        ZEPHYR_ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
-        ZEPHYR_ASSERT(pAssimpMesh.HasNormals(), "Mesh has to have normals");
+        ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
+        ASSERT(pAssimpMesh.HasNormals(), "Mesh has to have normals");
 
          // Process positions, normals and texture coordinates
         for (unsigned int i = 0; i < pAssimpMesh.mNumVertices; i++)
@@ -71,8 +71,8 @@ namespace Data
         , mTriangles{}
         , mGLData{}
     {
-        ZEPHYR_ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
-        ZEPHYR_ASSERT(pAssimpMesh.HasNormals(), "Mesh has to have normals");
+        ASSERT(pAssimpMesh.mNumUVComponents[0] == 2, "Only 2-component UVs are supported");
+        ASSERT(pAssimpMesh.HasNormals(), "Mesh has to have normals");
 
         // Process positions, normals and texture coordinates
         for (unsigned int i = 0; i < pAssimpMesh.mNumVertices; i++)
@@ -116,7 +116,7 @@ namespace Data
                     aiString fileName;
                     material->GetTexture(pTextureType, i, &fileName);
                     const std::filesystem::path textureFilePath = fileName.C_Str();
-                    ZEPHYR_ASSERT(false, "Need to set textureFilePath to full path for textureSystem loader");
+                    ASSERT(false, "Need to set textureFilePath to full path for textureSystem loader");
 
                     return std::make_optional(pTextureManager.getOrCreate([&textureFilePath](const Texture& pTexture)
                         { return pTexture.mFilePath == textureFilePath; }, textureFilePath));
@@ -169,7 +169,7 @@ namespace Data
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
             LOG_ERROR("Model load error: {}", std::string(importer.GetErrorString()));
-            ZEPHYR_ASSERT(false, "Failed to load model using ASSIMP");
+            ASSERT(false, "Failed to load model using ASSIMP");
             return;
         }
 

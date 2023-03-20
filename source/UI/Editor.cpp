@@ -77,7 +77,7 @@ namespace ImGui
             return false;
 
         const auto it = std::find_if(pOptions.begin(), pOptions.end(), [&pCurrent](const auto& pElement) { return pCurrent == pElement.first; });
-        ZEPHYR_ASSERT(it != pOptions.end(), "pCurrent not found in the list pOptions, pOptions should be a complete list of all types of Type.");
+        ASSERT(it != pOptions.end(), "pCurrent not found in the list pOptions, pOptions should be a complete list of all types of Type.");
 
         bool result = false;
 

@@ -15,13 +15,13 @@ namespace Data
         , mHeight{-1}
         , mNumberOfChannels{-1}
     {
-        //ZEPHYR_ASSERT(Utility::File::exists(pFilePath), "The texture file not found at path '{}'", pFilePath.string());
+        //ASSERT(Utility::File::exists(pFilePath), "The texture file not found at path '{}'", pFilePath.string());
 
         // OpenGL expects 0 coordinate on y-axis to be the bottom side of the image, images usually have 0 at the top of y-axis
         // Flip textures here to account for this.
         stbi_set_flip_vertically_on_load(true);
         mData = stbi_load(pFilePath.string().c_str(), &mWidth, &mHeight, &mNumberOfChannels, 0);
-        ZEPHYR_ASSERT(mData != nullptr, "Failed to load texture");
+        ASSERT(mData != nullptr, "Failed to load texture");
 
         mGLTexture = OpenGL::Texture(*this);
 

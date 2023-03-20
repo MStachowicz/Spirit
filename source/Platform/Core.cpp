@@ -27,7 +27,7 @@ namespace Platform
     {
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
         mHandle = glfwCreateWindow(mWidth, mHeight, "Zephyr", NULL, NULL);
-        ZEPHYR_ASSERT(mHandle != nullptr, "Failed to create a GLFW window");
+        ASSERT(mHandle != nullptr, "Failed to create a GLFW window");
         glfwSetWindowUserPointer(mHandle, this);
         glfwMakeContextCurrent(mHandle);
         glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -80,7 +80,7 @@ namespace Platform
         { // Initialise GLFW
             glfwSetErrorCallback(GLFW_errorCallback);
             const auto initalisedGLFW = glfwInit();
-            ZEPHYR_ASSERT(initalisedGLFW == GLFW_TRUE, "GLFW initialisation failed");
+            ASSERT(initalisedGLFW == GLFW_TRUE, "GLFW initialisation failed");
 
             // Set Graphics context version
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenGLMajorVersion);
@@ -115,7 +115,7 @@ namespace Platform
         {
             mOpenGLContext = (GladGLContext*)malloc(sizeof(GladGLContext));
             int version    = gladLoadGLContext(mOpenGLContext, glfwGetProcAddress);
-            ZEPHYR_ASSERT(mOpenGLContext && version != 0, "Failed to initialise GLAD OpenGL");
+            ASSERT(mOpenGLContext && version != 0, "Failed to initialise GLAD OpenGL");
             LOG_INFO("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
         }
 

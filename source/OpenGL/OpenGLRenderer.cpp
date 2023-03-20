@@ -129,7 +129,7 @@ namespace OpenGL
         { // Prepare mScreenFramebuffer for rendering
             mScreenFramebuffer.bind();
             mScreenFramebuffer.clearBuffers();
-            ZEPHYR_ASSERT(mScreenFramebuffer.isComplete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
+            ASSERT(mScreenFramebuffer.isComplete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
         }
 
         { // Set global shader uniforms.
@@ -234,9 +234,9 @@ namespace OpenGL
             draw(*mMeshSystem.mPlanePrimitive);
         }
 
-        //ZEPHYR_ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
-        //ZEPHYR_ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
-        //ZEPHYR_ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
+        //ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
+        //ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
+        //ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
         pointLightDrawCount       = 0;
         directionalLightDrawCount = 0;
         spotLightDrawCount        = 0;
@@ -485,7 +485,7 @@ namespace OpenGL
     glm::vec3 OpenGLRenderer::getCursorWorldDirection() const
     {
         const auto [mouseX, mouseY]   = Platform::Core::getCursorPosition(); // VIEWPORT
-        ZEPHYR_ASSERT(mouseX > 0.f && mouseY > 0.f, "Mouse coordinates cannot be negative, did you miss a Window::capturingMouse() check before calling")
+        ASSERT(mouseX > 0.f && mouseY > 0.f, "Mouse coordinates cannot be negative, did you miss a Window::capturingMouse() check before calling")
         const auto [windowX, windowY] = Platform::Core::getWindow().size();
 
         // VIEWPORT [0 - WINDOWSIZE] to OpenGL NDC [-1 - 1]
