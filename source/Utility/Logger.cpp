@@ -13,8 +13,8 @@ void Logger::log_info(const std::string& p_message, const std::source_location& 
 
     if constexpr (s_log_to_editor)
     {
-        if (m_editor_sink)
-            m_editor_sink->log(info_str);
+        if (s_editor_sink)
+            s_editor_sink->log(info_str);
     }
 
     if constexpr (s_log_to_console)
@@ -29,8 +29,8 @@ void Logger::log_warning(const std::string& p_message, const std::source_locatio
 
     if constexpr (s_log_to_editor)
     {
-        if (m_editor_sink)
-            m_editor_sink->log_warning(warn_str);
+        if (s_editor_sink)
+            s_editor_sink->log_warning(warn_str);
     }
 
     if constexpr (s_log_to_console)
@@ -45,8 +45,8 @@ void Logger::log_error(const std::string& p_message, const std::source_location&
 
     if constexpr (s_log_to_editor)
     {
-        if (m_editor_sink)
-            m_editor_sink->log_error(error_str);
+        if (s_editor_sink)
+            s_editor_sink->log_error(error_str);
     }
 
     if constexpr (s_log_to_console)
