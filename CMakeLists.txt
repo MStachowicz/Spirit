@@ -127,6 +127,8 @@ target_link_libraries(Geometry
 add_library(UI
 source/UI/Editor.hpp
 source/UI/Editor.cpp
+source/UI/Console.hpp
+source/UI/Console.cpp
 source/UI/ImGuiConfig.hpp
 )
 target_include_directories(UI

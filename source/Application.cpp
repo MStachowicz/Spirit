@@ -9,7 +9,9 @@ Application::Application()
     , mPhysicsSystem(mSceneSystem, mCollisionSystem)
     , mInputSystem(mSceneSystem)
     , mEditor(mTextureSystem, mMeshSystem, mSceneSystem, mCollisionSystem, mOpenGLRenderer)
-{}
+{
+    Logger::s_editor_sink = &mEditor;
+}
 
 void Application::simulationLoop()
 {

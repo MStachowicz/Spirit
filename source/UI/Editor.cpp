@@ -113,249 +113,10 @@ namespace ImGui
 
         ).c_str());
     }
-
-    // Console with an input and filter view for outputting application messages to the editor.
-    // The input box supports commands making this a command-line-esque console.
-    struct Console
-    {
-        struct Message
-        {
-            std::string m_message;
-            glm::vec3 m_colour;
-
-            Message(const std::string& p_message, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f))
-                : m_message{p_message}
-                , m_colour{p_colour}
-            {}
-        };
-
-    private:
-        std::vector<std::string> m_commands; // Available commands in the input box
-        std::vector<std::string> m_history;
-        std::vector<Message> m_log_messages;
-        ImGuiTextFilter m_filter;
-        char m_input_buffer[256]; // Text box input
-        bool m_auto_scroll;
-        bool m_scroll_to_bottom;
-
-    public:
-        Console()
-            : m_commands{"HELP" "HISTORY" "CLEAR" "CLASSIFY"}
-            , m_history{}
-            , m_log_messages{}
-            , m_auto_scroll{true}
-            , m_scroll_to_bottom{false}
-        {
-            memset(m_input_buffer, 0, sizeof(m_input_buffer));
-            clear_log();
-        }
-        ~Console() = default;
-
-        void clear_log()                       { m_log_messages.clear(); }
-        void add_log(const Message& p_message) { m_log_messages.push_back(p_message); }
-
-        void draw(const char* title, bool* p_open)
-        {
-            ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-            if (!ImGui::Begin(title, p_open))
-            {
-                ImGui::End();
-                return;
-            }
-
-            // As a specific feature guaranteed by the library, after calling Begin() the last Item represent the title bar.
-            // So e.g. IsItemHovered() will return true when hovering the title bar.
-            // Here we create a context menu only available from the title bar.
-            if (ImGui::BeginPopupContextItem())
-            {
-                if (ImGui::MenuItem("Close Console"))
-                    *p_open = false;
-                ImGui::EndPopup();
-            }
-            ImGui::TextWrapped("Enter 'HELP' for help.");
-
-            ImGui::SameLine();
-            bool copy_to_clipboard = ImGui::SmallButton("Copy");
-            // static float t = 0.0f; if (ImGui::GetTime() - t > 0.02f) { t = ImGui::GetTime(); add_log("Spam %f", t); }
-            ImGui::Separator();
-
-            // Options menu
-                if (ImGui::BeginPopup("Options"))
-                {
-                ImGui::Checkbox("Auto-scroll", &m_auto_scroll);
-                    ImGui::EndPopup();
-                }
-
-            // Options, m_filter
-                if (ImGui::Button("Options"))
-                    ImGui::OpenPopup("Options");
-            ImGui::SameLine();
-            m_filter.Draw("m_filter (\"incl,-excl\") (\"error\")", 180);
-            ImGui::Separator();
-
-            // Reserve enough left-over height for 1 separator + 1 input text
-            const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-            ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-            if (ImGui::BeginPopupContextWindow())
-            {
-                if (ImGui::Selectable("Clear")) clear_log();
-                ImGui::EndPopup();
-            }
-
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-
-            if (copy_to_clipboard)
-                ImGui::LogToClipboard();
-
-            for (int i = 0; i < m_log_messages.size(); i++)
-            {
-                const char* item = m_log_messages[i].m_message.c_str();
-                if (!m_filter.PassFilter(item))
-                    continue;
-
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(m_log_messages[i].m_colour.r, m_log_messages[i].m_colour.g, m_log_messages[i].m_colour.b, 1.0f));
-                ImGui::TextUnformatted(m_log_messages[i].m_message.c_str());
-                ImGui::PopStyleColor();
-            }
-            if (copy_to_clipboard)
-                ImGui::LogFinish();
-
-            if (m_scroll_to_bottom || (m_auto_scroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-                ImGui::SetScrollHereY(1.0f);
-            m_scroll_to_bottom = false;
-
-            ImGui::PopStyleVar();
-            ImGui::EndChild();
-            ImGui::Separator();
-
-            // Command-line
-            bool reclaim_focus = false;
-            ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
-            if (ImGui::InputText("Input", m_input_buffer, IM_ARRAYSIZE(m_input_buffer), input_text_flags, &TextEditCallbackStub, (void*)this))
-            {
-                char* s = m_input_buffer;
-                char* str_end = s + strlen(s);
-
-                while (str_end > s && str_end[-1] == ' ')
-                    str_end--;
-                *str_end = 0;
-
-                if (s[0])
-                    ExecCommand(s);
-
-                reclaim_focus = true;
-            }
-
-            // Auto-focus on window apparition
-            ImGui::SetItemDefaultFocus();
-            if (reclaim_focus)
-                ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-
-            ImGui::End();
-        }
-    private:
-        void ExecCommand(const std::string& p_command)
-        {
-            add_log(std::format("# {}\n", p_command));
-            m_history.push_back(p_command);
-
-            // Process command
-            if (p_command == "CLEAR")
-            {
-                clear_log();
-            }
-            else if (p_command == "HELP")
-                {
-                ImGui::TextWrapped("TAB key - completion\nUp/Down keys - command history");
-
-                std::string m_commandsStr = "Available m_commands:\n";
-                for (const auto& command : m_commands)
-                    m_commandsStr += "\n- " + command;
-                add_log(m_commandsStr);
-                }
-            else if (p_command == "HISTORY")
-            {
-                std::string historyStr = "Command history:\n";
-                for (const auto& command : m_history)
-                    historyStr += "\n- " + command;
-                add_log(historyStr);
-            }
-            else
-                add_log({std::format("Unknown command: '{}'\n", p_command), glm::vec3(1.f, 0.f, 0.f)});
-
-            // On command input, we scroll to bottom even if m_auto_scroll==false
-            m_scroll_to_bottom = true;
-        }
-
-        // In C++11 you'd be better off using lambdas for this sort of forwarding callbacks
-        static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
-        {
-            Console* console = (Console*)data->UserData;
-            return console->TextEditCallback(data);
-        }
-
-        int TextEditCallback(ImGuiInputTextCallbackData* data)
-        {
-            // add_log("cursor: %d, selection: %d-%d", data->CursorPos, data->SelectionStart, data->SelectionEnd);
-            switch (data->EventFlag)
-            {
-                case ImGuiInputTextFlags_CallbackCompletion:
-                {
-                    if (data->BufTextLen <= 0)
-                        return 0;
-
-                    std::string input = "";
-                    input.reserve(data->BufSize);
-                    for (int i = 0; i < data->BufTextLen; i++)
-                        input.push_back(data->Buf[i]);
-
-                    // Build a list of candidates
-                    std::vector<std::string> candidates;
-                    for (const auto& command : m_commands)
-                    {
-                        if (input == command || command.starts_with(input))
-                            candidates.push_back(command);
-                    }
-
-                    if (candidates.size() == 0) // No match
-                        add_log(std::format("No match for \"{}\"", input));
-                    else if (candidates.size() == 1)
-            {
-                        // Single match. Delete the beginning of the word and replace it entirely so we've got nice casing.
-                        data->DeleteChars(0, data->BufSize);
-                        //data->DeleteChars(data->CursorPos - data->BufTextLen, data->CursorPos + data->BufTextLen);
-
-                        data->InsertChars(data->CursorPos, candidates[0].c_str());
-                        data->InsertChars(data->CursorPos, " ");
-                    }
-                    else
-                {
-                        // Multiple matches. Complete as much as we can..
-                        // So inputing "C"+Tab will complete to "CL" then display "CLEAR" and "CLASSIFY" as matches.
-
-                        // List matches
-                        std::string candidatesStr = "";
-                        for (const auto& candidate : candidates)
-                            candidatesStr += std::format("- {}\n", candidate);
-                        add_log(candidatesStr);
-                    }
-                    break;
-                }
-                case ImGuiInputTextFlags_CallbackHistory:
-                    {
-                    }
-                }
-            return 0;
-            }
-    };
-
-
 } // namespace ImGui
 
 namespace UI
 {
-    static ImGui::Console console;
-
     Editor::Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
         : mTextureSystem{pTextureSystem}
         , mMeshSystem{pMeshSystem}
@@ -363,6 +124,7 @@ namespace UI
         , mCollisionSystem{pCollisionSystem}
         , mOpenGLRenderer{pOpenGLRenderer}
         , mSelectedEntities{}
+        , m_console{}
         , mWindowsToDisplay{}
         , mDrawCount{0}
     {
@@ -565,7 +327,7 @@ namespace UI
 
     void Editor::drawLog()
     {
-        console.draw("Console", &mWindowsToDisplay.Log);
+        m_console.draw("Console", &mWindowsToDisplay.Log);
     }
 
     void Editor::drawGraphicsWindow()
@@ -737,15 +499,15 @@ namespace UI
 
 void Editor::log(const std::string& p_message)
 {
-    console.add_log({p_message});
+        m_console.add_log({p_message});
 }
 void Editor::log_warning(const std::string& p_message)
 {
-    console.add_log({p_message, glm::vec3(1.f, 1.f, 0.f)});
+        m_console.add_log({p_message, glm::vec3(1.f, 1.f, 0.f)});
 }
 void Editor::log_error(const std::string& p_message)
 {
-    console.add_log({p_message, glm::vec3(1.f, 0.f, 0.f)});
+        m_console.add_log({p_message, glm::vec3(1.f, 0.f, 0.f)});
 }
 
 } // namespace UI

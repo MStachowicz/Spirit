@@ -1,8 +1,13 @@
 #pragma once
 
+// UI
+#include "Console.hpp"
+
+// GLM
 #include "glm/vec3.hpp"
 #include "glm/fwd.hpp"
 
+// STD
 #include <vector>
 #include <string>
 
@@ -65,6 +70,7 @@ namespace UI
         OpenGL::OpenGLRenderer&  mOpenGLRenderer;
 
         std::vector<ECS::Entity> mSelectedEntities;
+        Console m_console;
         Windows mWindowsToDisplay; // All the windows currently being displayed
     public:
         int mDrawCount;
