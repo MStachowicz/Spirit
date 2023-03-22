@@ -89,5 +89,6 @@ namespace UI
         void drawPerformanceWindow();
         void drawPhysicsWindow();
         void drawLog();
+        void initialiseStyling();
     };
 } // namespace UI

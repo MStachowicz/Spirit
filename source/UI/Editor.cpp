@@ -138,6 +138,8 @@ namespace UI
             , pTriangle.mPoint3.x, pTriangle.mPoint3.y, pTriangle.mPoint3.z);
             std::cout << constructor << std::endl;
         };
+
+        initialiseStyling();
     }
 
     void Editor::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)
@@ -497,17 +499,54 @@ namespace UI
         ImGui::End();
     }
 
-void Editor::log(const std::string& p_message)
-{
+    void Editor::log(const std::string& p_message)
+    {
         m_console.add_log({p_message});
-}
-void Editor::log_warning(const std::string& p_message)
-{
+    }
+    void Editor::log_warning(const std::string& p_message)
+    {
         m_console.add_log({p_message, glm::vec3(1.f, 1.f, 0.f)});
-}
-void Editor::log_error(const std::string& p_message)
-{
+    }
+    void Editor::log_error(const std::string& p_message)
+    {
         m_console.add_log({p_message, glm::vec3(1.f, 0.f, 0.f)});
-}
+    }
+    void Editor::initialiseStyling()
+    {
+        // Round out the UI and make more compact
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowPadding            = ImVec2(4.f, 2.f);
+        style.FramePadding             = ImVec2(4.f, 2.f);
+        style.CellPadding              = ImVec2(4.f, 0.f);
+        style.ItemSpacing              = ImVec2(4.f, 3.f);
+        style.ItemInnerSpacing         = ImVec2(4.f, 2.f);
+        style.TouchExtraPadding        = ImVec2(0.f, 0.f);
+        style.IndentSpacing            = 16.f;
+        style.ScrollbarSize            = 10.f;
+        style.GrabMinSize              = 10.f;
 
+        style.WindowBorderSize         = 1.f;
+        style.ChildBorderSize          = 1.f;
+        style.PopupBorderSize          = 1.f;
+        style.FrameBorderSize          = 0.f;
+        style.TabBorderSize            = 0.f;
+
+        style.WindowRounding           = 4.f;
+        style.ChildRounding            = 4.f;
+        style.FrameRounding            = 4.f;
+        style.PopupRounding            = 4.f;
+        style.ScrollbarRounding        = 4.f;
+        style.GrabRounding             = 4.f;
+        style.LogSliderDeadzone        = 4.f;
+        style.TabRounding              = 4.f;
+
+        style.WindowTitleAlign         = ImVec2(0.5f, 0.5f);
+        style.WindowMenuButtonPosition = ImGuiDir_Right;
+        style.ColorButtonPosition      = ImGuiDir_Right;
+        style.ButtonTextAlign          = ImVec2(0.5f, 0.5f);
+        style.SelectableTextAlign      = ImVec2(0.5f, 0.5f);
+        style.DisplaySafeAreaPadding   = ImVec2(0.f, 0.f);
+
+        style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.f, 0.f, 0.f, 1.f);
+    }
 } // namespace UI
