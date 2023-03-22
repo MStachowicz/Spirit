@@ -9,7 +9,7 @@
 
 void Logger::log_info(const std::string& p_message, const std::source_location& p_location)
 {
-    const auto info_str = std::format("[INFO] {}\n{}", p_message, to_string(p_location));
+    const auto info_str = std::format("[INFO] {} -{}", p_message, to_string(p_location));
 
     if constexpr (s_log_to_editor)
     {
@@ -25,7 +25,7 @@ void Logger::log_info(const std::string& p_message, const std::source_location& 
 }
 void Logger::log_warning(const std::string& p_message, const std::source_location& p_location)
 {
-    const auto warn_str = std::format("[WARNING] {}\n{}", p_message, to_string(p_location));
+    const auto warn_str = std::format("[WARNING] {} -{}", p_message, to_string(p_location));
 
     if constexpr (s_log_to_editor)
     {
@@ -41,7 +41,7 @@ void Logger::log_warning(const std::string& p_message, const std::source_locatio
 }
 void Logger::log_error(const std::string& p_message, const std::source_location& p_location)
 {
-    const auto error_str = std::format("[ERROR] {}\n{}", p_message, to_string(p_location));
+    const auto error_str = std::format("[ERROR] {} -{}", p_message, to_string(p_location));
 
     if constexpr (s_log_to_editor)
     {
