@@ -4,6 +4,7 @@
 
 // Utility
 #include "Logger.hpp"
+#include "File.hpp"
 
 // External
 #include "glad/gl.h"
@@ -28,9 +29,20 @@ namespace Platform
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
         mHandle = glfwCreateWindow(mWidth, mHeight, "Zephyr", NULL, NULL);
         ASSERT(mHandle != nullptr, "Failed to create a GLFW window");
+
         glfwSetWindowUserPointer(mHandle, this);
         glfwMakeContextCurrent(mHandle);
         glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+        // Set the taskbar icon for the window
+        const auto icon_path = Utility::File::textureDirectory / "Icons" / "Icon.png";
+        auto icon_image = Utility::File::s_image_files.getOrCreate([&icon_path](const Utility::Image& p_image){ return p_image.m_filepath == icon_path; }, icon_path);
+        GLFWimage icon;
+        icon.pixels = (unsigned char*)(icon_image->get_data());
+        icon.width = icon_image->m_width;
+        icon.height = icon_image->m_height;
+        glfwSetWindowIcon(mHandle, 1, &icon);
+
         LOG("Created GLFW Window with resolution {}x{}",mWidth, mHeight);
     }
     void Window::requestClose()

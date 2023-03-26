@@ -153,8 +153,8 @@ int main(int argc, char *argv[])
 {
     Utility::Stopwatch stopwatch;
 
-    Platform::Core::initialise();
     Utility::File::setupDirectories(argv[0]);
+    Platform::Core::initialise();
     JobSystem::initialise();
 
     Test::runUnitTests(false);
