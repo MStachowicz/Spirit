@@ -16,7 +16,7 @@ PUBLIC System
 PUBLIC OpenGL
 PUBLIC Platform
 PUBLIC UI
-PUBLIC Utility
+PUBLIC Utility # Simulation loop runs in the header and uses Logger
 PUBLIC Test
 )
 # Zephyr end --------------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ PRIVATE source/External/ASSIMP/include
 target_link_libraries(Component
 PUBLIC Geometry
 PUBLIC OpenGL
-PUBLIC Utility
+PRIVATE Utility
 PRIVATE ImGui
 PRIVATE assimp
 )
@@ -93,8 +93,8 @@ PUBLIC source/System
 target_link_libraries(System
 PUBLIC Component
 PUBLIC Geometry
-PUBLIC Utility
 PUBLIC ECS #SceneSystem.hpp uses ECS storage
+PRIVATE Utility
 PRIVATE Platform
 )
 # System end ----------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ PUBLIC source/Platform
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(Platform
-PUBLIC Utility
+PRIVATE Utility
 PRIVATE glfw
 PRIVATE glad_GL
 PRIVATE ImGui
@@ -180,7 +180,7 @@ PUBLIC source/External/GLM
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(OpenGL
-PUBLIC Utility # ToIndex used in header for size of Shader::attribute arrays.
+PRIVATE Utility # ToIndex used in header for size of Shader::attribute arrays.
 PUBLIC Geometry
 PRIVATE System
 PRIVATE Platform
@@ -210,11 +210,9 @@ target_include_directories(Utility
 PUBLIC source/Utility
 PUBLIC source/Utility/JobSystem
 PUBLIC source/External/GLM
-PRIVATE source/External/spdlog/include
 )
 target_link_libraries(Utility
-PUBLIC spdlog # Logger.hpp uses spdlog in the header.
-PRIVATE UI
+PRIVATE UI # Logger.cpp uses Editor for output
 )
 # Utility end ---------------------------------------------------------------------------------
 
@@ -258,10 +256,6 @@ PRIVATE Geometry
     PRIVATE source/External/GLFW/include
     )
     # ImGui end -----------------------------------------------------------------------------------
-
-    # spdlog --------------------------------------------------------------------------------------
-    add_subdirectory(source/External/spdlog External/spdlog)
-    # spdlog end ----------------------------------------------------------------------------------
 
     # GLFW ----------------------------------------------------------------------------------------
     add_subdirectory(source/External/GLFW External/GLFW)
