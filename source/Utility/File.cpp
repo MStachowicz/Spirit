@@ -27,7 +27,7 @@ namespace Utility
     {
         // OpenGL expects 0 coordinate on y-axis to be the bottom side of the image, images usually have 0 at the top of y-axis
         // Flip textures here to account for this.
-        stbi_set_flip_vertically_on_load(true);
+        stbi_set_flip_vertically_on_load(false);
 
         m_data = (std::byte*)(stbi_load(m_filepath.string().c_str(), &m_width, &m_height, &m_number_of_channels, 0));
         ASSERT(m_data != nullptr, "Failed to load texture at path '{}'", m_filepath.string());
