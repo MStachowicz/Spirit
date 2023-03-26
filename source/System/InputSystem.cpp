@@ -62,6 +62,9 @@ namespace System
 
     void InputSystem::onKeyPressed(const Platform::Key& pKeyPressed)
     {
+        if (pKeyPressed == Platform::Key::KEY_ESCAPE) // Regardless of state, close on escape
+            Platform::Core::getWindow().requestClose();
+
         if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
         {
             switch (pKeyPressed)
@@ -102,11 +105,7 @@ namespace System
                         primaryCamera->move(Component::Camera::Down);
                     break;
                 }
-                case Platform::Key::KEY_ESCAPE:
-                    Platform::Core::getWindow().requestClose();
-                    break;
                 case Platform::Key::KEY_ENTER:
-                    break;
                 case Platform::Key::KEY_UNKNOWN:
                 default:
                     break;
