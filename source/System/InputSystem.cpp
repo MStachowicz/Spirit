@@ -62,53 +62,55 @@ namespace System
 
     void InputSystem::onKeyPressed(const Platform::Key& pKeyPressed)
     {
-        switch (pKeyPressed)
+        if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
         {
-            case Platform::Key::KEY_W:
+            switch (pKeyPressed)
             {
-                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                    primaryCamera->move(Component::Camera::Forward);
-                break;
+                case Platform::Key::KEY_W:
+                {
+                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+                        primaryCamera->move(Component::Camera::Forward);
+                    break;
+                }
+                case Platform::Key::KEY_S:
+                {
+                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+                        primaryCamera->move(Component::Camera::Backward);
+                    break;
+                }
+                case Platform::Key::KEY_A:
+                {
+                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+                        primaryCamera->move(Component::Camera::Left);
+                    break;
+                }
+                case Platform::Key::KEY_D:
+                {
+                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+                        primaryCamera->move(Component::Camera::Right);
+                    break;
+                }
+                case Platform::Key::KEY_E:
+                {
+                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+                        primaryCamera->move(Component::Camera::Up);
+                    break;
+                }
+                case Platform::Key::KEY_Q:
+                {
+                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+                        primaryCamera->move(Component::Camera::Down);
+                    break;
+                }
+                case Platform::Key::KEY_ESCAPE:
+                    Platform::Core::getWindow().requestClose();
+                    break;
+                case Platform::Key::KEY_ENTER:
+                    break;
+                case Platform::Key::KEY_UNKNOWN:
+                default:
+                    break;
             }
-            case Platform::Key::KEY_S:
-            {
-                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                    primaryCamera->move(Component::Camera::Backward);
-                break;
-            }
-            case Platform::Key::KEY_A:
-            {
-                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                    primaryCamera->move(Component::Camera::Left);
-                break;
-            }
-            case Platform::Key::KEY_D:
-            {
-                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                    primaryCamera->move(Component::Camera::Right);
-                break;
-            }
-            case Platform::Key::KEY_E:
-            {
-                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                    primaryCamera->move(Component::Camera::Up);
-                break;
-            }
-            case Platform::Key::KEY_Q:
-            {
-                if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                    primaryCamera->move(Component::Camera::Down);
-                break;
-            }
-            case Platform::Key::KEY_ESCAPE:
-                Platform::Core::getWindow().requestClose();
-                break;
-            case Platform::Key::KEY_ENTER:
-                break;
-            case Platform::Key::KEY_UNKNOWN:
-            default:
-                LOG_WARN("Unknown key press");
-                break;
         }
     }
 }
