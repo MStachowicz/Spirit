@@ -8,29 +8,10 @@
 
 namespace Data
 {
-    Texture::Texture(const std::filesystem::path& pFilePath)
-        : mFilePath{pFilePath}
-        , mName{pFilePath.stem().string()}
-        , mWidth{-1}
-        , mHeight{-1}
-        , mNumberOfChannels{-1}
+    Texture::Texture(const std::filesystem::path& p_filepath)
+        : m_image_ref{Utility::File::s_image_files.getOrCreate([&p_filepath](const Utility::Image& p_image){ return p_image.m_filepath == p_filepath; }, p_filepath)}
+        , m_GL_texture{*m_image_ref}
     {
-        //ASSERT(Utility::File::exists(pFilePath), "The texture file not found at path '{}'", pFilePath.string());
-
-        // OpenGL expects 0 coordinate on y-axis to be the bottom side of the image, images usually have 0 at the top of y-axis
-        // Flip textures here to account for this.
-        stbi_set_flip_vertically_on_load(true);
-        mData = stbi_load(pFilePath.string().c_str(), &mWidth, &mHeight, &mNumberOfChannels, 0);
-        ASSERT(mData != nullptr, "Failed to load texture");
-
-        mGLTexture = OpenGL::Texture(*this);
-
-        LOG("Data::Texture '{}' loaded", mName);
-    }
-
-    Texture::~Texture()
-    {
-        stbi_image_free(mData);
-        LOG("Data::Texture '{}' destroyed", mName);
+        LOG("Data::Texture '{}' loaded", m_image_ref->m_filepath.string());
     }
 }

@@ -188,7 +188,7 @@ namespace OpenGL
                 if (texComponent.mDiffuse.has_value())
                 {
                     mGLState.setActiveTextureUnit(0);
-                    texComponent.mDiffuse.value()->mGLTexture.bind();
+                    texComponent.mDiffuse.value()->m_GL_texture.bind();
                 }
                 //   if (texComponent.mSpecular.has_value())
                 //   {

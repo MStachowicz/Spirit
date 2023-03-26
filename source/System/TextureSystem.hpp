@@ -26,7 +26,7 @@ namespace System
         {
             return mTextureManager.getOrCreate([&pFilePath](const Data::Texture& pTexture)
             {
-                return pTexture.mFilePath == pFilePath;
+                return pTexture.m_image_ref->m_filepath == pFilePath;
             }, pFilePath);
         }
     };

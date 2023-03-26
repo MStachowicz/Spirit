@@ -6,6 +6,7 @@
 
 // UTILITY
 #include "Logger.hpp"
+#include "File.hpp"
 
 // OPENGL
 #include "glad/gl.h"
@@ -211,6 +212,29 @@ namespace OpenGL
         glGenTextures(1, &mHandle);
         if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
+    Texture::Texture(const Utility::Image& p_image)
+        : mHandle{0}
+    {
+        glGenTextures(1, &mHandle);
+        glBindTexture(GL_TEXTURE_2D, mHandle);
+
+        GLenum format = 0;
+        if (p_image.m_number_of_channels == 1)      format = GL_RED;
+        else if (p_image.m_number_of_channels == 3) format = GL_RGB;
+        else if (p_image.m_number_of_channels == 4) format = GL_RGBA;
+        ASSERT(format != 0, "Could not find channel type for this number of texture channels");
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, p_image.m_width, p_image.m_height, 0, format, GL_UNSIGNED_BYTE, p_image.get_data());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // GL_REPEAT - (default wrapping method)
+        // GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+    }
     Texture::Texture(Texture&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
     {
@@ -234,29 +258,6 @@ namespace OpenGL
 
         if constexpr (LogGLTypeEvents) LOG("Texture move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
         return *this;
-    }
-    Texture::Texture(const Data::Texture& pTextureData)
-        : mHandle{0}
-    {
-        glGenTextures(1, &mHandle);
-        glBindTexture(GL_TEXTURE_2D, mHandle);
-
-        GLenum format = 0;
-        if (pTextureData.mNumberOfChannels == 1)      format = GL_RED;
-        else if (pTextureData.mNumberOfChannels == 3) format = GL_RGB;
-        else if (pTextureData.mNumberOfChannels == 4) format = GL_RGBA;
-        ASSERT(format != 0, "Could not find channel type for this number of texture channels");
-
-        glTexImage2D(GL_TEXTURE_2D, 0, format, pTextureData.mWidth, pTextureData.mHeight, 0, format, GL_UNSIGNED_BYTE, pTextureData.getData());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // GL_REPEAT - (default wrapping method)
-        // GL_CLAMP_TO_EDGE - when using transparency to stop interpolation at borders causing semi-transparent artifacts.
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
     void Texture::bind() const
     {

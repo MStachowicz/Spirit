@@ -119,7 +119,7 @@ namespace Data
                     ASSERT(false, "Need to set textureFilePath to full path for textureSystem loader");
 
                     return std::make_optional(pTextureManager.getOrCreate([&textureFilePath](const Texture& pTexture)
-                        { return pTexture.mFilePath == textureFilePath; }, textureFilePath));
+                        { return pTexture.m_image_ref->m_filepath == textureFilePath; }, textureFilePath));
                 }
 
                 std::nullopt;

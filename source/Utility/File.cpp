@@ -2,6 +2,8 @@
 
 #include "Logger.hpp"
 
+#include "stb_image.h"
+
 #include <functional>
 #include <algorithm>
 #include <fstream>
@@ -14,6 +16,26 @@ namespace Utility
     std::filesystem::path File::GLSLShaderDirectory;
     std::filesystem::path File::textureDirectory;
     std::filesystem::path File::modelDirectory;
+
+
+    Image::Image(const std::filesystem::path& p_path)
+        : m_data{nullptr}
+        , m_filepath{p_path}
+        , m_width{0}
+        , m_height{0}
+        , m_number_of_channels{0}
+    {
+        // OpenGL expects 0 coordinate on y-axis to be the bottom side of the image, images usually have 0 at the top of y-axis
+        // Flip textures here to account for this.
+        stbi_set_flip_vertically_on_load(true);
+
+        m_data = (std::byte*)(stbi_load(m_filepath.string().c_str(), &m_width, &m_height, &m_number_of_channels, 0));
+        ASSERT(m_data != nullptr, "Failed to load texture at path '{}'", m_filepath.string());
+    }
+    Image::~Image()
+    {
+        stbi_image_free(m_data);
+    }
 
     void File::setupDirectories(const std::string& pExecutePath)
     {

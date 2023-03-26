@@ -8,10 +8,13 @@
 
 namespace Data
 {
-    class Texture;
     class Model;
     class CompositeMesh;
     class Mesh;
+}
+namespace Utility
+{
+    class Image;
 }
 
 namespace OpenGL
@@ -84,14 +87,13 @@ namespace OpenGL
     {
     public:
         Texture();
+        Texture(const Utility::Image& p_image);
         ~Texture();
 
         Texture(const Texture& pOther) = delete;
         Texture& operator=(const Texture& pOther) = delete;
         Texture(Texture&& pOther) noexcept;
         Texture& operator=(Texture&& pOther) noexcept;
-
-        Texture(const Data::Texture& pTextureData);
 
         void bind() const;
         const GLHandle& getHandle() const { return mHandle; };

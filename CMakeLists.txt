@@ -66,7 +66,7 @@ PRIVATE source/External/ASSIMP/include
 target_link_libraries(Component
 PUBLIC Geometry
 PUBLIC OpenGL
-PRIVATE Utility
+PUBLIC Utility # Used in headers of Mesh and Texture
 PRIVATE ImGui
 PRIVATE assimp
 )
@@ -210,6 +210,7 @@ target_include_directories(Utility
 PUBLIC source/Utility
 PUBLIC source/Utility/JobSystem
 PUBLIC source/External/GLM
+PRIVATE source/External/stb
 )
 target_link_libraries(Utility
 PRIVATE UI # Logger.cpp uses Editor for output
