@@ -61,8 +61,9 @@ namespace System
         constexpr float spaceBetweenPrimitives = 1.f; // Space from the end of one primitive mesh to starts of next.
         constexpr float incrementPerPrimitive  = primitiveExtents + spaceBetweenPrimitives;
         float runningXPosition = -((primitiveCount / 2.f) * incrementPerPrimitive) - (primitiveExtents);
-        auto containerDiffuse = Utility::File::textureDirectory / "metalContainerDiffuse.png";
-        auto directions       = Utility::File::textureDirectory / "directions.jpg";
+        auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
+        auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
+        auto directions        = Utility::File::textureDirectory / "directions.jpg";
 
         {
             Component::Transform transform;
@@ -70,8 +71,8 @@ namespace System
             Component::Label name        = Component::Label("cube");
 
             Component::Texture texture;
-            texture.mDiffuse = mTextureSystem.mTextureManager.getOrCreate([&containerDiffuse](const Data::Texture& pTexture) { return pTexture.mFilePath == containerDiffuse; }, containerDiffuse);
-            //texture.mSpecular = mTextureSystem.mTextureManager.get([](const Data::Texture& pTexture) { return pTexture.mFilePath.stem() == "metalContainerSpecular.png"; });
+            texture.mDiffuse  = mTextureSystem.getTexture(containerDiffuse);
+            texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
 
             Component::Mesh mesh         = {mMeshSystem.mCubePrimitive};
             Component::Collider collider = Component::Collider(transform, mesh);
@@ -80,12 +81,12 @@ namespace System
         }
         {
             Component::Transform transform;
-            transform.mPosition          = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-            Component::Label name        = Component::Label("cube 2");
+            transform.mPosition   = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
+            Component::Label name = Component::Label("cube 2");
 
             Component::Texture texture;
-            texture.mDiffuse = mTextureSystem.mTextureManager.getOrCreate([&containerDiffuse](const Data::Texture& pTexture) { return pTexture.mFilePath == containerDiffuse; }, containerDiffuse);
-            //texture.mSpecular = mTextureSystem.mTextureManager.get([](const Data::Texture& pTexture) { return pTexture.mFilePath.stem() == "metalContainerSpecular.png"; });
+            texture.mDiffuse = mTextureSystem.getTexture(containerDiffuse);
+            texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
 
             Component::Mesh mesh         = {mMeshSystem.mCubePrimitive};
             Component::Collider collider = Component::Collider(transform, mesh);
@@ -134,6 +135,9 @@ namespace System
 
     void SceneSystem::constructBoxScene()
     {
+        const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
+        const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
+
         {
             Component::Label name    = Component::Label("Camera");
             Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
@@ -150,8 +154,8 @@ namespace System
                 Component::Mesh mesh          = Component::Mesh(mMeshSystem.mCubePrimitive);
                 Component::Collider collider  = Component::Collider(transform, mesh);
                 Component::Texture texture;
-                texture.mDiffuse = mTextureSystem.mTextureManager.get([](const Data::Texture& pTexture) { return pTexture.mFilePath.stem() == "metalContainerDiffuse.png"; });
-                texture.mSpecular = mTextureSystem.mTextureManager.get([](const Data::Texture& pTexture) { return pTexture.mFilePath.stem() == "metalContainerSpecular.png"; });
+                texture.mDiffuse = mTextureSystem.getTexture(containerDiffuse);
+                texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
                 Component::RigidBody rigidBody;
 
                 mStorage.addEntity(mesh, transform, collider, rigidBody, name, texture);
@@ -195,6 +199,9 @@ namespace System
     }
     void SceneSystem::constructBouncingBallScene()
     {
+        const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
+        const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
+
         {
             Component::Label name    = Component::Label("Camera");
             Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
@@ -210,8 +217,8 @@ namespace System
 
             Component::Mesh mesh = Component::Mesh(mMeshSystem.mSpherePrimitive);
             Component::Texture texture;
-            texture.mDiffuse = mTextureSystem.mTextureManager.get([](const Data::Texture& pTexture) { return pTexture.mFilePath.stem() == "metalContainerDiffuse.png"; });
-            texture.mSpecular = mTextureSystem.mTextureManager.get([](const Data::Texture& pTexture) { return pTexture.mFilePath.stem() == "metalContainerSpecular.png"; });
+            texture.mDiffuse = mTextureSystem.getTexture(containerDiffuse);
+            texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
 
             Component::Collider collider = Component::Collider(transform, mesh);
 
