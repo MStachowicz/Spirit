@@ -156,7 +156,7 @@ namespace Platform
     {
         // Calling glfwSetWindowShouldClose or Window::request close doesnt destroy the window,
         // we have to handle this ourselves by reading the flag.
-        if (glfwWindowShouldClose(mPrimaryWindow->mHandle))
+        if (hasWindow() && glfwWindowShouldClose(mPrimaryWindow->mHandle))
         {
             delete mPrimaryWindow;
             mPrimaryWindow = nullptr;
@@ -264,7 +264,6 @@ namespace Platform
     {
         mMouseButtonEvent.dispatch(GLFW_getMouseButton(pButton), GLFW_getAction(pAction));
     }
-
     void Core::GLFW_windowResizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
     {
         ImGuiIO& io        = ImGui::GetIO();
