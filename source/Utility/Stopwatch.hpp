@@ -28,6 +28,9 @@ namespace Utility
             return static_cast<Type>(counted_time);
         }
 
+        // Returns the time elapsed since StopWatch construction.
+        // Type: The type to cast the duration to. e.g. float (allows fractions of Period e.g. 16.667)
+        // Period: The std::ratio used to cast the elapsed time relative to seconds. E.g. std::milli for milliseconds
         template <typename Type, typename Period>
         std::chrono::duration<Type, Period> duration_since_start() const
         {
