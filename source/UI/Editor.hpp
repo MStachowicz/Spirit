@@ -60,7 +60,7 @@ namespace UI
             bool ImGuiStack       = false;
             bool ImGuiAbout       = false;
             bool ImGuiStyleEditor = false;
-            bool Log              = false;
+            bool Console          = true;
         };
 
         System::TextureSystem&   mTextureSystem;
@@ -119,7 +119,7 @@ namespace UI
         void drawGraphicsWindow();
         void drawPerformanceWindow();
         void drawPhysicsWindow();
-        void drawLog();
+        void drawConsoleWindow();
         void initialiseStyling();
     };
 } // namespace UI

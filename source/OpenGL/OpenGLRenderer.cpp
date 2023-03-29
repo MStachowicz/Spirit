@@ -43,7 +43,7 @@ namespace OpenGL
         , mVisualiseNormals{false}
         , mForceClearColour{false}
         , mClearColour{0.f, 0.f, 0.f, 0.f}
-        , mForceDepthTestType{true}
+        , mForceDepthTestType{false}
         , mForcedDepthTestType{GLType::DepthTestType::Less}
         , mForceBlendType{false}
         , mForcedSourceBlendType{GLType::BlendFactorType::SourceAlpha}
@@ -55,7 +55,7 @@ namespace OpenGL
         , mShowOrientations{false}
         , mShowBoundingBoxes{false}
         , mFillBoundingBoxes{false}
-        , mShowCollisionGeometry{true}
+        , mShowCollisionGeometry{false}
         , mCylinders{}
         , mSpheres{}
         , mDepthViewerShader{"depthView", pGLState}

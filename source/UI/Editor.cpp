@@ -197,7 +197,7 @@ namespace UI
             if (ImGui::BeginMenu("View"))
             {
                 ImGui::MenuItem("Entity hierarchy", NULL, &mWindowsToDisplay.Entity);
-                ImGui::MenuItem("Log", NULL, &mWindowsToDisplay.Log);
+                ImGui::MenuItem("Console", NULL, &mWindowsToDisplay.Console);
 
                 if (ImGui::BeginMenu("Debug"))
                 {
@@ -230,7 +230,7 @@ namespace UI
             ImGui::EndMenuBar();
         }
         if (mWindowsToDisplay.Entity)           drawEntityTreeWindow();
-        if (mWindowsToDisplay.Log)              drawLog();
+        if (mWindowsToDisplay.Console)              drawConsoleWindow();
         if (mWindowsToDisplay.Performance)      drawPerformanceWindow();
         if (mWindowsToDisplay.Graphics)         drawGraphicsWindow();
         if (mWindowsToDisplay.Physics)          drawPhysicsWindow();
@@ -338,9 +338,9 @@ namespace UI
         ImGui::End();
     }
 
-    void Editor::drawLog()
+    void Editor::drawConsoleWindow()
     {
-        m_console.draw("Console", &mWindowsToDisplay.Log);
+        m_console.draw("Console", &mWindowsToDisplay.Console);
     }
 
     void Editor::drawGraphicsWindow()
