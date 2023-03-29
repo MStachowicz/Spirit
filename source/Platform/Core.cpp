@@ -22,6 +22,7 @@ namespace Platform
         : mWidth{pWidth}
         , mHeight{pHeight}
         , mAspectRatio{static_cast<float>(mWidth) / static_cast<float>(mHeight)}
+        , m_VSync{false}
         , mCapturingMouse{false}
         , mCapturedChangedThisFrame{false}
         , mHandle{nullptr}
@@ -33,6 +34,7 @@ namespace Platform
         glfwSetWindowUserPointer(mHandle, this);
         glfwMakeContextCurrent(mHandle);
         glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        set_VSync(m_VSync);
 
         // Set the taskbar icon for the window
         const auto icon_path = Utility::File::textureDirectory / "Icons" / "Icon.png";
@@ -45,14 +47,22 @@ namespace Platform
 
         LOG("Created GLFW Window with resolution {}x{}",mWidth, mHeight);
     }
-    void Window::requestClose()
-    {
-        glfwSetWindowShouldClose(mHandle, GL_TRUE); // Ask GLFW to close this window
-    }
     Window::~Window()
     {
         glfwDestroyWindow(mHandle);
         LOG("Destroyed GLFW Window");
+    }
+    void Window::requestClose()
+    {
+        glfwSetWindowShouldClose(mHandle, GL_TRUE); // Ask GLFW to close this window
+    }
+    void Window::set_VSync(bool p_enabled)
+    {
+        glfwMakeContextCurrent(mHandle);
+        // This function sets the swap interval for the current OpenGL context,
+        // i.e. the number of screen updates to wait from the time glfwSwapBuffers was called before swapping the buffers and returning.
+        glfwSwapInterval(p_enabled ? 1 : 0);
+        m_VSync = p_enabled;
     }
 
     void Window::setInputMode(const CursorMode& pCursorMode)

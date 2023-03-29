@@ -21,6 +21,9 @@ namespace Platform
         void setInputMode(const CursorMode& pCursorMode);
         void requestClose();
 
+        void set_VSync(bool p_enabled);
+        bool get_VSync() const { return m_VSync; };
+
         bool capturingMouse()      const { return mCapturingMouse != mCapturedChangedThisFrame; };
         float aspectRatio()        const { return mAspectRatio; };
         std::pair<int, int> size() const { return {mWidth, mHeight}; };
@@ -32,6 +35,7 @@ namespace Platform
         int mWidth;
         int mHeight;
         float mAspectRatio;
+        bool m_VSync; // Whether VSync is on for the window.
         bool mCapturingMouse; // Is the mouse hidden and input is restricted to this window.
         bool mCapturedChangedThisFrame; // Has mCapturingMouse changed on this pollEventCycle. Useful for avoiding same cycle input clashes.
         GLFWwindow* mHandle;
