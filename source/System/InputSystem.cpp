@@ -26,6 +26,29 @@ namespace System
         Platform::Core::mMouseMoveEvent.subscribe(this, &InputSystem::onMouseMoved);
     }
 
+    void InputSystem::update()
+    {
+        // Regardless of state, close on escape
+        if (Platform::Core::is_key_down(Platform::Key::Escape))
+        {
+            Platform::Core::getWindow().requestClose();
+            return;
+        }
+
+        if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
+        {
+            if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+            {
+                if (Platform::Core::is_key_down(Platform::Key::W)) primaryCamera->move(Component::Camera::Forward);
+                if (Platform::Core::is_key_down(Platform::Key::S)) primaryCamera->move(Component::Camera::Backward);
+                if (Platform::Core::is_key_down(Platform::Key::A)) primaryCamera->move(Component::Camera::Left);
+                if (Platform::Core::is_key_down(Platform::Key::D)) primaryCamera->move(Component::Camera::Right);
+                if (Platform::Core::is_key_down(Platform::Key::E)) primaryCamera->move(Component::Camera::Up);
+                if (Platform::Core::is_key_down(Platform::Key::Q)) primaryCamera->move(Component::Camera::Down);
+            }
+        }
+    }
+
     void InputSystem::onMouseMoved(const float& pXOffset, const float& pYOffset)
     {
         if (Platform::Core::getWindow().capturingMouse())
@@ -42,74 +65,20 @@ namespace System
         {
             switch (pMouseButton)
             {
-                case Platform::MouseButton::MOUSE_LEFT:
-                    break;
-                case Platform::MouseButton::MOUSE_MIDDLE:
-                    break;
+                case Platform::MouseButton::MOUSE_LEFT:   break;
+                case Platform::MouseButton::MOUSE_MIDDLE: break;
                 case Platform::MouseButton::MOUSE_RIGHT:
                 {
                     if (pAction == Platform::Action::PRESS)
                         Platform::Core::getWindow().setInputMode(Platform::CursorMode::NORMAL);
                     break;
                 }
-                    break;
-                default:
-                    LOG_WARN("Unknown mouse press");
-                    break;
+                default: break;
             }
         }
     }
 
     void InputSystem::onKeyPressed(const Platform::Key& pKeyPressed)
     {
-        if (pKeyPressed == Platform::Key::KEY_ESCAPE) // Regardless of state, close on escape
-            Platform::Core::getWindow().requestClose();
-
-        if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
-        {
-            switch (pKeyPressed)
-            {
-                case Platform::Key::KEY_W:
-                {
-                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                        primaryCamera->move(Component::Camera::Forward);
-                    break;
-                }
-                case Platform::Key::KEY_S:
-                {
-                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                        primaryCamera->move(Component::Camera::Backward);
-                    break;
-                }
-                case Platform::Key::KEY_A:
-                {
-                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                        primaryCamera->move(Component::Camera::Left);
-                    break;
-                }
-                case Platform::Key::KEY_D:
-                {
-                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                        primaryCamera->move(Component::Camera::Right);
-                    break;
-                }
-                case Platform::Key::KEY_E:
-                {
-                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                        primaryCamera->move(Component::Camera::Up);
-                    break;
-                }
-                case Platform::Key::KEY_Q:
-                {
-                    if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                        primaryCamera->move(Component::Camera::Down);
-                    break;
-                }
-                case Platform::Key::KEY_ENTER:
-                case Platform::Key::KEY_UNKNOWN:
-                default:
-                    break;
-            }
-        }
     }
 }

@@ -1,7 +1,12 @@
 #pragma once
 
+#include "InputDefinitions.hpp"
+
 #include "EventDispatcher.hpp"
 
+#include <array>
+#include <limits>
+#include <type_traits>
 #include <utility>
 
 typedef struct GLFWwindow GLFWwindow;
@@ -9,11 +14,6 @@ struct GladGLContext;
 
 namespace Platform
 {
-    enum class Key;
-    enum class MouseButton;
-    enum class Action;
-    enum class CursorMode;
-
     class Window
     {
         friend class Core;
@@ -69,6 +69,9 @@ namespace Platform
         // Is the UI capturing keyboard input, such when a user clicks on an input box.
         static bool UICapturingKeyboard();
 
+        // Is p_key currently down
+        static bool is_key_down(const Key& p_key);
+
         // Returns the cursor screen-coordinates, relative to the upper-left corner of the primary window.
         // If the cursor is captured by the window the values returned can be negative (Window::capturingMouse).
         static std::pair<float, float> getCursorPosition();
@@ -80,6 +83,9 @@ namespace Platform
         static inline Utility::EventDispatcher<const int&, const int&> mWindowResizeEvent;
 
     private:
+        constexpr static auto Max_Key_Index = std::numeric_limits<std::underlying_type_t<Key>>::max();
+        static inline std::array<bool, Max_Key_Index> keys_pressed = { false };
+
         static inline Window* mPrimaryWindow = nullptr;
         static inline GladGLContext* mOpenGLContext;
         static inline double mLastXPosition = -1.0;

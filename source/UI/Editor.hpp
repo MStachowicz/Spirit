@@ -14,7 +14,7 @@
 
 namespace Platform
 {
-    enum class Key;
+    enum class Key : uint8_t;
     enum class MouseButton;
     enum class Action;
     enum class CursorMode;

@@ -89,9 +89,10 @@ private:
         while (true)
         {
             Platform::Core::pollEvents();
-
             if (!Platform::Core::hasWindow() || mSimulationLoopParamsChanged)
                 break;
+
+            mInputSystem.update();
 
             timeFrameStarted = Clock::now();
             durationSinceLastFrame = timeFrameStarted - timeLastFrameStarted;
