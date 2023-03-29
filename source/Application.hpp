@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
         LOG("Argument {}: {}", index + 1, argv[index]);
 
     Application app;
-    LOG("Zephyr initialisation took {}", stopwatch.duration_since_start<float, std::milli>());
+    LOG("Zephyr initialisation took {}", stopwatch.duration_since_start<int, std::milli>());
 
     app.simulationLoop();
 

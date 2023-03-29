@@ -9,7 +9,8 @@
 
 void Logger::log_info(const std::string& p_message, const std::source_location& p_location)
 {
-    const auto info_str = std::format("[INFO] {} -{}", p_message, to_string(p_location));
+    // const auto info_str = std::format("[INFO] {} -{}", p_message, to_string(p_location));
+    const auto info_str = std::format("[INFO] {}", p_message);
 
     if constexpr (s_log_to_editor)
     {
