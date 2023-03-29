@@ -115,12 +115,12 @@ private:
             {
                 // Rendering is only relevant if the data changed in the physics update.
                 // Not neccessary to decrement durationSinceLastRenderTick as in physics update above as repeated draws will be identical with no data changes.
-                durationSinceLastRenderTick = Duration::zero();
 
                 mOpenGLRenderer.draw();
-                mEditor.draw();
-
+                mEditor.draw(durationSinceLastRenderTick);
                 Platform::Core::swapBuffers();
+
+                durationSinceLastRenderTick = Duration::zero();
             }
         }
 

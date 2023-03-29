@@ -127,6 +127,8 @@ namespace UI
         , m_console{}
         , mWindowsToDisplay{}
         , mDrawCount{0}
+        , m_time_to_average_over{std::chrono::seconds(1)}
+        , m_duration_between_draws{}
     {
         Platform::Core::mMouseButtonEvent.subscribe(this, &Editor::onMousePressed);
 
@@ -184,8 +186,10 @@ namespace UI
         }
     }
 
-    void Editor::draw()
+    void Editor::draw(const DeltaTime& p_duration_since_last_draw)
     {
+        m_duration_between_draws.push_back(p_duration_since_last_draw);
+
         Platform::Core::startImGuiFrame();
 
         if (ImGui::BeginMenuBar())
@@ -198,6 +202,7 @@ namespace UI
                 if (ImGui::BeginMenu("Debug"))
                 {
                     ImGui::MenuItem("Performance", NULL, &mWindowsToDisplay.Performance);
+                    ImGui::MenuItem("FPS Timer", NULL, &mWindowsToDisplay.FPSTimer);
                     ImGui::MenuItem("Graphics", NULL, &mWindowsToDisplay.Graphics);
                     ImGui::MenuItem("Physics", NULL, &mWindowsToDisplay.Physics);
 
@@ -215,9 +220,15 @@ namespace UI
                 }
                 ImGui::EndMenu();
             }
+            if (mWindowsToDisplay.FPSTimer)
+            {
+                auto fps = get_fps(m_duration_between_draws, m_time_to_average_over);
+                std::string fps_str = std::format("FPS: {:.1f}", fps);
+                ImGui::SameLine((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(fps_str.c_str()).x - ImGui::GetStyle().ItemSpacing.x) / 2.f);
+                ImGui::Text(fps_str.c_str());
+            }
             ImGui::EndMenuBar();
         }
-
         if (mWindowsToDisplay.Entity)           drawEntityTreeWindow();
         if (mWindowsToDisplay.Log)              drawLog();
         if (mWindowsToDisplay.Performance)      drawPerformanceWindow();
@@ -341,6 +352,8 @@ namespace UI
 
             ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
             ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
+            bool VSync = window.get_VSync();
+            if (ImGui::Checkbox("VSync", &VSync)) window.set_VSync(VSync);
             ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
             ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
             ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
