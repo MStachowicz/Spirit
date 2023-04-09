@@ -76,15 +76,14 @@ namespace ECS
     {
         ComponentID ID    = 0;
         size_t size       = 0;
-        size_t alignment  = 0;
+        size_t align      = 0;
         MemberFuncs funcs = {};
     };
 
     struct ComponentLayout
     {
-        ComponentID ID = 0;
-        MemberFuncs funcs = {};
-        BufferPosition offset_from_instance_start = 0; // The number of bytes from the start of an Archetype instance to this Component
+        BufferPosition offset = 0; // The number of bytes from the start of an Archetype instance to this Component
+        ComponentInfo info    = {};
     };
 
     // ComponentHelper stores an array of ComponentInfos retrievable by ComponentType or ComponentID.
@@ -122,34 +121,6 @@ namespace ECS
             return componentBitset;
         }
 
-        // Generates a vector of ComponentLayouts from a paramater pack of ComponentTypes. Skips over Entity params.
-        // This function sets out the order and allignment of the Components within the Archetype as its used to initialise mComponents.
-        template <typename... ComponentTypes>
-        static inline std::vector<ComponentLayout> get_components_layout()
-        {
-            std::vector<ComponentLayout> result{};
-            result.reserve(sizeof...(ComponentTypes));
-
-            auto set_component_layout = [&result]<typename ComponentType>()
-            {
-                if constexpr (!std::is_same_v<Entity, std::decay_t<ComponentType>>) // Ignore any Entity params supplied.
-                {
-                    auto info = get_info<ComponentType>();
-                    result.push_back({info.ID, info.funcs, 0}); // offset_from_instance_start set later.
-                }
-            };
-            (set_component_layout.operator()<ComponentTypes>(), ...);
-
-            BufferPosition runningOffset = 0;
-            for (size_t i = 0; i < result.size(); i++)
-            {
-                result[i].offset_from_instance_start = runningOffset;
-                runningOffset += get_info(result[i].ID).size;
-            }
-
-            return result;
-        }
-
         template <typename ComponentType>
         static inline void set_info()
         {
@@ -158,7 +129,7 @@ namespace ECS
             {
                 using DecayedComponentType = std::decay_t<ComponentType>;
                 Infos[ID]                  = std::make_optional<ComponentInfo>(ID, sizeof(DecayedComponentType), alignof(DecayedComponentType), Meta::PackArg<DecayedComponentType>());
-                LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->alignment)
+                LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->align)
             }
         }
         template <typename... ComponentTypes>
@@ -180,6 +151,162 @@ namespace ECS
         }
     };
 
+    // Returns the next higher power of 2 after p_val
+    inline size_t next_greater_power_of_2(const size_t& p_val)
+    { // Find the next power of 2 by shifting the bit to the left
+        size_t result = 1;
+        while (result <= p_val) result <<= 1;
+        return result;
+    }
+    // Returns the multiple of p_multiple greater than p_min
+    inline size_t next_multiple(const size_t& p_multiple, const size_t& p_min)
+    {
+        // If p_min is already a multiple of p_multiple, return p_min
+        // Otherwise calculate the next multiple of p_multiple greater than or equal to p_min.
+
+        if (p_min % p_multiple == 0)
+            return p_min;
+        else
+            return ((p_min / p_multiple) + 1) * p_multiple;
+    }
+
+    // Returns the stride for a list of ComponentLayouts.
+    inline size_t get_stride(const std::vector<ComponentLayout>& p_component_layouts)
+    {
+        size_t max_position = 0;
+        size_t max_allign = 0;
+
+        for (const auto& component : p_component_layouts)
+        {
+            max_position = std::max(max_position, component.offset + component.info.size);
+            max_allign = std::max(max_allign, component.info.align);
+        }
+
+        return next_multiple(max_allign, max_position);
+    }
+
+    // Returns the string representation of the memory layout for a list of ComponentLayouts.
+    // Depends on p_component_layouts being ordered in ascending offset order.
+    inline std::string to_string(const std::vector<ComponentLayout>& p_component_layouts)
+    {
+        const auto stride          = get_stride(p_component_layouts);
+        const char padding_symbol  = '-';
+        char running_char          = 'A';
+        std::string component_list = "";
+        component_list.reserve(p_component_layouts.size() * 3);
+        std::string mem_layout     = "";
+        mem_layout.reserve(stride);
+
+        for (size_t i = 0; i < p_component_layouts.size(); i++)
+        {
+            const auto& component      = p_component_layouts[i];
+            const auto component_label = running_char++;
+
+            if (!component_list.empty()) component_list += ", ";
+            component_list += std::format("\nID: {} ({}) size: {} align: {}", std::to_string(component.info.ID), component_label, component.info.size, component.info.align);
+
+            const auto component_end_position = component.offset + component.info.size;
+            const size_t padding_size         = i + 1 == p_component_layouts.size() ? stride - component_end_position : p_component_layouts[i + 1].offset - component_end_position;
+
+            std::string comp_mem_layout = "";
+            comp_mem_layout.reserve(component.info.size + padding_size);
+
+            for (size_t i = 0; i < component.info.size; i++)
+                comp_mem_layout += component_label;
+            for (size_t i = 0; i < padding_size; i++)
+                comp_mem_layout += padding_symbol;
+
+            mem_layout += comp_mem_layout;
+        }
+
+        return std::format("{}:\n{} stride={}", component_list, mem_layout, stride);
+    }
+
+    // Generates a vector of ComponentLayouts from a paramater pack of ComponentTypes. Skips over Entity params.
+    // This function sets out the order and allignment of the Components within the Archetype buffer.
+    // The order of components is not guaranteed to remain the same.
+    template <typename... ComponentTypes>
+    inline std::vector<ComponentLayout> get_components_layout()
+    {
+        // There are a few assumptions we make setting the layout.
+        // 1. alignof each component is always a power of 2 (guaranteed by standard alignas(3) does not compile)
+        // 2. We make no promise to store the types in the same order specified by parameter pack - we can pack more efficiently.
+        // 3. Each ComponentType is at an offset position which is a multiple of its alignof.
+
+        // Of all the ComponentTypes, this is the largest alignof value.
+        constexpr auto max_allignof = Meta::get_max_alignof<ComponentTypes...>();
+        // The most un-optimised buffer size deduced by summing the ComponentTypes sizes + padding in the order they appear in the pack.
+        size_t worst_placement_size = 0;
+
+        std::vector<ComponentLayout> component_layouts;
+        component_layouts.reserve(sizeof...(ComponentTypes));
+
+        auto set_component_info = [&component_layouts, &worst_placement_size]<typename ComponentType>()
+        {
+            if constexpr (!std::is_same_v<Entity, std::decay_t<ComponentType>>) // Ignore any Entity params supplied.
+            {
+                component_layouts.push_back({0, ComponentHelper::get_info<ComponentType>()});
+                worst_placement_size += next_multiple(max_allignof, sizeof(ComponentType));
+            }
+        };
+        (set_component_info.operator()<ComponentTypes>(), ...);
+
+        // TODO Sort by size (+ align if size is equal) descending
+        std::sort(component_layouts.begin(), component_layouts.end(), [](const auto& a, const auto& b) -> bool { return a.info.size > b.info.size; });
+
+        // Unused fragment of the buffer.
+        struct empty_block
+        {
+            size_t start = 0;
+            size_t size  = 0;
+        };
+
+        // Begin the placement algorithm with an empty block representing a completely empty buffer
+        // worst_placement_size is neccessary since using size_t::max causes overflow problems below.
+        std::vector<empty_block> empty_blocks = {{0, worst_placement_size}};
+
+        // Go through the component_layouts and set their offset values.
+        for (size_t i = 0; i < component_layouts.size(); i++)
+        {
+            for (size_t j = 0; j < empty_blocks.size(); j++)
+            {
+                if (empty_blocks[j].size >= component_layouts[i].info.size) // If the block is big enough for the type
+                {
+                    const auto next_align_pos = next_multiple(component_layouts[i].info.align, empty_blocks[j].start);
+                    const auto block_end      = empty_blocks[j].start + empty_blocks[j].size;
+
+                    if (next_align_pos < block_end) // If the next alignment is before the end of the block
+                    {
+                        // If the remaining size of the block with alignment accounted for is large enough for this type
+                        const auto size_remaining = block_end - next_align_pos;
+                        if (size_remaining >= component_layouts[i].info.size)
+                        { // The remaining size in the block is enough, we can fit this type into the empty_block
+                            component_layouts[i].offset = next_align_pos;
+
+                            { // With the type offset assigned, the empty_block needs to be split/removed
+                                const auto type_end = component_layouts[i].offset + component_layouts[i].info.size;
+
+                                // Front block
+                                if (component_layouts[i].offset > empty_blocks[j].start)
+                                    empty_blocks.push_back({empty_blocks[j].start, component_layouts[i].offset - empty_blocks[j].start});
+                                // Back block
+                                if (type_end < block_end)
+                                    empty_blocks.push_back({type_end, block_end - type_end});
+                            }
+
+                            empty_blocks.erase(empty_blocks.begin() + j);
+                            break; // Iteration ends here, j is invalidated by the erase + we have set the type offset
+                        }
+                    }
+                }
+            }
+            ASSERT(component_layouts[i].offset != 0 || i == 0, "Failed to set the position of ComponentID {} in the buffer.", component_layouts[i].info.ID)
+        }
+
+        std::sort(component_layouts.begin(), component_layouts.end(), [](const auto& a, const auto& b) -> bool { return a.offset < b.offset; });
+        return component_layouts;
+    }
+
     // A container of Entity objects and the components they own.
     // Every unique combination of components makes an Archetype which is a contiguouse store of all the ComponentTypes.
     // Storage is interfaced using Entity as a key.
@@ -199,42 +326,20 @@ namespace ECS
             ArchetypeInstanceID m_capacity;           // The ArchetypeInstanceID count of how much memory is allocated in m_data for storage of components.
             std::byte* m_data;
 
-            // Returns the next higher power of 2 after p_val
-            static inline size_t next_power_of_2(const size_t& p_val)
-            { // Find the next power of 2 by shifting the bit to the left
-                size_t result = 1;
-                while (result <= p_val) result <<= 1;
-                return result;
-            }
-
-            // Construct an Archetype from a list of ComponentTypes.
+            // Construct an Archetype from a template list of ComponentTypes.
             template<typename... ComponentTypes>
             Archetype(Meta::PackArgs<ComponentTypes...>)
                 : mBitset{ComponentHelper::get_component_bitset<ComponentTypes...>()}
-                , mComponents{ComponentHelper::get_components_layout<ComponentTypes...>()}
+                , mComponents{get_components_layout<ComponentTypes...>()}
                 , mEntities{}
-                , mInstanceSize{Meta::sizeOfVariadic<ComponentTypes...>()}
+                , mInstanceSize{get_stride(mComponents)}
                 , mNextInstanceID{0}
                 , m_capacity{Archetype_Start_Capacity}
-                , m_data{}
-            {
-                m_data = (std::byte*)malloc(mInstanceSize * m_capacity);
+                , m_data{(std::byte*)malloc(mInstanceSize * m_capacity)}
 
-                { // LOGGING
-                    std::string components      = "";
-                    std::string componentLayout = "|";
-                    for (size_t i = 0; i < mComponents.size(); i++)
                     {
-                        components.empty() ? components = std::to_string(mComponents[i].ID) : components += ", " + std::to_string(mComponents[i].ID);
-
-                        const size_t allignment = ComponentHelper::get_info(mComponents[i].ID).alignment;
-                        for (size_t j = 0; j < allignment; j++)
-                            componentLayout += std::to_string(mComponents[i].ID) + '-';
-                        componentLayout += '|';
+                LOG("[ECS] New Archetype created from components: {}", to_string(mComponents));
                     }
-                    LOG("ECS: New Archetype created out of component combination ({}). Memory layout: {}", components, componentLayout);
-                }
-            }
 
             // Search the mComponents vector for the ComponentType and return its ComponentLayout.
             template <typename ComponentType>
@@ -243,7 +348,7 @@ namespace ECS
                 const auto component_ID = ComponentHelper::get_ID<ComponentType>();
                 auto it = std::find_if(mComponents.begin(), mComponents.end(), [&component_ID](const auto& pComponentLayout)
                 {
-                    return pComponentLayout.ID == component_ID;
+                    return pComponentLayout.info.ID == component_ID;
                 });
 
                 if (it != mComponents.end())
@@ -259,7 +364,7 @@ namespace ECS
             BufferPosition getComponentOffset() const
             {
                 const auto& layout = getComponentLayout<ComponentType>();
-                return layout.offset_from_instance_start;
+                return layout.offset;
             }
             // Get the byte position of ComponentType at ArchetypeInstanceID.
             template <typename ComponentType>
@@ -294,7 +399,7 @@ namespace ECS
                 static_assert(Meta::is_unique<ComponentTypes...>, "Non unique component types! Archetype can only push back a set of unique ComponentTypes");
 
                 if (mNextInstanceID + 1 > m_capacity)
-                    reserve(next_power_of_2(m_capacity));
+                    reserve(next_greater_power_of_2(m_capacity));
 
                 // Each `ComponentType` in the parameter pack is placement-new move-constructed into m_data
                 auto construct_func = [&](auto&& p_component)
@@ -321,9 +426,9 @@ namespace ECS
                 { // If erasing off the end, call the destructors for all the components at the end index
                     for (size_t comp = 0; comp < mComponents.size(); comp++)
                     {
-                        const auto lastInstanceCompStartPosition = lastInstanceStartPosition + mComponents[comp].offset_from_instance_start;
+                        const auto lastInstanceCompStartPosition = lastInstanceStartPosition + mComponents[comp].offset;
                         const auto lastInstanceCompAddress = &m_data[lastInstanceCompStartPosition];
-                        mComponents[comp].funcs.Destruct(lastInstanceCompAddress);
+                        mComponents[comp].info.funcs.Destruct(lastInstanceCompAddress);
                     }
 
                     mEntities.pop_back();
@@ -336,14 +441,14 @@ namespace ECS
                     // Move-assign the end components into the p_erase_index then call the destructor on all the end elements.
                     for (size_t comp = 0; comp < mComponents.size(); comp++)
                     {
-                        const auto lastInstanceCompStartPosition = lastInstanceStartPosition + mComponents[comp].offset_from_instance_start;
+                        const auto lastInstanceCompStartPosition = lastInstanceStartPosition + mComponents[comp].offset;
                         const auto lastInstanceCompAddress = &m_data[lastInstanceCompStartPosition];
 
-                        const auto eraseInstanceCompStartPosition = eraseInstanceStartPosition + mComponents[comp].offset_from_instance_start;
+                        const auto eraseInstanceCompStartPosition = eraseInstanceStartPosition + mComponents[comp].offset;
                         const auto eraseInstanceCompAddress = &m_data[eraseInstanceCompStartPosition];
 
-                        mComponents[comp].funcs.MoveAssign(lastInstanceCompAddress, eraseInstanceCompAddress);
-                        mComponents[comp].funcs.Destruct(lastInstanceCompAddress);
+                        mComponents[comp].info.funcs.MoveAssign(lastInstanceCompAddress, eraseInstanceCompAddress);
+                        mComponents[comp].info.funcs.Destruct(lastInstanceCompAddress);
                     }
 
                     // Move the end EntityID into the erased index, pop back below.
@@ -370,10 +475,10 @@ namespace ECS
 
                     for (size_t comp = 0; comp < mComponents.size(); comp++)
                     {
-                        auto comp_data_position = instance_start + mComponents[comp].offset_from_instance_start;
+                        auto comp_data_position = instance_start + mComponents[comp].offset;
 
-                        mComponents[comp].funcs.MoveConstruct(&new_data[comp_data_position], &m_data[comp_data_position]);
-                        mComponents[comp].funcs.Destruct(&m_data[comp_data_position]);
+                        mComponents[comp].info.funcs.MoveConstruct(&new_data[comp_data_position], &m_data[comp_data_position]);
+                        mComponents[comp].info.funcs.Destruct(&m_data[comp_data_position]);
                     }
                 }
 
@@ -455,7 +560,7 @@ namespace ECS
             static void setOffset(std::array<BufferPosition, sizeof...(FunctionArgs)>& pOffsets, const size_t& pIndex, const Archetype& pArchetype)
             {
                 if constexpr (!std::is_same_v<Entity, std::decay_t<ComponentType>>) // Ignore any Entity params supplied.
-                    pOffsets[pIndex] = pArchetype.getComponentLayout<ComponentType>().offset_from_instance_start;
+                    pOffsets[pIndex] = pArchetype.getComponentLayout<ComponentType>().offset;
             }
 
             // Construct an array of corresponding to the offset of each FunctionArgs into the archetype.

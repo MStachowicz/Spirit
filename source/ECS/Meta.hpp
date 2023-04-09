@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <vector>
+#include <algorithm>
 
 namespace Meta
 {
@@ -67,6 +68,13 @@ namespace Meta
     constexpr static size_t sizeOfVariadic()
     {
         return (0 + ... + sizeof(Args));
+    }
+
+    // Returns the max of all the alignof parameter pack types.
+    template <typename... Args>
+    constexpr static inline size_t get_max_alignof()
+    {
+        return (std::max({alignof(std::decay_t<Args>)...}));
     }
 
     template<std::size_t N, typename... Args>
