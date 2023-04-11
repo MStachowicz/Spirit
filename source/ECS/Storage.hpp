@@ -521,7 +521,7 @@ namespace ECS
                         mComponents[comp].info.funcs.Destruct(lastInstanceCompAddress);
                     }
                 }
-                else 
+                else
                 {
                     // Erasing an index not on the end of the Archetype
                     // Move-assign the end components into the p_erase_index then call the destructor on all the end elements.
@@ -545,7 +545,7 @@ namespace ECS
                     mEntities[p_erase_index] = end_entity;
                     p_EntityToArchetypeID[end_entity].value().second = p_erase_index;
                 }
-                
+
                 mEntities.pop_back();
                 mNextInstanceID--;
                 p_EntityToArchetypeID[p_entity] = std::nullopt;
@@ -860,18 +860,20 @@ namespace ECS
         template <typename ComponentType>
         void deleteComponent(const Entity& p_entity)
         {
-            const auto& [from_archetype_ID, from_archetype_index] = *mEntityToArchetypeID[p_entity.ID];
+            if (!mEntityToArchetypeID[p_entity.ID].has_value()) // pEntity has been deleted
+                return;
 
-            // from_archetype is a single component deleteComponent == erase.
-            if (mArchetypes[from_archetype_ID].mComponents.size() == 1)
+            const auto& [from_archetype_ID, from_archetype_index] = *mEntityToArchetypeID[p_entity.ID];
+            const auto delete_component_ID = ComponentHelper::get_ID<ComponentType>();
+            if (!mArchetypes[from_archetype_ID].mBitset[delete_component_ID]) // p_entity doesnt own this ComponentType already, do nothing.
+                return;
+            else if (mArchetypes[from_archetype_ID].mComponents.size() == 1) // from_archetype is a single component deleteComponent == erase.
             {
                 mArchetypes[from_archetype_ID].erase(from_archetype_index, p_entity, mEntityToArchetypeID);
                 return;
             }
-
             // The bitset of p_entity with ComponentType removed. This is the bitset for the archetype the remaining Components are being moved into.
             auto bitset = mArchetypes[from_archetype_ID].mBitset;
-            const auto delete_component_ID = ComponentHelper::get_ID<ComponentType>();
             bitset[delete_component_ID] = false;
             auto to_archetype_ID = getMatchingArchetype(bitset);
 
@@ -924,6 +926,9 @@ namespace ECS
         bool hasComponents(const Entity& pEntity) const
         {
             static_assert(sizeof...(ComponentTypes) != 0, "Cannot query hasComponents with 0 types.");
+
+            if (!mEntityToArchetypeID[pEntity.ID].has_value()) // pEntity has been deleted
+                return false;
 
             if constexpr (sizeof...(ComponentTypes) > 1)
             {// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
