@@ -341,7 +341,7 @@ namespace ECS
 
             // Construct an Archetype from a template list of ComponentTypes.
             template<typename... ComponentTypes>
-            Archetype(Meta::PackArgs<ComponentTypes...>)
+            Archetype(Meta::PackArgs<ComponentTypes...>) noexcept
                 : mBitset{ComponentHelper::get_component_bitset<ComponentTypes...>()}
                 , mComponents{get_components_layout(mBitset)}
                 , mEntities{}
@@ -351,11 +351,11 @@ namespace ECS
                 , m_data{(std::byte*)malloc(mInstanceSize * m_capacity)}
 
             {
-                LOG("[ECS] New Archetype created from components: {}", to_string(mComponents));
+                LOG("[ECS][Archetype] New Archetype created from components: {}", to_string(mComponents));
             }
 
             // Construct an Archetype from a ComponentBitset.
-            Archetype(const ComponentBitset& p_component_bitset)
+            Archetype(const ComponentBitset& p_component_bitset) noexcept
                 : mBitset{p_component_bitset}
                 , mComponents{get_components_layout(mBitset)}
                 , mEntities{}
@@ -364,8 +364,56 @@ namespace ECS
                 , m_capacity{Archetype_Start_Capacity}
                 , m_data{(std::byte*)malloc(mInstanceSize * m_capacity)}
             {
-                LOG("[ECS] New Archetype created from components: {}", to_string(mComponents));
+                LOG("[ECS][Archetype] New Archetype created from components: {}", to_string(mComponents));
             }
+
+            ~Archetype() noexcept
+            {  // Call the destructor for all the components and free the heap memory.
+                clear();
+                free(m_data);
+
+                LOG("[ECS][Archetype] Destroyed at address {}", (void*)(this));
+            }
+
+            // Move-construct
+            Archetype(Archetype&& p_other) noexcept
+                : mBitset{std::move(p_other.mBitset)}
+                , mComponents{std::move(p_other.mComponents)}
+                , mEntities{std::move(p_other.mEntities)}
+                , mInstanceSize{std::move(p_other.mInstanceSize)}
+                , mNextInstanceID{std::move(p_other.mNextInstanceID)}
+                , m_capacity{std::move(p_other.m_capacity)}
+                , m_data{std::exchange(p_other.m_data, nullptr)}
+            {
+		        LOG("[ECS][Archetype] Move constructed {} from {}", (void*)(this), (void*)(&p_other));
+            }
+            // Move-assign
+            Archetype& operator=(Archetype&& p_other) noexcept
+            {
+                if (this != &p_other)
+                {
+                    if (m_data != nullptr)
+                    {
+                        clear();
+                        free(m_data);
+                    }
+
+                    mBitset         = std::move(p_other.mBitset);
+                    mComponents     = std::move(p_other.mComponents);
+                    mEntities       = std::move(p_other.mEntities);
+                    mInstanceSize   = std::move(p_other.mInstanceSize);
+                    mNextInstanceID = std::move(p_other.mNextInstanceID);
+                    m_capacity      = std::move(p_other.m_capacity);
+                    m_data          = std::exchange(p_other.m_data, nullptr);
+                }
+
+		        LOG("[ECS][Archetype] Move assigning {} from {}", (void*)(this), (void*)(&p_other));
+                return *this;
+            }
+
+            // No copying archetypes
+            Archetype(const Archetype& p_other)            = delete;
+            Archetype& operator=(const Archetype& p_other) = delete;
 
             // Search the mComponents vector for the ComponentType and return its ComponentLayout.
             template <typename ComponentType>
@@ -529,6 +577,24 @@ namespace ECS
 
                 free(m_data);
                 m_data = new_data;
+            }
+
+            // Destroy all the components in all instances of this archetype.
+            // Size is 0 after clear.
+            void clear()
+            {
+                for (size_t instance = 0; instance < mNextInstanceID; instance++)
+                {
+                    const auto instance_start = mInstanceSize * instance;
+
+                    for (auto& comp : mComponents)
+                    {
+                        const auto comp_address = &m_data[instance_start + comp.offset];
+                        comp.info.funcs.Destruct(comp_address);
+                    }
+                }
+
+                mNextInstanceID = 0;
             }
         }; // class Archetype
 
