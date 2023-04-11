@@ -797,6 +797,65 @@ namespace ECS
             return *mArchetypes[archetype].getComponentMutable<ComponentType>(index);
         }
 
+        // Add the ComponentType to p_entity.
+        template <typename ComponentType>
+        void addComponent(const Entity& p_entity, ComponentType&& p_component)
+        {
+            const auto& [from_archetype_ID, from_archetype_index] = *mEntityToArchetypeID[p_entity.ID];
+            const auto add_component_ID = ComponentHelper::get_ID<ComponentType>();
+
+            if (mArchetypes[from_archetype_ID].mBitset[add_component_ID]) // p_entity already own this ComponentType, do nothing.
+                return;
+
+            // The bitset of p_entity with ComponentType added. This is the bitset for the archetype the current p_entity Components are being moved into.
+            auto bitset = mArchetypes[from_archetype_ID].mBitset;
+            bitset[add_component_ID] = true;
+            auto to_archetype_ID = getMatchingArchetype(bitset);
+
+            // If there is no archetype matching p_entity ComponentTypes after removing ComponentType, create a new one and set to_archetype to it.
+            if (!to_archetype_ID.has_value())
+            {
+                mArchetypes.push_back(Archetype(bitset));
+                to_archetype_ID = mArchetypes.size() - 1;
+            }
+
+            // We now know from_archetype and to_archetype this Entity will be traversing.
+            // Move-construct the p_entity components from_archetype that into to_archetype and destruct the from_archetype components.
+            // Updates Archetype::mEntities containers and Storage::mEntityToArchetypeID according to placement changes caused by inheriting p_entity and required erase.
+            {
+                auto& from_archetype = mArchetypes[from_archetype_ID];
+                auto& to_archetype   = mArchetypes[to_archetype_ID.value()];
+
+                if (to_archetype.mNextInstanceID >= to_archetype.m_capacity)
+                    to_archetype.reserve(next_greater_power_of_2(to_archetype.m_capacity));
+
+                // Move construct all the components into to_archetype from from_archetype.
+                // Then call erase on the index/entity in from_archetype.
+                {
+                    const auto from_instance_start = from_archetype.mInstanceSize * from_archetype_index;
+                    const auto to_end_instance_start = to_archetype.mInstanceSize * to_archetype.mNextInstanceID;
+
+                    for (auto& comp : from_archetype.mComponents)
+                    {
+                        const auto from_comp_address = &from_archetype.m_data[from_instance_start + comp.offset];
+                        const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.getComponentLayout(comp.info.ID).offset];
+                        comp.info.funcs.MoveConstruct(to_comp_address, from_comp_address);
+                        // from_archetype.erase handles calling the destructors.
+                    }
+
+                    // placement-new move-construct the new component into m_data.
+                    const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.getComponentLayout(add_component_ID).offset];
+                    new (&to_archetype.m_data[to_comp_address]) ComponentType(std::move(p_component));
+
+                    // Update mEntities and mEntityToArchetypeID.
+                    from_archetype.erase(from_archetype_index, p_entity, mEntityToArchetypeID);
+                    to_archetype.mEntities.push_back(p_entity);
+                    to_archetype.mNextInstanceID++;
+                    mEntityToArchetypeID[p_entity] = std::make_optional(std::make_pair(to_archetype_ID.value(), to_archetype.mNextInstanceID - 1));
+                }
+            }
+        }
+
         // Delete the ComponentType belonging to p_entity.
         template <typename ComponentType>
         void deleteComponent(const Entity& p_entity)
