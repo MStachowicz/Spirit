@@ -28,13 +28,6 @@ namespace System
 
     void InputSystem::update()
     {
-        // Regardless of state, close on escape
-        if (Platform::Core::is_key_down(Platform::Key::Escape))
-        {
-            Platform::Core::getWindow().requestClose();
-            return;
-        }
-
         if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
         {
             if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
@@ -46,6 +39,17 @@ namespace System
                 if (Platform::Core::is_key_down(Platform::Key::E)) primaryCamera->move(Component::Camera::Up);
                 if (Platform::Core::is_key_down(Platform::Key::Q)) primaryCamera->move(Component::Camera::Down);
             }
+        }
+    }
+    // use onKeyPressed to perform one-time actions. e.g. UI events are best not repeated every frame.
+    // On the other hand, game logic is best suited to Platform::Core::is_key_down since this alows repeated events.
+    void InputSystem::onKeyPressed(const Platform::Key& pKeyPressed)
+    {
+        switch (pKeyPressed)
+        {
+            case Platform::Key::Escape: Platform::Core::getWindow().requestClose();      break;
+            case Platform::Key::F11:    Platform::Core::getWindow().toggle_fullscreen(); break;
+            default: break;
         }
     }
 
@@ -76,9 +80,5 @@ namespace System
                 default: break;
             }
         }
-    }
-
-    void InputSystem::onKeyPressed(const Platform::Key& pKeyPressed)
-    {
     }
 }
