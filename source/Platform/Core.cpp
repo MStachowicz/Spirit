@@ -19,21 +19,26 @@
 namespace Platform
 {
     Window::Window(const int& pWidth, const int& pHeight)
-        : mWidth{pWidth}
-        , mHeight{pHeight}
-        , mAspectRatio{static_cast<float>(mWidth) / static_cast<float>(mHeight)}
+        : m_size_fullscreen{pWidth, pHeight}
+        , m_position_fullscreen{0,0}
+        , m_size_windowed{pWidth, pHeight}
+        , m_position_windowed{0,0}
+        , m_fullscreen{false}
+        , m_aspect_ratio{m_fullscreen ? static_cast<float>(m_size_fullscreen.first) / static_cast<float>(m_size_fullscreen.second) : static_cast<float>(m_size_windowed.first) / static_cast<float>(m_size_windowed.second)}
         , m_VSync{false}
         , mCapturingMouse{false}
         , mCapturedChangedThisFrame{false}
         , mHandle{nullptr}
     {
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-        mHandle = glfwCreateWindow(mWidth, mHeight, "Zephyr", NULL, NULL);
+        glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+        mHandle = glfwCreateWindow(size().first, size().second, "Zephyr", m_fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
         ASSERT(mHandle != nullptr, "Failed to create a GLFW window");
 
         glfwSetWindowUserPointer(mHandle, this);
-        glfwMakeContextCurrent(mHandle);
+        glfwMakeContextCurrent(mHandle); // Set this window as the context for GL render calls.
         glfwSetInputMode(mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetWindowPos(mHandle, position().first, position().second);
         set_VSync(m_VSync);
 
         // Set the taskbar icon for the window
@@ -45,13 +50,39 @@ namespace Platform
         icon.height = icon_image->m_height;
         glfwSetWindowIcon(mHandle, 1, &icon);
 
-        LOG("Created GLFW Window with resolution {}x{}",mWidth, mHeight);
+        LOG("Created GLFW Window with resolution {}x{}", size().first, size().second);
     }
     Window::~Window()
     {
         glfwDestroyWindow(mHandle);
         LOG("Destroyed GLFW Window");
     }
+
+    void Window::set_size(std::pair<int, int> p_new_size)
+    {
+        if (m_fullscreen)
+        {
+            m_size_fullscreen = p_new_size;
+            m_aspect_ratio    = static_cast<float>(m_size_fullscreen.first) / static_cast<float>(m_size_fullscreen.second);
+        }
+        else
+        {
+            m_size_windowed = p_new_size;
+            m_aspect_ratio  = static_cast<float>(m_size_windowed.first) / static_cast<float>(m_size_windowed.second);
+        }
+
+        LOG("[WINDOW] Resized to {}x{} aspect: {}", size().first, size().second, get_aspect_ratio());
+    }
+    void Window::set_position(std::pair<int, int> p_new_position)
+    {
+        if (m_fullscreen)
+            m_position_fullscreen = p_new_position;
+        else
+            m_position_windowed = p_new_position;
+
+        LOG("[WINDOW] Moved to {}, {}", position().first, position().second, get_aspect_ratio());
+    }
+
     void Window::requestClose()
     {
         glfwSetWindowShouldClose(mHandle, GL_TRUE); // Ask GLFW to close this window
@@ -63,6 +94,25 @@ namespace Platform
         // i.e. the number of screen updates to wait from the time glfwSwapBuffers was called before swapping the buffers and returning.
         glfwSwapInterval(p_enabled ? 1 : 0);
         m_VSync = p_enabled;
+    }
+
+    void Window::toggle_fullscreen()
+    {
+        m_fullscreen = !m_fullscreen;
+
+        if (m_fullscreen)
+        {
+            const auto& [res_x, res_y] = Platform::Core::getPrimaryMonitorResolution();
+            glfwSetWindowMonitor(mHandle, glfwGetPrimaryMonitor(), 0, 0, res_x, res_y, GLFW_DONT_CARE);
+            set_position({0, 0});
+            set_size({res_x, res_y});
+            LOG("[WINDOW] Set to fullscreen. Position: {},{} Resolution: {}x{} Aspect ratio: {}", 0, 0, m_size_fullscreen.first, m_size_fullscreen.second, m_aspect_ratio);
+        }
+        else // Windowed mode. Reuse the old size and position
+        {
+            glfwSetWindowMonitor(mHandle, NULL, m_position_windowed.first, m_position_windowed.second, m_size_windowed.first, m_size_windowed.second, GLFW_DONT_CARE);
+            LOG("[WINDOW] Set to windowed mode. Position: {},{} Resolution: {}x{} Aspect ratio: {}", 0, 0, m_size_windowed.first, m_size_windowed.second, m_aspect_ratio);
+        }
     }
 
     void Window::setInputMode(const CursorMode& pCursorMode)
@@ -119,7 +169,7 @@ namespace Platform
         glfwSetCursorPosCallback(mPrimaryWindow->mHandle,   GLFW_mouseMoveCallback);
         glfwSetMouseButtonCallback(mPrimaryWindow->mHandle, GLFW_mouseButtonCallback);
         glfwSetWindowSizeCallback(mPrimaryWindow->mHandle,  GLFW_windowResizeCallback);
-
+        glfwSetWindowPosCallback(mPrimaryWindow->mHandle,   GLFW_window_move_callback);
 
         { // Initialise ImGui
             IMGUI_CHECKVERSION();
@@ -127,7 +177,7 @@ namespace Platform
             ImGuiIO& io = ImGui::GetIO();
             (void)io;
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
-            io.DisplaySize = ImVec2(static_cast<float>(mPrimaryWindow->mWidth), static_cast<float>(mPrimaryWindow->mHeight));
+            io.DisplaySize = ImVec2(static_cast<float>(mPrimaryWindow->size().first), static_cast<float>(mPrimaryWindow->size().second));
             ImGui::StyleColorsDark();
 
             ImGui_ImplGlfw_InitForOpenGL(mPrimaryWindow->mHandle, true);
@@ -213,7 +263,7 @@ namespace Platform
         ImGui::NewFrame();
 
         { // At the start of an ImGui frame, push a window the size of viewport to allow docking other ImGui windows to.
-            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(mPrimaryWindow->mWidth), static_cast<float>(mPrimaryWindow->mHeight)));
+            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(mPrimaryWindow->size().first), static_cast<float>(mPrimaryWindow->size().second)));
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
 
@@ -292,11 +342,14 @@ namespace Platform
         io.DisplaySize     = ImVec2(static_cast<float>(pWidth), static_cast<float>(pHeight));
         io.FontGlobalScale = std::round(ImGui::GetMainViewport()->DpiScale);
 
-        mPrimaryWindow->mWidth = pWidth;
-        mPrimaryWindow->mHeight = pHeight;
-        mPrimaryWindow->mAspectRatio = static_cast<float>(pWidth) / static_cast<float>(pHeight);
+        mPrimaryWindow->set_size({pWidth, pHeight});
+        auto new_size = mPrimaryWindow->size();
+        mWindowResizeEvent.dispatch(new_size.first, new_size.second);
+    }
 
-        mWindowResizeEvent.dispatch(pWidth, pHeight);
+    void Core::GLFW_window_move_callback(GLFWwindow* p_window, int p_x_position, int p_y_position)
+    {
+        mPrimaryWindow->set_position({p_x_position, p_y_position});
     }
 
     Key Core::GLFW_getKey(const int& pKeyInput)

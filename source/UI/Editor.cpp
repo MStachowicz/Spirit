@@ -351,7 +351,7 @@ namespace UI
             auto [width, height] = window.size();
 
             ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
-            ImGui::Text(("Aspect ratio: " + std::to_string(window.aspectRatio())).c_str());
+            ImGui::Text(("Aspect ratio: " + std::to_string(window.get_aspect_ratio())).c_str());
             bool VSync = window.get_VSync();
             if (ImGui::Checkbox("VSync", &VSync)) window.set_VSync(VSync);
             ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);

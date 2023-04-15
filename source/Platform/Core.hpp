@@ -24,17 +24,29 @@ namespace Platform
         void set_VSync(bool p_enabled);
         bool get_VSync() const { return m_VSync; };
 
-        bool capturingMouse()      const { return mCapturingMouse != mCapturedChangedThisFrame; };
-        float aspectRatio()        const { return mAspectRatio; };
-        std::pair<int, int> size() const { return {mWidth, mHeight}; };
+        std::pair<int, int> size() const { return m_fullscreen ? m_size_fullscreen : m_size_windowed; };
+        void set_size(std::pair<int, int> p_new_size);
+
+        std::pair<int, int> position() const { return m_fullscreen ? m_position_fullscreen : m_position_windowed; };
+        void set_position(std::pair<int, int> p_new_position);
+
+        void toggle_fullscreen();
+
+        bool capturingMouse() const { return mCapturingMouse != mCapturedChangedThisFrame; };
+
+        float get_aspect_ratio() const { return m_aspect_ratio; };
 
     private:
         Window(const int& pWidth, const int& pHeight);
         ~Window();
 
-        int mWidth;
-        int mHeight;
-        float mAspectRatio;
+        std::pair<int, int> m_size_fullscreen;     // the most up-to-date size of the window in fullscreen.
+        std::pair<int, int> m_position_fullscreen; // the most up-to-date position of the window in fullscreen.
+        std::pair<int, int> m_size_windowed;       // the most up-to-date size of the window in windowed.
+        std::pair<int, int> m_position_windowed;   // the most up-to-date position of the window in windowed.
+
+        bool m_fullscreen;
+        float m_aspect_ratio;
         bool m_VSync; // Whether VSync is on for the window.
         bool mCapturingMouse; // Is the mouse hidden and input is restricted to this window.
         bool mCapturedChangedThisFrame; // Has mCapturingMouse changed on this pollEventCycle. Useful for avoiding same cycle input clashes.
@@ -98,6 +110,7 @@ namespace Platform
         static void GLFW_mouseMoveCallback(GLFWwindow* pWindow, double pNewXPosition, double pNewYPosition);
         static void GLFW_mouseButtonCallback(GLFWwindow* pWindow, int pButton, int pAction, int pModifiers);
         static void GLFW_windowResizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight);
+        static void GLFW_window_move_callback(GLFWwindow* p_window, int p_x_position, int p_y_position);
 
         // GLFW to platform conversion funcs
         static Key GLFW_getKey(const int& pKeyInput);
