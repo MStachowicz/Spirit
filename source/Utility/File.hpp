@@ -25,6 +25,11 @@ namespace Utility
         Image(const std::filesystem::path& p_path);
         ~Image();
 
+        Image(const Image& p_other) = delete;
+        Image(Image&& p_other) = delete;
+        Image& operator=(const Image& p_other) = delete;
+        Image& operator=(Image&& p_other) = delete;
+
         // Raw access to the image pixel data. Access for read only.
         std::byte* get_data() const { return m_data; }
         // Return a display-friendly name for this image.
