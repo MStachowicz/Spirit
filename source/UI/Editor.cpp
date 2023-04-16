@@ -559,6 +559,7 @@ namespace UI
         style.SelectableTextAlign      = ImVec2(0.5f, 0.5f);
         style.DisplaySafeAreaPadding   = ImVec2(0.f, 0.f);
 
-        style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.f, 0.f, 0.f, 1.f);
+        auto theme_grey = ImVec4(0.174f, 0.174f, 0.174f, 1.000f);
+        style.Colors[ImGuiCol_MenuBarBg] = theme_grey;
     }
 } // namespace UI
