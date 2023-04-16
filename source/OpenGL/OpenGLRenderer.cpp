@@ -138,7 +138,7 @@ namespace OpenGL
                 mViewInformation.mViewMatrix   = primaryCamera->getViewMatrix();
                 mViewInformation.mViewPosition = primaryCamera->getPosition();
             }
-            mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), Platform::Core::getWindow().aspectRatio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
+            mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), Platform::Core::getWindow().get_aspect_ratio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
             mGLState.setUniformBlockVariable("ViewProperties.view", mViewInformation.mViewMatrix);
             mGLState.setUniformBlockVariable("ViewProperties.projection", mViewInformation.mProjection);
         }
@@ -174,8 +174,8 @@ namespace OpenGL
                 mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
         }
 
-        auto scene = mSceneSystem.getCurrentScene();
-        scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh)
+        auto& scene = mSceneSystem.getCurrentScene();
+        scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh )
         {
             if (scene.hasComponents<Component::Texture>(pEntity))
             {
@@ -329,7 +329,7 @@ namespace OpenGL
 
     void OpenGLRenderer::renderDebug()
     {
-        auto scene = mSceneSystem.getCurrentScene();
+        auto& scene = mSceneSystem.getCurrentScene();
         mGLState.toggleCullFaces(true);
 
         {// Render all the collision geometry by pushing all the mesh triangles transformed in world-space.
