@@ -129,7 +129,6 @@ source/UI/Editor.hpp
 source/UI/Editor.cpp
 source/UI/Console.hpp
 source/UI/Console.cpp
-source/UI/ImGuiConfig.hpp
 )
 target_include_directories(UI
 PUBLIC source/UI

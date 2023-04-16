@@ -39,7 +39,6 @@
 #include "glm/gtc/type_ptr.hpp"
 
 // IMGUI
-#define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
 #include "imgui.h"
 
 // STD

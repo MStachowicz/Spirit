@@ -10,11 +10,12 @@
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
 
-// ImGui (must be included after GLFW)
+
+#define IMGUI_USER_CONFIG "ImGuiConfig.hpp"
+// ImGui.h (must be included after GLFW)
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui.h"
-#include "imgui_draw.cpp"
 
 namespace Platform
 {
