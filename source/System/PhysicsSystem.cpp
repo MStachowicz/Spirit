@@ -6,6 +6,7 @@
 
 // COMPONENT
 #include "Collider.hpp"
+#include "Camera.hpp"
 #include "RigidBody.hpp"
 #include "Storage.hpp"
 #include "Transform.hpp"
@@ -115,6 +116,17 @@ namespace System
                         }
                     }
                 }
+            }
+        });
+
+        scene.foreach([this, &pDeltaTime](Component::Camera& p_camera)
+        {
+            if (p_camera.m_velocity.x != 0.f || p_camera.m_velocity.y != 0.f || p_camera.m_velocity.z != 0.f)
+            {
+                const auto change_in_position = p_camera.m_velocity * pDeltaTime.count(); // dx = v dt
+                p_camera.set_position(p_camera.m_position + change_in_position);
+                float damping = std::pow(1.0f - p_camera.m_move_dampening, pDeltaTime.count());
+                p_camera.m_velocity *= damping;
             }
         });
     }

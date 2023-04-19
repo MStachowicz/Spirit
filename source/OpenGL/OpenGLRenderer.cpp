@@ -135,8 +135,8 @@ namespace OpenGL
         { // Set global shader uniforms.
             if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
             {
-                mViewInformation.mViewMatrix   = primaryCamera->getViewMatrix();
-                mViewInformation.mViewPosition = primaryCamera->getPosition();
+                mViewInformation.mViewMatrix   = primaryCamera->get_view();
+                mViewInformation.mViewPosition = primaryCamera->get_position();
             }
             mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), Platform::Core::getWindow().get_aspect_ratio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
             mGLState.setUniformBlockVariable("ViewProperties.view", mViewInformation.mViewMatrix);
@@ -504,7 +504,7 @@ namespace OpenGL
     }
     Geometry::Ray OpenGLRenderer::getCursorWorldRay() const
     {
-        return Geometry::Ray(mSceneSystem.getPrimaryCamera()->getPosition(), getCursorWorldDirection());
+        return Geometry::Ray(mSceneSystem.getPrimaryCamera()->get_position(), getCursorWorldDirection());
     }
 
 } // namespace OpenGL

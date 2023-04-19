@@ -1,93 +1,111 @@
 #include "Camera.hpp"
+#include "Transform.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "imgui.h"
+
 namespace Component
 {
-    Camera::Camera(const glm::vec3& pPosition, const float& pYaw, const float& pPitch)
-        : mPrimaryCamera(false)
-        , mPosition(pPosition)
-        , mYaw(pYaw)
-        , mPitch(pPitch)
-        , mFront() // ----|
-        , mUp()    //     |<-- set in updateCameraVectors()
-        , mRight() //     |
-        , mView()  // ----|
-        , mMovementSpeed(1.f)
-        , mMouseSensitivity(0.1f)
-        , mZoom(45.0f)
+    Camera::Camera(bool p_make_primary_camera)
+        : m_position{0.f,0.f,30.f}
+        , m_velocity{0.f}
+        , m_up{0.f, 1.0f, 0.0f}
+        , m_right{1.f, 0.0f, 0.0f}
+        , m_view_direction{0.f, 0.f, -1.f}
+        , m_view{glm::lookAt(m_position, m_position + m_view_direction, m_up)}
+        , m_look_sensitivity{0.001f}
+        , m_move_speed{0.002f}
+        , m_move_dampening{0.99f}
+        , m_zoom{45.0f}
+        , m_primary_camera{p_make_primary_camera}
+    {}
+
+    void Camera::set_position(const glm::vec3& p_new_position)
     {
-        updateCameraVectors();
+        m_position = p_new_position;
+        m_view     = glm::lookAt(m_position, m_position + m_view_direction, m_up);
     }
 
-    void Camera::move(const MoveDirection& pDirection)
+    void Camera::look_at(const glm::vec3& p_point)
     {
-        const float velocity = mMovementSpeed;
-
-        switch (pDirection)
+        if (p_point != m_position)
         {
-            case MoveDirection::Forward:
-                mPosition += mFront * velocity;
-                break;
-            case MoveDirection::Backward:
-                mPosition -= mFront * velocity;
-                break;
-            case MoveDirection::Left:
-                mPosition -= mRight * velocity;
-                break;
-            case MoveDirection::Right:
-                mPosition += mRight * velocity;
-                break;
-            case MoveDirection::Up:
-                mPosition.y += velocity;
-                break;
-            case MoveDirection::Down:
-                mPosition.y -= velocity;
-                break;
-            default:
-                break;
+            m_view_direction = glm::normalize(p_point - m_position);
+            m_right          = glm::normalize(glm::cross(m_view_direction, WorldUp));
+            m_up             = glm::normalize(glm::cross(m_right, m_view_direction));
+            m_view           = glm::lookAt(m_position, m_position + m_view_direction, m_up);
         }
-
-        mView = glm::lookAt(mPosition, mPosition + mFront, mUp);
     }
 
-    void Camera::ProcessMouseMove(const float& pXOffset, const float& pYOffset, const bool& pConstrainPitch)
+    void Camera::move(const Camera::move_direction& p_move_direction)
     {
-        mYaw += (pXOffset * mMouseSensitivity);
-        mPitch += (pYOffset * mMouseSensitivity);
-
-        // make sure that when pPitch is out of bounds, screen doesn't get flipped
-        if (pConstrainPitch)
+        // Doesn't apply the movement to m_position deferring this to PhysicsSystem which will
+        // apply a deltatime and provide smoother motion.
+        switch (p_move_direction)
         {
-            if (mPitch > 89.0f)
-                mPitch = 89.0f;
-            if (mPitch < -89.0f)
-                mPitch = -89.0f;
+            case Camera::move_direction::Forward  : m_velocity += m_view_direction * m_move_speed; break;
+            case Camera::move_direction::Backward : m_velocity -= m_view_direction * m_move_speed; break;
+            case Camera::move_direction::Left     : m_velocity -= m_right * m_move_speed;          break;
+            case Camera::move_direction::Right    : m_velocity += m_right * m_move_speed;          break;
+            case Camera::move_direction::Up       : m_velocity += m_up * m_move_speed;             break;
+            case Camera::move_direction::Down     : m_velocity -= m_up * m_move_speed;             break;
         }
-        updateCameraVectors();
     }
 
-    void Camera::processScroll(const float& pOffset)
+    void Camera::look(const float& p_x_offset, const float& p_y_offset, const bool& p_constrain_pitch)
     {
-        mZoom -= pOffset;
-        if (mZoom < 1.0f)
-            mZoom = 1.0f;
-        if (mZoom > 45.0f)
-            mZoom = 45.0f;
+        m_view_direction.x += p_x_offset * m_look_sensitivity;
+        m_view_direction.y += p_y_offset * m_look_sensitivity;
+        m_view_direction = glm::normalize(m_view_direction);
+        m_right          = glm::normalize(glm::cross(m_view_direction, WorldUp));
+        m_up             = glm::normalize(glm::cross(m_right, m_view_direction));
+        m_view           = glm::lookAt(m_position, m_position + m_view_direction, m_up);
     }
 
-    void Camera::updateCameraVectors()
+
+    void Camera::scroll(const float& p_offset)
     {
-        glm::vec3 front; // calculate the new mFront vector
-        front.x = cos(glm::radians(mYaw)) * cos(glm::radians(mPitch));
-        front.y = sin(glm::radians(mPitch));
-        front.z = sin(glm::radians(mYaw)) * cos(glm::radians(mPitch));
-        mFront  = glm::normalize(front);
+        m_zoom -= p_offset;
+        if (m_zoom < 1.0f)
+            m_zoom = 1.0f;
+        if (m_zoom > 45.0f)
+            m_zoom = 45.0f;
+    }
 
-        // also re-calculate the Right and Up vector
-        mRight = glm::normalize(glm::cross(mFront, WorldUp)); // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        mUp    = glm::normalize(glm::cross(mRight, mFront));
+    void Camera::draw_UI()
+    {
+        if (ImGui::TreeNode("Camera"))
+        {
+            ImGui::SeparatorText("State");
+            ImGui::SliderFloat3("Position      ", &m_position.x, -30.f, 30.f);
+            ImGui::SliderFloat3("Velocity      ", &m_velocity.x, -1.f, 1.f);
+            ImGui::SliderFloat3("Up            ", &m_up.x, -1.f, 1.f);
+            ImGui::SliderFloat3("Right         ", &m_right.x, -1.f, 1.f);
+            ImGui::SliderFloat3("View direction", &m_view_direction.x, -1.f, 1.f);
+            ImGui::Text("View matrix   ", m_view);
 
-        mView = glm::lookAt(mPosition, mPosition + mFront, mUp);
+            ImGui::SeparatorText("Controls");
+            ImGui::SliderFloat("Look sensitivity", &m_look_sensitivity, 0.f, 1.f);
+            ImGui::SliderFloat("Move speed      ", &m_move_speed, 0.f, 1.f);
+            ImGui::SliderFloat("Move dampening  ", &m_move_dampening, 0.f, 1.f);
+            ImGui::SliderFloat("Zoom            ", &m_zoom, 1.f, 45.f);
+
+            ImGui::SeparatorText("Quick options");
+            if (ImGui::Button("Look at 0,0,0"))
+                look_at(glm::vec3(0.f, 0.f, 0.f));
+            ImGui::SameLine();
+            if (ImGui::Button("Reset"))
+            {
+                m_position       = {0.f, 0.f, 30.f};
+                m_velocity       = glm::vec3{0.f};
+                m_up             = {0.f, 1.0f, 0.0f};
+                m_right          = {1.f, 0.0f, 0.0f};
+                m_view_direction = {0.f, 0.f, -1.f};
+                m_view           = {glm::lookAt(m_position, m_position + m_view_direction, m_up)};
+            }
+
+            ImGui::TreePop();
+        }
     }
 } // namespace Component

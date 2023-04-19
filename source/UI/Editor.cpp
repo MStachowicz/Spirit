@@ -165,7 +165,7 @@ namespace UI
                             LOG("Entity{} has been selected", entityCollided.ID);
                             }
 
-                            const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->getPosition(), mSceneSystem.getPrimaryCamera()->getPosition() + (cursorRay.mDirection * 1000.f), 0.02f);
+                            const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->get_position(), mSceneSystem.getPrimaryCamera()->get_position() + (cursorRay.mDirection * 1000.f), 0.02f);
                             mOpenGLRenderer.mDebugOptions.mCylinders.push_back(mouseRayCylinder);
                     }
                     break;
@@ -287,16 +287,7 @@ namespace UI
                     if (scene.hasComponents<Component::PointLight>(pEntity))
                         scene.getComponentMutable<Component::PointLight&>(pEntity).DrawImGui();
                     if (scene.hasComponents<Component::Camera>(pEntity))
-                    {
-                        auto& camera = scene.getComponentMutable<Component::Camera>(pEntity);
-                        if (ImGui::TreeNode("Camera"))
-                        {
-                            ImGui::Text("Position", camera.getPosition());
-                            ImGui::Text("Look direction", camera.getForwardDirection());
-                            ImGui::Text("View matrix", camera.getViewMatrix());
-                            ImGui::TreePop();
-                        }
-                    }
+                        scene.getComponentMutable<Component::Camera>(pEntity).draw_UI();
                     if (scene.hasComponents<Component::Mesh>(pEntity))
                     {
                         auto& mesh = scene.getComponentMutable<Component::Mesh>(pEntity);

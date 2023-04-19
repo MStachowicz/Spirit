@@ -34,10 +34,11 @@ namespace System
 
     Component::Camera* SceneSystem::getPrimaryCamera()
     {
-        Component::Camera* primaryCamera;
+        Component::Camera* primaryCamera = nullptr;
+
         getCurrentScene().foreach([&primaryCamera](Component::Camera& pCamera)
         {
-            if (pCamera.mPrimaryCamera)
+            if (pCamera.m_primary_camera)
             {
                 primaryCamera = &pCamera;
                 return;
@@ -49,12 +50,8 @@ namespace System
     void SceneSystem::primitiveMeshScene()
     {
         // Lines up all the available primitive meshes along the x axis with the camera facing them.
-        {
-            Component::Label name    = Component::Label("Camera");
-            Component::Camera camera = Component::Camera(glm::vec3(0.0f, 3.f, 13.0f));
-            camera.mPrimaryCamera    = true;
-            mStorage.addEntity(camera, name);
-        }
+        mStorage.addEntity(Component::Camera(true), Component::Label("Camera"));
+
 
         constexpr float primitiveCount         = 5.f; // Number of available primitives.
         constexpr float primitiveExtents       = 2.f; // The scale of all the primitives. Primitives are in the object space [-1 - 1].
@@ -138,12 +135,7 @@ namespace System
         const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
         const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
 
-        {
-            Component::Label name    = Component::Label("Camera");
-            Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
-            camera.mPrimaryCamera    = true;
-            mStorage.addEntity(camera, name);
-        }
+        mStorage.addEntity(Component::Camera(true), Component::Label("Camera"));
 
         {// Cubes
             for (size_t i = 0; i < 100; i += 2)
@@ -202,12 +194,7 @@ namespace System
         const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
         const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
 
-        {
-            Component::Label name    = Component::Label("Camera");
-            Component::Camera camera = Component::Camera(glm::vec3(0.0f, 1.7f, 7.0f));
-            camera.mPrimaryCamera    = true;
-            mStorage.addEntity(camera, name);
-        }
+        mStorage.addEntity(Component::Camera(true), Component::Label("Camera"));
 
         { // Ball
             Component::Transform transform;

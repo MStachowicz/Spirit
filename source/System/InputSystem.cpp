@@ -8,6 +8,7 @@
 
 // Component
 #include "Camera.hpp"
+#include "Transform.hpp"
 
 // Utility
 #include "Logger.hpp"
@@ -30,15 +31,19 @@ namespace System
     {
         if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
         {
-            if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+            mSceneSystem.getCurrentScene().foreach([](Component::Camera& p_camera)
             {
-                if (Platform::Core::is_key_down(Platform::Key::W)) primaryCamera->move(Component::Camera::Forward);
-                if (Platform::Core::is_key_down(Platform::Key::S)) primaryCamera->move(Component::Camera::Backward);
-                if (Platform::Core::is_key_down(Platform::Key::A)) primaryCamera->move(Component::Camera::Left);
-                if (Platform::Core::is_key_down(Platform::Key::D)) primaryCamera->move(Component::Camera::Right);
-                if (Platform::Core::is_key_down(Platform::Key::E)) primaryCamera->move(Component::Camera::Up);
-                if (Platform::Core::is_key_down(Platform::Key::Q)) primaryCamera->move(Component::Camera::Down);
-            }
+                if (p_camera.m_primary_camera)
+                {
+                    if (Platform::Core::is_key_down(Platform::Key::W)) p_camera.move(Component::Camera::move_direction::Forward);
+                    if (Platform::Core::is_key_down(Platform::Key::S)) p_camera.move(Component::Camera::move_direction::Backward);
+                    if (Platform::Core::is_key_down(Platform::Key::A)) p_camera.move(Component::Camera::move_direction::Left);
+                    if (Platform::Core::is_key_down(Platform::Key::D)) p_camera.move(Component::Camera::move_direction::Right);
+                    if (Platform::Core::is_key_down(Platform::Key::E)) p_camera.move(Component::Camera::move_direction::Up);
+                    if (Platform::Core::is_key_down(Platform::Key::Q)) p_camera.move(Component::Camera::move_direction::Down);
+                }
+            });
+
         }
     }
     // use onKeyPressed to perform one-time actions. e.g. UI events are best not repeated every frame.
@@ -53,12 +58,15 @@ namespace System
         }
     }
 
-    void InputSystem::onMouseMoved(const float& pXOffset, const float& pYOffset)
+    void InputSystem::onMouseMoved(const float& p_x_offset, const float& p_y_offset)
     {
         if (Platform::Core::getWindow().capturingMouse())
         {
-            if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
-                primaryCamera->ProcessMouseMove(pXOffset, pYOffset);
+            mSceneSystem.getCurrentScene().foreach([&p_x_offset, &p_y_offset](Component::Camera& p_camera)
+            {
+                if (p_camera.m_primary_camera)
+                    p_camera.look(p_x_offset, p_y_offset);
+            });
         }
     }
 
