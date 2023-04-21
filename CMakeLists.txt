@@ -254,6 +254,12 @@ PRIVATE GLM
     PUBLIC source/External/imgui
     PRIVATE source/External/GLFW/include
     )
+    target_compile_definitions(ImGui
+    PUBLIC IMGUI_USER_CONFIG="../../UI/ImUserConfig.hpp") # Config file stored in the source folder to allow source control
+
+    target_link_libraries(ImGui
+    PUBLIC GLM
+    )
     # ImGui end -----------------------------------------------------------------------------------
 
     # GLFW ----------------------------------------------------------------------------------------
