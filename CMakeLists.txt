@@ -266,7 +266,7 @@ PRIVATE Geometry
 
     # GLAD ----------------------------------------------------------------------------------------
     add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
-    glad_add_library(glad_GL REPRODUCIBLE MX MXGLOBAL API gl:core=4.3)
+    glad_add_library(glad_GL API gl:core=4.3)
     # GLAD end ------------------------------------------------------------------------------------
 
     # GLM -----------------------------------------------------------------------------------------

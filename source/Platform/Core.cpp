@@ -183,11 +183,10 @@ namespace Platform
             ImGui_ImplOpenGL3_Init(OpenGLVersion);
         }
 
-        {
-            mOpenGLContext = (GladGLContext*)malloc(sizeof(GladGLContext));
-            int version    = gladLoadGLContext(mOpenGLContext, glfwGetProcAddress);
-            ASSERT(mOpenGLContext && version != 0, "Failed to initialise GLAD OpenGL");
-            LOG("Initialised GLAD using OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+        { // Load OpenGL functions, gladLoadGL returns the loaded version, 0 on error.
+            int version = gladLoadGL(glfwGetProcAddress);
+            ASSERT(version != 0, "Failed to initialise GLAD OpenGL"); // ALWAYS ASSERT
+            LOG("Loaded OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
         }
 
         LOG("OpenGL {}.{} context created", OpenGLMajorVersion, OpenGLMinorVersion);
@@ -205,8 +204,6 @@ namespace Platform
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext();
         }
-
-        free(mOpenGLContext);
 
         LOG("Core cleanup");
     }

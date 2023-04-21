@@ -10,7 +10,6 @@
 #include <utility>
 
 typedef struct GLFWwindow GLFWwindow;
-struct GladGLContext;
 
 namespace Platform
 {
@@ -99,7 +98,6 @@ namespace Platform
         static inline std::array<bool, Max_Key_Index> keys_pressed = { false };
 
         static inline Window* mPrimaryWindow = nullptr;
-        static inline GladGLContext* mOpenGLContext;
         static inline double mLastXPosition = -1.0;
         static inline double mLastYPosition = -1.0;
 
