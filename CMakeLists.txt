@@ -58,13 +58,13 @@ source/Component/Transform.hpp
 )
 target_include_directories(Component
 PUBLIC source/Component
-PUBLIC source/External/GLM
 PRIVATE source/External/stb
 PRIVATE source/External/ASSIMP/include
 )
 target_link_libraries(Component
 PUBLIC Geometry
 PUBLIC OpenGL
+PUBLIC GLM
 PUBLIC Utility # Used in headers of Mesh and Texture
 PRIVATE ImGui
 PRIVATE assimp
@@ -115,10 +115,10 @@ source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
 )
 target_include_directories(Geometry
-PUBLIC source/External/GLM
 PUBLIC source/Geometry
 )
 target_link_libraries(Geometry
+PUBLIC GLM
 )
 # Geometry end ----------------------------------------------------------------------------------
 
@@ -174,12 +174,12 @@ source/OpenGL/Shader.cpp
 )
 target_include_directories(OpenGL
 PUBLIC source/OpenGL
-PUBLIC source/External/GLM
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(OpenGL
 PRIVATE Utility # ToIndex used in header for size of Shader::attribute arrays.
 PUBLIC Geometry
+PUBLIC GLM
 PRIVATE System
 PRIVATE Platform
 PRIVATE Component
@@ -207,10 +207,10 @@ source/Utility/Utility.hpp
 target_include_directories(Utility
 PUBLIC source/Utility
 PUBLIC source/Utility/JobSystem
-PUBLIC source/External/GLM
 PRIVATE source/External/stb
 )
 target_link_libraries(Utility
+PUBLIC GLM
 PRIVATE UI # Logger.cpp uses Editor for output
 )
 # Utility end ---------------------------------------------------------------------------------
@@ -229,12 +229,12 @@ source/Test/Tests/GeometryTester.cpp
 target_include_directories(Test
 PUBLIC source/Test
 PUBLIC source/Test/Tests
-PUBLIC source/External/GLM
 )
 target_link_libraries(Test
 PRIVATE Utility
 PRIVATE ECS
 PRIVATE Geometry
+PRIVATE GLM
 )
 # Test end ---------------------------------------------------------------------------------
 
@@ -270,7 +270,8 @@ PRIVATE Geometry
     # GLAD end ------------------------------------------------------------------------------------
 
     # GLM -----------------------------------------------------------------------------------------
-    add_subdirectory(source/External/GLM)
+    add_library(GLM INTERFACE)
+    target_include_directories(GLM INTERFACE source/External/GLM)
     # GLM end -------------------------------------------------------------------------------------
 
     # ASSIMP --------------------------------------------------------------------------------------
