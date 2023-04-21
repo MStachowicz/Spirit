@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
-# Setup the preprocessor debug and release defines based on the configuartion selected in CMakePresets.json
-add_compile_options("$<$<CONFIG:DEBUG>:-DZEPHYR_CONFIG_DEBUG>$<$<CONFIG:RELEASE>:-DZEPHYR_CONFIG_RELEASE>")
+cmake_minimum_required(VERSION 3.22)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)

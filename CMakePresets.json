@@ -1,89 +1,96 @@
 {
-    "version": 2,
-    "cmakeMinimumRequired": {
+    "version": 3,
+    "cmakeMinimumRequired":
+    {
         "major": 3,
-        "minor": 6,
+        "minor": 22,
         "patch": 0
     },
-    "configurePresets": [
+    "configurePresets":
+    [
         {
-            "name": "base",
-            "description": "Sets the build and install directory",
-            "hidden": true,
+            "name": "visual-studio-17-2022-x64",
+            "displayName": "Visual Studio 2022",
+            "description": "Build for visual studio 2022 in x64.",
+            "generator": "Visual Studio 17 2022",
             "binaryDir": "build/${presetName}",
-            "cacheVariables": {
+            "architecture":
+            {
+                "value": "x64",
+                "strategy": "set"
+            },
+            "toolset":
+            {
+                "value": "host=x64",
+                "strategy": "set"
+            },
+            "cacheVariables":
+            {
                 "CMAKE_INSTALL_PREFIX": "install/${presetName}"
             }
         },
         {
-            "name": "visual-studio-17-2022-x64",
-            "displayName": "Visual Studio 17 2022 x64",
-            "inherits": [
-                "base"
-            ],
-            "generator": "Visual Studio 17 2022",
-            "architecture": {
-                "value": "x64",
-                "strategy": "set"
-            },
-            "toolset": {
-                "value": "host=x64",
-                "strategy": "set"
+            "name": "Ninja",
+            "description": "Build using Ninja",
+            "generator": "Ninja",
+            "binaryDir": "build/${presetName}",
+            "cacheVariables":
+            {
+                "CMAKE_INSTALL_PREFIX": "install/${presetName}"
             }
         }
     ],
-    "buildPresets": [
+    "buildPresets":
+    [
         {
-            "name": "release",
-            "hidden": true,
+            "name": "visual-studio-release",
+            "displayName": "Release",
+            "configurePreset": "visual-studio-17-2022-x64",
             "configuration": "Release",
-            "verbose": false
+            "verbose": false,
+            "targets": ["Zephyr"]
         },
         {
-            "name": "debug",
-            "hidden": true,
+            "name": "visual-studio-debug",
+            "displayName": "Debug",
+            "configurePreset": "visual-studio-17-2022-x64",
             "configuration": "Debug",
-            "verbose": true
+            "verbose": true,
+            "targets": ["Zephyr"]
         },
         {
-            "name": "clean-debug",
-            "hidden": true,
+            "name": "visual-studio-clean-debug",
+            "displayName": "Clean and Debug",
+            "configurePreset": "visual-studio-17-2022-x64",
             "configuration": "Debug",
             "cleanFirst": true,
-            "verbose": true
+            "verbose": true,
+            "targets": ["Zephyr"]
         },
         {
-            "name": "all",
-            "hidden": true,
-            "targets": [
-                "all"
-            ]
+            "name": "ninja-release",
+            "displayName": "Release",
+            "configurePreset": "Ninja",
+            "configuration": "Release",
+            "verbose": false,
+            "targets": ["Zephyr"]
         },
         {
-            "name": "visual-studio-debug-all",
-            "displayName": "Debug all (VS)",
-            "configurePreset": "visual-studio-17-2022-x64",
-            "inherits": [
-                "debug",
-                "all"
-            ]
+            "name": "ninja-debug",
+            "displayName": "Debug",
+            "configurePreset": "Ninja",
+            "configuration": "Debug",
+            "verbose": false,
+            "targets": ["Zephyr"]
         },
         {
-            "name": "visual-studio-clean-debug-all",
-            "displayName": "Clean and Debug all (VS)",
-            "configurePreset": "visual-studio-17-2022-x64",
-            "inherits": [
-                "clean-debug"
-            ]
-        },
-        {
-            "name": "visual-studio-release-all",
-            "displayName": "Release all (VS)",
-            "configurePreset": "visual-studio-17-2022-x64",
-            "inherits": [
-                "release",
-                "all"
-            ]
+            "name": "ninja-clean-debug",
+            "displayName": "Clean and Debug",
+            "configurePreset": "Ninja",
+            "configuration": "Debug",
+            "cleanFirst": true,
+            "verbose": true,
+            "targets": ["Zephyr"]
         }
     ]
 }
