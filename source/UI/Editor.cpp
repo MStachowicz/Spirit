@@ -224,12 +224,18 @@ namespace UI
                 auto fps = get_fps(m_duration_between_draws, m_time_to_average_over);
                 std::string fps_str = std::format("FPS: {:.1f}", fps);
                 ImGui::SameLine((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(fps_str.c_str()).x - ImGui::GetStyle().ItemSpacing.x) / 2.f);
-                ImGui::Text(fps_str.c_str());
+
+                glm::vec4 colour;
+                if      (fps > 60.f) colour = glm::vec4(0.f, 255.f, 0.f, 255.f);
+                else if (fps > 30.f) colour = glm::vec4(255.f, 255.f, 0.f, 255.f);
+                else                 colour = glm::vec4(255.f, 0.f, 0.f, 255.f);
+
+                ImGui::TextColored(colour, fps_str.c_str());
             }
             ImGui::EndMenuBar();
         }
         if (mWindowsToDisplay.Entity)           drawEntityTreeWindow();
-        if (mWindowsToDisplay.Console)              drawConsoleWindow();
+        if (mWindowsToDisplay.Console)          drawConsoleWindow();
         if (mWindowsToDisplay.Performance)      drawPerformanceWindow();
         if (mWindowsToDisplay.Graphics)         drawGraphicsWindow();
         if (mWindowsToDisplay.Physics)          drawPhysicsWindow();
