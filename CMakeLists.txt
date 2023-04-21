@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Zephyr ------------------------------------------------------------------------------------------
 project(Zephyr)
@@ -256,6 +257,10 @@ PRIVATE Geometry
     # ImGui end -----------------------------------------------------------------------------------
 
     # GLFW ----------------------------------------------------------------------------------------
+    # Dont build any examples, tests or documentation
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
     add_subdirectory(source/External/GLFW External/GLFW)
     # GLFW end ------------------------------------------------------------------------------------
 
@@ -269,7 +274,12 @@ PRIVATE Geometry
     # GLM end -------------------------------------------------------------------------------------
 
     # ASSIMP --------------------------------------------------------------------------------------
-    set(ASSIMP_BUILD_ZLIB ON)
+    # Remove all supported filetypes for import and export.
+    # Enable only OBJ files for import.
+    set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
     add_subdirectory(source/External/ASSIMP External/ASSIMP)
     # ASSIMP end ----------------------------------------------------------------------------------
 
