@@ -249,13 +249,16 @@ PRIVATE GLM
     source/External/imgui/imgui.cpp
     source/External/imgui/backends/imgui_impl_opengl3.cpp
     source/External/imgui/backends/imgui_impl_glfw.cpp
+    source/External/ImGuiUser/imgui_user.h
+    source/External/ImGuiUser/imgui_user_config.h
     )
     target_include_directories(ImGui
     PUBLIC source/External/imgui
+    PUBLIC source/External/ImGuiUser # Seperate folder to avoid comitting to ImGui
     PRIVATE source/External/GLFW/include
     )
     target_compile_definitions(ImGui
-    PUBLIC IMGUI_USER_CONFIG="../../UI/ImUserConfig.hpp") # Config file stored in the source folder to allow source control
+    PUBLIC IMGUI_USER_CONFIG="imgui_user_config.h")
 
     target_link_libraries(ImGui
     PUBLIC GLM

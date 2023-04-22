@@ -97,21 +97,6 @@ namespace ImGui
         return result;
     }
 
-    void Text(const char* pLabel, const glm::vec3& pVec3)
-    {
-        ImGui::Text(std::format("{}: {}, {}, {}", pLabel, pVec3.x, pVec3.y, pVec3.z).c_str());
-    }
-    void Text(const char* pLabel, const glm::mat4& pMat4)
-    {
-        ImGui::Text(std::format("{}:\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]"
-        , pLabel
-        , pMat4[0][0], pMat4[0][1], pMat4[0][2], pMat4[0][3]
-        , pMat4[1][0], pMat4[1][1], pMat4[1][2], pMat4[1][3]
-        , pMat4[2][0], pMat4[2][1], pMat4[2][2], pMat4[2][3]
-        , pMat4[3][0], pMat4[3][1], pMat4[3][2], pMat4[3][3]
-
-        ).c_str());
-    }
 } // namespace ImGui
 
 namespace UI
@@ -346,11 +331,11 @@ namespace UI
             auto& window         = Platform::Core::getWindow();
             auto [width, height] = window.size();
 
-            ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
-            ImGui::Text(("Aspect ratio: " + std::to_string(window.get_aspect_ratio())).c_str());
+            //ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
+            //ImGui::Text(("Aspect ratio: " + std::to_string(window.get_aspect_ratio())).c_str());
             bool VSync = window.get_VSync();
             if (ImGui::Checkbox("VSync", &VSync)) window.set_VSync(VSync);
-            ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
+            //ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
             ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
             ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
             ImGui::SliderFloat("Z far plane", &mOpenGLRenderer.mViewInformation.mZFarPlane, 15.f, 300.f);

@@ -39,8 +39,6 @@ namespace ECS
 namespace ImGui
 {
     bool ComboContainer(const char* pLabel, const char* pCurrentValue, const std::vector<std::string>& pItems, size_t& outSelectedIndex);
-    void Text(const char* pLabel, const glm::vec3& pVec3);
-    void Text(const char* pLabel, const glm::mat4& pMat4);
 }
 
 namespace UI
