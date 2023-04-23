@@ -20,16 +20,16 @@ namespace Component
     {
         if (ImGui::TreeNode("Transform"))
         {
-            ImGui::SliderFloat3("Position (m)", &mPosition.x, -50.f, 50.f);
-            ImGui::SliderFloat3("Scale", &mScale.x, 0.1f, 10.f);
+            ImGui::Slider("Position", mPosition, -50.f, 50.f, "%.3f m");
+            ImGui::Slider("Scale", mScale, 0.1f, 10.f);
 
             // Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
-            if (ImGui::SliderFloat3("Roll Pitch Yaw (degrees)", &mRollPitchYaw.x, -179.999f, 179.999f))
+            if (ImGui::Slider("Roll Pitch Yaw", mRollPitchYaw, -179.f, 179.f, "%.3f °"))
                 rotateEulerDegrees(mRollPitchYaw);
 
             ImGui::Separator();
-            ImGui::Text(("Directon:    " + std::to_string(mDirection.x) + ", " + std::to_string(mDirection.y) + ", " + std::to_string(mDirection.z)).c_str());
-            ImGui::Text(("Orientation: " + std::to_string(mOrientation.w) + ", " + std::to_string(mOrientation.x) + ", " + std::to_string(mOrientation.y) + ", " + std::to_string(mOrientation.z)).c_str());
+            ImGui::Text("Directon",    mDirection);
+            ImGui::Text("Orientation", mOrientation);
 
             // https://glm.g-truc.net/0.9.2/api/a00259.html#
             if (ImGui::Button("Reset"))

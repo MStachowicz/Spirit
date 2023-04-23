@@ -78,18 +78,18 @@ namespace Component
         if (ImGui::TreeNode("Camera"))
         {
             ImGui::SeparatorText("State");
-            ImGui::SliderFloat3("Position      ", &m_position.x, -30.f, 30.f);
-            ImGui::SliderFloat3("Velocity      ", &m_velocity.x, -1.f, 1.f);
-            ImGui::SliderFloat3("Up            ", &m_up.x, -1.f, 1.f);
-            ImGui::SliderFloat3("Right         ", &m_right.x, -1.f, 1.f);
-            ImGui::SliderFloat3("View direction", &m_view_direction.x, -1.f, 1.f);
-            ImGui::Text("View matrix   ", m_view);
+            ImGui::Slider("Position      ", m_position, -30.f, 30., "%.3f m");
+            ImGui::Slider("Velocity      ", m_velocity, -1.f, 1.f, "%.3f m/s");
+            ImGui::Slider("Up            ", m_up, -1.f, 1.f);
+            ImGui::Slider("Right         ", m_right, -1.f, 1.f);
+            ImGui::Slider("View direction", m_view_direction, -1.f, 1.f);
+            ImGui::Text("View matrix", m_view);
 
             ImGui::SeparatorText("Controls");
-            ImGui::SliderFloat("Look sensitivity", &m_look_sensitivity, 0.f, 1.f);
-            ImGui::SliderFloat("Move speed      ", &m_move_speed, 0.f, 1.f);
-            ImGui::SliderFloat("Move dampening  ", &m_move_dampening, 0.f, 1.f);
-            ImGui::SliderFloat("Zoom            ", &m_zoom, 1.f, 45.f);
+            ImGui::Slider("Look sensitivity", m_look_sensitivity, 0.f, 1.f);
+            ImGui::Slider("Move speed      ", m_move_speed, 0.f, 1.f);
+            ImGui::Slider("Move dampening  ", m_move_dampening, 0.f, 1.f);
+            ImGui::Slider("Zoom            ", m_zoom, 1.f, 45.f);
 
             ImGui::SeparatorText("Quick options");
             if (ImGui::Button("Look at 0,0,0"))
