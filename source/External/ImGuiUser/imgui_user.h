@@ -9,6 +9,9 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtx/quaternion.hpp"
 
+#include <string>
+#include <vector>
+
 // Add extra functions within the ImGui:: namespace here.
 namespace ImGui
 {
@@ -41,5 +44,59 @@ namespace ImGui
     inline bool Slider(const char* label, float& p_float, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
     {
         return SliderFloat(label, &p_float, v_min, v_max, format, flags);
+    }
+
+
+    // Given a list of p_options, create a selectable dropown that returns true on selection and returns the out_selected_index of p_options.
+    // Prefer the Typed option when possible, this one is handy when you already have access to a list of stringified p_options.
+    inline bool ComboContainer(const char* p_label, const char* p_current_option, const std::vector<std::string>& p_options, size_t& out_selected_option_index)
+    {
+        if (p_options.empty())
+            return false;
+
+        bool result = false;
+        if (BeginCombo(p_label, p_current_option))
+        {
+            for (size_t i = 0; i < p_options.size(); i++)
+            {
+                if (Selectable(p_options[i].c_str()))
+                {
+                    out_selected_option_index = i;
+                    result = true;
+                }
+            }
+            EndCombo();
+        }
+        return result;
+    }
+
+    // Given a p_current_option and a list of p_options and their labels, creates an ImGui selectable dropdown and assigns the selected option to p_current_option.
+    // Returns true if p_current_option has been assigned a new value.
+    template <typename Type>
+    inline bool ComboContainer(const char* p_label, Type& p_current_option, const std::vector<std::pair<Type, const char*>>& p_options)
+    {
+        if (p_options.empty())
+            return false;
+
+        const auto it = std::find_if(p_options.begin(), p_options.end(), [&p_current_option](const auto& pElement) { return p_current_option == pElement.first; });
+        ASSERT(it != p_options.end(), "p_current_option not found in the list p_options, p_options should be a complete list of all types of Type.");
+
+        bool result = false;
+
+        if (BeginCombo(p_label, it->second))
+        {
+            for (const auto& selectable : p_options)
+            {
+                auto& [type, label] = selectable;
+
+                if (Selectable(label))
+                {
+                    p_current_option = type;
+                    result = true;
+                }
+            }
+            EndCombo();
+        }
+        return result;
     }
 }

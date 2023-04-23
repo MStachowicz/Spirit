@@ -35,12 +35,6 @@ namespace ECS
     class Entity;
 }
 
-// ImGui extenders.
-namespace ImGui
-{
-    bool ComboContainer(const char* pLabel, const char* pCurrentValue, const std::vector<std::string>& pItems, size_t& outSelectedIndex);
-}
-
 namespace UI
 {
     // Editor is a Debug-build only overlay for Zephyr that provides a UI for interaction.

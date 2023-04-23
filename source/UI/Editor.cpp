@@ -44,61 +44,6 @@
 // STD
 #include <format>
 
-namespace ImGui
-{
-    bool ComboContainer(const char* pLabel, const char* pCurrentValue, const std::vector<std::string>& pItems, size_t& outSelectedIndex)
-    {
-        if (pItems.empty())
-            return false;
-
-        bool result = false;
-        if (ImGui::BeginCombo(pLabel, pCurrentValue))
-        {
-            for (size_t i = 0; i < pItems.size(); i++)
-            {
-                if (ImGui::Selectable(pItems[i].c_str()))
-                {
-                    outSelectedIndex = i;
-                    result = true;
-                }
-            }
-            ImGui::EndCombo();
-        }
-        return result;
-    }
-
-    // Given a pCurrent and a list of pOptions and their labels, creates an ImGui selectable dropdown and assigns the selected option to pCurrent.
-    // Returns true if pCurrent has been assigned a new value.
-    template <typename Type>
-    bool ComboContainer(const char* pLabel, Type& pCurrent, const std::vector<std::pair<Type, const char*>>& pOptions)
-    {
-        if (pOptions.empty())
-            return false;
-
-        const auto it = std::find_if(pOptions.begin(), pOptions.end(), [&pCurrent](const auto& pElement) { return pCurrent == pElement.first; });
-        ASSERT(it != pOptions.end(), "pCurrent not found in the list pOptions, pOptions should be a complete list of all types of Type.");
-
-        bool result = false;
-
-        if (ImGui::BeginCombo(pLabel, it->second))
-        {
-            for (const auto& selectable : pOptions)
-            {
-                auto& [type, label] = selectable;
-
-                if (ImGui::Selectable(label))
-                {
-                    pCurrent = type;
-                    result = true;
-                }
-            }
-            ImGui::EndCombo();
-        }
-        return result;
-    }
-
-} // namespace ImGui
-
 namespace UI
 {
     Editor::Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
