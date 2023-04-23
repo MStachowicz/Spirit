@@ -255,7 +255,10 @@ namespace UI
                         }
                     }
 
-                    ImGui::Separator();
+                    ImGui::SeparatorText("Quick options");
+                    if (ImGui::Button("Delete entity"))
+                        scene.deleteEntity(pEntity);
+
                     ImGui::Separator();
                     ImGui::TreePop();
                 }
