@@ -536,7 +536,7 @@ namespace ECS
                         const auto eraseInstanceCompStartPosition = eraseInstanceStartPosition + mComponents[comp].offset;
                         const auto eraseInstanceCompAddress = &m_data[eraseInstanceCompStartPosition];
 
-                        mComponents[comp].info.funcs.MoveAssign(lastInstanceCompAddress, eraseInstanceCompAddress);
+                        mComponents[comp].info.funcs.MoveAssign(eraseInstanceCompAddress, lastInstanceCompAddress);
                         mComponents[comp].info.funcs.Destruct(lastInstanceCompAddress);
                     }
 
@@ -769,9 +769,9 @@ namespace ECS
             using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
             static_assert(FunctionHelper<FunctionParameterPack>::isEntityFunction(), "pFunction is not a function that takes only one argument of type ECS::Entity");
 
-            if (mNextEntity > 0)
+            for (EntityID i = 0; i < mEntityToArchetypeID.size(); i++)
             {
-                for (EntityID i = 0; i < mNextEntity; i++)
+                if (mEntityToArchetypeID[i].has_value())
                 {
                     auto ent = Entity(i);
                     pFunction(ent);
