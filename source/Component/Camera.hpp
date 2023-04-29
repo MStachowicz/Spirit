@@ -38,8 +38,8 @@ namespace Component
         void look_at(const glm::vec3& p_point);
         // Relative to the m_view_direction, move in p_move_direction.
         void move(const move_direction& p_move_direction);
-        // Apply p_x_offset and p_y_offset to the m_view_direction.
-        void look(const float& p_x_offset, const float& p_y_offset, const bool& p_constrain_pitch = true);
+        // Apply p_offset.x and p_offset.y to the m_view_direction.
+        void look(const glm::vec2& p_offset, const bool& p_constrain_pitch = true);
 
         // Process mouse scrollwheel events. Applies a zoom on the camera.
         void scroll(const float& p_offset);

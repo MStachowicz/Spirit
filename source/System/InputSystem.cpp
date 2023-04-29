@@ -14,77 +14,57 @@
 #include "Logger.hpp"
 
 // Platform
-#include "InputDefinitions.hpp"
+#include "Input.hpp"
 #include "Core.hpp"
+#include "Window.hpp"
 
 namespace System
 {
-    InputSystem::InputSystem(System::SceneSystem& pSceneSystem)
-        : mSceneSystem(pSceneSystem)
+    InputSystem::InputSystem(Platform::Input& p_input, Platform::Window& p_window, System::SceneSystem& pSceneSystem)
+        : m_input{p_input}
+        , m_window{p_window}
+        , mSceneSystem{pSceneSystem}
     {
-        Platform::Core::mKeyPressEvent.subscribe(this, &InputSystem::onKeyPressed);
-        Platform::Core::mMouseButtonEvent.subscribe(this, &InputSystem::onMousePressed);
-        Platform::Core::mMouseMoveEvent.subscribe(this, &InputSystem::onMouseMoved);
+        m_input.m_key_event.subscribe(this, &InputSystem::on_key_event);
     }
 
     void InputSystem::update()
     {
-        if (!Platform::Core::UICapturingKeyboard() && Platform::Core::getWindow().capturingMouse())
+        if (!m_input.cursor_captured())
+            return;
+
+        if (!m_input.keyboard_captured_by_UI())
         {
-            mSceneSystem.getCurrentScene().foreach([](Component::Camera& p_camera)
+            mSceneSystem.getCurrentScene().foreach([this](Component::Camera& p_camera)
             {
                 if (p_camera.m_primary_camera)
                 {
-                    if (Platform::Core::is_key_down(Platform::Key::W)) p_camera.move(Component::Camera::move_direction::Forward);
-                    if (Platform::Core::is_key_down(Platform::Key::S)) p_camera.move(Component::Camera::move_direction::Backward);
-                    if (Platform::Core::is_key_down(Platform::Key::A)) p_camera.move(Component::Camera::move_direction::Left);
-                    if (Platform::Core::is_key_down(Platform::Key::D)) p_camera.move(Component::Camera::move_direction::Right);
-                    if (Platform::Core::is_key_down(Platform::Key::E)) p_camera.move(Component::Camera::move_direction::Up);
-                    if (Platform::Core::is_key_down(Platform::Key::Q)) p_camera.move(Component::Camera::move_direction::Down);
+                    if (m_input.is_key_down(Platform::Key::W)) p_camera.move(Component::Camera::move_direction::Forward);
+                    if (m_input.is_key_down(Platform::Key::S)) p_camera.move(Component::Camera::move_direction::Backward);
+                    if (m_input.is_key_down(Platform::Key::A)) p_camera.move(Component::Camera::move_direction::Left);
+                    if (m_input.is_key_down(Platform::Key::D)) p_camera.move(Component::Camera::move_direction::Right);
+                    if (m_input.is_key_down(Platform::Key::E)) p_camera.move(Component::Camera::move_direction::Up);
+                    if (m_input.is_key_down(Platform::Key::Q)) p_camera.move(Component::Camera::move_direction::Down);
                 }
             });
-
         }
+
+        mSceneSystem.getCurrentScene().foreach([this](Component::Camera& p_camera)
+        {
+            if (p_camera.m_primary_camera)
+                p_camera.look(m_input.cursor_delta());
+        });
     }
     // use onKeyPressed to perform one-time actions. e.g. UI events are best not repeated every frame.
     // On the other hand, game logic is best suited to Platform::Core::is_key_down since this alows repeated events.
-    void InputSystem::onKeyPressed(const Platform::Key& pKeyPressed)
+    void InputSystem::on_key_event(Platform::Key p_key, Platform::Action p_action)
     {
-        switch (pKeyPressed)
+        if (p_action == Platform::Action::Press)
         {
-            case Platform::Key::Escape: Platform::Core::getWindow().requestClose();      break;
-            case Platform::Key::F11:    Platform::Core::getWindow().toggle_fullscreen(); break;
-            default: break;
-        }
-    }
-
-    void InputSystem::onMouseMoved(const float& p_x_offset, const float& p_y_offset)
-    {
-        if (Platform::Core::getWindow().capturingMouse())
-        {
-            mSceneSystem.getCurrentScene().foreach([&p_x_offset, &p_y_offset](Component::Camera& p_camera)
+            switch (p_key)
             {
-                if (p_camera.m_primary_camera)
-                    p_camera.look(p_x_offset, p_y_offset);
-            });
-        }
-    }
-
-    void InputSystem::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)
-    {
-        // InputSystem only reacts to inputs if the UI is not hovered and the mouse is captured by the window.
-        if (!Platform::Core::UICapturingMouse() && Platform::Core::getWindow().capturingMouse())
-        {
-            switch (pMouseButton)
-            {
-                case Platform::MouseButton::MOUSE_LEFT:   break;
-                case Platform::MouseButton::MOUSE_MIDDLE: break;
-                case Platform::MouseButton::MOUSE_RIGHT:
-                {
-                    if (pAction == Platform::Action::PRESS)
-                        Platform::Core::getWindow().setInputMode(Platform::CursorMode::NORMAL);
-                    break;
-                }
+                case Platform::Key::Escape: m_window.request_close();     break;
+                case Platform::Key::F11:    m_window.toggle_fullscreen(); break;
                 default: break;
             }
         }

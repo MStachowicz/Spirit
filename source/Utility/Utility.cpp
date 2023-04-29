@@ -1,4 +1,5 @@
 #include "Utility.hpp"
+#include "Logger.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -87,5 +88,28 @@ namespace Utility
             const float invs = 1.f / s;
             return glm::quat(s * 0.5f, rotationAxis.x * invs, rotationAxis.y * invs, rotationAxis.z * invs);
         }
+    }
+
+    glm::vec3 get_direction_from_cursor(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::mat4& p_projection, const glm::mat4& p_view)
+    {
+        ASSERT(p_cursor_pos.x > 0.f && p_cursor_pos.y > 0.f, "[UTILITY] Mouse coordinates cannot be negative, did you miss a Window::capturingMouse() check before calling");
+
+        // VIEWPORT [0 - WINDOWSIZE] to OpenGL NDC [-1 - 1]
+        const glm::vec2 normalizedDisplayCoords = glm::vec2((2.f * p_cursor_pos.x) / p_window_size.x - 1.f, (2.f * p_cursor_pos.y) / p_window_size.y - 1.f);
+
+        // NDC to CLIPSPACE - Reversing normalizedDisplayCoords.y -> OpenGL windowSpace is relative to bottom left, get_cursor_position returns screen coordinates relative to top-left
+        const glm::vec4 clipSpaceRay = glm::vec4(normalizedDisplayCoords.x, -normalizedDisplayCoords.y, -1.f, 1.f);
+
+        // CLIPSPACE to EYE SPACE
+        auto eyeSpaceRay = glm::inverse(p_projection) * clipSpaceRay;
+        eyeSpaceRay      = glm::vec4(eyeSpaceRay.x, eyeSpaceRay.y, -1.f, 0.f); // Set the direction into the screen -1.f
+
+        // EYE SPACE to WORLD SPACE
+        const glm::vec3 worldSpaceRay = glm::normalize(glm::vec3(glm::inverse(p_view) * eyeSpaceRay));
+        return worldSpaceRay;
+    }
+    Geometry::Ray get_cursor_ray(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::vec3& p_view_position, const glm::mat4& p_projection, const glm::mat4& p_view)
+    {
+        return Geometry::Ray(p_view_position, get_direction_from_cursor(p_cursor_pos, p_window_size, p_projection, p_view));
     }
 }

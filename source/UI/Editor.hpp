@@ -18,6 +18,9 @@ namespace Platform
     enum class MouseButton;
     enum class Action;
     enum class CursorMode;
+
+    class Window;
+    class Input;
 }
 namespace System
 {
@@ -37,7 +40,8 @@ namespace ECS
 
 namespace UI
 {
-    // Editor is a Debug-build only overlay for Zephyr that provides a UI for interaction.
+    // Editor is a Debug-build only overlay for Zephyr that provides a UI for interaction using ImGui.
+    // The individual Component clases define their own draw_UI functions which the Editor is in charge of calling.
     class Editor
     {
         struct Windows
@@ -54,6 +58,9 @@ namespace UI
             bool ImGuiStyleEditor = false;
             bool Console          = true;
         };
+
+        Platform::Input&         m_input;
+        Platform::Window&        m_window;
 
         System::TextureSystem&   mTextureSystem;
         System::MeshSystem&      mMeshSystem;
@@ -98,7 +105,8 @@ namespace UI
             return 1.f / std::chrono::duration_cast<std::chrono::duration<Rep>>(avg_time_per_frame).count();
         }
 
-        Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
+        Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
+
         void draw(const DeltaTime& p_duration_since_last_draw);
 
         void log(const std::string& p_message);
@@ -106,12 +114,15 @@ namespace UI
         void log_error(const std::string& p_message);
 
     private:
-        void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
+        void on_mouse_event(Platform::MouseButton p_button, Platform::Action p_action);
+        void on_key_event(Platform::Key p_key, Platform::Action p_action);
+
         void drawEntityTreeWindow();
         void drawGraphicsWindow();
         void drawPerformanceWindow();
         void drawPhysicsWindow();
         void drawConsoleWindow();
+
         void initialiseStyling();
     };
 } // namespace UI

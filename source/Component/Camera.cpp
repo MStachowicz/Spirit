@@ -53,10 +53,10 @@ namespace Component
         }
     }
 
-    void Camera::look(const float& p_x_offset, const float& p_y_offset, const bool& p_constrain_pitch)
+    void Camera::look(const glm::vec2& p_offset, const bool& p_constrain_pitch)
     {
-        m_view_direction.x += p_x_offset * m_look_sensitivity;
-        m_view_direction.y += p_y_offset * m_look_sensitivity;
+        m_view_direction.x += p_offset.x * m_look_sensitivity;
+        m_view_direction.y += p_offset.y * m_look_sensitivity;
         m_view_direction = glm::normalize(m_view_direction);
         m_right          = glm::normalize(glm::cross(m_view_direction, WorldUp));
         m_up             = glm::normalize(glm::cross(m_right, m_view_direction));

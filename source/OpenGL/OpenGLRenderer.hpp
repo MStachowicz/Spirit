@@ -7,9 +7,7 @@
 
 // GEOMETRY
 #include "Cylinder.hpp"
-#include "Ray.hpp"
 #include "Sphere.hpp"
-#include "Triangle.hpp"
 
 // GLM
 #include "glm/fwd.hpp"
@@ -26,11 +24,6 @@ namespace ECS
 {
     class Storage;
 }
-namespace Data
-{
-    class Texture;
-    class Model;
-}
 namespace Component
 {
     class Mesh;
@@ -44,6 +37,20 @@ namespace System
     class MeshSystem;
     class TextureSystem;
     class SceneSystem;
+}
+namespace Data
+{
+    class Texture;
+    class Model;
+}
+namespace Geometry
+{
+    class Cylinder;
+    class Sphere;
+}
+namespace Platform
+{
+    class Window;
 }
 
 namespace OpenGL
@@ -106,7 +113,7 @@ namespace OpenGL
         {
             ViewInformation();
 
-            glm::mat4 mViewMatrix;
+            glm::mat4 mView;
             glm::vec3 mViewPosition;
             glm::mat4 mProjection;
             float mZNearPlane;
@@ -115,6 +122,7 @@ namespace OpenGL
         };
 
         GLState mGLState;
+        Platform::Window& m_window;
         FBO mScreenFramebuffer;
 
         System::SceneSystem& mSceneSystem;
@@ -137,15 +145,9 @@ namespace OpenGL
         void showPhysicsOptions();
 
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-        OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
+        OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
         // Draw the current state of the ECS.
         void draw();
-
-        // Returns the current cursor screen position as a normalised direction vector in world-space.
-        // This function is OpenGL specific as it makes assumptions on NDC coordinate system and forward direction in world space.
-        glm::vec3 getCursorWorldDirection() const;
-        // Returns a ray cast from the primary camera view position in the direction of the cursor.
-        Geometry::Ray getCursorWorldRay() const;
 
     private:
         void setShaderVariables(const Component::PointLight& pPointLight);

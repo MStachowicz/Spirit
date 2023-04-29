@@ -13,6 +13,8 @@
 
 // Platform
 #include "Core.hpp"
+#include "Window.hpp"
+#include "Input.hpp"
 
 // OpenGL
 #include "OpenGLRenderer.hpp"
@@ -29,14 +31,18 @@
 // STD
 #include <Chrono>
 
-// Application keeps track of timing and running the simulation loop and runtime of the program.
+// Application manages the ownership and calling of all the Systems.
+// Taking an OS window it renders and updates the state of an ECS.
 class Application
 {
 public:
-    Application();
+    Application(Platform::Input& p_input, Platform::Window& p_window);
     void simulationLoop();
 
 private:
+    Platform::Input& m_input;
+    Platform::Window& m_window; // Main window all application business takes place in. When this window is closed, the application ends and vice-versa.
+
     System::TextureSystem mTextureSystem;
     System::MeshSystem mMeshSystem;
     System::SceneSystem mSceneSystem;
@@ -88,8 +94,8 @@ private:
         // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
         while (true)
         {
-            Platform::Core::pollEvents();
-            if (!Platform::Core::hasWindow() || mSimulationLoopParamsChanged)
+            m_input.update(); // Poll events then check close_requested.
+            if (m_window.close_requested() || mSimulationLoopParamsChanged)
                 break;
 
             mInputSystem.update();
@@ -119,7 +125,7 @@ private:
 
                 mOpenGLRenderer.draw();
                 mEditor.draw(durationSinceLastRenderTick);
-                Platform::Core::swapBuffers();
+                m_window.swap_buffers();
 
                 durationSinceLastRenderTick = Duration::zero();
             }
@@ -140,22 +146,31 @@ private:
 
 int main(int argc, char *argv[])
 {
-    Utility::Stopwatch stopwatch;
+    {
+        Utility::Stopwatch stopwatch;
+        Utility::File::setupDirectories(argv[0]);
 
-    Utility::File::setupDirectories(argv[0]);
-    Platform::Core::initialise();
-    JobSystem::initialise();
+        // Library init order is important here
+        // GLFW <- Window/GL context <- OpenGL functions <- ImGui <- App
 
-    Test::runUnitTests(false);
+        Platform::Core::initialise_GLFW();
+        Platform::Input input   = Platform::Input();
+        Platform::Window window = Platform::Window(1920, 1080, input);
+        Platform::Core::initialise_OpenGL();
+        Platform::Core::initialise_ImGui(window);
 
-    LOG("Number of arguments passed on launch: {}", argc);
-    for (int index{}; index != argc; ++index)
-        LOG("Argument {}: {}", index + 1, argv[index]);
+        //JobSystem::initialise();
+        //Test::runUnitTests(false);
 
-    Application app;
-    LOG("Zephyr initialisation took {}", stopwatch.duration_since_start<int, std::milli>());
+        LOG("[INIT] Number of arguments passed on launch: {}", argc);
+        for (int index{}; index != argc; ++index)
+            LOG("Argument {}: {}", index + 1, argv[index]);
 
-    app.simulationLoop();
+        auto app = Application(input, window);
+        LOG("[INIT] initialisation took {}", stopwatch.duration_since_start<int, std::milli>());
+
+        app.simulationLoop();
+    } // Window and input must go out of scope and destroy their resources before Core::cleanup
 
     Platform::Core::cleanup();
     return EXIT_SUCCESS;

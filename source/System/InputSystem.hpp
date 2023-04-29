@@ -8,6 +8,8 @@ namespace Platform
     enum class MouseButton;
     enum class Action;
     enum class CursorMode;
+    class Window;
+    class Input;
 }
 namespace System
 {
@@ -17,13 +19,14 @@ namespace System
     class InputSystem
     {
     public:
-        InputSystem(SceneSystem& pSceneSystem);
+        InputSystem(Platform::Input& p_input, Platform::Window& p_window, SceneSystem& pSceneSystem);
         void update();
 
     private:
-        void onKeyPressed(const Platform::Key& pKeyPressed);
-        void onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction);
-        void onMouseMoved(const float& pXOffset, const float& pYOffset);
+        void on_key_event(Platform::Key p_key, Platform::Action p_action);
+
+        Platform::Input& m_input;
+        Platform::Window& m_window;
 
         SceneSystem& mSceneSystem;
     };

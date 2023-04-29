@@ -18,12 +18,17 @@
 #include "TextureSystem.hpp"
 #include "SceneSystem.hpp"
 
+// GEOMETRY
+#include "Ray.hpp"
+#include "Triangle.hpp"
+
 // UTILITY
 #include "Logger.hpp"
 #include "Utility.hpp"
 
 // PLATFORM
 #include "Core.hpp"
+#include "Window.hpp"
 
 //GLM
 #include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
@@ -66,7 +71,7 @@ namespace OpenGL
         , mDebugPointsVBO{}
     {}
     OpenGLRenderer::ViewInformation::ViewInformation()
-        : mViewMatrix{glm::identity<glm::mat4>()}
+        : mView{glm::identity<glm::mat4>()}
         , mViewPosition{0.f}
         , mProjection{glm::identity<glm::mat4>()}
         , mZNearPlane{0.1f}
@@ -74,8 +79,9 @@ namespace OpenGL
         , mFOV{45.f}
     {}
 
-    OpenGLRenderer::OpenGLRenderer(System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)
-        : mGLState{}
+    OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)
+        : m_window{p_window}
+        , mGLState{}
         , mScreenFramebuffer{}
         , mSceneSystem{pSceneSystem}
         , mMeshSystem{pMeshSystem}
@@ -90,12 +96,10 @@ namespace OpenGL
         , mViewInformation{}
         , mDebugOptions{mGLState}
     {
-        Platform::Core::mWindowResizeEvent.subscribe(this, &OpenGLRenderer::onWindowResize);
-
-        const auto [width, height] = Platform::Core::getWindow().size();
-        mScreenFramebuffer.attachColourBuffer(width, height);
-        mScreenFramebuffer.attachDepthBuffer(width, height);
-        mGLState.setViewport(width, height);
+        const auto windowSize = m_window.size();
+        mScreenFramebuffer.attachColourBuffer(windowSize.x, windowSize.y);
+        mScreenFramebuffer.attachDepthBuffer(windowSize.x, windowSize.y);
+        mGLState.setViewport(windowSize.x, windowSize.y);
 
         LOG("Constructed new OpenGLRenderer instance");
     }
@@ -127,6 +131,9 @@ namespace OpenGL
     void OpenGLRenderer::draw()
     {
         { // Prepare mScreenFramebuffer for rendering
+            const auto window_size = m_window.size();
+            mScreenFramebuffer.resize(window_size.x, window_size.y);
+            mGLState.setViewport(window_size.x, window_size.y);
             mScreenFramebuffer.bind();
             mScreenFramebuffer.clearBuffers();
             ASSERT(mScreenFramebuffer.isComplete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
@@ -135,11 +142,11 @@ namespace OpenGL
         { // Set global shader uniforms.
             if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
             {
-                mViewInformation.mViewMatrix   = primaryCamera->get_view();
+                mViewInformation.mView   = primaryCamera->get_view();
                 mViewInformation.mViewPosition = primaryCamera->get_position();
             }
-            mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), Platform::Core::getWindow().get_aspect_ratio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
-            mGLState.setUniformBlockVariable("ViewProperties.view", mViewInformation.mViewMatrix);
+            mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), m_window.aspect_ratio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
+            mGLState.setUniformBlockVariable("ViewProperties.view", mViewInformation.mView);
             mGLState.setUniformBlockVariable("ViewProperties.projection", mViewInformation.mProjection);
         }
 
@@ -475,36 +482,4 @@ namespace OpenGL
 
         spotLightDrawCount++;
     }
-
-    void OpenGLRenderer::onWindowResize(const int pWidth, const int pHeight)
-    {
-        mScreenFramebuffer.resize(pWidth, pHeight);
-        mGLState.setViewport(pWidth, pHeight);
-    }
-
-    glm::vec3 OpenGLRenderer::getCursorWorldDirection() const
-    {
-        const auto [mouseX, mouseY]   = Platform::Core::getCursorPosition(); // VIEWPORT
-        ASSERT(mouseX > 0.f && mouseY > 0.f, "Mouse coordinates cannot be negative, did you miss a Window::capturingMouse() check before calling")
-        const auto [windowX, windowY] = Platform::Core::getWindow().size();
-
-        // VIEWPORT [0 - WINDOWSIZE] to OpenGL NDC [-1 - 1]
-        const glm::vec2 normalizedDisplayCoords = glm::vec2((2.f * mouseX) / windowX - 1.f, (2.f * mouseY) / windowY - 1.f);
-
-        // NDC to CLIPSPACE - Reversing normalizedDisplayCoords.y -> OpenGL windowSpace is relative to bottom left, getCursorPosition returns screen coordinates relative to top-left
-        const glm::vec4 clipSpaceRay = glm::vec4(normalizedDisplayCoords.x, -normalizedDisplayCoords.y, -1.f, 1.f);
-
-        // CLIPSPACE to EYE SPACE
-        auto eyeSpaceRay = glm::inverse(mViewInformation.mProjection) * clipSpaceRay;
-        eyeSpaceRay      = glm::vec4(eyeSpaceRay.x, eyeSpaceRay.y, -1.f, 0.f); // Set the direction into the screen -1.f
-
-        // EYE SPACE to WORLD SPACE
-        const glm::vec3 worldSpaceRay = glm::normalize(glm::vec3(glm::inverse(mViewInformation.mViewMatrix) * eyeSpaceRay));
-        return worldSpaceRay;
-    }
-    Geometry::Ray OpenGLRenderer::getCursorWorldRay() const
-    {
-        return Geometry::Ray(mSceneSystem.getPrimaryCamera()->get_position(), getCursorWorldDirection());
-    }
-
 } // namespace OpenGL

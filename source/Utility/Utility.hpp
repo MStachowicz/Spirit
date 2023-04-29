@@ -1,12 +1,20 @@
 #pragma once
 
-#include <functional>
-#include <filesystem>
-#include <string>
-#include <random>
-
-#include "glm/mat4x4.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "glm/mat4x4.hpp"
+
+// GEOMETRY
+#include "Ray.hpp"
+
+#include <filesystem>
+#include <functional>
+#include <random>
+#include <string>
+
+namespace Geometry
+{
+    class Ray;
+}
 
 namespace Utility
 {
@@ -76,4 +84,9 @@ namespace Utility
     inline glm::quat toQuaternion(const glm::vec3& pRollPitchYaw) { return toQuaternion(pRollPitchYaw.x, pRollPitchYaw.y, pRollPitchYaw.z); }
     // Returns the quaternon rotation to get from pStart to pDestination direction vectors.
     glm::quat getRotation(const glm::vec3& pStart, const glm::vec3& pDestination);
+
+    // Returns the world space direction the cursor is pointing by reversing the projection and view matrices.
+    glm::vec3 get_cursor_direction(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::mat4& p_projection, const glm::mat4& p_view);
+    // Returns a Ray with a starting point at p_view_position
+    Geometry::Ray get_cursor_ray(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::vec3& p_view_position, const glm::mat4& p_projection, const glm::mat4& p_view);
 }

@@ -1,14 +1,16 @@
 #include "Application.hpp"
 
-Application::Application()
-    : mTextureSystem{}
+Application::Application(Platform::Input& p_input, Platform::Window& p_window)
+    : m_input{p_input}
+    , m_window{p_window}
+    , mTextureSystem{}
     , mMeshSystem{mTextureSystem}
     , mSceneSystem{mTextureSystem, mMeshSystem}
-    , mOpenGLRenderer{mSceneSystem, mMeshSystem, mTextureSystem}
+    , mOpenGLRenderer{m_window, mSceneSystem, mMeshSystem, mTextureSystem}
     , mCollisionSystem{mSceneSystem, mMeshSystem}
     , mPhysicsSystem{mSceneSystem, mCollisionSystem}
-    , mInputSystem{mSceneSystem}
-    , mEditor{mTextureSystem, mMeshSystem, mSceneSystem, mCollisionSystem, mOpenGLRenderer}
+    , mInputSystem{m_input, m_window, mSceneSystem}
+    , mEditor{m_input, m_window, mTextureSystem, mMeshSystem, mSceneSystem, mCollisionSystem, mOpenGLRenderer}
     , mSimulationLoopParamsChanged{false}
     , mPhysicsTicksPerSecond{60}
     , mRenderTicksPerSecond{120}
@@ -19,34 +21,21 @@ Application::Application()
 
 void Application::simulationLoop()
 {
-    while (Platform::Core::hasWindow())
+    while (!m_window.close_requested())
     {
+        ASSERT(mPhysicsTicksPerSecond == 30 || mPhysicsTicksPerSecond == 60 || mPhysicsTicksPerSecond == 90 || mPhysicsTicksPerSecond == 120, "[APPLICATION] Physics ticks per second requested invalid!");
+        ASSERT(mRenderTicksPerSecond == 30 || mRenderTicksPerSecond == 60 || mRenderTicksPerSecond == 90 || mRenderTicksPerSecond == 120, "[APPLICATION] Render ticks per second requested invalid!");
+
         switch (mPhysicsTicksPerSecond)
         {
             case 30:
             {
                 switch (mRenderTicksPerSecond)
                 {
-                    case 30:
-                    {
-                        simulationLoop<30, 30>();
-                        break;
-                    }
-                    case 60:
-                    {
-                        simulationLoop<30, 60>();
-                        break;
-                    }
-                    case 90:
-                    {
-                        simulationLoop<30, 90>();
-                        break;
-                    }
-                    case 120:
-                    {
-                        simulationLoop<30, 120>();
-                        break;
-                    }
+                    case 30:  simulationLoop<30, 30>(); break;
+                    case 60:  simulationLoop<30, 60>(); break;
+                    case 90:  simulationLoop<30, 90>(); break;
+                    case 120: simulationLoop<30, 120>(); break;
                 }
                 break;
             }
@@ -54,26 +43,10 @@ void Application::simulationLoop()
             {
                 switch (mRenderTicksPerSecond)
                 {
-                    case 30:
-                    {
-                        simulationLoop<60, 30>();
-                        break;
-                    }
-                    case 60:
-                    {
-                        simulationLoop<60, 60>();
-                        break;
-                    }
-                    case 90:
-                    {
-                        simulationLoop<60, 90>();
-                        break;
-                    }
-                    case 120:
-                    {
-                        simulationLoop<60, 120>();
-                        break;
-                    }
+                    case 30:  simulationLoop<60, 30>(); break;
+                    case 60:  simulationLoop<60, 60>(); break;
+                    case 90:  simulationLoop<60, 90>(); break;
+                    case 120: simulationLoop<60, 120>(); break;
                 }
                 break;
             }
@@ -81,26 +54,10 @@ void Application::simulationLoop()
             {
                 switch (mRenderTicksPerSecond)
                 {
-                    case 30:
-                    {
-                        simulationLoop<90, 30>();
-                        break;
-                    }
-                    case 60:
-                    {
-                        simulationLoop<90, 60>();
-                        break;
-                    }
-                    case 90:
-                    {
-                        simulationLoop<90, 90>();
-                        break;
-                    }
-                    case 120:
-                    {
-                        simulationLoop<90, 120>();
-                        break;
-                    }
+                    case 30:  simulationLoop<90, 30>(); break;
+                    case 60:  simulationLoop<90, 60>(); break;
+                    case 90:  simulationLoop<90, 90>(); break;
+                    case 120: simulationLoop<90, 120>(); break;
                 }
                 break;
             }
@@ -108,30 +65,13 @@ void Application::simulationLoop()
             {
                 switch (mRenderTicksPerSecond)
                 {
-                    case 30:
-                    {
-                        simulationLoop<120, 30>();
-                        break;
-                    }
-                    case 60:
-                    {
-                        simulationLoop<120, 60>();
-                        break;
-                    }
-                    case 90:
-                    {
-                        simulationLoop<120, 90>();
-                        break;
-                    }
-                    case 120:
-                    {
-                        simulationLoop<120, 120>();
-                        break;
-                    }
+                    case 30:  simulationLoop<120, 30>(); break;
+                    case 60:  simulationLoop<120, 60>(); break;
+                    case 90:  simulationLoop<120, 90>(); break;
+                    case 120: simulationLoop<120, 120>(); break;
                 }
                 break;
             }
-            default: ASSERT(false, "Invalid value assigned to mPhysicsTicksPerSecond"); break;
         }
 
         // After exiting a simulation loop we may have requested a physics timestep change.

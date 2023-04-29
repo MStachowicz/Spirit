@@ -145,16 +145,20 @@ PRIVATE ImGui
 
 # Platform ------------------------------------------------------------------------------------
 add_library(Platform
+source/Platform/Window.hpp
+source/Platform/Window.cpp
 source/Platform/Core.hpp
 source/Platform/Core.cpp
-source/Platform/InputDefinitions.hpp
+source/Platform/Input.hpp
+source/Platform/Input.cpp
 )
 target_include_directories(Platform
 PUBLIC source/Platform
 PRIVATE source/External/GLFW/include
 )
 target_link_libraries(Platform
-PRIVATE Utility
+PUBLIC GLM
+PUBLIC Utility # EventDispatcher in Window and Input hpps.
 PRIVATE glfw
 PRIVATE glad_GL
 PRIVATE ImGui
@@ -211,6 +215,7 @@ PRIVATE source/External/stb
 )
 target_link_libraries(Utility
 PUBLIC GLM
+PUBLIC Geometry
 PRIVATE UI # Logger.cpp uses Editor for output
 )
 # Utility end ---------------------------------------------------------------------------------

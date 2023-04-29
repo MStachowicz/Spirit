@@ -29,10 +29,12 @@
 
 // PLATFORM
 #include "Core.hpp"
-#include "InputDefinitions.hpp"
+#include "Input.hpp"
+#include "Window.hpp"
 
 // UTILITY
 #include "Logger.hpp"
+#include "Utility.hpp"
 
 // GLM
 #include "glm/glm.hpp"
@@ -46,8 +48,10 @@
 
 namespace UI
 {
-    Editor::Editor(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
-        : mTextureSystem{pTextureSystem}
+    Editor::Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
+        : m_input{p_input}
+        , m_window{p_window}
+        , mTextureSystem{pTextureSystem}
         , mMeshSystem{pMeshSystem}
         , mSceneSystem{pSceneSystem}
         , mCollisionSystem{pCollisionSystem}
@@ -59,67 +63,67 @@ namespace UI
         , m_time_to_average_over{std::chrono::seconds(1)}
         , m_duration_between_draws{}
     {
-        Platform::Core::mMouseButtonEvent.subscribe(this, &Editor::onMousePressed);
-
-        auto writeTriangleConstructor = [](const Geometry::Triangle& pTriangle)
-        {
-            auto constructor = std::format("Geometry::Triangle(glm::vec3({}f, {}f, {}f), glm::vec3({}f, {}f, {}f), glm::vec3({}f, {}f, {}f))"
-            , pTriangle.mPoint1.x, pTriangle.mPoint1.y, pTriangle.mPoint1.z
-            , pTriangle.mPoint2.x, pTriangle.mPoint2.y, pTriangle.mPoint2.z
-            , pTriangle.mPoint3.x, pTriangle.mPoint3.y, pTriangle.mPoint3.z);
-            std::cout << constructor << std::endl;
-        };
+        m_input.m_mouse_event.subscribe(this, &Editor::on_mouse_event);
+        m_input.m_key_event.subscribe(this,   &Editor::on_key_event);
 
         initialiseStyling();
     }
 
-    void Editor::onMousePressed(const Platform::MouseButton& pMouseButton, const Platform::Action& pAction)
+    void Editor::on_mouse_event(Platform::MouseButton p_button, Platform::Action p_action)
     {
-        if (!Platform::Core::UICapturingMouse() && !Platform::Core::getWindow().capturingMouse())
+        if (p_button == Platform::MouseButton::Right && p_action == Platform::Action::Press)
         {
-            switch (pMouseButton)
+            if (m_input.cursor_captured())
+                m_input.set_cursor_mode(Platform::CursorMode::Normal);
+            else if (!m_input.cursor_over_UI()) // We are editing. If we click on non-UI re-capture mouse
+                m_input.set_cursor_mode(Platform::CursorMode::Captured);
+        }
+        if (m_input.cursor_captured())
+            return;
+
+        if (!m_input.cursor_over_UI())
+        {
+            switch (p_button)
             {
-                case Platform::MouseButton::MOUSE_LEFT:
+                case Platform::MouseButton::Left:
                 {
-                    if (pAction == Platform::Action::PRESS)
+                    if (p_action == Platform::Action::Press)
                     {
-                        auto cursorRay          = mOpenGLRenderer.getCursorWorldRay();
+                        const auto& view_info = mOpenGLRenderer.mViewInformation;
+                        auto cursorRay = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.mViewPosition, view_info.mProjection, view_info.mView);
                         auto entitiesUnderMouse = mCollisionSystem.getEntitiesAlongRay(cursorRay);
 
                         if (!entitiesUnderMouse.empty())
                         {
-                            std::sort(entitiesUnderMouse.begin(), entitiesUnderMouse.end(),[](const auto& left, const auto& right) { return left.second < right.second; });
+                            std::sort(entitiesUnderMouse.begin(), entitiesUnderMouse.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
                             auto entityCollided = entitiesUnderMouse.front().first;
 
                             mSelectedEntities.push_back(entityCollided);
-                            LOG("Entity{} has been selected", entityCollided.ID);
-                            }
+                            LOG("[EDITOR] Entity{} has been selected", entityCollided.ID);
+                        }
 
-                            const auto mouseRayCylinder  = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->get_position(), mSceneSystem.getPrimaryCamera()->get_position() + (cursorRay.mDirection * 1000.f), 0.02f);
-                            mOpenGLRenderer.mDebugOptions.mCylinders.push_back(mouseRayCylinder);
+                        const auto mouseRayCylinder = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->get_position(), mSceneSystem.getPrimaryCamera()->get_position() + (cursorRay.mDirection * 1000.f), 0.02f);
+                        mOpenGLRenderer.mDebugOptions.mCylinders.push_back(mouseRayCylinder);
                     }
                     break;
                 }
-                case Platform::MouseButton::MOUSE_MIDDLE:
+                case Platform::MouseButton::Middle:
                 {
                     mOpenGLRenderer.mDebugOptions.mCylinders.clear();
                     break;
                 }
-                case Platform::MouseButton::MOUSE_RIGHT:
-                {
-                    if (pAction == Platform::Action::PRESS)
-                        Platform::Core::getWindow().setInputMode(Platform::Core::getWindow().capturingMouse() ? Platform::CursorMode::NORMAL : Platform::CursorMode::CAPTURED);
-                    break;
-                }
+                case Platform::MouseButton::Right: break;
+                default: break;
             }
         }
     }
+    void Editor::on_key_event(Platform::Key p_key, Platform::Action p_action)
+    {}
 
     void Editor::draw(const DeltaTime& p_duration_since_last_draw)
     {
         m_duration_between_draws.push_back(p_duration_since_last_draw);
-
-        Platform::Core::startImGuiFrame();
+        m_window.start_ImGui_frame();
 
         if (ImGui::BeginMenuBar())
         {
@@ -180,7 +184,7 @@ namespace UI
             ImGui::End();
         }
 
-        Platform::Core::endImGuiFrame();
+        m_window.end_ImGui_frame();
         mDrawCount++;
     }
 
@@ -276,14 +280,11 @@ namespace UI
     {
         if (ImGui::Begin("Graphics", &mWindowsToDisplay.Graphics))
         {
-            auto& window         = Platform::Core::getWindow();
-            auto [width, height] = window.size();
-
-            //ImGui::Text(("Viewport size: " + std::to_string(width) + "x" + std::to_string(height)).c_str());
-            //ImGui::Text(("Aspect ratio: " + std::to_string(window.get_aspect_ratio())).c_str());
-            bool VSync = window.get_VSync();
-            if (ImGui::Checkbox("VSync", &VSync)) window.set_VSync(VSync);
-            //ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
+            ImGui::Text("Window size", m_window.size());
+            ImGui::Text("Aspect ratio", m_window.aspect_ratio());
+            bool VSync = m_window.get_VSync();
+            if (ImGui::Checkbox("VSync", &VSync)) m_window.set_VSync(VSync);
+            ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
             ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
             ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
             ImGui::SliderFloat("Z far plane", &mOpenGLRenderer.mViewInformation.mZFarPlane, 15.f, 300.f);
@@ -455,6 +456,8 @@ namespace UI
     }
     void Editor::initialiseStyling()
     {
+        ImGui::StyleColorsDark();
+
         // Round out the UI and make more compact
         ImGuiStyle& style = ImGui::GetStyle();
         style.WindowPadding            = ImVec2(4.f, 2.f);
