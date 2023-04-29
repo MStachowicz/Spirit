@@ -83,6 +83,8 @@
 #include "glm/vec3.hpp"	// vec3, bvec3, dvec3, ivec3 and uvec3
 #include "glm/vec2.hpp"	// vec2, bvec2, dvec2, ivec2 and uvec2
 
+#include <cmath>
+
 //---- Don't define obsolete functions/enums/behaviors. Consider enabling from time to time after updating to avoid using soon-to-be obsolete function/names.
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
@@ -95,7 +97,12 @@
             : x{f.x}\
             , y{f.y}\
         {}\
-        operator glm::vec2() const { return glm::vec2(x,y); }
+        operator glm::vec2() const { return glm::vec2(x,y); }\
+        constexpr ImVec2(const glm::ivec2& f)\
+            : x{static_cast<float>(f.x)}\
+            , y{static_cast<float>(f.y)}\
+        {}\
+        operator glm::ivec2() const { return glm::ivec2(static_cast<int>(std::round(x)), static_cast<int>(std::round(y))); }
 
 #define IM_VEC3_CLASS_EXTRA\
         constexpr ImVec3(const glm::vec3& f)\
