@@ -151,19 +151,19 @@ namespace OpenGL
     void Shader::scanForAttributes(const std::string& pSourceCode)
     {
         if (mAttributes.find(Attribute::Position3D) == mAttributes.end())
-            if (pSourceCode.find(getAttributeName(Attribute::Position3D)) != std::string::npos)
+            if (pSourceCode.find(get_attribute_identifier(Attribute::Position3D)) != std::string::npos)
                 mAttributes.insert(Attribute::Position3D);
 
         if (mAttributes.find(Attribute::Normal3D) == mAttributes.end())
-            if (pSourceCode.find(getAttributeName(Attribute::Normal3D)) != std::string::npos)
+            if (pSourceCode.find(get_attribute_identifier(Attribute::Normal3D)) != std::string::npos)
                 mAttributes.insert(Attribute::Normal3D);
 
         if (mAttributes.find(Attribute::ColourRGB) == mAttributes.end())
-            if (pSourceCode.find(getAttributeName(Attribute::ColourRGB)) != std::string::npos)
+            if (pSourceCode.find(get_attribute_identifier(Attribute::ColourRGB)) != std::string::npos)
                 mAttributes.insert(Attribute::ColourRGB);
 
         if (mAttributes.find(Attribute::TextureCoordinate2D) == mAttributes.end())
-            if (pSourceCode.find(getAttributeName(Attribute::TextureCoordinate2D)) != std::string::npos)
+            if (pSourceCode.find(get_attribute_identifier(Attribute::TextureCoordinate2D)) != std::string::npos)
                 mAttributes.insert(Attribute::TextureCoordinate2D);
 
         ASSERT(!mAttributes.empty() && mAttributes.size() <= Utility::toIndex(Attribute::Count), "{} is not a valid number of attributes for a shader.", mAttributes.size());
@@ -174,50 +174,60 @@ namespace OpenGL
         pGLState.UseProgram(mHandle);
     }
 
-    int Shader::getAttributeLocation(const Attribute& pAttribute)
+    int Shader::get_attribute_index(Attribute p_attribute)
     {
-        int location = static_cast<int>(Utility::toIndex(pAttribute));
-        return location;
-
-        // Non static version of getAttributeLocation, not necessary as attribute locations are
-        // consistent across all Zephyr GLSL shaders.
-
-        // const GLint location = glGetAttribLocation(mHandle, getAttributeName(pAttribute).c_str());
-        // ASSERT(location != -1, "Failed to find the location of {} in shader {}.", getAttributeName(pAttribute).c_str(), mName);
-        // return static_cast<int>(location);
-    }
-
-    int Shader::getAttributeComponentCount(const Attribute& pAttribute)
-    {
-        switch (pAttribute)
+        switch (p_attribute)
         {
-            case Attribute::Position3D:
-                return 3; // X, Y and Z position components
-            case Attribute::Normal3D:
-                return 3; // X, Y and Z direction components
-            case Attribute::ColourRGB:
-                return 3; // Red, Green and Blue components
-            case Attribute::TextureCoordinate2D:
-                return 2; // X and Y components
-            default:
-                ASSERT(false, "Could not determine the size of the attribute pAttribute");
-                return 0;
+            case Attribute::Position3D:          return 0; // X, Y and Z position components
+            case Attribute::Normal3D:            return 1; // X, Y and Z direction components
+            case Attribute::ColourRGB:           return 2; // Red, Green and Blue components
+            case Attribute::TextureCoordinate2D: return 3; // X and Y components
+            default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
         }
     }
-
-    std::string Shader::getAttributeName(const Attribute& pAttribute)
+    int Shader::get_attribute_stride(Attribute p_attribute)
     {
-        if (pAttribute == Attribute::Position3D)
-            return "VertexPosition";
-        else if (pAttribute == Attribute::Normal3D)
-            return "VertexNormal";
-        else if (pAttribute == Attribute::ColourRGB)
-            return "VertexColour";
-        else if (pAttribute == Attribute::TextureCoordinate2D)
-            return "VertexTexCoord";
-        else
-            ASSERT(false, "Could not convert Shader::Attribute '{}' to an std::string", static_cast<unsigned int>(pAttribute));
-        return "";
+        switch (p_attribute)
+        {
+            case Attribute::Position3D:          return sizeof(glm::vec3); // X, Y and Z position components
+            case Attribute::Normal3D:            return sizeof(glm::vec3); // X, Y and Z direction components
+            case Attribute::ColourRGB:           return sizeof(glm::vec3); // Red, Green and Blue components
+            case Attribute::TextureCoordinate2D: return sizeof(glm::vec2); // X and Y components
+            default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+        }
+    }
+    int Shader::get_attribute_component_count(Attribute p_attribute)
+    {
+        switch (p_attribute)
+        {
+            case Attribute::Position3D:          return 3; // X, Y and Z position components
+            case Attribute::Normal3D:            return 3; // X, Y and Z direction components
+            case Attribute::ColourRGB:           return 3; // Red, Green and Blue components
+            case Attribute::TextureCoordinate2D: return 2; // X and Y components
+            default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+        }
+    }
+    std::string Shader::get_attribute_identifier(Attribute p_attribute)
+    {
+        switch (p_attribute)
+        {
+            case Attribute::Position3D:          return "VertexPosition";
+            case Attribute::Normal3D:            return "VertexNormal";
+            case Attribute::ColourRGB:           return "VertexColour";
+            case Attribute::TextureCoordinate2D: return "VertexTexCoord";
+            default: ASSERT(false, "Could not convert Shader::Attribute to a std::string"); return ""; // Always
+        }
+    }
+    GLType::DataType Shader::get_attribute_type(Attribute p_attribute)
+    {
+        switch (p_attribute)
+        {
+            case Attribute::Position3D:          return GLType::DataType::Float;
+            case Attribute::Normal3D:            return GLType::DataType::Float;
+            case Attribute::ColourRGB:           return GLType::DataType::Float;
+            case Attribute::TextureCoordinate2D: return GLType::DataType::Float;
+            default: ASSERT(false, "Could not convert Shader::Attribute to a std::string"); return GLType::DataType::Unknown; // Always
+        }
     }
 
     bool Shader::isBufferShared(const std::string& pShaderStorageBlockName, const std::string& pSourceCode)

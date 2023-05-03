@@ -14,20 +14,35 @@ namespace OpenGL
     class Shader
     {
     public:
-        Shader(const std::string& pName, GLState& pGLState);
-
         // These are per-vertex attributes found in GLSL shaders.
         // Each attribute must be named the same in the GLSL files. getAttributeName() returns the expected string in the shader.
         // Each attribute must be in the same location in all shaders, specified as "layout (location = X)"". getAttributeLocation() returns the location X.
-        enum class Attribute : unsigned int
+        enum class Attribute : uint8_t
         {
-            Position3D          = 0,
-            Normal3D            = 1,
-            ColourRGB           = 2,
-            TextureCoordinate2D = 3,
+            Position3D,
+            Normal3D,
+            ColourRGB,
+            TextureCoordinate2D,
             Count
-        }; // The possible vertex attributes supported by OpenGLRenderer GLSL shaders.
+        };
+        // Returns the number of components the specified attribute consists of.
+        // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)
+        static int get_attribute_component_count(Attribute p_attribute);
+        // Returns the location of a specified attribute type.
+        // All shaders repeat the same attribute layout positions so this is a static function.
+        // Specified as "layout (location = X)" in GLSL shaders.
+        static int get_attribute_index(Attribute p_attribute);
+        // Returns the stride of the attribute i.e. the sizeof.
+        static int get_attribute_stride(Attribute p_attribute);
+        // The data type of each component in the attribute. e.g. vec3=GL_FLOAT, int=GL_INT
+        static GLType::DataType get_attribute_type(Attribute p_attribute);
+        // Returns the attribute as a string matching the naming used within GLSL shaders.
+        // e.g. All vertex position attributes will use the identifier "VertexPosition"
+        static std::string get_attribute_identifier(Attribute p_attribute);
 
+
+
+        Shader(const std::string& pName, GLState& pGLState);
         const std::string& getName() const { return mName; };
         bool isInstanced() const { return mIsInstanced; };
         const int& getTexturesUnitsCount() const { return mTextureUnits; };
@@ -67,13 +82,6 @@ namespace OpenGL
             return nullptr;
         }
 
-        // Returns the number of components the specified attribute consists of.
-        // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)
-        static int getAttributeComponentCount(const Attribute& pAttribute);
-        // Returns the location of a specified attribute type.
-        // All shaders repeat the same attribute layout positions so this is a static function.
-        // Specified as "layout (location = X)" in GLSL shaders.
-        static int getAttributeLocation(const Attribute& pAttribute);
 
     private:
         // Search source code for any per-vertex attributes a Mesh will require to be drawn by this shader.
@@ -94,6 +102,5 @@ namespace OpenGL
 
         static bool isBufferShared(const std::string& pShaderStorageBlockName, const std::string& pSourceCode);
         static inline const size_t maxTextureUnits = 2;                   // The limit on the number of texture units available in the shaders
-        static std::string getAttributeName(const Attribute& pAttribute); // Returns the attribute as a string matching the naming used within GLSL shaders.
     };
 } // namespace OpenGL

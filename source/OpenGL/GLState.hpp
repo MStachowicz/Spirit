@@ -10,6 +10,15 @@
 #include <optional>
 #include <memory>
 
+using GLint      = int;
+using GLuint     = unsigned int;
+using GLboolean  = unsigned char;
+using GLenum     = unsigned int;
+using GLsizei    = int;
+using GLsizeiptr = signed long long int;
+//using GLenum   = Corresponding enum type in GLType namespace
+//using GLdouble = double; // Unused
+
 // Wraps all the GL types into enums and provides helper functions to extract the values or string representations.
 // All the enums come with a matching array to allow iterating over the enums in ImGui and converting to string by O(1) indexing.
 namespace GLType
@@ -669,6 +678,12 @@ class GLState
 public:
     GLState();
     GLState(const GLState&) = delete;
+
+
+    void enable_vertex_attrib_array(GLuint p_index);
+    void vertex_attrib_pointer(GLuint p_index, GLint p_size, GLType::DataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer);
+    void buffer_data(GLType::BufferType p_target, GLsizeiptr p_size, const void* p_data, GLType::BufferUsage p_usage);
+
 
     // Checks if GLState matches what OpenGL state machine is set to.
     bool validateState();

@@ -54,6 +54,19 @@ GLState::GLState()
     ASSERT(validateState(), "GLState is inconsistant with actual OpenGL state.");
 }
 
+void GLState::enable_vertex_attrib_array(GLuint p_index)
+{
+    glEnableVertexAttribArray(p_index);
+}
+void GLState::vertex_attrib_pointer(GLuint p_index, GLint p_size, GLType::DataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer)
+{
+    glVertexAttribPointer(p_index, p_size, GLType::convert(p_type), p_normalized, p_stride, (void*)p_pointer);
+}
+void GLState::buffer_data(GLType::BufferType p_target, GLsizeiptr p_size, const void* p_data, GLType::BufferUsage p_usage)
+{
+    glBufferData(GLType::convert(p_target), p_size, p_data, GLType::convert(p_usage));
+}
+
 bool GLState::validateState()
 {
     { // Check depth test flags
