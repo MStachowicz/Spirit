@@ -11,7 +11,6 @@
 // OPENGL
 #include "glad/gl.h"
 
-
 namespace OpenGL
 {
     VAO::VAO() noexcept
@@ -112,7 +111,7 @@ namespace OpenGL
 
     VBO::VBO() noexcept
     : mHandle{0}
-    , mSize{0}
+    , m_size{0}
     {
         glGenBuffers(1, &mHandle);
 
@@ -127,10 +126,10 @@ namespace OpenGL
     }
     VBO::VBO(VBO&& pOther) noexcept
         : mHandle{std::move(pOther.mHandle)}
-        , mSize{std::move(pOther.mSize)}
+        , m_size{std::move(pOther.m_size)}
     {
         pOther.mHandle = 0;
-        pOther.mSize = 0;
+        pOther.m_size = 0;
 
         if constexpr (LogGLTypeEvents) LOG("VBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
     }
@@ -144,10 +143,10 @@ namespace OpenGL
 
             // Copy the data pointer from the source object.
             mHandle = pOther.mHandle;
-            mSize = pOther.mSize;
+            m_size = pOther.m_size;
             // Release the handle so ~VBO doesnt call glDeleteBuffers on mHandle.
             pOther.mHandle = 0;
-            pOther.mSize = 0;
+            pOther.m_size = 0;
         }
 
         if constexpr (LogGLTypeEvents) LOG("VBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
@@ -157,47 +156,45 @@ namespace OpenGL
     {
         glBindBuffer(GL_ARRAY_BUFFER, mHandle);
     }
+
     void VBO::setData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType)
     {
-        mSize = pVec3Data.size() * sizeof(glm::vec3);
-        glBufferData(GL_ARRAY_BUFFER, mSize, &pVec3Data.front(), GL_STATIC_DRAW);
+        m_size = pVec3Data.size() * sizeof(glm::vec3);
+        glBufferData(GL_ARRAY_BUFFER, m_size, &pVec3Data.front(), GL_STATIC_DRAW);
 
-        auto index = Shader::getAttributeLocation(pAttributeType);
-        auto count = Shader::getAttributeComponentCount(pAttributeType);
+        auto index = Shader::get_attribute_index(pAttributeType);
+        auto count = Shader::get_attribute_component_count(pAttributeType);
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
         glEnableVertexAttribArray(index);
     }
     void VBO::setData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType)
     {
-        mSize = pVec2Data.size() * sizeof(glm::vec2);
-        glBufferData(GL_ARRAY_BUFFER, mSize, &pVec2Data.front(), GL_STATIC_DRAW);
+        m_size = pVec2Data.size() * sizeof(glm::vec2);
+        glBufferData(GL_ARRAY_BUFFER, m_size, &pVec2Data.front(), GL_STATIC_DRAW);
 
-        auto index = Shader::getAttributeLocation(pAttributeType);
-        auto count = Shader::getAttributeComponentCount(pAttributeType);
+        auto index = Shader::get_attribute_index(pAttributeType);
+        auto count = Shader::get_attribute_component_count(pAttributeType);
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
         glEnableVertexAttribArray(index);
     }
     void VBO::clear()
     {
         bind();
-        mSize = 0;
-        glBufferData(GL_ARRAY_BUFFER, mSize, NULL, GL_STATIC_DRAW);
+        m_size = 0;
+        glBufferData(GL_ARRAY_BUFFER, m_size, NULL, GL_STATIC_DRAW);
     }
     void VBO::copy(const VBO& pSource, VBO& pDestination)
     {
         glBindBuffer(GL_COPY_WRITE_BUFFER, pDestination.mHandle);
         // glBufferData deletes pre-existing data, we additionally call with pData as NULL which
-        // gives us a buffer of pSource.mSize uninitialised.
-        glBufferData(GL_COPY_WRITE_BUFFER, pSource.mSize, NULL, GL_STREAM_COPY);
+        // gives us a buffer of pSource.m_size uninitialised.
+        glBufferData(GL_COPY_WRITE_BUFFER, pSource.m_size, NULL, GL_STREAM_COPY);
 
         glBindBuffer(GL_COPY_READ_BUFFER, pSource.mHandle);
-        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, pSource.mSize);
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, pSource.m_size);
 
-        pDestination.mSize = pSource.mSize;
+        pDestination.m_size = pSource.m_size;
     }
-
-
-
 
     Texture::~Texture()
     {

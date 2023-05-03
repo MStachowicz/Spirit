@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shader.hpp"
+#include "GLState.hpp"
 
 // STD
 #include <optional>
@@ -23,6 +24,9 @@ namespace OpenGL
     // A GLHandle is a pointer to memory owned by this OpenGL context on the GPU.
     // Classes that own a GLHandle require memory management as if having an owning pointer.
     using GLHandle = unsigned int;
+
+    template <typename T>
+    concept Has_Shader_Attributes_Layout = requires(T x) {{ T::Attributes[0] } -> std::convertible_to<Shader::Attribute>; };
 
     class VAO
     {
@@ -71,6 +75,38 @@ namespace OpenGL
         VBO& operator=(VBO&& pOther) noexcept;
 
         void bind() const;
+
+        // Push a vector of Data type to the GPU.
+        // The Data type being pushed is required to have a member array "Attributes".
+        // Attributes is a list of Shader::Attributes in the same order they appear in the Data class.
+        template <typename Data>
+        requires Has_Shader_Attributes_Layout<Data>
+        void buffer_data(const std::vector<Data>& p_data, GLState& p_GLState)
+        {
+            { // Setup the stride and size for the buffer itself.
+                m_stride = 0;
+                m_size   = 0;
+                for (const Shader::Attribute& attrib : Data::Attributes)
+                {
+                    m_stride += Shader::get_attribute_stride(attrib);
+                }
+                m_size = m_stride * p_data.size();
+            }
+
+            size_t running_offset = 0;
+            for (const Shader::Attribute& attrib : Data::Attributes)
+            {
+                const auto index           = Shader::get_attribute_index(attrib);
+                const auto component_count = Shader::get_attribute_component_count(attrib);
+                const auto type            = Shader::get_attribute_type(attrib);
+
+                p_GLState.enable_vertex_attrib_array(index);
+                p_GLState.vertex_attrib_pointer(index, component_count, type, false, m_stride, (void*)running_offset);
+                running_offset += Shader::get_attribute_stride(attrib);
+            }
+            p_GLState.buffer_data(GLType::BufferType::ArrayBuffer, m_size, p_data.data(), GLType::BufferUsage::StaticDraw);
+        }
+
         void setData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType);
         void setData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType);
         void clear();
@@ -78,9 +114,11 @@ namespace OpenGL
         // Copy the contents of pSource into pDestination. Any data pDestination owned before is deleted.
         // Implemented as a static of VBO to only allow explicit copying.
         static void copy(const VBO& pSource, VBO& pDestination);
+
     private:
         GLHandle mHandle;
-        size_t mSize; // Size in bytes of the data this VBO holds in GPU memory.
+        size_t m_size;    // Size in bytes of the buffer. i.e. the amount of GPU memory the whole buffer holds.
+        size_t m_stride; // Number of bytes from the start of one element to the next i.e. size of one element.
     };
 
     class Texture
