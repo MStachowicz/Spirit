@@ -2,6 +2,7 @@
 
 #include "EventDispatcher.hpp"
 
+#include <concepts>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -184,6 +185,16 @@ namespace Utility
             {
                 pFunction(*resource);
             }
+        }
+
+        // Iterate over every Resource in the Manager and call p_function on it.
+        //@param p_function Function which will be called on every element in the manager. It must be invocable with a type Resource.
+        template <typename Func>
+        requires std::invocable<Func, Resource>
+        void for_each(const Func&& p_function)
+        {
+            for (auto& [resource, count] : mResourcesAndCounts)
+                p_function(*resource);
         }
     };
 
