@@ -26,6 +26,7 @@
 
 // OPENGL
 #include "OpenGLRenderer.hpp"
+#include "DebugRenderer.hpp"
 
 // PLATFORM
 #include "Core.hpp"
@@ -123,7 +124,6 @@ namespace UI
     void Editor::draw(const DeltaTime& p_duration_since_last_draw)
     {
         m_duration_between_draws.push_back(p_duration_since_last_draw);
-        m_window.start_ImGui_frame();
 
         if (ImGui::BeginMenuBar())
         {
@@ -184,7 +184,6 @@ namespace UI
             ImGui::End();
         }
 
-        m_window.end_ImGui_frame();
         mDrawCount++;
     }
 
