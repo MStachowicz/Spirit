@@ -18,6 +18,7 @@
 
 // OpenGL
 #include "OpenGLRenderer.hpp"
+#include "DebugRenderer.hpp"
 
 // Utility
 #include "File.hpp"
@@ -94,6 +95,8 @@ private:
         // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
         while (true)
         {
+            OpenGL::DebugRenderer::clear();
+
             m_input.update(); // Poll events then check close_requested.
             if (m_window.close_requested() || mSimulationLoopParamsChanged)
                 break;
@@ -124,7 +127,11 @@ private:
                 // Not neccessary to decrement durationSinceLastRenderTick as in physics update above as repeated draws will be identical with no data changes.
 
                 mOpenGLRenderer.draw();
+
+                m_window.start_ImGui_frame();
                 mEditor.draw(durationSinceLastRenderTick);
+                OpenGL::DebugRenderer::render(mSceneSystem);
+                m_window.end_ImGui_frame();
                 m_window.swap_buffers();
 
                 durationSinceLastRenderTick = Duration::zero();
@@ -157,6 +164,7 @@ int main(int argc, char *argv[])
         Platform::Input input   = Platform::Input();
         Platform::Window window = Platform::Window(1920, 1080, input);
         Platform::Core::initialise_OpenGL();
+        OpenGL::DebugRenderer::init();
         Platform::Core::initialise_ImGui(window);
 
         //JobSystem::initialise();
@@ -173,5 +181,6 @@ int main(int argc, char *argv[])
     } // Window and input must go out of scope and destroy their resources before Core::cleanup
 
     Platform::Core::cleanup();
+    OpenGL::DebugRenderer::deinit();
     return EXIT_SUCCESS;
 }
