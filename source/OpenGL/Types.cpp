@@ -11,96 +11,98 @@
 // OPENGL
 #include "glad/gl.h"
 
+#include <array>
+
 namespace OpenGL
 {
     VAO::VAO() noexcept
-        : mHandle{0}
+        : m_handle{0}
     {
-        glGenVertexArrays(1, &mHandle);
-        if constexpr (LogGLTypeEvents) LOG("VAO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        glGenVertexArrays(1, &m_handle);
+        if constexpr (LogGLTypeEvents) LOG("VAO constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     VAO::~VAO() noexcept
     {
-        // We initialise mHandle to 0 and reset to 0 on move and depend on this to check if there is a vertex array to delete here.
+        // We initialise m_handle to 0 and reset to 0 on move and depend on this to check if there is a vertex array to delete here.
         // We still want to call glDeleteVertexArrays if the array was generated but not used with bind and/or VBOs hence
         // not using glIsVertexArray here.
-        if (mHandle != 0)
-            glDeleteVertexArrays(1, &mHandle);
+        if (m_handle != 0)
+            glDeleteVertexArrays(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("VAO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    VAO::VAO(VAO&& pOther) noexcept
-        : mHandle{std::move(pOther.mHandle)}
-    { // Steal the handle of the other VAO and set it to 0 to prevent the pOther destructor calling glDeleteVertexArrays
-        pOther.mHandle = 0;
+    VAO::VAO(VAO&& p_other) noexcept
+        : m_handle{std::move(p_other.m_handle)}
+    { // Steal the handle of the other VAO and set it to 0 to prevent the p_other destructor calling glDeleteVertexArrays
+        p_other.m_handle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG("VAO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    VAO& VAO::operator=(VAO&& pOther) noexcept
+    VAO& VAO::operator=(VAO&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
             // Free the existing resource.
-            if (mHandle != 0)
-                glDeleteVertexArrays(1, &mHandle);
+            if (m_handle != 0)
+                glDeleteVertexArrays(1, &m_handle);
 
             // Copy the data pointer from the source object.
-            mHandle = pOther.mHandle;
-            // Release the handle so ~VAO doesnt call glDeleteVertexArrays on mHandle.
-            pOther.mHandle = 0;
+            m_handle = p_other.m_handle;
+            // Release the handle so ~VAO doesnt call glDeleteVertexArrays on m_handle.
+            p_other.m_handle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG("VAO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VAO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
     void VAO::bind() const
     {
-        glBindVertexArray(mHandle);
+        glBindVertexArray(m_handle);
     }
 
 
 
     EBO::EBO() noexcept
-        : mHandle{0}
+        : m_handle{0}
     {
-        glGenBuffers(1, &mHandle);
+        glGenBuffers(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("EBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     EBO::~EBO() noexcept
     {
-        if (mHandle != 0)
-            glDeleteBuffers(1, &mHandle);
+        if (m_handle != 0)
+            glDeleteBuffers(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("EBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    EBO::EBO(EBO&& pOther) noexcept
-        : mHandle{std::move(pOther.mHandle)}
+    EBO::EBO(EBO&& p_other) noexcept
+        : m_handle{std::move(p_other.m_handle)}
     {
-        pOther.mHandle = 0;
+        p_other.m_handle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG("EBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    EBO& EBO::operator=(EBO&& pOther) noexcept
+    EBO& EBO::operator=(EBO&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
             // Free the existing resource.
-            if (mHandle != 0)
-                glDeleteBuffers(1, &mHandle);
+            if (m_handle != 0)
+                glDeleteBuffers(1, &m_handle);
 
             // Copy the data pointer from the source object.
-            mHandle = pOther.mHandle;
-            // Release the handle so ~EBO doesnt call glDeleteBuffers on mHandle.
-            pOther.mHandle = 0;
+            m_handle = p_other.m_handle;
+            // Release the handle so ~EBO doesnt call glDeleteBuffers on m_handle.
+            p_other.m_handle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG("EBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("EBO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
     void EBO::bind() const
     {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mHandle);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_handle);
     }
     void EBO::setData(const std::vector<int>& pIndexData) const
     {
@@ -110,70 +112,70 @@ namespace OpenGL
 
 
     VBO::VBO() noexcept
-    : mHandle{0}
+    : m_handle{0}
     , m_size{0}
     {
-        glGenBuffers(1, &mHandle);
+        glGenBuffers(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("VBO created with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO created with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     VBO::~VBO() noexcept
     {
-        if (mHandle != 0)
-            glDeleteBuffers(1, &mHandle);
+        if (m_handle != 0)
+            glDeleteBuffers(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("VBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    VBO::VBO(VBO&& pOther) noexcept
-        : mHandle{std::move(pOther.mHandle)}
-        , m_size{std::move(pOther.m_size)}
+    VBO::VBO(VBO&& p_other) noexcept
+        : m_handle{std::move(p_other.m_handle)}
+        , m_size{std::move(p_other.m_size)}
     {
-        pOther.mHandle = 0;
-        pOther.m_size = 0;
+        p_other.m_handle = 0;
+        p_other.m_size = 0;
 
-        if constexpr (LogGLTypeEvents) LOG("VBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    VBO& VBO::operator=(VBO&& pOther) noexcept
+    VBO& VBO::operator=(VBO&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
             // Free the existing resource.
-            if (mHandle != 0)
-                glDeleteBuffers(1, &mHandle);
+            if (m_handle != 0)
+                glDeleteBuffers(1, &m_handle);
 
             // Copy the data pointer from the source object.
-            mHandle = pOther.mHandle;
-            m_size = pOther.m_size;
-            // Release the handle so ~VBO doesnt call glDeleteBuffers on mHandle.
-            pOther.mHandle = 0;
-            pOther.m_size = 0;
+            m_handle = p_other.m_handle;
+            m_size = p_other.m_size;
+            // Release the handle so ~VBO doesnt call glDeleteBuffers on m_handle.
+            p_other.m_handle = 0;
+            p_other.m_size = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG("VBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("VBO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
     void VBO::bind() const
     {
-        glBindBuffer(GL_ARRAY_BUFFER, mHandle);
+        glBindBuffer(GL_ARRAY_BUFFER, m_handle);
     }
 
-    void VBO::setData(const std::vector<glm::vec3>& pVec3Data, const Shader::Attribute& pAttributeType)
+    void VBO::setData(const std::vector<glm::vec3>& pVec3Data, const VertexAttribute& pAttributeType)
     {
         m_size = pVec3Data.size() * sizeof(glm::vec3);
         glBufferData(GL_ARRAY_BUFFER, m_size, &pVec3Data.front(), GL_STATIC_DRAW);
 
-        auto index = Shader::get_attribute_index(pAttributeType);
-        auto count = Shader::get_attribute_component_count(pAttributeType);
+        auto index = impl::get_attribute_index(pAttributeType);
+        auto count = impl::get_attribute_component_count(pAttributeType);
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
         glEnableVertexAttribArray(index);
     }
-    void VBO::setData(const std::vector<glm::vec2>& pVec2Data, const Shader::Attribute& pAttributeType)
+    void VBO::setData(const std::vector<glm::vec2>& pVec2Data, const VertexAttribute& pAttributeType)
     {
         m_size = pVec2Data.size() * sizeof(glm::vec2);
         glBufferData(GL_ARRAY_BUFFER, m_size, &pVec2Data.front(), GL_STATIC_DRAW);
 
-        auto index = Shader::get_attribute_index(pAttributeType);
-        auto count = Shader::get_attribute_component_count(pAttributeType);
+        auto index = impl::get_attribute_index(pAttributeType);
+        auto count = impl::get_attribute_component_count(pAttributeType);
         glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
         glEnableVertexAttribArray(index);
     }
@@ -185,12 +187,12 @@ namespace OpenGL
     }
     void VBO::copy(const VBO& pSource, VBO& pDestination)
     {
-        glBindBuffer(GL_COPY_WRITE_BUFFER, pDestination.mHandle);
-        // glBufferData deletes pre-existing data, we additionally call with pData as NULL which
+        glBindBuffer(GL_COPY_WRITE_BUFFER, pDestination.m_handle);
+        // glBufferData deletes pre-existing data, we additionally call with p_data as NULL which
         // gives us a buffer of pSource.m_size uninitialised.
         glBufferData(GL_COPY_WRITE_BUFFER, pSource.m_size, NULL, GL_STREAM_COPY);
 
-        glBindBuffer(GL_COPY_READ_BUFFER, pSource.mHandle);
+        glBindBuffer(GL_COPY_READ_BUFFER, pSource.m_handle);
         glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, pSource.m_size);
 
         pDestination.m_size = pSource.m_size;
@@ -198,22 +200,22 @@ namespace OpenGL
 
     Texture::~Texture()
     {
-        if (mHandle != 0)
-            glDeleteTextures(1, &mHandle);
+        if (m_handle != 0)
+            glDeleteTextures(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("Texture destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     Texture::Texture()
-        : mHandle{0}
+        : m_handle{0}
     {
-        glGenTextures(1, &mHandle);
-        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        glGenTextures(1, &m_handle);
+        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     Texture::Texture(const Utility::Image& p_image)
-        : mHandle{0}
+        : m_handle{0}
     {
-        glGenTextures(1, &mHandle);
-        glBindTexture(GL_TEXTURE_2D, mHandle);
+        glGenTextures(1, &m_handle);
+        glBindTexture(GL_TEXTURE_2D, m_handle);
 
         GLenum format = 0;
         if (p_image.m_number_of_channels == 1)      format = GL_RED;
@@ -230,135 +232,135 @@ namespace OpenGL
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    Texture::Texture(Texture&& pOther) noexcept
-        : mHandle{std::move(pOther.mHandle)}
+    Texture::Texture(Texture&& p_other) noexcept
+        : m_handle{std::move(p_other.m_handle)}
     {
-        pOther.mHandle = 0;
+        p_other.m_handle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG("Texture move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    Texture& Texture::operator=(Texture&& pOther) noexcept
+    Texture& Texture::operator=(Texture&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
             // Free the existing resource.
-            if (mHandle != 0)
-                glDeleteTextures(1, &mHandle);
+            if (m_handle != 0)
+                glDeleteTextures(1, &m_handle);
 
             // Copy the data pointer from the source object.
-            mHandle = pOther.mHandle;
-            // Release the handle so ~Texture doesnt call glDeleteBuffers on mHandle.
-            pOther.mHandle = 0;
+            m_handle = p_other.m_handle;
+            // Release the handle so ~Texture doesnt call glDeleteBuffers on m_handle.
+            p_other.m_handle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG("Texture move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("Texture move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
     void Texture::bind() const
     {
-        glBindTexture(GL_TEXTURE_2D, mHandle);
+        glBindTexture(GL_TEXTURE_2D, m_handle);
     };
 
     RBO::RBO() noexcept
-        : mHandle{0}
+        : m_handle{0}
     {
-        glGenRenderbuffers(1, &mHandle);
+        glGenRenderbuffers(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("RBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     RBO::~RBO() noexcept
     {
-        if (mHandle != 0)
-            glDeleteRenderbuffers(1, &mHandle);
+        if (m_handle != 0)
+            glDeleteRenderbuffers(1, &m_handle);
 
-        if constexpr (LogGLTypeEvents) LOG("RBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    RBO::RBO(RBO&& pOther) noexcept
-        : mHandle{std::move(pOther.mHandle)}
+    RBO::RBO(RBO&& p_other) noexcept
+        : m_handle{std::move(p_other.m_handle)}
     {
-        pOther.mHandle = 0;
+        p_other.m_handle = 0;
 
-        if constexpr (LogGLTypeEvents) LOG("RBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    RBO& RBO::operator=(RBO&& pOther) noexcept
+    RBO& RBO::operator=(RBO&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
             // Free the existing resource.
-            if (mHandle != 0)
-                glDeleteRenderbuffers(1, &mHandle);
+            if (m_handle != 0)
+                glDeleteRenderbuffers(1, &m_handle);
 
             // Copy the data pointer from the source object.
-            mHandle = pOther.mHandle;
-            // Release the handle so ~RBO doesnt call glDeleteBuffers on mHandle.
-            pOther.mHandle = 0;
+            m_handle = p_other.m_handle;
+            // Release the handle so ~RBO doesnt call glDeleteBuffers on m_handle.
+            p_other.m_handle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG("RBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("RBO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
     void RBO::bind() const
     {
-        glBindRenderbuffer(GL_RENDERBUFFER, mHandle);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_handle);
     }
 
 
 
     FBO::FBO() noexcept
-        : mHandle{0}
+        : m_handle{0}
         , mColourAttachment{}
         , mDepthAttachment{}
         , mBufferClearBitField{0}
     {
-        glGenFramebuffers(1, &mHandle);
-        if constexpr (LogGLTypeEvents) LOG("FBO constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        glGenFramebuffers(1, &m_handle);
+        if constexpr (LogGLTypeEvents) LOG("FBO constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
     FBO::~FBO() noexcept
     {
-        if (mHandle != 0)
-            glDeleteFramebuffers(1, &mHandle);
+        if (m_handle != 0)
+            glDeleteFramebuffers(1, &m_handle);
 
         //if (mColourAttachment.has_value() && mColourAttachment->getHandle() != 0)
         //    glDeleteTextures(1, &mColourAttachment->getHandle());
         //if (mDepthAttachment.has_value() && mDepthAttachment->getHandle() != 0)
         //    glDeleteRenderbuffers(1, &mDepthAttachment->getHandle());
 
-        if constexpr (LogGLTypeEvents) LOG("FBO destroyed with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("FBO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
 
-    FBO::FBO(FBO&& pOther) noexcept
-        : mHandle{std::move(pOther.mHandle)}
-        , mColourAttachment{std::move(pOther.mColourAttachment)}
-        , mDepthAttachment{std::move(pOther.mDepthAttachment)}
-        , mBufferClearBitField{std::move(pOther.mBufferClearBitField)}
+    FBO::FBO(FBO&& p_other) noexcept
+        : m_handle{std::move(p_other.m_handle)}
+        , mColourAttachment{std::move(p_other.mColourAttachment)}
+        , mDepthAttachment{std::move(p_other.mDepthAttachment)}
+        , mBufferClearBitField{std::move(p_other.mBufferClearBitField)}
     {
-        pOther.mHandle = 0;
-        if constexpr (LogGLTypeEvents) LOG("FBO move-constructed with GLHandle {} at address {}", mHandle, (void*)(this));
+        p_other.m_handle = 0;
+        if constexpr (LogGLTypeEvents) LOG("FBO move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-    FBO& FBO::operator=(FBO&& pOther) noexcept
+    FBO& FBO::operator=(FBO&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
             // Free the existing resource.
-            if (mHandle != 0)
-                glDeleteFramebuffers(1, &mHandle);
+            if (m_handle != 0)
+                glDeleteFramebuffers(1, &m_handle);
 
             // Copy the data pointer from the source object.
-            mHandle = pOther.mHandle;
-            // Release the handle so ~FBO doesnt call glDeleteBuffers on mHandle.
-            pOther.mHandle = 0;
+            m_handle = p_other.m_handle;
+            // Release the handle so ~FBO doesnt call glDeleteBuffers on m_handle.
+            p_other.m_handle = 0;
         }
 
-        if constexpr (LogGLTypeEvents) LOG("FBO move-assigned with GLHandle {} at address {}", mHandle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("FBO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
 
 
     void FBO::bind() const
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_handle);
     }
     void FBO::clearBuffers() const
     {
@@ -454,6 +456,7 @@ namespace OpenGL
 
         bind();
         const bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+
         glBindFramebuffer(GL_FRAMEBUFFER, currentBoundFBO); // Rebind the originally bound handle.
         return complete;
     }
@@ -462,32 +465,208 @@ namespace OpenGL
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    Mesh::Mesh(Mesh&& pOther) noexcept
-        : mVAO{std::move(pOther.mVAO)}
-        , mVertexPositions{std::move(pOther.mVertexPositions)}
-        , mVertexNormals{std::move(pOther.mVertexNormals)}
-        , mVertexTextureCoordinates{std::move(pOther.mVertexTextureCoordinates)}
-        , mEBO{std::move(pOther.mEBO)}
-        , mDrawSize{std::move(pOther.mDrawSize)}
+    UniformBlockVariable::UniformBlockVariable(GLHandle p_shader_program, GLuint p_block_variable_index) noexcept
+        : m_name{""}
+        , m_type{DataType::Unknown}
+        , m_offset{-1}
+        , m_array_size{-1}
+        , m_array_stride{-1}
+        , m_matrix_stride{-1}
+        , m_location{-1}
+        , m_is_row_major{false}
+    {
+        // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
+        // https://www.khronos.org/opengl/wiki/Program_Introspection
+        static constexpr size_t property_count = 8;
+        static constexpr GLenum property_query[property_count] = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_LOCATION, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR};
+        GLint property_values[property_count] = {-1};
+        glGetProgramResourceiv(p_shader_program, GL_UNIFORM, p_block_variable_index, property_count, &property_query[0], property_count, NULL, &property_values[0]);
+
+        m_name.resize(property_values[0]);
+        glGetProgramResourceName(p_shader_program, GL_UNIFORM, p_block_variable_index, property_values[0], NULL, m_name.data());
+        ASSERT(!m_name.empty(), "Failed to get name of uniform variable in shader with handle {}", p_shader_program);
+        m_name.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+
+        m_type           = convert(property_values[1]);
+        m_offset         = property_values[2];
+        m_location       = property_values[3];
+        m_array_size     = property_values[4];
+        m_array_stride   = property_values[5];
+        m_matrix_stride  = property_values[6];
+        m_is_row_major   = property_values[7];
+    }
+
+    UBO::UBO(const std::string& p_uniform_block_name, GLsizei p_size, const std::vector<UniformBlockVariable>& p_variables) noexcept
+        : m_handle{0}
+        , m_size{p_size}
+        , m_uniform_binding_point{0}
+        , m_variables{p_variables}
+        , m_uniform_block_name{p_uniform_block_name}
+    {
+        glGenBuffers(1, &m_handle);
+
+        bind();
+        // Supplying NULL as p_data to buffer_data reserves the Bytes but does not assign to them.
+        buffer_data(BufferType::UniformBuffer, m_size, NULL, BufferUsage::StaticDraw);
+
+        // Bind ourselves to the first available binding point.
+        {
+            if (s_binding_points.empty()) // First UBO construction
+                s_binding_points = std::vector<bool>(get_max_uniform_binding_points(), false);
+
+            auto it = std::find(s_binding_points.begin(), s_binding_points.end(), false);
+            ASSERT(it != s_binding_points.end(), "[OPENGL][UBO] No remaining uniform block binding points to bind to."); // Always
+            (*it) = true;
+            m_uniform_binding_point = std::distance(s_binding_points.begin(), it);
+        }
+
+        bind_buffer_range(BufferType::UniformBuffer, m_uniform_binding_point, m_handle, 0, m_size);
+
+        if constexpr (LogGLTypeEvents) LOG("UBO '{}' created with GLHandle {}, size {}B binding point {} at address {}", m_uniform_block_name, m_handle, m_size, m_uniform_binding_point, (void*)(this));
+    }
+    UBO::~UBO() noexcept
+    {
+        if (m_handle != 0)
+        {
+            glDeleteBuffers(1, &m_handle);
+            s_binding_points[m_uniform_binding_point] = false;
+            if constexpr (LogGLTypeEvents) LOG("UBO '{}' free resource. GLHandle: {} Size: {}B bounding point: {}", m_uniform_block_name, m_handle, m_size, m_uniform_binding_point);
+        }
+
+        if constexpr (LogGLTypeEvents) LOG("UBO '{}' destroyed address: {}", m_uniform_block_name, m_handle, (void*)(this));
+    }
+    UBO::UBO(UBO&& p_other) noexcept
+        : m_handle{std::exchange(p_other.m_handle, 0)} // Ensure the p_other m_handle is set to 0 to prevent its destructor clearing memory.
+        , m_size{std::exchange(p_other.m_size, 0)}
+        , m_uniform_binding_point{std::exchange(p_other.m_uniform_binding_point, 0)}
+        , m_variables{std::exchange(p_other.m_variables, {})}
+        , m_uniform_block_name{p_other.m_uniform_block_name} // p_other retains the m_uniform_block_name for output in destruction.
+    {
+        if constexpr (LogGLTypeEvents) LOG("UBO '{}' move-constructed with GLHandle {} at address {}", m_uniform_block_name, m_handle, (void*)(this));
+    }
+    UBO& UBO::operator=(UBO&& p_other) noexcept
+    {
+        if (this != &p_other)
+        {
+            // Free the existing resource.
+            if (m_handle != 0)
+            {
+                glDeleteBuffers(1, &m_handle);
+                s_binding_points[m_uniform_binding_point] = false;
+                if constexpr (LogGLTypeEvents) LOG("UBO '{}' free resource. GLHandle: {} Size: {}B bounding point: {}", m_uniform_block_name, m_handle, m_size, m_uniform_binding_point);
+            }
+
+            // Take the m_handle from p_other source object.
+            // Assign the p_other m_handle to 0 so ~UBO doesnt call glDeleteBuffers on m_handle.
+            m_handle                = std::exchange(p_other.m_handle, 0);
+            m_size                  = std::exchange(p_other.m_size, 0);
+            m_uniform_binding_point = std::exchange(p_other.m_uniform_binding_point, 0);
+            m_variables             = std::exchange(p_other.m_variables, {});
+            m_uniform_block_name    = p_other.m_uniform_block_name; // p_other retains the m_uniform_block_name for output in destruction.
+        }
+
+        if constexpr (LogGLTypeEvents) LOG("UBO '{}' move-assigned with GLHandle {} at address {}", m_uniform_block_name, m_handle, (void*)(this));
+        return *this;
+    }
+    void UBO::bind() const
+    {
+        glBindBuffer(GL_UNIFORM_BUFFER, m_handle);
+    }
+
+    UniformBlock::UniformBlock(GLHandle p_shader_program, GLuint p_uniform_block_index) noexcept
+        : m_name{""}
+        , m_block_index{p_uniform_block_index}
+        , m_parent_shader_program{p_shader_program}
+        , m_variables{}
+        , m_buffer_backing{std::nullopt}
+    {
+        static constexpr size_t Property_Count = 4;
+        // GL_BUFFER_BINDING is unused, returns the binding point (layout(binding = X)) for the UniformBlock
+        // We set this manually after constructing a UBO and binding this UniformBlock to its m_buffer_backing m_uniform_binding_point.
+        static constexpr GLenum property_query[Property_Count] = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
+        GLint property_values[Property_Count] = {-1};
+        glGetProgramResourceiv(p_shader_program, GL_UNIFORM_BLOCK, m_block_index, Property_Count, &property_query[0], Property_Count, NULL, &property_values[0]);
+
+        m_name.resize(property_values[0]);
+        glGetProgramResourceName(p_shader_program, GL_UNIFORM_BLOCK, m_block_index, property_values[0], NULL, m_name.data());
+        ASSERT(!m_name.empty(), "Failed to get name of uniform block in shader with handle {}", p_shader_program);
+        m_name.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+
+        ASSERT(m_block_index == glGetProgramResourceIndex(p_shader_program, GL_UNIFORM_BLOCK, m_name.c_str()), "Uniform Block index given doesnt match the shader program index for the same name block!");
+
+        const GLint active_variables_count = property_values[1];
+        if (active_variables_count > 0)
+        {
+            // Get the array of active variable indices associated with the uniform block. (GL_ACTIVE_VARIABLES)
+            // The indices correspond in size to GL_NUM_ACTIVE_VARIABLES
+
+            //m_variables.reserve(active_variables_count);
+
+            std::vector<GLint> variable_indices(active_variables_count);
+            static constexpr GLenum active_variable_query[1] = {GL_ACTIVE_VARIABLES};
+            glGetProgramResourceiv(p_shader_program, GL_UNIFORM_BLOCK, m_block_index, 1, active_variable_query, active_variables_count, NULL, &variable_indices[0]);
+
+            for (GLint variable_index : variable_indices)
+                m_variables.emplace_back(p_shader_program, static_cast<GLuint>(variable_index));
+        }
+
+        const GLint buffer_data_size = property_values[3];
+        ASSERT(buffer_data_size <= get_max_uniform_block_size(), "[OPENGL][SHADER] UniformBlock larger than max size.");
+
+        // To find a UBO that can back this uniform block:
+        // The names of the blocks have to match.
+        // The variables must be the same and listed in the same order.
+        // TODO: the block must be marked as shared?
+        m_buffer_backing = uniform_block_binding_points.getOrCreate([this](const UBO& p_UBO)
+        {
+            if (p_UBO.m_uniform_block_name == m_name)
+            {
+                if (p_UBO.m_variables == m_variables)
+                    return true;
+                else
+                {
+                    ASSERT(false, "[OPENGL][SHADER] Uniform block '{}' identifier repeated with different variables! Did you mess up the order or names of types in the block? Have any variables been optimised away?", m_name);
+                    return false;
+                }
+            }
+            else
+                return false;
+        }, m_name, buffer_data_size, m_variables);
+
+        ASSERT(m_variables.size() == active_variables_count && (*m_buffer_backing)->m_variables == m_variables, "Failed to retrieve all the UniformBlockVariables of block '{}'", m_name);
+
+        // Bind the UniformBlock to the binding point the buffer backing UBO is bound to. UBO constrcutor called the corresponding bind_buffer_range to the same binding point.
+        uniform_block_binding(m_parent_shader_program, m_block_index, (*m_buffer_backing)->m_uniform_binding_point);
+
+        if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] UniformBlock '{}' bound to point index {}", m_name, (*m_buffer_backing)->m_uniform_binding_point);
+    }
+
+
+    Mesh::Mesh(Mesh&& p_other) noexcept
+        : mVAO{std::move(p_other.mVAO)}
+        , mVertexPositions{std::move(p_other.mVertexPositions)}
+        , mVertexNormals{std::move(p_other.mVertexNormals)}
+        , mVertexTextureCoordinates{std::move(p_other.mVertexTextureCoordinates)}
+        , mEBO{std::move(p_other.mEBO)}
+        , mDrawSize{std::move(p_other.mDrawSize)}
     {
         if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh move-constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
     }
-    Mesh& Mesh::operator=(Mesh&& pOther) noexcept
+    Mesh& Mesh::operator=(Mesh&& p_other) noexcept
     {
-        if (this != &pOther)
+        if (this != &p_other)
         {
-            mVAO                      = std::move(pOther.mVAO);
-            mVertexPositions          = std::move(pOther.mVertexPositions);
-            mVertexNormals            = std::move(pOther.mVertexNormals);
-            mVertexTextureCoordinates = std::move(pOther.mVertexTextureCoordinates);
-            mEBO                      = std::move(pOther.mEBO);
-            mDrawSize                 = std::move(pOther.mDrawSize);
+            mVAO                      = std::move(p_other.mVAO);
+            mVertexPositions          = std::move(p_other.mVertexPositions);
+            mVertexNormals            = std::move(p_other.mVertexNormals);
+            mVertexTextureCoordinates = std::move(p_other.mVertexTextureCoordinates);
+            mEBO                      = std::move(p_other.mEBO);
+            mDrawSize                 = std::move(p_other.mDrawSize);
         }
 
         if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh move-assigned with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
         return *this;
     }
-
     Mesh::Mesh(const Data::Mesh& pMeshData) noexcept
         : mVAO{}
         , mVertexPositions{}
@@ -512,21 +691,80 @@ namespace OpenGL
         {
             mVertexPositions = VBO();
             mVertexPositions->bind();
-            mVertexPositions->setData(pMeshData.mPositions, Shader::Attribute::Position3D);
+            mVertexPositions->setData(pMeshData.mPositions, VertexAttribute::Position3D);
         }
         if (!pMeshData.mNormals.empty())
         {
             mVertexNormals = VBO();
             mVertexNormals->bind();
-            mVertexNormals->setData(pMeshData.mNormals, Shader::Attribute::Normal3D);
+            mVertexNormals->setData(pMeshData.mNormals, VertexAttribute::Normal3D);
         }
         if (!pMeshData.mTextureCoordinates.empty())
         {
             mVertexTextureCoordinates = VBO();
             mVertexTextureCoordinates->bind();
-            mVertexTextureCoordinates->setData(pMeshData.mTextureCoordinates, Shader::Attribute::TextureCoordinate2D);
+            mVertexTextureCoordinates->setData(pMeshData.mTextureCoordinates, VertexAttribute::TextureCoordinate2D);
         }
 
         if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
+    }
+
+    namespace impl
+    {
+        int get_attribute_index(VertexAttribute p_attribute)
+        {
+            switch (p_attribute)
+            {
+                case VertexAttribute::Position3D:          return 0; // X, Y and Z position components
+                case VertexAttribute::Normal3D:            return 1; // X, Y and Z direction components
+                case VertexAttribute::ColourRGB:           return 2; // Red, Green and Blue components
+                case VertexAttribute::TextureCoordinate2D: return 3; // X and Y components
+                default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+            }
+        }
+        int get_attribute_stride(VertexAttribute p_attribute)
+        {
+            switch (p_attribute)
+            {
+                case VertexAttribute::Position3D:          return sizeof(glm::vec3); // X, Y and Z position components
+                case VertexAttribute::Normal3D:            return sizeof(glm::vec3); // X, Y and Z direction components
+                case VertexAttribute::ColourRGB:           return sizeof(glm::vec3); // Red, Green and Blue components
+                case VertexAttribute::TextureCoordinate2D: return sizeof(glm::vec2); // X and Y components
+                default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+            }
+        }
+        int get_attribute_component_count(VertexAttribute p_attribute)
+        {
+            switch (p_attribute)
+            {
+                case VertexAttribute::Position3D:          return 3; // X, Y and Z position components
+                case VertexAttribute::Normal3D:            return 3; // X, Y and Z direction components
+                case VertexAttribute::ColourRGB:           return 3; // Red, Green and Blue components
+                case VertexAttribute::TextureCoordinate2D: return 2; // X and Y components
+                default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+            }
+        }
+        const char* get_attribute_identifier(VertexAttribute p_attribute)
+        {
+            switch (p_attribute)
+            {
+                case VertexAttribute::Position3D:          return "VertexPosition";
+                case VertexAttribute::Normal3D:            return "VertexNormal";
+                case VertexAttribute::ColourRGB:           return "VertexColour";
+                case VertexAttribute::TextureCoordinate2D: return "VertexTexCoord";
+                default: ASSERT(false, "Could not convert VertexAttribute to a std::string"); return ""; // Always
+            }
+        }
+        DataType get_attribute_type(VertexAttribute p_attribute)
+        {
+            switch (p_attribute)
+            {
+                case VertexAttribute::Position3D:          return DataType::Float;
+                case VertexAttribute::Normal3D:            return DataType::Float;
+                case VertexAttribute::ColourRGB:           return DataType::Float;
+                case VertexAttribute::TextureCoordinate2D: return DataType::Float;
+                default: ASSERT(false, "Could not convert VertexAttribute to a std::string"); return DataType::Unknown; // Always
+            }
+        }
     }
 }

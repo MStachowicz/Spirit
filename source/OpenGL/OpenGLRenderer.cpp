@@ -43,29 +43,29 @@
 
 namespace OpenGL
 {
-    OpenGLRenderer::DebugOptions::DebugOptions(GLState& pGLState)
+    OpenGLRenderer::DebugOptions::DebugOptions()
         : mShowLightPositions{false}
         , mVisualiseNormals{false}
         , mForceClearColour{false}
         , mClearColour{0.f, 0.f, 0.f, 0.f}
         , mForceDepthTestType{false}
-        , mForcedDepthTestType{GLType::DepthTestType::Less}
+        , mForcedDepthTestType{DepthTestType::Less}
         , mForceBlendType{false}
-        , mForcedSourceBlendType{GLType::BlendFactorType::SourceAlpha}
-        , mForcedDestinationBlendType{GLType::BlendFactorType::OneMinusSourceAlpha}
+        , mForcedSourceBlendType{BlendFactorType::SourceAlpha}
+        , mForcedDestinationBlendType{BlendFactorType::OneMinusSourceAlpha}
         , mForceCullFacesType{false}
-        , mForcedCullFacesType{GLType::CullFacesType::Back}
+        , mForcedCullFacesType{CullFacesType::Back}
         , mForceFrontFaceOrientationType{false}
-        , mForcedFrontFaceOrientationType{GLType::FrontFaceOrientation::CounterClockwise}
+        , mForcedFrontFaceOrientationType{FrontFaceOrientation::CounterClockwise}
         , mShowOrientations{false}
         , mShowBoundingBoxes{false}
         , mFillBoundingBoxes{false}
         , mShowCollisionGeometry{false}
         , mCylinders{}
         , mSpheres{}
-        , mDepthViewerShader{"depthView", pGLState}
-        , mVisualiseNormalShader{"visualiseNormal", pGLState}
-        , mCollisionGeometryShader{"collisionGeometry", pGLState}
+        , mDepthViewerShader{"depthView"}
+        , mVisualiseNormalShader{"visualiseNormal"}
+        , mCollisionGeometryShader{"collisionGeometry"}
         , mDebugPoints{}
         , mDebugPointsVAO{}
         , mDebugPointsVBO{}
@@ -81,7 +81,6 @@ namespace OpenGL
 
     OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)
         : m_window{p_window}
-        , mGLState{}
         , mScreenFramebuffer{}
         , mSceneSystem{pSceneSystem}
         , mMeshSystem{pMeshSystem}
@@ -89,17 +88,17 @@ namespace OpenGL
         , spotLightDrawCount{0}
         , directionalLightDrawCount{0}
         , mPostProcessingOptions{}
-        , mUniformColourShader{"uniformColour" , mGLState}
-        , mTextureShader{"texture1" , mGLState}
-        , mScreenTextureShader{"screenTexture", mGLState}
-        , mSkyBoxShader{"skybox", mGLState}
+        , mUniformColourShader{"uniformColour"}
+        , mTextureShader{"texture1"}
+        , mScreenTextureShader{"screenTexture"}
+        , mSkyBoxShader{"skybox"}
         , mViewInformation{}
-        , mDebugOptions{mGLState}
+        , mDebugOptions{}
     {
         const auto windowSize = m_window.size();
         mScreenFramebuffer.attachColourBuffer(windowSize.x, windowSize.y);
         mScreenFramebuffer.attachDepthBuffer(windowSize.x, windowSize.y);
-        mGLState.setViewport(windowSize.x, windowSize.y);
+        set_viewport(0, 0, windowSize.x, windowSize.y);
 
         LOG("Constructed new OpenGLRenderer instance");
     }
@@ -123,9 +122,9 @@ namespace OpenGL
         GLMeshData.mVAO.bind();
 
         if (GLMeshData.mEBO.has_value()) // EBO available means drawing with indices.
-            mGLState.drawElements(GLType::PrimitiveMode::Triangles, GLMeshData.mDrawSize);
+            draw_elements(PrimitiveMode::Triangles, GLMeshData.mDrawSize);
         else
-            mGLState.drawArrays(GLType::PrimitiveMode::Triangles, GLMeshData.mDrawSize);
+            draw_arrays(PrimitiveMode::Triangles, 0, GLMeshData.mDrawSize);
     }
 
     void OpenGLRenderer::draw()
@@ -133,7 +132,7 @@ namespace OpenGL
         { // Prepare mScreenFramebuffer for rendering
             const auto window_size = m_window.size();
             mScreenFramebuffer.resize(window_size.x, window_size.y);
-            mGLState.setViewport(window_size.x, window_size.y);
+            set_viewport(0, 0, window_size.x, window_size.y);
             mScreenFramebuffer.bind();
             mScreenFramebuffer.clearBuffers();
             ASSERT(mScreenFramebuffer.isComplete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
@@ -142,43 +141,45 @@ namespace OpenGL
         { // Set global shader uniforms.
             if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
             {
-                mViewInformation.mView   = primaryCamera->get_view();
+                mViewInformation.mView         = primaryCamera->get_view();
                 mViewInformation.mViewPosition = primaryCamera->get_position();
             }
             mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), m_window.aspect_ratio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
-            mGLState.setUniformBlockVariable("ViewProperties.view", mViewInformation.mView);
-            mGLState.setUniformBlockVariable("ViewProperties.projection", mViewInformation.mProjection);
+
+            Shader::set_block_uniform("ViewProperties.view", mViewInformation.mView);
+            Shader::set_block_uniform("ViewProperties.projection", mViewInformation.mProjection);
         }
 
         { // Setup the GL state for rendering the scene, the default setup can be overriden by the Debug options struct
-            mGLState.setPolygonMode(GLType::PolygonMode::Fill);
+            set_polygon_mode(PolygonMode::Fill);
 
             if (mDebugOptions.mForceClearColour)
-                mGLState.setClearColour(mDebugOptions.mClearColour);
+                set_clear_colour(mDebugOptions.mClearColour);
             else
-                mGLState.setClearColour(glm::vec4(0.f));
+                set_clear_colour(glm::vec4(0.f));
 
-            mGLState.toggleCullFaces(true);
+            toggle_cull_face(true);
             if (mDebugOptions.mForceCullFacesType)
-                mGLState.setCullFacesType(mDebugOptions.mForcedCullFacesType);
+                set_cull_face_type(mDebugOptions.mForcedCullFacesType);
             else
-                mGLState.setCullFacesType(GLType::CullFacesType::Back);
+                set_cull_face_type(CullFacesType::Back);
 
             if (mDebugOptions.mForceFrontFaceOrientationType)
-                mGLState.setFrontFaceOrientation(mDebugOptions.mForcedFrontFaceOrientationType);
+                set_front_face_orientation(mDebugOptions.mForcedFrontFaceOrientationType);
             else
-                mGLState.setFrontFaceOrientation(GLType::FrontFaceOrientation::CounterClockwise);
+                set_front_face_orientation(FrontFaceOrientation::CounterClockwise);
 
-            mGLState.toggleDepthTest(true);
+            set_depth_test(true);
             if (mDebugOptions.mForceDepthTestType)
-                mGLState.setDepthTestType(mDebugOptions.mForcedDepthTestType);
+                set_depth_test_type(mDebugOptions.mForcedDepthTestType);
             else
-                mGLState.setDepthTestType(GLType::DepthTestType::Less);
+                set_depth_test_type(DepthTestType::Less);
 
+            toggle_blending(true);
             if (mDebugOptions.mForceBlendType)
-                mGLState.setBlendFunction(mDebugOptions.mForcedSourceBlendType, mDebugOptions.mForcedDestinationBlendType);
+                set_blend_func(mDebugOptions.mForcedSourceBlendType, mDebugOptions.mForcedDestinationBlendType);
             else
-                mGLState.setBlendFunction(GLType::BlendFactorType::SourceAlpha, GLType::BlendFactorType::OneMinusSourceAlpha);
+                set_blend_func(BlendFactorType::SourceAlpha, BlendFactorType::OneMinusSourceAlpha);
         }
 
         auto& scene = mSceneSystem.getCurrentScene();
@@ -188,55 +189,53 @@ namespace OpenGL
             {
                 auto& texComponent = scene.getComponent<Component::Texture>(pEntity);
 
-                auto& shader = mTextureShader;
-                shader.use(mGLState);
-                shader.setUniform(mGLState, "model", pTransform.mModel);
+                mTextureShader.use();
+                mTextureShader.set_uniform("model", pTransform.mModel);
 
                 if (texComponent.mDiffuse.has_value())
                 {
-                    mGLState.setActiveTextureUnit(0);
+                    set_active_texture(0);
                     texComponent.mDiffuse.value()->m_GL_texture.bind();
                 }
                 //   if (texComponent.mSpecular.has_value())
                 //   {
-                //       mGLState.setActiveTextureUnit(1);
+                //       set_active_texture(1);
                 //       texComponent.mSpecular.value()->mGLTexture.bind();
                 //   }
             }
             else
             {
-                auto& shader = mUniformColourShader;
-                shader.use(mGLState);
-                shader.setUniform(mGLState, "model", pTransform.mModel);
-                shader.setUniform(mGLState, "colour", glm::vec3(0.f, 1.f, 0.f));
+                mUniformColourShader.use();
+                mUniformColourShader.set_uniform("model", pTransform.mModel);
+                mUniformColourShader.set_uniform("colour", glm::vec3(0.f, 1.f, 0.f));
             }
 
             draw(*pMesh.mModel);
         });
 
         renderDebug();
-        //mGLState.renderImGui();
+        //renderImGui();
 
         { // Draw the colour output to the from mScreenFramebuffer texture to the default FBO
             // Unbind after completing draw to ensure all subsequent actions apply to the default FBO and not mScreenFrameBuffer.
             // Disable depth testing to not cull the screen quad the screen texture will be applied onto.
             FBO::unbind();
-            mGLState.toggleDepthTest(false);
-            mGLState.toggleCullFaces(false);
-            mGLState.setPolygonMode(GLType::PolygonMode::Fill);
+            set_depth_test(false);
+            toggle_cull_face(false);
+            set_polygon_mode(PolygonMode::Fill);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            mScreenTextureShader.use(mGLState);
+            mScreenTextureShader.use();
             { // PostProcessing setters
-                mScreenTextureShader.setUniform(mGLState, "invertColours", mPostProcessingOptions.mInvertColours);
-                mScreenTextureShader.setUniform(mGLState, "grayScale", mPostProcessingOptions.mGrayScale);
-                mScreenTextureShader.setUniform(mGLState, "sharpen", mPostProcessingOptions.mSharpen);
-                mScreenTextureShader.setUniform(mGLState, "blur", mPostProcessingOptions.mBlur);
-                mScreenTextureShader.setUniform(mGLState, "edgeDetection", mPostProcessingOptions.mEdgeDetection);
-                mScreenTextureShader.setUniform(mGLState, "offset", mPostProcessingOptions.mKernelOffset);
+                mScreenTextureShader.set_uniform("invertColours", mPostProcessingOptions.mInvertColours);
+                mScreenTextureShader.set_uniform("grayScale", mPostProcessingOptions.mGrayScale);
+                mScreenTextureShader.set_uniform("sharpen", mPostProcessingOptions.mSharpen);
+                mScreenTextureShader.set_uniform("blur", mPostProcessingOptions.mBlur);
+                mScreenTextureShader.set_uniform("edgeDetection", mPostProcessingOptions.mEdgeDetection);
+                mScreenTextureShader.set_uniform("offset", mPostProcessingOptions.mKernelOffset);
             }
 
-            mGLState.setActiveTextureUnit(0);
+            set_active_texture(0);
             mScreenFramebuffer.bindColourTexture();
             draw(*mMeshSystem.mPlanePrimitive);
         }
@@ -249,7 +248,7 @@ namespace OpenGL
         spotLightDrawCount        = 0;
     }
 
-    void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour /*= glm::vec3(1.f,1.f,1.f)*/)
+    void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& p_colour /*= glm::vec3(1.f,1.f,1.f)*/)
     {
         // Draw an arrow starting at pOrigin of length pLength point in pOrientation.
         // The body/stem of the arrow is a cylinder, the head/tip is a cone model.
@@ -286,19 +285,20 @@ namespace OpenGL
         arrowHeadModel = arrowHeadModel * arrowToDirectionRot;
         arrowHeadModel = glm::scale(arrowHeadModel, arrowHeadScale);
 
-        mUniformColourShader.setUniform(mGLState, "colour", pColour);
+        mUniformColourShader.use();
+        mUniformColourShader.set_uniform("colour", p_colour);
 
-        mUniformColourShader.setUniform(mGLState, "model", arrowHeadModel);
+        mUniformColourShader.set_uniform("model", arrowHeadModel);
         draw(*mMeshSystem.mConePrimitive);
 
-        mUniformColourShader.setUniform(mGLState, "model", arrowBodyModel);
+        mUniformColourShader.set_uniform("model", arrowBodyModel);
         draw(*mMeshSystem.mCylinderPrimitive);
     }
-    void OpenGLRenderer::drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour /*= glm::vec3(1.f,1.f,1.f)*/)
+    void OpenGLRenderer::drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& p_colour /*= glm::vec3(1.f,1.f,1.f)*/)
     {
-        drawCylinder({pStart, pEnd, pDiameter}, pColour);
+        drawCylinder({pStart, pEnd, pDiameter}, p_colour);
     }
-    void OpenGLRenderer::drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour /*=glm::vec3(1.f, 1.f, 1.f)*/)
+    void OpenGLRenderer::drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& p_colour /*=glm::vec3(1.f, 1.f, 1.f)*/)
     {
         static const float cylinderDimensions = 2.f; // The default cylinder model has x, y and z dimensions in the range = [-1 - 1]
         static const glm::vec3 cylinderAxis{0.f, 1.f, 0.f}; // Unit vec up, cone/cylinder models are alligned up (along y) by default.
@@ -314,30 +314,30 @@ namespace OpenGL
         modelMat = modelMat * rotation;
         modelMat = glm::scale(modelMat, scale);
 
-        mUniformColourShader.setUniform(mGLState, "colour", pColour);
-        mUniformColourShader.setUniform(mGLState, "model", modelMat);
+        mUniformColourShader.set_uniform("colour", p_colour);
+        mUniformColourShader.set_uniform("model", modelMat);
         draw(*mMeshSystem.mCylinderPrimitive);
     }
-    void OpenGLRenderer::drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& pColour/*= glm::vec3(1.f, 1.f, 1.f)*/)
+    void OpenGLRenderer::drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& p_colour/*= glm::vec3(1.f, 1.f, 1.f)*/)
     {
-        drawSphere({pCenter, pRadius}, pColour);
+        drawSphere({pCenter, pRadius}, p_colour);
     }
-    void OpenGLRenderer::drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& pColour/*= glm::vec3(1.f, 1.f, 1.f)*/)
+    void OpenGLRenderer::drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& p_colour/*= glm::vec3(1.f, 1.f, 1.f)*/)
     {
         static const float sphereModelRadius = 1.f; // The default sphere model has XYZ dimensions in the range [-1 - 1] = radius of 1.f, diameter 2.f
 
         glm::mat4 modelMat = glm::translate(glm::identity<glm::mat4>(), pSphere.mCenter);
         modelMat = glm::scale(modelMat, glm::vec3(pSphere.mRadius / sphereModelRadius));
 
-        mUniformColourShader.setUniform(mGLState, "colour", pColour);
-        mUniformColourShader.setUniform(mGLState, "model", modelMat);
+        mUniformColourShader.set_uniform("colour", p_colour);
+        mUniformColourShader.set_uniform("model", modelMat);
         draw(*mMeshSystem.mSpherePrimitive);
     }
 
     void OpenGLRenderer::renderDebug()
     {
         auto& scene = mSceneSystem.getCurrentScene();
-        mGLState.toggleCullFaces(true);
+        toggle_cull_face(true);
 
         {// Render all the collision geometry by pushing all the mesh triangles transformed in world-space.
             mDebugOptions.mDebugPoints.clear();
@@ -348,7 +348,7 @@ namespace OpenGL
             {
                 mSceneSystem.getCurrentScene().foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh)
                 {
-                    mDebugOptions.mCollisionGeometryShader.use(mGLState);
+                    mDebugOptions.mCollisionGeometryShader.use();
 
                     pMesh.mModel->mCompositeMesh.forEachMesh([this, &pTransform](const Data::Mesh& pMesh)
                     {
@@ -365,25 +365,25 @@ namespace OpenGL
                     mDebugOptions.mDebugPointsVAO.bind();
                     mDebugOptions.mDebugPointsVBO = VBO();
                     mDebugOptions.mDebugPointsVBO.bind();
-                    mDebugOptions.mDebugPointsVBO.setData(mDebugOptions.mDebugPoints, Shader::Attribute::Position3D);
+                    mDebugOptions.mDebugPointsVBO.setData(mDebugOptions.mDebugPoints, VertexAttribute::Position3D);
 
-                    mGLState.toggleCullFaces(false); // Disable culling to show exact geometry
-                    mDebugOptions.mCollisionGeometryShader.setUniform(mGLState, "viewPosition", mViewInformation.mViewPosition);
-                    mDebugOptions.mCollisionGeometryShader.setUniform(mGLState, "colour", glm::vec4(0.f, 1.f, 0.f, 0.5f));
-                    mDebugOptions.mCollisionGeometryShader.setUniform(mGLState, "model", glm::mat4(1.f));
-                    mGLState.drawArrays(GLType::PrimitiveMode::Triangles, static_cast<int>(mDebugOptions.mDebugPoints.size()));
+                    toggle_cull_face(false); // Disable culling to show exact geometry
+                    mDebugOptions.mCollisionGeometryShader.set_uniform("viewPosition", mViewInformation.mViewPosition);
+                    mDebugOptions.mCollisionGeometryShader.set_uniform("colour", glm::vec4(0.f, 1.f, 0.f, 0.5f));
+                    mDebugOptions.mCollisionGeometryShader.set_uniform("model", glm::mat4(1.f));
+                    draw_arrays(PrimitiveMode::Triangles, 0, static_cast<int>(mDebugOptions.mDebugPoints.size()));
                 }
             }
         }
 
         if (mDebugOptions.mShowLightPositions)
         {
-            mUniformColourShader.use(mGLState);
+            mUniformColourShader.use();
 
             mSceneSystem.getCurrentScene().foreach([this](Component::PointLight& pPointLight)
             {
-                mUniformColourShader.setUniform(mGLState, "model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
-                mUniformColourShader.setUniform(mGLState, "colour", pPointLight.mColour);
+                mUniformColourShader.set_uniform("model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
+                mUniformColourShader.set_uniform("colour", pPointLight.mColour);
                 draw(*mMeshSystem.mCubePrimitive);
             });
         }
@@ -401,13 +401,13 @@ namespace OpenGL
 
         if (mDebugOptions.mShowBoundingBoxes)
         {
-            mGLState.setPolygonMode(mDebugOptions.mFillBoundingBoxes ? GLType::PolygonMode::Fill : GLType::PolygonMode::Line);
-            mUniformColourShader.use(mGLState);
+            set_polygon_mode(mDebugOptions.mFillBoundingBoxes ? PolygonMode::Fill : PolygonMode::Line);
+            mUniformColourShader.use();
 
             scene.foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh, Component::Collider& pCollider)
             {
-                mUniformColourShader.setUniform(mGLState, "model", pCollider.getWorldAABBModel());
-                mUniformColourShader.setUniform(mGLState, "colour", pCollider.mCollided ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 1.f, 0.f));
+                mUniformColourShader.set_uniform("model", pCollider.getWorldAABBModel());
+                mUniformColourShader.set_uniform("colour", pCollider.mCollided ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 1.f, 0.f));
                 draw(*mMeshSystem.mCubePrimitive);
             });
         }
@@ -442,13 +442,13 @@ namespace OpenGL
         const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
         const glm::vec3 ambientColour = diffuseColour * pPointLight.mAmbientIntensity;
 
-        mGLState.setUniformBlockVariable((uniform + ".position").c_str(), pPointLight.mPosition);
-        mGLState.setUniformBlockVariable((uniform + ".ambient").c_str(), ambientColour);
-        mGLState.setUniformBlockVariable((uniform + ".diffuse").c_str(), diffuseColour);
-        mGLState.setUniformBlockVariable((uniform + ".specular").c_str(), glm::vec3(pPointLight.mSpecularIntensity));
-        mGLState.setUniformBlockVariable((uniform + ".constant").c_str(), pPointLight.mConstant);
-        mGLState.setUniformBlockVariable((uniform + ".linear").c_str(), pPointLight.mLinear);
-        mGLState.setUniformBlockVariable((uniform + ".quadratic").c_str(), pPointLight.mQuadratic);
+        //Shader::set_block_uniform((uniform + ".position").c_str(), pPointLight.mPosition);
+        //Shader::set_block_uniform((uniform + ".ambient").c_str(), ambientColour);
+        //Shader::set_block_uniform((uniform + ".diffuse").c_str(), diffuseColour);
+        //Shader::set_block_uniform((uniform + ".specular").c_str(), glm::vec3(pPointLight.mSpecularIntensity));
+        //Shader::set_block_uniform((uniform + ".constant").c_str(), pPointLight.mConstant);
+        //Shader::set_block_uniform((uniform + ".linear").c_str(), pPointLight.mLinear);
+        //Shader::set_block_uniform((uniform + ".quadratic").c_str(), pPointLight.mQuadratic);
 
         pointLightDrawCount++;
     }
@@ -457,10 +457,10 @@ namespace OpenGL
         const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
         const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
 
-        mGLState.setUniformBlockVariable("Lights.mDirectionalLight.direction", pDirectionalLight.mDirection);
-        mGLState.setUniformBlockVariable("Lights.mDirectionalLight.ambient", ambientColour);
-        mGLState.setUniformBlockVariable("Lights.mDirectionalLight.diffuse", diffuseColour);
-        mGLState.setUniformBlockVariable("Lights.mDirectionalLight.specular", glm::vec3(pDirectionalLight.mSpecularIntensity));
+        //Shader::set_block_uniform("Lights.mDirectionalLight.direction", pDirectionalLight.mDirection);
+        //Shader::set_block_uniform("Lights.mDirectionalLight.ambient", ambientColour);
+        //Shader::set_block_uniform("Lights.mDirectionalLight.diffuse", diffuseColour);
+        //Shader::set_block_uniform("Lights.mDirectionalLight.specular", glm::vec3(pDirectionalLight.mSpecularIntensity));
 
         directionalLightDrawCount++;
     }
@@ -469,16 +469,16 @@ namespace OpenGL
         const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
         const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
 
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.position", pSpotLight.mPosition);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.direction", pSpotLight.mDirection);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.diffuse", diffuseColour);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.ambient", ambientColour);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.specular", glm::vec3(pSpotLight.mSpecularIntensity));
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.constant", pSpotLight.mConstant);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.linear", pSpotLight.mLinear);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.quadratic", pSpotLight.mQuadratic);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.cutOff", pSpotLight.mCutOff);
-        mGLState.setUniformBlockVariable("Lights.mSpotLight.cutOff", pSpotLight.mOuterCutOff);
+        //Shader::set_block_uniform("Lights.mSpotLight.position", pSpotLight.mPosition);
+        //Shader::set_block_uniform("Lights.mSpotLight.direction", pSpotLight.mDirection);
+        //Shader::set_block_uniform("Lights.mSpotLight.diffuse", diffuseColour);
+        //Shader::set_block_uniform("Lights.mSpotLight.ambient", ambientColour);
+        //Shader::set_block_uniform("Lights.mSpotLight.specular", glm::vec3(pSpotLight.mSpecularIntensity));
+        //Shader::set_block_uniform("Lights.mSpotLight.constant", pSpotLight.mConstant);
+        //Shader::set_block_uniform("Lights.mSpotLight.linear", pSpotLight.mLinear);
+        //Shader::set_block_uniform("Lights.mSpotLight.quadratic", pSpotLight.mQuadratic);
+        //Shader::set_block_uniform("Lights.mSpotLight.cutOff", pSpotLight.mCutOff);
+        //Shader::set_block_uniform("Lights.mSpotLight.cutOff", pSpotLight.mOuterCutOff);
 
         spotLightDrawCount++;
     }

@@ -60,7 +60,7 @@ namespace OpenGL
     {
         struct DebugOptions
         {
-            DebugOptions(GLState& pGLState);
+            DebugOptions();
 
             // Rendering
             bool mShowLightPositions;
@@ -70,24 +70,23 @@ namespace OpenGL
             glm::vec4 mClearColour;
 
             bool mForceDepthTestType;
-            GLType::DepthTestType mForcedDepthTestType;
+            DepthTestType mForcedDepthTestType;
 
             bool mForceBlendType;
-            GLType::BlendFactorType mForcedSourceBlendType;
-            GLType::BlendFactorType mForcedDestinationBlendType;
+            BlendFactorType mForcedSourceBlendType;
+            BlendFactorType mForcedDestinationBlendType;
 
             bool mForceCullFacesType;
-            GLType::CullFacesType mForcedCullFacesType;
+            CullFacesType mForcedCullFacesType;
 
             bool mForceFrontFaceOrientationType;
-            GLType::FrontFaceOrientation mForcedFrontFaceOrientationType;
+            FrontFaceOrientation mForcedFrontFaceOrientationType;
 
             // Physics
             bool mShowOrientations;
             bool mShowBoundingBoxes;
                 bool mFillBoundingBoxes;
             bool mShowCollisionGeometry; // Display all Meshes according to their collision geometry
-
 
             std::vector<Geometry::Cylinder> mCylinders;
             std::vector<Geometry::Sphere> mSpheres;
@@ -121,7 +120,6 @@ namespace OpenGL
             float mFOV;
         };
 
-        GLState mGLState;
         Platform::Window& m_window;
         FBO mScreenFramebuffer;
 
@@ -160,11 +158,11 @@ namespace OpenGL
         void draw(const Data::Mesh& pMesh);
 
         void renderDebug();
-        void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
-        void drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f)); // Draw a cylinder with base at pStart and top at pEnd of pDiameter.
-        void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
-        void drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
-        void drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& pColour = glm::vec3(1.f, 1.f, 1.f));
+        void drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f)); // Draw an arrow from pOrigin in pDirection of pLength.
+        void drawCylinder(const glm::vec3& pStart, const glm::vec3& pEnd, const float pDiameter, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f)); // Draw a cylinder with base at pStart and top at pEnd of pDiameter.
+        void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
+        void drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
+        void drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
 
         void onWindowResize(const int pWidth, const int pHeight);
     };

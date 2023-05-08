@@ -1,14 +1,7 @@
 #pragma once
 
 #include "glm/fwd.hpp"
-
-#include "Logger.hpp"
-
 #include <string>
-#include <array>
-#include <vector>
-#include <optional>
-#include <memory>
 
 using GLint      = int;
 using GLuint     = unsigned int;
@@ -16,14 +9,19 @@ using GLboolean  = unsigned char;
 using GLenum     = unsigned int;
 using GLsizei    = int;
 using GLsizeiptr = signed long long int;
-//using GLenum   = Corresponding enum type in GLType namespace
+using GLintptr   = signed long long int;
+using GLHandle   = unsigned int; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
+//using GLenum   = Corresponding enum type in OpenGL namespace
 //using GLdouble = double; // Unused
+//using GLfloat  = float; // Unused
 
-// Wraps all the GL types into enums and provides helper functions to extract the values or string representations.
-// All the enums come with a matching array to allow iterating over the enums in ImGui and converting to string by O(1) indexing.
-namespace GLType
+// Define wrappers to strongly type GLenum types.
+// All the wrappers provide helper functions to extract the values or string representations.
+namespace OpenGL
 {
-    enum class DataType
+    constexpr inline static bool LogGLTypeEvents = false;
+
+    enum class DataType : uint8_t
     {
         Float, Vec2, Vec3, Vec4,
         Double, DVec2, DVec3, DVec4,
@@ -60,7 +58,7 @@ namespace GLType
         Usampler2DRect,
         Unknown
     };
-    enum class BufferType
+    enum class BufferType : uint8_t
     {
         ArrayBuffer,             // Vertex attributes
         AtomicCounterBuffer,     // Atomic counter storage
@@ -77,7 +75,7 @@ namespace GLType
         TransformFeedbackBuffer, // Transform feedback buffer
         UniformBuffer            // Uniform block storage
     };
-    enum class GLSLVariableType
+    enum class GLSLVariableType : uint8_t
     {
         Uniform,      // 'loose' uniform variables not part of any interface blocks. These are owned by a shader program and can be directly set without buffer backing.
         UniformBlock, // UniformBlockVariable found inside a UniformBlock. Has to be backed by a UBO to be set. These can be global or exclusive to the shader depending on the UniformBlock layout definition.
@@ -93,7 +91,7 @@ namespace GLType
     //  2.b.    READ: Modified by reading data from the GL, and used to return that data when queried by the application.
     //  2.c.    COPY: Modified by reading data from the GL, and used as the source for GL drawing and image specification commands.
     // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
-    enum class BufferUsage
+    enum class BufferUsage : uint8_t
     {
         StreamDraw,
         StreamRead,
@@ -105,13 +103,13 @@ namespace GLType
         DynamicRead,
         DynamicCopy
     };
-    enum class ShaderProgramType
+    enum class ShaderProgramType : uint8_t
     {
         Vertex,
         Geometry,
         Fragment
     };
-    enum class ShaderResourceType
+    enum class ShaderResourceType : uint8_t
     {
         Uniform,
         UniformBlock,
@@ -131,7 +129,7 @@ namespace GLType
         TransformFeedbackBuffer,
         TransformFeedbackVarying
     };
-    enum class ShaderResourceProperty
+    enum class ShaderResourceProperty : uint8_t
     {
         NameLength,
         Type,
@@ -164,7 +162,7 @@ namespace GLType
         TransformFeedbackBufferIndex,
         TransformFeedbackBufferStride
     };
-    enum class DepthTestType
+    enum class DepthTestType : uint8_t
     {
         Always,
         Never,
@@ -175,7 +173,7 @@ namespace GLType
         LessEqual,
         GreaterEqual
     };
-    enum class BlendFactorType
+    enum class BlendFactorType : uint8_t
     {
         Zero,                      // Factor is equal to 0.
         One,                       // Factor is equal to 1.
@@ -192,27 +190,27 @@ namespace GLType
         ConstantAlpha,             // Factor is equal to the alpha component of the constant colour vector.
         OneMinusConstantAlpha,     // Factor is equal to 1 minus alpha of the constant colour vector.
     };
-    enum class CullFacesType
-    {
+    enum class CullFacesType : uint8_t
+{
         Back,          // Culls only the back faces (Default OpenGL setting).
         Front,         // Culls only the front faces.
         FrontAndBack  // Culls both the front and back faces.
     };
-    enum class FrontFaceOrientation
+    enum class FrontFaceOrientation : uint8_t
     {
         Clockwise,          // Clockwise polygons are identified as front-facing.
         CounterClockwise,   // Counter-clockwise polygons are identified as front-facing (Default OpenGL setting).
     };
     // Polygon rasterization mode
     // Vertices are marked as boundary/non-boundary with an edge flag generated internally by OpenGL when it decomposes triangle stips and fans.
-    enum class PolygonMode
+    enum class PolygonMode : uint8_t
     {
         Point, // Polygon vertices that are marked as the start of a boundary edge are drawn as points. Point attributes such as GL_POINT_SIZE and GL_POINT_SMOOTH control the rasterization of the points.
         Line,  // Boundary edges of the polygon are drawn as line segments. Line attributes such as GL_LINE_WIDTH and GL_LINE_SMOOTH control the rasterization of the lines.
         Fill  // The interior of the polygon is filled. Polygon attributes such as GL_POLYGON_SMOOTH control the rasterization of the polygon. (Default OpenGL setting).
     };
     // Interpretation scheme used to determine what a stream of vertices represents when being rendered.
-    enum class PrimitiveMode
+    enum class PrimitiveMode : uint8_t
     {
         Points,
         LineStrip,
@@ -227,13 +225,13 @@ namespace GLType
         TrianglesAdjacency,
         Patches,
     };
-    enum class FramebufferTarget
+    enum class FramebufferTarget : uint8_t
     {
         DrawFramebuffer,
         ReadFramebuffer,
         Framebuffer
     };
-    enum class ErrorType
+    enum class ErrorType : uint8_t
     {
         InvalidEnum,
         InvalidValue,
@@ -243,7 +241,7 @@ namespace GLType
         StackUnderflow,
         StackOverflow
     };
-    enum class Function
+    enum class Function : uint8_t
     {
         Viewport,
         DrawElements,
@@ -251,527 +249,111 @@ namespace GLType
         DrawElementsInstanced,
         DrawArraysInstanced,
         BindFramebuffer,
-        CreateShader,
-        ShaderSource,
-        CompileShader,
-        CreateProgram,
-        AttachShader,
-        LinkProgram,
-        DeleteShader,
-        UseProgram,
+        create_shader,
+        shader_source,
+        compile_shader,
+        create_program,
+        attach_shader,
+        link_program,
+        delete_shader,
+        use_program,
         BindBuffer,
         DeleteBuffer,
         BufferData,
-        BufferSubData,
-        BindBufferRange,
-        UniformBlockBinding,
-        ShaderStorageBlockBinding,
-        CopyBufferSubData
-    };
-
-    std::string toString(const Function& pFunction);
-    std::string toString(const ShaderProgramType& pShaderProgramType);
-    std::string toString(const DataType &pDataType);
-    std::string toString(const GLSLVariableType& pVariableType);
-    std::string toString(const BufferType& pBufferType);
-    std::string toString(const BufferUsage& pBufferUsage);
-    std::string toString(const ShaderResourceType &pResourceType);
-    std::string toString(const ShaderResourceProperty &pShaderResourceProperty);
-    std::string toString(const DepthTestType &pDepthTestType);
-    std::string toString(const BlendFactorType &pBlendFactorType);
-    std::string toString(const CullFacesType &pCullFacesType);
-    std::string toString(const FrontFaceOrientation &pFrontFaceOrientation);
-    std::string toString(const PolygonMode &pPolygonMode);
-    std::string toString(const PrimitiveMode &pPrimitiveMode);
-    std::string toString(const FramebufferTarget &pFramebufferTarget);
-    std::string toString(const ErrorType &pErrorType);
-
-    DataType convert(const int& pDataType);
-
-    int convert(const ShaderProgramType& pShaderProgramType);
-    int convert(const DataType& pDataType);
-    int convert(const GLSLVariableType& pVariableType);
-    int convert(const BufferType& pBufferType);
-    int convert(const BufferUsage& pBufferUsage);
-    int convert(const ShaderResourceType& pResourceType);
-    int convert(const ShaderResourceProperty& pShaderResourceProperty);
-    int convert(const DepthTestType& pDepthTestType);
-    int convert(const BlendFactorType& pBlendFactorType);
-    int convert(const CullFacesType& pCullFacesType);
-    int convert(const FrontFaceOrientation& pFrontFaceOrientation);
-    int convert(const PolygonMode& pPolygonMode);
-    int convert(const PrimitiveMode& pPrimitiveMode);
-    int convert(const FramebufferTarget& pFramebufferTarget);
-}
-
-class GLState;
-// Wraps OpenGL data types that hold GPU data. Each type follows the same class structure:
-// generate() - Creates a handle that data can be bound to.
-// bind()     - Makes the data 'current'
-// release()  - Deletes the data on the GPU freeing the handle (has to be called before destruction).
-namespace GLData
-{
-    // Stores an array of memory allocated using OpenGL context on the GPU.
-    struct Buffer
-    {
-        void Bind(const GLState& pGLState) const;
-        void Delete(const GLState& pGLState);
-        void Reserve(GLState& pGLState, const size_t& pBytesToReserve);
-        void PushData(GLState& pGLState, const std::vector<int>& pData);
-        void PushData(GLState& pGLState, const std::vector<float>& pData);
-
-        const GLType::BufferType mType;
-        const GLType::BufferUsage mUsage;
-        unsigned int getHandle() { return mHandle; };
-        size_t GetReservedSize() const { return mReservedSize; };
-    protected:
-        // Protected Buffer constructor turning Buffer into a pure interface.
-        Buffer(const GLState& pGLState, const GLType::BufferType& pType, const GLType::BufferUsage& pUsage);
-        unsigned int mHandle; // The handle/name of this Buffer in OpenGL. This value can change when a Buffer is extended.
-        size_t mReservedSize; // The number of Bytes this Buffer occupies in GPU memory.
-        size_t mUsedSize; // The number of Bytes actually pushed to the GPU memory occupied by the Buffer.
-    };
-    // Uniform Buffer Object
-    // A Buffer Object that is used to store uniform data for a shader program. They can be used to share
-    // uniforms between different programs, as well as quickly change between sets of uniforms for the same program object.
-    // Used to provide buffer-backed storage for uniforms.
-    // https://www.khronos.org/opengl/wiki/Uniform_Buffer_Object
-    struct UBO : public Buffer
-    {
-        friend class GLState;
-
-        void AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint);
-
-       private:
-        UBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
-            : Buffer(pGLState, GLType::BufferType::UniformBuffer, pUsage) {}
-    };
-    // A Shader Storage block Object (SSBO)
-    // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
-    // Compared to UBO's SSBOs:
-    // Can be much larger. The spec guarantees that SSBOs can be up to 128MB. Most implementations will let you allocate a size up to the limit of GPU memory.
-    // Are writable, even atomically. SSBOs reads and writes use incoherent memory accesses, so they need the appropriate barriers, just as Image Load Store operations.
-    // Can have variable storage, up to whatever buffer range was bound for that particular buffer. This means that you can have an array of arbitrary length in an SSBO (at the end, rather).
-    // The actual size of the array, based on the range of the buffer bound, can be queried at runtime in the shader using the length function on the unbounded array variable.
-    // SSBO access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
-    // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
-    struct SSBO : public Buffer
-    {
-        friend class GLState;
-
-        void AssignBindingPoint(GLState& pGLState, const unsigned int& pBindingPoint);
-        // Double the size of this SSBO in GPU memory.
-        // This is a costly operation, where possible call a Buffer::Resize to the predicted size that will be required.
-        // SSBOs are extended when a variable-sized-array ShaderStorageBlockVariable is being set and its offset index passes the end of the SSBO backing it.
-        // All data set before the Extend is lost.
-        void Extend(GLState& pGLState);
-       private:
-        SSBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
-        : Buffer(pGLState, GLType::BufferType::ShaderStorageBuffer, pUsage) {}
-
-        std::optional<unsigned int> mBindingPoint;
-    };
-
-    // Represents a variable in GLSL offering an interface to set to its data. A GLSLVariable can be found in multiple configurations:
-    // A loose uniform belonging to a shader program without an interface block parent (mBlockIndex == -1).
-    // A UniformBlockVariable defined inside a UniformBlock.
-    // A ShaderStorageBlockVariable defined inside a ShaderStorageBlock interface.
-    struct GLSLVariable
-    {
-        GLType::GLSLVariableType mVariableType;
-        std::optional<GLType::DataType> mDataType;
-
-        std::optional<std::string> mName;
-        // Number of array elements. The size is in units of the type associated with the property mDataType.
-        // For variables not corresponding to an array of basic types, the value is 0.
-        std::optional<int> mArraySize;
-        // The offset of the variable relative to the base of the buffer range holding its value (UBO and SSBO variables)
-        std::optional<int> mOffset;
-        // The index of the interface block containing the variable.
-        // If the variable is not the member of an interface block, the value is -1.
-        std::optional<int> mBlockIndex;
-        // The stride between array elements.
-        // For variables declared an array of basic types, the value is the difference, in basic machine units, between the offsets of consecutive elements in an array.
-        // For variables not declared as an array of basic types, the value is 0.
-        // For variables not backed by a buffer object, the value is -1, regardless of the variable type.
-        std::optional<int> mArrayStride;
-        // The stride between columns of a column-major matrix or rows of a row-major matrix.
-        // For variables declared a single matrix or array of matrices, the value is the difference, in basic machine units, between the offsets of consecutive columns or rows in each matrix.
-        // For variables not declared as a matrix or array of matrices, the value is 0.
-        // For variables not backed by a buffer object, the value is -1, regardless of the variable type.
-        std::optional<int> mMatrixStride;
-        // Identifying whether a variable is a row-major matrix.
-        // For variables backed by a buffer object, declared as a single matrix or array of matrices, and stored in row-major order, the value is 1.
-        // For all other variables, the value is 0.
-        std::optional<int> mIsRowMajor;
-
-        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0)      = 0;
-        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0)       = 0;
-        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0)     = 0;
-        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) = 0;
-        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) = 0;
-        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) = 0;
-        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) = 0;
-        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) = 0;
-        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) = 0;
-
-       protected:
-        GLSLVariable(const GLType::GLSLVariableType& pType) : mVariableType(pType) {}
-    };
-
-    // A shader-program global variable.
-    // Declared with the "uniform" storage qualifier in GLSL
-    // Uniform variables don't change from one shader invocation to the next within a particular rendering call thus their value is uniform among all invocations. This makes them unlike shader stage inputs and outputs, which are often different for each invocation of a shader stage.
-    // These act as parameters that the user of a shader program can pass to that program. Their values are stored in a program object.
-    // https://www.khronos.org/opengl/wiki/Uniform_(GLSL)
-    struct UniformVariable : public GLSLVariable
-    {
-        // The index of the atomic counter buffer containing the variable.
-        // If the variable is not an atomic counter uniform, the value is -1.
-        // Uniform Only
-        std::optional<int> mAtomicCounterBufferIndex;
-        // The assigned location for a uniform, input, output, or subroutine uniform variable.
-        // For input, output, or uniform variables with locations specified by a layout qualifier, the specified location is used.
-        // For vertex shader input or fragment shader output variables without a layout qualifier, the location assigned when a program is linked.
-        // For all other input and output variables, the value is -1.
-        // For uniforms in uniform blocks, the value is -1.
-        // Uniform only
-        std::optional<int> mLocation;
-
-        UniformVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
-
-        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) override;
-    };
-    // A GLSL variable that belongs to a UniformBlock
-    struct UniformBlockVariable : public GLSLVariable
-    {
-        UniformBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
-        UBO* mBufferBacking = nullptr;
-
-        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) override;
-    };
-    // A GLSL variable that belongs to a ShaderStorageBlock
-    struct ShaderStorageBlockVariable: public GLSLVariable
-    {
-        // The number of array elements of the top-level shader storage block member containing to the variable.
-        // If the top-level block member is not declared as an array, the value is 1.
-        // If the top-level block member is an array with no declared size, the value is 0.
-        // Buffer block only
-        std::optional<int> mTopLevelArraySize;
-        // The stride between array elements of the top-level shader storage block member containing the variable.
-        // For top-level block members declared as arrays, the value is the difference, in basic machine units, between the offsets of the variable for consecutive elements in the top-level array.
-        // For top-level block members not declared as an array, the value is 0.
-        // Buffer block only
-        std::optional<int> mTopLevelArrayStride;
-
-        bool mIsVariableArray = false; // Is this variable declared as an Array with no size constraint.
-
-        ShaderStorageBlockVariable(const unsigned int& pShaderProgramHandle, const unsigned int& pVariableIndex);
-        SSBO* mBufferBacking = nullptr;
-
-        virtual void Set(GLState& pGLState, const bool& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const int& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const float& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec2& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec3& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::vec4& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat2& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat3& pValue, const size_t& pArrayIndex = 0) override;
-        virtual void Set(GLState& pGLState, const glm::mat4& pValue, const size_t& pArrayIndex = 0) override;
-    };
-
-    // UniformBlocks are GLSL interface blocks which group UniformVariable's.
-    // UniformBlock's can be buffer-backed using UniformBufferObjects allowing data to be shared across shader-programs.
-    // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
-    // Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
-    // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Uniform_blocks
-    struct UniformBlock
-    {
-        std::string mName           = "";
-        int mBlockIndex             = -1; // Index of the UniformBlock in its parentShader.
-        int mParentShaderHandle     = -1;
-        int mBufferDataSize         = -1; // Size of the block in bytes.
-        int mActiveVariablesCount   = -1; // The number of UniformVariables this block contains.
-
-        std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding UniformBlockBindingPoint
-        std::vector<UniformBlockVariable> mVariables;
-        std::vector<int> mVariableIndices;
-    };
-    // Represents an OpenGLWide index for attatching UBO objects to so their memory can be shared across Shader instances.
-    struct UniformBlockBindingPoint
-    {
-        UniformBlockBindingPoint(GLState& pGLState, UniformBlock& pUniformBlock, const unsigned int& pIndex);
-
-        void BindUniformBlock(UniformBlock& pUniformBlock)
-        {
-            mInstances++;
-
-            for (auto& variable : pUniformBlock.mVariables)
-                variable.mBufferBacking = mUBO;
-        }
-
-        GLData::UBO* mUBO;           // The actual buffer all the GLSL::UniformBlocks bound to this index use.
-        unsigned int mBindingPoint; // The location of this binding point in the parent mUniformBlockBindingPoints vector.
-        std::string mName;          // Name of the GLSL::UniformBlock instances sharing this buffer.
-        size_t mInstances;          // The number of UniformBlock instances using this buffer.
-        std::vector<GLData::UniformBlockVariable> mVariables;  // Copy of the variables inside the UniformBlocks this BindingPoint backs.
-    };
-
-    // ShaderStorageBlock's are GLSL interface blocks which group ShaderStorageBlockVariable's.
-    // ShaderStorageBlock's can be buffer-backed using SSBO's allowing data to be shared across shader-programs.
-    // buffer-backed blocks declared shared can be used with any program that defines a block with the same elements in the same order.
-    // Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
-    // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Shader_storage_blocks
-    // Compared to UniformBlocks ShaderStorageBlocks can store more data, are writable atomically, can have variable storage (array of arbitrary length).
-    // ShaderStorageBlock access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
-    struct ShaderStorageBlock
-    {
-        std::string mName           = "";
-        int mBlockIndex             = -1; // Index of the ShaderStorageBlock in its parentShader.
-        int mParentShaderHandle     = -1;
-        int mBufferDataSize         = -1; // Size of the block in bytes.
-        int mActiveVariablesCount   = -1; // The number of ShaderStorageBlockVariables this block contains.
-
-        bool mShared = false; // Whether the block should be bound to a ShaderStorageBlockBindingPoint matching.
-        std::optional<unsigned int> mBindingPoint; // The binding of the block to a corrresponding ShaderStorageBlockBindingPoint
-        std::vector<ShaderStorageBlockVariable> mVariables;
-        std::vector<int> mVariableIndices;
-    };
-    struct ShaderStorageBlockBindingPoint
-    {
-        ShaderStorageBlockBindingPoint(GLState& pGLState, ShaderStorageBlock& pStorageBlock, const unsigned int pIndex);
-
-        void BindStorageBlock(ShaderStorageBlock& pStorageBlock)
-        {
-            mInstances++;
-
-            for (auto& variable : pStorageBlock.mVariables)
-                variable.mBufferBacking = mSSBO;
-        }
-
-        GLData::SSBO* mSSBO;     // The buffer for all the data used by all the ShaderStorageBlock bound to this point.
-        unsigned int mBindingPoint; // The location of this binding point in the parent mShaderStorageBlockBindingPoints vector.
-        std::string mName;      // Name of the ShaderStorageBlock instances sharing this buffer.
-        size_t mInstances;      // The number of ShaderStorageBlock instances using this buffer.
-        std::vector<GLData::ShaderStorageBlockVariable> mVariables;
-    };
-
-    // Vertex Array Object (VAO)
-    // Stores all of the state needed to supply vertex data. VAO::bind() needs to be called before setting the state using VBO's and EBO's.
-    // It stores the format of the vertex data as well as the Buffer Objects (see below) providing the vertex data arrays.
-    // Note: If you change any of the data in the buffers referenced by an existing VAO (VBO/EBO), those changes will be seen by users of the VAO.
-	struct VAO
-	{
-		void generate();
-		void bind() const;
-		void release();
-		unsigned int getHandle() { return mHandle; };
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-	};
-
-    // Vertex Buffer Object
-    // Buffer storing per-vertex array data.
-    struct VBO : public Buffer
-	{
-        VBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
-            : Buffer(pGLState, GLType::BufferType::ArrayBuffer, pUsage) {}
-        void PushVertexAttributeData(GLState& pGLState, const std::vector<float>& pData, const int& pAttributeIndex, const int& pAttributeSize);
-	};
-    // Element Buffer Object
-    // Buffer storing vertex index data defining which order to draw vertex data stored in a VBO.
-    // EBO's are used only if a mesh uses Indexed drawing.
-	struct EBO : public Buffer
-	{
-        EBO(const GLState& pGLState, const GLType::BufferUsage& pUsage)
-        : Buffer(pGLState, GLType::BufferType::ElementArrayBuffer, pUsage) {}
-    };
-
-    // OpenGL Texture object.
-    // Represents a texture pushed to the GPU.
-    struct Texture
-	{
-        friend struct FBO;
-
-        enum class Type
-        {
-            Texture2D, // Texture target: GL_TEXTURE_2D
-            CubeMap, // Texture target: GL_TEXTURE_CUBE_MAP
-            None
-        };
-        Texture(const Type& pType) : mType(pType) {}
-        Texture() = default;
-
-		void generate();
-		void bind() const;
-        // Pushes the texture data using glTexImage2D.
-        // If pCubeMapIndexOffset is supplied the data is pushed to GL_TEXTURE_CUBE_MAP at index GL_TEXTURE_CUBE_MAP_POSITIVE_X (0) + offset to GL_TEXTURE_CUBE_MAP_NEGATIVE_Z (5).
-        void pushData(const int& pWidth, const int& pHeight, const int& pNumberOfChannels, const unsigned char* pData, const int& pCubeMapIndexOffset = -1);
-		void release();
-		unsigned int getHandle() const { return mHandle; };
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-        Type mType              = Type::None;
-	};
-
-    // Render Buffer Object
-    // RBO's contain images optimized for use as render targets, and are the logical choice when you do not need to sample (i.e. in a post-pass shader) from the produced image.
-    // If you need to resample (such as when reading depth back in a second shader pass), use Texture instead.
-    // RBO's are created and used specifically with Framebuffer Objects (FBO's).
-    struct RBO
-    {
-        void generate();
-		void bind() const;
-        void release();
-		unsigned int getHandle() { return mHandle; };
-	private:
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-    };
-    // Framebuffer object.
-    // Allows creation of user-defined framebuffers that can be rendered to without disturbing the main screen.
-    struct FBO
-    {
-        void generate();
-		void bind(GLState& pGLState) const;
-        void release();
-		unsigned int getHandle() { return mHandle; };
-        Texture& getColourTexture();
-        void clearBuffers();
-
-        void resize(const int& pWidth, const int& pHeight, GLState& pGLState);
-        void attachColourBuffer(const int& pWidth, const int& pHeight, GLState& pGLState);
-        void detachColourBuffer();
-        void attachDepthBuffer(const int& pWidth, const int& pHeight, GLState& pGLState);
-        void detachDepthBuffer();
-	private:
-        std::optional<Texture> mColourAttachment    = std::nullopt;
-        std::optional<RBO> mDepthAttachment         = std::nullopt;
-
-		bool mInitialised 		= false;
-		unsigned int mHandle 	= 0;
-        int mBufferClearBitField = 0; // Bit field sent to OpenGL clear buffers before next draw.
+        buffer_sub_data,
+        bind_buffer_range,
+        uniform_block_binding,
+        shader_storage_block_binding,
+        copy_buffer_sub_data
     };
 }
 
-// Tracks the current GLState and provides helpers to set global GL state using GlTypes.
-class GLState
+// OpenGL functions using the strongly typed enums defined by us.
+namespace OpenGL
 {
-public:
-    GLState();
-    GLState(const GLState&) = delete;
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// GENERAL STATE FUNCTIONS
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    void enable_vertex_attrib_array(GLuint p_index);
-    void vertex_attrib_pointer(GLuint p_index, GLint p_size, GLType::DataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer);
-    void buffer_data(GLType::BufferType p_target, GLsizeiptr p_size, const void* p_data, GLType::BufferUsage p_usage);
-
-
-    // Checks if GLState matches what OpenGL state machine is set to.
-    bool validateState();
-
-    bool getDepthTest() const { return mDepthTest; };
-	void toggleDepthTest(const bool& pDepthTest);
-
-    GLType::DepthTestType getDepthTestType() const { return mDepthTestType; };
-	void setDepthTestType(const GLType::DepthTestType& pType);
-
-	// Specifies if objects with alpha values <1 should be blended using function set with setBlendFunction().
-    void toggleBlending(const bool& pBlend);
+    void set_depth_test(bool p_depth_test);
+	void set_depth_test_type(DepthTestType p_type);
+	// Specifies if objects with alpha values <1 should be blended using function set with set_blend_func().
+    void toggle_blending(bool p_blend);
     // Specifies how the RGBA factors of source and destination are blended to give the final pixel colour when encountering transparent objects.
-    void setBlendFunction(const GLType::BlendFactorType& pSourceFactor, const GLType::BlendFactorType& pDestinationFactor);
-
-    bool getCullFaces() const { return mCullFaces; };
-    // Specifies if facets specified by setFrontFaceOrientation are candidates for culling.
-    void toggleCullFaces(const bool& pCull);
+    void set_blend_func(BlendFactorType p_source_factor, BlendFactorType p_destination_factor);
+    // Specifies if facets specified by set_front_face_orientation are candidates for culling.
+    void toggle_cull_face(bool p_cull);
     // Specifies which facets are candidates for culling.
-    void setCullFacesType(const GLType::CullFacesType& pCullFaceType);
-    // Specifies the orientation of front-facing polygons. Used to mark facets for culling.
-    void setFrontFaceOrientation(const GLType::FrontFaceOrientation& pFrontFaceOrientation);
-
-    // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
-    void setClearColour(const std::array<float, 4>& pColour);
-    // Specifies the red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
-    void setClearColour(const glm::vec4& pColour);
-
+    void set_cull_face_type(CullFacesType p_cull_face_type);
+    // The orientation of front-facing polygons. Used to mark facets for culling.
+    void set_front_face_orientation(FrontFaceOrientation p_front_face_orientation);
+    // The red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
+    void set_clear_colour(const glm::vec4& p_colour);
+    // Set the viewport.
+    // When a GL context is first attached to a window, width and height are set to the dimensions of that window.
+    // The affine transformation of x and y from normalized device coordinates to window coordinates.
+    //@param p_x The lower left x corner of the viewport rectangle, in pixels. The initial value is 0.
+    //@param p_y The lower left y corner of the viewport rectangle, in pixels. The initial value is 0.
+    //@param p_width The width of the viewport.
+    //@param p_height The height of the viewport.
+    void set_viewport(GLint p_x, GLint p_y, GLsizei p_width, GLsizei p_height);
     // Controls the interpretation of polygons for rasterization.
-    // pPolygonMode: Specifies how polygons will be rasterized.
+    // p_polygon_mode: Specifies how polygons will be rasterized.
     // Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
-    void setPolygonMode(const GLType::PolygonMode& pPolygonMode);
-
+    void set_polygon_mode(PolygonMode p_polygon_mode);
     // Selects active texture unit subsequent texture state calls will affect. The number of texture units an implementation supports is implementation dependent, but must be at least 80.
-    void setActiveTextureUnit(const int& pUnitPosition);
+    void set_active_texture(int pUnitPosition);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// DRAW FUNCTIONS
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Render primitives from array data.
-    // drawArrays specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL procedure to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and colors and use them to construct a sequence of primitives with a single call to glDrawArrays.
-    // When drawArrays is called, it uses pArraySize sequential elements from each enabled array to construct a sequence of geometric primitives, beginning with element first. pPrimitiveMode specifies what kind of primitives are constructed and how the array elements construct those primitives.
-    // Vertex attributes that are modified by drawArrays have an unspecified value after drawArrays returns. Attributes that aren't modified remain well defined.
-    void drawArrays(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize);
+    // draw_arrays specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL procedure to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and colors and use them to construct a sequence of primitives with a single call to glDrawArrays.
+    // When draw_arrays is called, it uses p_array_size sequential elements from each enabled array to construct a sequence of geometric primitives, beginning with element first. p_primitive_mode specifies what kind of primitives are constructed and how the array elements construct those primitives.
+    // Vertex attributes that are modified by draw_arrays have an unspecified value after draw_arrays returns. Attributes that aren't modified remain well defined.
+    //@param p_primitive_mode What kind of primitives to render
+    //@param p_first The starting index in the enabled arrays.
+    //@param p_count The number of indices to be rendered.
+    void draw_arrays(PrimitiveMode p_primitive_mode, GLint p_first, GLsizei p_count);
     // Draw multiple instances of a range of elements
-    // drawArraysInstanced behaves identically to drawArrays except that pInstanceCount instances of the range of elements are executed and the value of the internal counter instanceID advances for each iteration.
+    // draw_arrays_instanced behaves identically to draw_arrays except that p_instance_count instances of the range of elements are executed and the value of the internal counter instanceID advances for each iteration.
     // instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
-    void drawArraysInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pArraySize, const int& pInstanceCount);
+    void draw_arrays_instanced(PrimitiveMode p_primitive_mode, int p_array_size, int p_instance_count);
     // Render primitives from array data.
-    // drawElements specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL function to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
-    // When drawElements is called, it uses pElementSize sequential elements from an enabled array, starting at indices to construct a sequence of geometric primitives. pPrimitiveMode specifies what kind of primitives are constructed and how the array elements construct these primitives. If more than one array is enabled, each is used.
-    // Vertex attributes that are modified by drawElements have an unspecified value after drawElements returns. Attributes that aren't modified maintain their previous values.
-    void drawElements(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize);
+    // draw_elements specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL function to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
+    // When draw_elements is called, it uses pElementSize sequential elements from an enabled array, starting at indices to construct a sequence of geometric primitives. p_primitive_mode specifies what kind of primitives are constructed and how the array elements construct these primitives. If more than one array is enabled, each is used.
+    // Vertex attributes that are modified by draw_elements have an unspecified value after draw_elements returns. Attributes that aren't modified maintain their previous values.
+    void draw_elements(PrimitiveMode p_primitive_mode, int pElementsSize);
     // Draw multiple instances of a set of elements.
-    // drawElementsInstanced behaves identically to drawElements except that pInstanceCount of the set of elements are executed and the value of the internal counter instanceID advances for each iteration.
+    // draw_elements_instanced behaves identically to draw_elements except that p_instance_count of the set of elements are executed and the value of the internal counter instanceID advances for each iteration.
     // instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
-    void drawElementsInstanced(const GLType::PrimitiveMode& pPrimitiveMode, const int& pElementsSize, const int& pInstanceCount);
+    void draw_elements_instanced(PrimitiveMode p_primitive_mode, int pElementsSize, int p_instance_count);
 
-    // Bind a FBO to a framebuffer target
-    void bindFramebuffer(const GLType::FramebufferTarget& pFramebufferTargetType, const unsigned int& pFBOHandle);
-    // Unbind any current framebuffer, this binds the default OpenGL framebuffer.
-    void unbindFramebuffer();
-    void checkFramebufferBufferComplete();
-
-    // Generates a Buffer object handle.
-    unsigned int GenBuffers() const;
-    // Bind a named buffer object.
-    void BindBuffer(const GLType::BufferType& pBufferType, const unsigned int& pBufferHandle) const;
-    // Delete named buffer objects.
-    void DeleteBuffer(const unsigned int& pBufferHandle) const;
-
-    // Create a shader object.
-    // Creates an empty shader object and returns a non-zero value by which it can be referenced. A shader object is used to maintain the source code strings that define a shader.
-    // Like buffer and texture objects, the name space for shader objects may be shared across a set of contexts, as long as the server sides of the contexts share the same address space.
-    // If the name space is shared across contexts, any attached objects and the data associated with those attached objects are shared as well.
-    unsigned int CreateShader(const GLType::ShaderProgramType& pProgramType);
-
-    // Replaces the source code in a shader object
-    // Any source code previously stored in the shader object is completely replaced.
-    // The source code strings are not scanned or parsed at this time; they are simply copied into the specified shader object.
-    void ShaderSource(const unsigned int& pShaderHandle, const std::string& pShaderSource);
-
-    // Compiles a shader object
-    void CompileShader(const unsigned int& pShaderHandle);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// SHADER FUNCTIONS
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Creates an empty program object and returns a non-zero value by which it can be referenced.
     // A program object is an object to which shader objects can be attached. This provides a mechanism to specify the shader objects that will be linked to create a program.
     // It also provides a means for checking the compatibility of the shaders that will be used to create a program (for instance, checking the compatibility between a vertex shader and a fragment shader).
     // When no longer needed as part of a program object, shader objects can be detached.
-    unsigned int CreateProgram();
-
+    GLHandle create_program();
+    // Deletes a program object and frees the memory.
+    // Invalidates the p_shader_program associated with the program object.
+    // This command effectively undoes the effects of a call to create_program.
+    // If a program object is in use as part of current rendering state, it will be flagged for deletion, but it will not be deleted until it is no longer part of current state for any rendering context.
+    // If a program object to be deleted has shader objects attached to it, those shader objects will be automatically detached but not deleted unless they have already been flagged for deletion by a previous call to delete_shader.
+    // To determine whether a program object has been flagged for deletion, call glGetProgram with arguments program and GL_DELETE_STATUS.
+    //@param p_shader_program Shader program object to be deleted. A value of 0 will be silently ignored.
+    void delete_program(GLHandle p_shader_program);
+    // Installs a program object as part of current rendering state
+    // While a program object is in use, applications are free to modify attached shader objects, compile attached shader objects, attach additional shader objects, and detach or delete shader objects.
+    // None of these operations will affect the executables that are part of the current state.
+    // However, relinking the program object that is currently in use will install the program object as part of the current rendering state if the link operation was successful (glLinkProgram).
+    // If the program object currently in use is relinked unsuccessfully, its link status will be set to GL_FALSE, but the executables and associated state will remain part of the current state until a subsequent call to glUseProgram removes it from use.
+    // After it is removed from use, it cannot be made part of current state until it has been successfully relinked.
+    void use_program(GLHandle p_shader_program);
     // Attaches a shader object to a program object
     // Shaders that are to be linked together in a program object must first be attached to that program object.
     // All operations that can be performed on a shader object are valid whether or not the shader object is attached to a program object.
@@ -779,8 +361,7 @@ public:
     // It is permissible to attach multiple shader objects of the same type because each may contain a portion of the complete shader.
     // It is also permissible to attach a shader object to more than one program object.
     // If a shader object is deleted while it is attached to a program object, it will be flagged for deletion, and deletion will not occur until DetachShader is called to detach it from all program objects to which it is attached.
-    void AttachShader(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderHandle);
-
+    void attach_shader(GLHandle p_shader_program, GLHandle p_shader);
     // Links a program object
     // As a result of a successful link operation, all active user-defined uniform variables belonging to program will be initialized to 0
     // The active uniform variables will be assigned a location that can be queried using GL program introspection.
@@ -788,173 +369,264 @@ public:
     // When a program object has been successfully linked, the program object can be made part of current state by calling glUseProgram
     // If the program object currently in use is relinked unsuccessfully the executables and associated state will remain part of the current state until a
     // subsequent call to glUseProgram removes it from use. After it is removed from use, it cannot be made part of current state until it has been successfully relinked.
-    void LinkProgram(const unsigned int& pShaderProgramHandle);
-
-    // Deletes a shader object
-    // Frees the memory and invalidates the name associated with the shader object specified by shader.
-    // This command effectively undoes the effects of a call to glCreateShader.
-    // If a shader object to be deleted is attached to a program object, it will be flagged for deletion, but it will
-    // not be deleted until it is no longer attached to any program object, for any rendering context (i.e. it must be
-    // detached from wherever it was attached before it will be deleted).
-    // A value of 0 for shader will be silently ignored.
+    void link_program(GLHandle p_shader_program);
+    // Creates an empty shader object and returns a non-zero value by which it can be referenced. A shader object is used to maintain the source code strings that define a shader.
+    // Like buffer and texture objects, the name space for shader objects may be shared across a set of contexts, as long as the server sides of the contexts share the same address space.
+    // If the name space is shared across contexts, any attached objects and the data associated with those attached objects are shared as well.
+    GLHandle create_shader(ShaderProgramType p_program_type);
+    // Deletes a shader object and frees the memory and invalidates the name associated with the shader object.
+    // This command effectively undoes the effects of a call to create_shader.
+    // If a shader object to be deleted is attached to a program object, it will be flagged for deletion, but it will not be deleted until it is no longer
+    // attached to any program object, for any rendering context (i.e. it must be detached from wherever it was attached before it will be deleted).
     // To determine whether an object has been flagged for deletion, call glGetShader with arguments shader and GL_DELETE_STATUS.
-    void DeleteShader(const unsigned int& pShaderHandle);
+    //@param p_shader Shader object to be deleted. A value of 0 for shader will be silently ignored.
+    void delete_shader(GLHandle p_shader);
+    // Replaces the source code in a shader object
+    // Any source code previously stored in the shader object is completely replaced.
+    // The source code strings are not scanned or parsed at this time; they are simply copied into the specified shader object.
+    //@param p_shader Shader object to be compiled.
+    //@param p_shader_source Souce code for the shader program.
+    void shader_source(GLHandle p_shader, const std::string& p_shader_source);
+    // Compiles the source code strings that have been stored in the shader object specified by p_shader.
+    // The compilation status will be stored as part of the shader object's state.
+    //@param p_shader Shader object to be compiled.
+    void compile_shader(GLHandle p_shader);
+    // Returns the location of a uniform variable.
+    // p_name must be:
+    //     - a null terminated string that contains no white space.
+    //     - an active uniform variable in p_shader_program that is not a structure, an array of structures, or a subcomponent of a vector or a matrix.
+    // This function returns -1 if p_name does not correspond to an active uniform variable in program, if p_name starts with the reserved prefix "gl_", or if p_name is associated with an atomic counter or a named uniform block.
+    // The actual locations assigned to uniform variables are not known until the program object is linked successfully (link_program).
+    // Uniform variables that are structures or arrays of structures may be queried by calling get_uniform_location for each field within the structure.
+    // The array element operator "[]" and the structure field operator "." may be used in p_name in order to select elements within an array or fields within a structure.
+    // The result of using these operators is not allowed to be another structure, an array of structures, or a subcomponent of a vector or a matrix.
+    // Except if the last part of name indicates a uniform variable array, the location of the first element of an array can be retrieved by using the name of the array, or by using the name appended by "[0]".
+    //@param p_shader_program Shader program object to be queried.
+    //@param p_name Null terminated string containing the name of the uniform variable whose location is to be queried.
+    //@return Integer that represents the location of a specific uniform variable within a program object or -1 if p_name is not an active uniform variable in p_shader_program.
+    GLint get_uniform_location(GLHandle p_shader_program, const char* p_name);
+    // Get the number of active uniforms variables within p_shader_program.
+    // Any uniform variables optimised away will not be counted. p_shader_program must be linked before calling get_uniform_count.
+    //@param p_shader_program Shader program to query.
+    GLint get_uniform_count(GLHandle p_shader_program);
+    // Get the number of active uniform buffer block objects (UBO) within p_shader_program.
+    // Any uniform blocks optimised away will not be counted. p_shader_program must be linked before calling get_uniform_block_count.
+    //@param p_shader_program Shader program to query.
+    GLint get_uniform_block_count(GLHandle p_shader_program);
+    // Get the number of active shader storage block objects (SSBO) within p_shader_program.
+    // Any uniform blocks optimised away will not be counted. p_shader_program must be linked before calling get_shader_storage_block_count.
+    //@param p_shader_program Shader program to query.
+    GLint get_shader_storage_block_count(GLHandle p_shader_program);
+    // Get the number of UniformBlock/UBO binding points available.
+    GLint get_max_uniform_binding_points();
+    // Get the number of ShaderStorageBlock/SSBO binding points available.
+    GLint get_max_shader_storage_binding_points();
+    // Get the max size in bytes a UniformBlock can have.
+    GLint get_max_uniform_block_size();
+    // Returns the shader program object that is currently active, or 0 if no program object is active.
+    GLHandle get_current_shader_program();
 
-    // Installs a program object as part of current rendering state
-    // While a program object is in use, applications are free to modify attached shader objects, compile attached shader objects, attach additional shader objects, and detach or delete shader objects.
-    // None of these operations will affect the executables that are part of the current state.
-    // However, relinking the program object that is currently in use will install the program object as part of the current rendering state if the link operation was successful (glLinkProgram).
-    // If the program object currently in use is relinked unsuccessfully, its link status will be set to GL_FALSE, but the executables and associated state will remain part of the current state until a subsequent call to glUseProgram removes it from use.
-    // After it is removed from use, it cannot be made part of current state until it has been successfully relinked.
-    void UseProgram(const unsigned int& pShaderProgramHandle);
+    // Assign a binding point to an active uniform block.
+    // Each of a program's active uniform blocks has a corresponding uniform buffer binding point.
+    // If successful, specifies that p_shader_program will use the data store of the buffer object bound to p_uniform_block_binding to extract the values of the uniforms in the uniform block identified by p_uniform_block_index.
+    //@param p_shader_program Shader program object containing the active UniformBlock whose binding to assign.
+    //@param p_uniform_block_index Index of the active UniformBlock within program whose binding to assign.
+    //@param p_uniform_block_binding Binding point to which to bind the UniformBlock with index p_uniform_block_index within program.
+    void uniform_block_binding(GLHandle p_shader_program, GLuint p_uniform_block_index, GLuint p_uniform_block_binding);
+    // Change an active shader storage block binding.
+    // Changes the active shader storage block with an assigned index of p_storage_block_index in p_shader_program.
+    // If successful, specifies that p_shader_program will use the data store of the buffer object bound to the binding point p_storage_block_binding to read and write the values of the buffer variables in the shader storage block identified by p_storage_block_index.
+    //@param p_shader_program Shader program containing the block whose binding to change.
+    //@param p_storage_block_index Index storage block within the program. Must be an active shader storage block index in program
+    //@param p_storage_block_binding Index storage block binding to associate with the specified storage block. Must be less than the value of GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS.
+    void shader_storage_block_binding(GLHandle p_shader_program, GLuint p_storage_block_index, GLuint p_storage_block_binding);
 
-    // Set the global viewport
-    // Specify the width and height of the viewport. When a context is first attached to a window, width and height are set to the dimensions of that window.
-    // The viewport specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
-    // Let x nd y nd be normalized device coordinates. Then the window coordinates x w y w are computed as follows:
-    // x w = x nd + 1 ⁢ width 2 + x
-    // y w = y nd + 1 ⁢ height 2 + y
-    void setViewport(const int& pWidth, const int& pHeight);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// DATA/BUFFER FUNCTIONS
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // Enables the generic vertex attribute array specified by p_index.
+    // If enabled, the values in the generic vertex attribute array will be accessed and used for rendering when calls are made to vertex array commands such as draw_arrays, draw_elements.
+    // By default, all client-side capabilities are disabled, including all generic vertex attribute arrays.
+    //@param p_index The generic vertex attribute to be enabled.
+    void enable_vertex_attrib_array(GLuint p_index);
+    // Disables the generic vertex attribute array specified by p_index.
+    // If disabled, the values in the generic vertex attribute array won't be accessed and used for rendering when calls are made to vertex array commands such as draw_arrays, draw_elements.
+    // By default, all client-side capabilities are disabled, including all generic vertex attribute arrays.
+    //@param p_index Index of the generic vertex attribute to be disabled.
+    void disable_vertex_attrib_array(GLuint p_index);
+    // Specify the location and data format of the array of generic vertex attributes at index p_index to use when rendering.
+    //@param p_index Index of the generic vertex attribute to be modified.
+    //@param p_size Number of components per attribute and must be 1, 2, 3, 4, or GL_BGRA.
+    //@param p_type Data type of each component,
+    //@param p_normalized Indicates that values stored in an integer format are to be mapped to the range [-1,1] (for signed values) or [0,1] (for unsigned values) when they are accessed
+    // and converted to floating point. Otherwise, values will be converted to floats directly without normalization.
+    //@param p_stride Byte stride from one attribute to the next, allowing vertices and attributes to be packed into a single array or stored in separate arrays.
+    //@param p_pointer Offset of the first component of the first generic vertex attribute in the array in the data store of the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
+    void vertex_attrib_pointer(GLuint p_index, GLint p_size, DataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer);
     // Creates and initializes a buffer object's data store. The Buffer currently bound to target is used.
     // While creating the new storage, any pre-existing data store is deleted. The new data store is created with the specified size in bytes and usage.
-    // If data is not NULL, the data store is initialized with data from this pointer. In its initial state, the new data store is not mapped, it has a NULL mapped pointer, and its mapped access is GL_READ_WRITE.
-    // pBufferUsage is a hint to the GL implementation as to how a buffer object's data store will be accessed. This enables the OpenGL to make more intelligent decisions that may significantly impact buffer performance.
+    // When replacing the entire data store, consider using buffer_sub_data rather than completely recreating the data store with buffer_data. This avoids the cost of reallocating the data store.
+    // If p_data is not NULL, the data store is initialized with data from this pointer. In its initial state, the new data store is not mapped, it has a NULL mapped pointer, and its mapped access is GL_READ_WRITE.
     // It does not, however, constrain the actual usage of the data store.
-    // If pData is NULL, a data store of the specified size is still created, but its contents remain uninitialized and thus undefined.
-    // Clients must align data elements consistently with the requirements of the client platform, with an additional base-level requirement:
-    // an offset within a buffer to a datum comprising N bytes be a multiple of N.
+    // If p_data is NULL, a data store of the specified size is still created, but its contents remain uninitialized and thus undefined.
+    // Clients must align data elements consistently with the requirements of the client platform, with an additional base-level requirement: an offset within a buffer to a datum comprising N bytes be a multiple of N.
     // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
-    void BufferData(const GLType::BufferType& pBufferType, const size_t& pSizeInBytes, const void* pData, const GLType::BufferUsage& pBufferUsage);
-
+    //@param p_target Target to which the buffer object being buffered to is bound.
+    //@param p_size Size in bytes of the buffer object's new data store.
+    //@param p_data Pointer to data that will be copied into the data store for initialization, or NULL if no data is to be copied.
+    //@param p_usage Hint to the GL implementation on how a buffer will be accessed. This enables OpenGL to make more intelligent decisions that may impact buffer performance.
+    void buffer_data(BufferType p_target, GLsizeiptr p_size, const void* p_data, BufferUsage p_usage);
     // Update a subset of a Buffer object's data store.
-    // Data starting at byte pOffset offset and extending for size pSizeInBytes is copied to the data store from the memory pointed to by data.
-    // pOffset and pSizeInBytes must define a range lying entirely within the buffer object's data store.
-    void BufferSubData(const GLType::BufferType& pBufferType, const size_t& pOffset, const size_t& pSizeInBytes, const void* pData);
-
+    // Redefines some or all of the data store for the buffer object currently bound to p_target.
+    // Data starting at byte offset p_offset and extending for p_size bytes is copied to the data store from the memory pointed to by p_data.
+    // An error is thrown if offset and size together define a range beyond the bounds of the buffer object's data store.
+    //@param p_target Target to which the buffer object being buffered to is bound.
+    //@param p_offset Offset into the buffer object's data store where data replacement will begin, measured in bytes.
+    //@param p_size Size in bytes of the data store region being replaced.
+    //@param p_data Pointer to the new data that will be copied into the data store.
+    void buffer_sub_data(BufferType p_target, GLintptr p_offset, GLsizeiptr p_size, const void* p_data);
     // Copy all or part of the data store of a buffer object to the data store of another buffer object.
-    // pSize is copied from the source buffer at pSourceOffset to the destination buffer at pDestinationOffset. pSourceOffset, pDestinationOffset and pSize are in terms of basic machine units.
-    // Any of the BufferType targets may be used, but the targets CopyReadBuffer and CopyWriteBuffer are provided specifically to allow copies between buffers without disturbing other GL state.
-    // If the source and destination are the same buffer object, then the source and destination ranges must not overlap.
-    // OpenGL 4.6 - Replace with bindless
-    void CopyBufferSubData(const GLType::BufferType& pSourceTarget, const GLType::BufferType& pDestinationTarget, const long long int& pSourceOffset, const long long int& pDestinationOffset, const long long int& pSize);
+    // Copy part of the data store attached to p_source_target to the data store attached to p_destination_target.
+    // The number of basic machine units indicated by p_size is copied from the p_source_target at p_source_offset to p_destination_target at p_destination_offset.
+    //@param p_source_target Target to which the source buffer object is bound.
+    //@param p_destination_target Target to which the destination buffer object is bound.
+    //@param p_source_offset Offset, in basic machine units, within the data store of p_source_target at which data will be read.
+    //@param p_destination_offset Offset, in basic machine units, within the data store of p_destination_target at which data will be written.
+    //@param p_size Size, in basic machine units, of the data to be copied from the p_source_offset to p_destination_target.
+    void copy_buffer_sub_data(BufferType p_source_target, BufferType p_destination_target, GLintptr p_source_offset, GLintptr p_destination_offset, GLsizeiptr p_size);
+    // Bind a range within a buffer object to an indexed buffer target.
+    // Binds the range of the p_buffer represented by p_offset and p_size, to the binding point at p_index of the array of targets specified by p_target.
+    // Each p_target represents an indexed array of buffer binding points, as well as a single general binding point that can be used by other buffer manipulation functions such as bind_buffer or map_buffer.
+    // In addition to binding a range of buffer to the indexed buffer binding target, bind_buffer_range also binds the range to the generic buffer binding point specified by target.
+    // Calling bind_buffer_range with p_offset 0 and p_size equal to the size of the p_target buffer is equivalent to bind_buffer_base.
+    //@param p_target Specify Target of the bind operation. target must be one of AtomicCounterBuffer, TransformFeedbackBuffer, UniformBuffer, or ShaderStorageBuffer.
+    //@param p_index Index of the binding point within the array specified by target.
+    //@param p_buffer Name of a p_buffer object to bind to the specified binding point.
+    //@param p_offset Starting offset in basic machine units into the p_buffer object buffer.
+    //@param p_size Amount of data in machine units that can be read from the p_buffer object while used as an indexed target.
+    void bind_buffer_range(BufferType p_target, GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
+}
 
-    // Bind a range within a buffer object to an indexed buffer target
-    // BufferType must be one of UniformBuffer, ShaderStorageBuffer, AtomicCounterBuffer or TransformFeedbackBuffer
-    // The range bound starts at pOffset
-    void BindBufferRange(const GLType::BufferType& pType, const unsigned int& pBufferHandle, const unsigned int& pBindingPoint, const unsigned int& pOffset, const size_t& pBindSizeInBytes);
+// Remainder are conversion functions for GLEnum wrappers to
+namespace OpenGL
+{
+    const char* get_name(Function p_function);
+    const char* get_name(ShaderProgramType p_shader_program_type);
+    const char* get_name(DataType p_data_type);
+    const char* get_name(GLSLVariableType p_variable_type);
+    const char* get_name(BufferType p_buffer_type);
+    const char* get_name(BufferUsage p_buffer_usage);
+    const char* get_name(ShaderResourceType p_resource_type);
+    const char* get_name(ShaderResourceProperty p_shader_resource_property);
+    const char* get_name(DepthTestType p_depth_test_type);
+    const char* get_name(BlendFactorType p_blend_factor_type);
+    const char* get_name(CullFacesType p_cull_faces_type);
+    const char* get_name(FrontFaceOrientation p_front_face_orientation);
+    const char* get_name(PolygonMode p_polygon_mode);
+    const char* get_name(PrimitiveMode p_primitive_mode);
+    const char* get_name(FramebufferTarget p_framebuffer_target);
+    const char* get_name(ErrorType p_error_type);
 
-    void UniformBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint);
-    void ShaderStorageBlockBinding(const unsigned int& pShaderHandle, const unsigned int& pUniformBlockIndexShader, const unsigned int& pBindingPoint);
-
-    int getActiveUniformCount(const unsigned int& pShaderProgramHandle) const;
-    int getActiveUniformBlockCount(const unsigned int& pShaderProgramHandle) const;
-    GLData::UniformBlock getUniformBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pUniformBlockIndex) const;
-    // Assign a binding point to a UniformBlock.
-    // This makes the UniformBlock buffer-backed allowing UniformVariables belonging to the block to be set using setUniformBlockVariable.
-    void RegisterUniformBlock(GLData::UniformBlock& pUniformBlock);
-
-    int getShaderStorageBlockCount(const unsigned int& pShaderProgramHandle) const;
-    GLData::ShaderStorageBlock getShaderStorageBlock(const unsigned int& pShaderProgramHandle, const unsigned int& pShaderBufferBlockIndex) const;
-    // Assign a binding point to a ShaderStorageBlock
-    // This makes the ShaderStorageBlock buffer-backed allowing variables belonging to the block to be set using setBufferBlockVariable.
-    void RegisterShaderStorageBlock(GLData::ShaderStorageBlock& pShaderStorageBlock);
-
-    // #GLHelperFunction
-    template<class T>
-    void setUniformBlockVariable(const std::string& pName, const T& pValue)
+    // Convert a GLEnum value to the DataType wrapper.
+    DataType convert(int p_data_type);
+    // Assert the OpenGL p_type and type T match up. Used to runtime assert the DataType of variables matches the templated set functions.
+    template <typename T>
+    constexpr bool assert_type(DataType p_type)
     {
-       for (auto& bindingPoint : mUniformBlockBindingPoints)
-       {
-           const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::UniformBlockVariable& pVariable)
-           {
-               return pVariable.mName == pName;
-           });
-
-           if (foundVariable != std::end(bindingPoint.mVariables))
-           {
-               ASSERT(bindingPoint.mUBO == (*foundVariable).mBufferBacking , "Variable buffer backing doesnt match the binding point assigned to the parent UniformBlock. Check the RegisterUniformBlock function.");
-               ASSERT((*foundVariable).mBufferBacking != nullptr, "Setting a UniformBlockVariable with no Buffer backing.");
-               bindingPoint.mUBO->Bind(*this);
-               (*foundVariable).Set(*this, pValue);
-               return;
-           }
-       }
-
-       ASSERT(false, "No uniform block variable found with name '{}'", pName);
+        switch (p_type)
+        {
+            case DataType::Float:                return std::is_same_v<T, float>;
+            case DataType::Double:               return std::is_same_v<T, double>;
+            case DataType::Int:                  return std::is_same_v<T, int>;
+            case DataType::UnsignedInt:          return std::is_same_v<T, unsigned int>;
+            case DataType::Bool:                 return std::is_same_v<T, bool>;
+            case DataType::Sampler2D:            return false; // Setting texture sampler types uses int to set their bound texture unit. The actual texture being sampled is set by setting active an texture unit and using bindTexture.
+            case DataType::SamplerCube:          return false;
+            case DataType::Vec2:                 return std::is_same_v<T, glm::vec2>;
+            case DataType::Vec3:                 return std::is_same_v<T, glm::vec3>;
+            case DataType::Vec4:                 return std::is_same_v<T, glm::vec4>;
+            case DataType::DVec2:                return std::is_same_v<T, glm::dvec2>;
+            case DataType::DVec3:                return std::is_same_v<T, glm::dvec3>;
+            case DataType::DVec4:                return std::is_same_v<T, glm::dvec4>;
+            case DataType::IVec2:                return std::is_same_v<T, glm::ivec2>;
+            case DataType::IVec3:                return std::is_same_v<T, glm::ivec3>;
+            case DataType::IVec4:                return std::is_same_v<T, glm::ivec4>;
+            case DataType::UVec2:                return std::is_same_v<T, glm::uvec2>;
+            case DataType::UVec3:                return std::is_same_v<T, glm::uvec3>;
+            case DataType::UVec4:                return std::is_same_v<T, glm::uvec4>;
+            case DataType::BVec2:                return std::is_same_v<T, glm::bvec2>;
+            case DataType::BVec3:                return std::is_same_v<T, glm::bvec3>;
+            case DataType::BVec4:                return std::is_same_v<T, glm::bvec4>;
+            case DataType::Mat2:                 return std::is_same_v<T, glm::mat2>;
+            case DataType::Mat3:                 return std::is_same_v<T, glm::mat3>;
+            case DataType::Mat4:                 return std::is_same_v<T, glm::mat4>;
+            case DataType::Mat2x3:               return std::is_same_v<T, glm::mat2x3>;
+            case DataType::Mat2x4:               return std::is_same_v<T, glm::mat2x4>;
+            case DataType::Mat3x2:               return std::is_same_v<T, glm::mat3x2>;
+            case DataType::Mat3x4:               return std::is_same_v<T, glm::mat3x4>;
+            case DataType::Mat4x2:               return std::is_same_v<T, glm::mat4x2>;
+            case DataType::Mat4x3:               return std::is_same_v<T, glm::mat4x3>;
+            case DataType::Dmat2:                return std::is_same_v<T, glm::dmat2>;
+            case DataType::Dmat3:                return std::is_same_v<T, glm::dmat3>;
+            case DataType::Dmat4:                return std::is_same_v<T, glm::dmat4>;
+            case DataType::Dmat2x3:              return std::is_same_v<T, glm::dmat2x3>;
+            case DataType::Dmat2x4:              return std::is_same_v<T, glm::dmat2x4>;
+            case DataType::Dmat3x2:              return std::is_same_v<T, glm::dmat3x2>;
+            case DataType::Dmat3x4:              return std::is_same_v<T, glm::dmat3x4>;
+            case DataType::Dmat4x2:              return std::is_same_v<T, glm::dmat4x2>;
+            case DataType::Dmat4x3:              return std::is_same_v<T, glm::dmat4x3>;
+            case DataType::Sampler1D:            return false; // Remaining types have not been implemented.
+            case DataType::Sampler3D:            return false;
+            case DataType::Sampler1DShadow:      return false;
+            case DataType::Sampler2DShadow:      return false;
+            case DataType::Sampler1DArray:       return false;
+            case DataType::Sampler2DArray:       return false;
+            case DataType::Sampler1DArrayShadow: return false;
+            case DataType::Sampler2DArrayShadow: return false;
+            case DataType::Sampler2DMS:          return false;
+            case DataType::Sampler2DMSArray:     return false;
+            case DataType::SamplerCubeShadow:    return false;
+            case DataType::SamplerBuffer:        return false;
+            case DataType::Sampler2DRect:        return false;
+            case DataType::Sampler2DRectShadow:  return false;
+            case DataType::Isampler1D:           return false;
+            case DataType::Isampler2D:           return false;
+            case DataType::Isampler3D:           return false;
+            case DataType::IsamplerCube:         return false;
+            case DataType::Isampler1DArray:      return false;
+            case DataType::Isampler2DArray:      return false;
+            case DataType::Isampler2DMS:         return false;
+            case DataType::Isampler2DMSArray:    return false;
+            case DataType::IsamplerBuffer:       return false;
+            case DataType::Isampler2DRect:       return false;
+            case DataType::Usampler1D:           return false;
+            case DataType::Usampler2D:           return false;
+            case DataType::Usampler3D:           return false;
+            case DataType::UsamplerCube:         return false;
+            case DataType::Usampler2DArray:      return false;
+            case DataType::Usampler2DMS:         return false;
+            case DataType::Usampler2DMSArray:    return false;
+            case DataType::UsamplerBuffer:       return false;
+            case DataType::Usampler2DRect:       return false;
+            case DataType::Unknown:              return false;
+            default:                             return false;
+        }
     }
 
-    // #GLHelperFunction
-    template<class T>
-    void setShaderStorageBlockVariable(const std::string& pName, const T& pValue)
-    {
-       for (auto& bindingPoint : mShaderStorageBlockBindingPoints)
-       {
-           const auto foundVariable = std::find_if(std::begin(bindingPoint.mVariables), std::end(bindingPoint.mVariables), [&pName](const GLData::ShaderStorageBlockVariable& pVariable)
-           {
-               return pVariable.mName == pName;
-           });
 
-           if (foundVariable != std::end(bindingPoint.mVariables))
-           {
-               ASSERT(bindingPoint.mSSBO == (*foundVariable).mBufferBacking , "Variable buffer backing doesnt match the binding point assigned to the parent ShaderStorageBlock. Check the RegisterShaderStorageBlock function.");
-               ASSERT((*foundVariable).mBufferBacking != nullptr, "Setting a ShaderStorageBlockVariable with no Buffer backing.");
-               bindingPoint.mSSBO->Bind(*this);
-               (*foundVariable).Set(*this, pValue);
-               return;
-           }
-       }
-
-       ASSERT(false, "No shader storage block variable found with name '{}'", pName)
-    }
-
-    // GLState acts as a factory for Buffers allowing single responsibility and access to memory that does not move.
-
-    GLData::UBO* const CreateUBO(const GLType::BufferUsage& pBufferUsage)
-    {
-        mUBOs.emplace_back(new GLData::UBO(*this, pBufferUsage));
-        return mUBOs.back().get();
-    }
-    GLData::SSBO* const CreateSSBO(const GLType::BufferUsage& pBufferUsage)
-    {
-        mSSBOs.emplace_back(new GLData::SSBO(*this, pBufferUsage));
-        return mSSBOs.back().get();
-    }
-
-private:
-	bool mDepthTest;
-	GLType::DepthTestType mDepthTestType;
-
-    bool mBlend;
-    GLType::BlendFactorType mSourceBlendFactor;
-    GLType::BlendFactorType mDestinationBlendFactor;
-
-    bool mCullFaces;
-    GLType::CullFacesType mCullFacesType;
-    GLType::FrontFaceOrientation mFrontFaceOrientation;
-
-    std::array<float, 4> mWindowClearColour;
-    GLType::PolygonMode mPolygonMode;
-
-    int mActiveTextureUnit;
-    unsigned int mActiveFramebuffer;
-
-    // Index data:
-    // 0: Position X (0,0 = bottom-left)
-    // 1: Position Y (0,0 = bottom-left)
-    // 2: Size X
-    // 3: Size Y
-    std::array<int, 4> mViewport;
-
-    std::vector<GLData::UniformBlockBindingPoint> mUniformBlockBindingPoints;
-    std::vector<GLData::ShaderStorageBlockBindingPoint> mShaderStorageBlockBindingPoints;
-
-
-    // Buffers are referened in many areas of GLState and OpenGLRenderer, therefore they must exist in a permanent memory location to not break these references.
-    std::vector<std::unique_ptr<GLData::UBO>> mUBOs;
-    std::vector<std::unique_ptr<GLData::SSBO>> mSSBOs;
-
-    std::optional<std::vector<std::string>> GetErrorMessagesOverride(const GLType::Function& pCallingFunction, const GLType::ErrorType& pErrorType) const;
-    std::string getErrorMessage() const;
-    std::string getErrorMessage(const GLType::Function& pCallingFunction) const;
-};
+    int convert(ShaderProgramType p_shader_program_type);
+    int convert(DataType p_data_type);
+    int convert(GLSLVariableType p_variable_type);
+    int convert(BufferType p_buffer_type);
+    int convert(BufferUsage p_buffer_usage);
+    int convert(ShaderResourceType p_resource_type);
+    int convert(ShaderResourceProperty p_shader_resource_property);
+    int convert(DepthTestType p_depth_test_type);
+    int convert(BlendFactorType p_blend_factor_type);
+    int convert(CullFacesType p_cull_faces_type);
+    int convert(FrontFaceOrientation p_front_face_orientation);
+    int convert(PolygonMode p_polygon_mode);
+    int convert(PrimitiveMode p_primitive_mode);
+    int convert(FramebufferTarget p_framebuffer_target);
+}

@@ -1,106 +1,84 @@
 #pragma once
 
-#include <algorithm>
-#include <set>
-#include <string>
-
 #include "GLState.hpp"
+#include "Types.hpp"
+
+#include "Logger.hpp"
+
+#include <string>
+#include <vector>
 
 namespace OpenGL
 {
     // Handles the loading of GLSL shaders from file.
-    // Provides functions to set GLSL uniform variables.
-    // Provides functions to find the locations of vertex attributes and their descriptions.
+    // Provides set_uniform for setting the GLSL uniform variables.
+    // m_vertex_attributes stores the VertexAttributes the shader depends on.
     class Shader
     {
-    public:
-        // These are per-vertex attributes found in GLSL shaders.
-        // Each attribute must be named the same in the GLSL files. getAttributeName() returns the expected string in the shader.
-        // Each attribute must be in the same location in all shaders, specified as "layout (location = X)"". getAttributeLocation() returns the location X.
-        enum class Attribute : uint8_t
-        {
-            Position3D,
-            Normal3D,
-            ColourRGB,
-            TextureCoordinate2D,
-            Count
-        };
-        // Returns the number of components the specified attribute consists of.
-        // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)
-        static int get_attribute_component_count(Attribute p_attribute);
-        // Returns the location of a specified attribute type.
-        // All shaders repeat the same attribute layout positions so this is a static function.
-        // Specified as "layout (location = X)" in GLSL shaders.
-        static int get_attribute_index(Attribute p_attribute);
-        // Returns the stride of the attribute i.e. the sizeof.
-        static int get_attribute_stride(Attribute p_attribute);
-        // The data type of each component in the attribute. e.g. vec3=GL_FLOAT, int=GL_INT
-        static GLType::DataType get_attribute_type(Attribute p_attribute);
-        // Returns the attribute as a string matching the naming used within GLSL shaders.
-        // e.g. All vertex position attributes will use the identifier "VertexPosition"
-        static std::string get_attribute_identifier(Attribute p_attribute);
+        static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
 
+        std::string m_name;
+        GLHandle m_handle;
+        int m_texture_units; // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
+        int m_shader_storage_block_count;
 
+        std::vector<VertexAttribute> m_vertex_attributes; // List vertex attributes shader program depends on.
+        std::vector<UniformBlock> m_uniform_blocks;       // Uniform variables that exist as part of UniformBlock objects. Setting affects all Shader programs using the UniformBlock.
+        std::vector<UniformBlockVariable> m_uniforms;     // Loose uniforms, setting these is per shader program.
 
-        Shader(const std::string& pName, GLState& pGLState);
-        const std::string& getName() const { return mName; };
-        bool isInstanced() const { return mIsInstanced; };
-        const int& getTexturesUnitsCount() const { return mTextureUnits; };
-
-        void use(GLState& pGLState) const; // Set this shader as the currently active one in OpenGL state. Necessary to call before setUniform.
-
-        template <class T>
-        void setUniform(GLState& pGLState, const std::string& pVariableName, const T& pValue)
-        {
-            auto variable = std::find_if(std::begin(mUniformVariables), std::end(mUniformVariables),
-                                          [&pVariableName](const GLData::UniformVariable& pVariable)
-                                          { return pVariable.mName.value() == pVariableName; });
-
-            if (variable != std::end(mUniformVariables))
-            {
-                use(pGLState); // #Optimisation - Only perform this use() once when setting a series of variables on one shader.
-                variable->Set(pGLState, pValue);
-                return;
-            }
-            else
-                ASSERT(false, "Uniform variable '{}' not found in shader '{}'", pVariableName, mName);
-        }
-
-        GLData::ShaderStorageBlockVariable* getShaderBlockVariable(const std::string& pVariableName)
-        {
-            for (auto& shaderBlock : mShaderBufferBlocks)
-            {
-                auto variable = std::find_if(std::begin(shaderBlock.mVariables), std::end(shaderBlock.mVariables),
-                                              [&pVariableName](const GLData::ShaderStorageBlockVariable& pVariable)
-                                              { return pVariable.mName.value() == pVariableName; });
-
-                if (variable != shaderBlock.mVariables.end())
-                    return &(*variable);
-            }
-
-            ASSERT(false, "ShaderStorageBlockVariable '{}' not found in shader '{}'", pVariableName, mName);
-            return nullptr;
-        }
-
-
-    private:
         // Search source code for any per-vertex attributes a Mesh will require to be drawn by this shader.
-        void scanForAttributes(const std::string& pSourceCode);
+        void scanForAttributes(const std::string& p_source_code);
+        // Implementations to set the uniform variables belonging to this shader.
+        // The client facing set_uniform is templated and calls one of these.
+        void set_uniform(GLint p_location, bool p_value);
+        void set_uniform(GLint p_location, int p_value);
+        void set_uniform(GLint p_location, float p_value);
+        void set_uniform(GLint p_location, const glm::vec2& p_value);
+        void set_uniform(GLint p_location, const glm::vec3& p_value);
+        void set_uniform(GLint p_location, const glm::vec4& p_value);
+        void set_uniform(GLint p_location, const glm::mat2& p_value);
+        void set_uniform(GLint p_location, const glm::mat3& p_value);
+        void set_uniform(GLint p_location, const glm::mat4& p_value);
 
-        std::string mName;
-        unsigned int mHandle;
-        bool mIsInstanced;
-        int mTextureUnits;                       // The number of available textures to the shader. Found in shader file as 'uniform sampler2D textureX'
-        std::set<Shader::Attribute> mAttributes; // The vertex attributes the shader requires to execute a draw call.
-        // TODO: make this an array of size GL_MAX_X_UNIFORM_BLOCKS + (X = Split the uniform blocks per shader stage)
-        // Each shader stage has a limit on the number of separate uniform buffer binding locations. These are queried using
-        // glGetIntegerv with GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, or GL_MAX_FRAGMENT_UNIFORM_BLOCKS.
-        std::vector<GLData::UniformBlock> mUniformBlocks;
-        // All the 'loose' uniform variables that exist in the shader. These do not belong to UniformBlock's.
-        std::vector<GLData::UniformVariable> mUniformVariables;
-        std::vector<GLData::ShaderStorageBlock> mShaderBufferBlocks;
+    public:
 
-        static bool isBufferShared(const std::string& pShaderStorageBlockName, const std::string& pSourceCode);
-        static inline const size_t maxTextureUnits = 2;                   // The limit on the number of texture units available in the shaders
+        Shader(const char* p_name);
+        void use() const; // Set this shader as the currently active one in OpenGL state.
+
+        // Set the data for a loose-uniform in this shader program. Call Shader::use() before set_uniform.
+        template<typename T>
+        inline void set_uniform(const char* p_name, const T& p_data)
+        {
+            ASSERT(get_current_shader_program() == m_handle, "Calling set uniform without calling Shader::use() first", p_name, m_name);
+
+            auto it = std::find_if(m_uniforms.begin(), m_uniforms.end(), [&p_name](const auto& p_variable){ return p_variable.m_name == p_name; });
+            ASSERT(it != m_uniforms.end(),     "[OPENGL][SHADER] Could not find uniform variable '{}' in {} shader", p_name, m_name);
+            ASSERT(assert_type<T>(it->m_type), "[OPENGL][SHADER] set uniform data type missmatch!");
+            set_uniform(it->m_location, p_data);
+        }
+
+        // Set the value for a variable in a UniformBlock. If the UniformBlock is shared this sets the variable in all Shader programs using the block.
+        template<typename T>
+        static inline void set_block_uniform(const char* p_name, const T& p_data)
+        {
+            UniformBlock::uniform_block_binding_points.for_each([&p_name, &p_data](const UBO& p_UBO)
+            {
+                for (const auto& variable : p_UBO.m_variables)
+                {
+                    if (variable.m_name == p_name)
+                    {
+                        ASSERT(assert_type<T>(variable.m_type), "[OPENGL][SHADER] set uniform block data type missmatch!");
+
+                        p_UBO.bind();
+                        buffer_sub_data(BufferType::UniformBuffer, variable.m_offset, sizeof(T), &p_data);
+                        return;
+                    }
+                }
+
+                ASSERT(false, "[OPENGL][SHADER] Could not find UniformBlock variable '{}' in any shader buffer backings", p_name);
+            });
+        }
+
+        int getTexturesUnitsCount() const { return m_texture_units; };
     };
 } // namespace OpenGL

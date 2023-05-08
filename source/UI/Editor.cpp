@@ -325,16 +325,16 @@ namespace UI
 
                 if (!mOpenGLRenderer.mDebugOptions.mForceDepthTestType) ImGui::BeginDisabled();
                 {
-                    const std::vector<std::pair<GLType::DepthTestType, const char*>> depthTestOptions =
+                    const std::vector<std::pair<OpenGL::DepthTestType, const char*>> depthTestOptions =
                     {
-                        { GLType::DepthTestType::Always, "Always" },
-                        { GLType::DepthTestType::Never, "Never" },
-                        { GLType::DepthTestType::Less, "Less" },
-                        { GLType::DepthTestType::Equal, "Equal" },
-                        { GLType::DepthTestType::NotEqual, "NotEqual" },
-                        { GLType::DepthTestType::Greater, "Greater" },
-                        { GLType::DepthTestType::LessEqual, "LessEqual" },
-                        { GLType::DepthTestType::GreaterEqual, "GreaterEqual" }
+                        { OpenGL::DepthTestType::Always, "Always" },
+                        { OpenGL::DepthTestType::Never, "Never" },
+                        { OpenGL::DepthTestType::Less, "Less" },
+                        { OpenGL::DepthTestType::Equal, "Equal" },
+                        { OpenGL::DepthTestType::NotEqual, "NotEqual" },
+                        { OpenGL::DepthTestType::Greater, "Greater" },
+                        { OpenGL::DepthTestType::LessEqual, "LessEqual" },
+                        { OpenGL::DepthTestType::GreaterEqual, "GreaterEqual" }
                     };
                     ImGui::ComboContainer("Forced depth test type", mOpenGLRenderer.mDebugOptions.mForcedDepthTestType, depthTestOptions );
                 }
@@ -343,22 +343,22 @@ namespace UI
             { // Blending options
                 ImGui::Checkbox("Force blend type", &mOpenGLRenderer.mDebugOptions.mForceBlendType);
 
-                const std::vector<std::pair<GLType::BlendFactorType, const char*>> blendOptions =
+                const std::vector<std::pair<OpenGL::BlendFactorType, const char*>> blendOptions =
                 {
-                    { GLType::BlendFactorType::Zero, "Zero" },
-                    { GLType::BlendFactorType::One, "One" },
-                    { GLType::BlendFactorType::SourceColour, "SourceColour" },
-                    { GLType::BlendFactorType::OneMinusSourceColour, "OneMinusSourceColour" },
-                    { GLType::BlendFactorType::DestinationColour, "DestinationColour" },
-                    { GLType::BlendFactorType::OneMinusDestinationColour, "OneMinusDestinationColour" },
-                    { GLType::BlendFactorType::SourceAlpha, "SourceAlpha" },
-                    { GLType::BlendFactorType::OneMinusSourceAlpha, "OneMinusSourceAlpha" },
-                    { GLType::BlendFactorType::DestinationAlpha, "DestinationAlpha" },
-                    { GLType::BlendFactorType::OneMinusDestinationAlpha, "OneMinusDestinationAlpha" },
-                    { GLType::BlendFactorType::ConstantColour, "ConstantColour" },
-                    { GLType::BlendFactorType::OneMinusConstantColour, "OneMinusConstantColour" },
-                    { GLType::BlendFactorType::ConstantAlpha, "ConstantAlpha" },
-                    { GLType::BlendFactorType::OneMinusConstantAlpha, "OneMinusConstantAlpha" }
+                    { OpenGL::BlendFactorType::Zero, "Zero" },
+                    { OpenGL::BlendFactorType::One, "One" },
+                    { OpenGL::BlendFactorType::SourceColour, "SourceColour" },
+                    { OpenGL::BlendFactorType::OneMinusSourceColour, "OneMinusSourceColour" },
+                    { OpenGL::BlendFactorType::DestinationColour, "DestinationColour" },
+                    { OpenGL::BlendFactorType::OneMinusDestinationColour, "OneMinusDestinationColour" },
+                    { OpenGL::BlendFactorType::SourceAlpha, "SourceAlpha" },
+                    { OpenGL::BlendFactorType::OneMinusSourceAlpha, "OneMinusSourceAlpha" },
+                    { OpenGL::BlendFactorType::DestinationAlpha, "DestinationAlpha" },
+                    { OpenGL::BlendFactorType::OneMinusDestinationAlpha, "OneMinusDestinationAlpha" },
+                    { OpenGL::BlendFactorType::ConstantColour, "ConstantColour" },
+                    { OpenGL::BlendFactorType::OneMinusConstantColour, "OneMinusConstantColour" },
+                    { OpenGL::BlendFactorType::ConstantAlpha, "ConstantAlpha" },
+                    { OpenGL::BlendFactorType::OneMinusConstantAlpha, "OneMinusConstantAlpha" }
                 };
                 if (!mOpenGLRenderer.mDebugOptions.mForceBlendType) ImGui::BeginDisabled();
                 {
@@ -368,11 +368,11 @@ namespace UI
                 if (!mOpenGLRenderer.mDebugOptions.mForceBlendType) ImGui::EndDisabled();
             }
             { // Cull face options
-                const std::vector<std::pair<GLType::CullFacesType, const char*>> cullFaceOptions =
+                const std::vector<std::pair<OpenGL::CullFacesType, const char*>> cullFaceOptions =
                 {
-                    { GLType::CullFacesType::Back, "Back" },
-                    { GLType::CullFacesType::Front, "Front" },
-                    { GLType::CullFacesType::FrontAndBack, "FrontAndBack" }
+                    { OpenGL::CullFacesType::Back, "Back" },
+                    { OpenGL::CullFacesType::Front, "Front" },
+                    { OpenGL::CullFacesType::FrontAndBack, "FrontAndBack" }
                 };
 
                 ImGui::Checkbox("Force cull face type", &mOpenGLRenderer.mDebugOptions.mForceCullFacesType);
@@ -382,10 +382,10 @@ namespace UI
                 }
                 if (!mOpenGLRenderer.mDebugOptions.mForceCullFacesType) ImGui::EndDisabled();
 
-                const std::vector<std::pair<GLType::FrontFaceOrientation, const char*>> frontFaceOrientationOptions =
+                const std::vector<std::pair<OpenGL::FrontFaceOrientation, const char*>> frontFaceOrientationOptions =
                 {
-                    { GLType::FrontFaceOrientation::Clockwise, "Clockwise" },
-                    { GLType::FrontFaceOrientation::CounterClockwise, "CounterClockwise" }
+                    { OpenGL::FrontFaceOrientation::Clockwise, "Clockwise" },
+                    { OpenGL::FrontFaceOrientation::CounterClockwise, "CounterClockwise" }
                 };
 
                 ImGui::Checkbox("Force front face type", &mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType);
@@ -403,14 +403,14 @@ namespace UI
                 mOpenGLRenderer.mDebugOptions.mForceClearColour = false;
                 mOpenGLRenderer.mDebugOptions.mClearColour = glm::vec4(0.f, 0.f, 0.f, 0.f);
                 mOpenGLRenderer.mDebugOptions.mForceDepthTestType = false;
-                mOpenGLRenderer.mDebugOptions.mForcedDepthTestType = GLType::DepthTestType::Less;
+                mOpenGLRenderer.mDebugOptions.mForcedDepthTestType = OpenGL::DepthTestType::Less;
                 mOpenGLRenderer.mDebugOptions.mForceBlendType = false;
-                mOpenGLRenderer.mDebugOptions.mForcedSourceBlendType = GLType::BlendFactorType::SourceAlpha;
-                mOpenGLRenderer.mDebugOptions.mForcedDestinationBlendType = GLType::BlendFactorType::OneMinusSourceAlpha;
+                mOpenGLRenderer.mDebugOptions.mForcedSourceBlendType = OpenGL::BlendFactorType::SourceAlpha;
+                mOpenGLRenderer.mDebugOptions.mForcedDestinationBlendType = OpenGL::BlendFactorType::OneMinusSourceAlpha;
                 mOpenGLRenderer.mDebugOptions.mForceCullFacesType = false;
-                mOpenGLRenderer.mDebugOptions.mForcedCullFacesType = GLType::CullFacesType::Back;
+                mOpenGLRenderer.mDebugOptions.mForcedCullFacesType = OpenGL::CullFacesType::Back;
                 mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType = false;
-                mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType = GLType::FrontFaceOrientation::CounterClockwise;
+                mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType = OpenGL::FrontFaceOrientation::CounterClockwise;
             }
 
             // TODO: Draw depth buffer in a box #45
