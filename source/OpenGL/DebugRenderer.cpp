@@ -80,8 +80,8 @@ namespace OpenGL
     void DebugRenderer::add(const Geometry::Triangle& p_triangle, const glm::vec3& p_colour)
     {
         m_debug_verts.insert(m_debug_verts.end(), {
-            {p_triangle.mPoint1, p_colour},
-            {p_triangle.mPoint2, p_colour},
-            {p_triangle.mPoint3, p_colour} });
+            {p_triangle.m_point_1, p_colour},
+            {p_triangle.m_point_2, p_colour},
+            {p_triangle.m_point_3, p_colour} });
     }
 }

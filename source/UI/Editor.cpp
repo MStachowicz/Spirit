@@ -103,7 +103,7 @@ namespace UI
                             LOG("[EDITOR] Entity{} has been selected", entityCollided.ID);
                         }
 
-                        const auto mouseRayCylinder = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->get_position(), mSceneSystem.getPrimaryCamera()->get_position() + (cursorRay.mDirection * 1000.f), 0.02f);
+                        const auto mouseRayCylinder = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->get_position(), mSceneSystem.getPrimaryCamera()->get_position() + (cursorRay.m_direction * 1000.f), 0.02f);
                         mOpenGLRenderer.mDebugOptions.mCylinders.push_back(mouseRayCylinder);
                     }
                     break;

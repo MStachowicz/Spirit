@@ -355,7 +355,7 @@ namespace OpenGL
                         for (auto triangle : pMesh.mTriangles)
                         {
                             triangle.transform(pTransform.mModel);
-                            mDebugOptions.mDebugPoints.insert(mDebugOptions.mDebugPoints.end(), {triangle.mPoint1, triangle.mPoint2, triangle.mPoint3});
+                            mDebugOptions.mDebugPoints.insert(mDebugOptions.mDebugPoints.end(), {triangle.m_point_1, triangle.m_point_2, triangle.m_point_3});
                         }
                     });
                 });

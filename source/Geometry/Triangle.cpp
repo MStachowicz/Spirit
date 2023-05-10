@@ -6,35 +6,27 @@
 
 namespace Geometry
 {
-    Triangle::Triangle() noexcept
-        : mPoint1{0.0f}
-        , mPoint2{0.0f}
-        , mPoint3{0.0f}
-    {}
-
-    Triangle::Triangle(const glm::vec3& pPoint1, const glm::vec3& pPoint2, const glm::vec3& pPoint3) noexcept
-        : mPoint1(pPoint1)
-        , mPoint2(pPoint2)
-        , mPoint3(pPoint3)
-    {}
-
     glm::vec3 Triangle::centroid() const
     {
         // calculates the arithmetic mean of the three points of the triangle, which gives the center of the triangle.
-        return (mPoint1 + mPoint2 + mPoint3) / 3.0f;
+        return (m_point_1 + m_point_2 + m_point_3) / 3.0f;
+    }
+    glm::vec3 Triangle::normal() const
+    {
+        return glm::normalize(glm::cross(m_point_2 - m_point_1, m_point_3 - m_point_1));
     }
 
-    void Triangle::transform(const glm::mat4& pTransformation)
+    void Triangle::transform(const glm::mat4& p_transform)
     {
-        mPoint1 = glm::vec3(pTransformation * glm::vec4(mPoint1, 1.f));
-        mPoint2 = glm::vec3(pTransformation * glm::vec4(mPoint2, 1.f));
-        mPoint3 = glm::vec3(pTransformation * glm::vec4(mPoint3, 1.f));
+        m_point_1 = glm::vec3(p_transform * glm::vec4(m_point_1, 1.f));
+        m_point_2 = glm::vec3(p_transform * glm::vec4(m_point_2, 1.f));
+        m_point_3 = glm::vec3(p_transform * glm::vec4(m_point_3, 1.f));
     }
 
-    void Triangle::translate(const glm::vec3& pTranslation)
+    void Triangle::translate(const glm::vec3& p_translate)
     {
-        mPoint1 += pTranslation;
-        mPoint2 += pTranslation;
-        mPoint3 += pTranslation;
+        m_point_1 += p_translate;
+        m_point_2 += p_translate;
+        m_point_3 += p_translate;
     }
 }

@@ -13,9 +13,9 @@ namespace Geometry
 {
     class Cylinder;
     class Plane;
-    struct Ray;
+    class Ray;
     class Sphere;
-    struct Triangle;
+    class Triangle;
 }
 namespace ECS
 {

@@ -5,22 +5,33 @@
 
 namespace Geometry
 {
-    struct Triangle
+    class Triangle
     {
-        glm::vec3 mPoint1;
-        glm::vec3 mPoint2;
-        glm::vec3 mPoint3;
+    public:
+        glm::vec3 m_point_1;
+        glm::vec3 m_point_2;
+        glm::vec3 m_point_3;
 
-        Triangle() noexcept;
-        Triangle(const glm::vec3& pPoint1, const glm::vec3& pPoint2, const glm::vec3& pPoint3) noexcept;
+        constexpr Triangle() noexcept
+            : m_point_1{0.0f}
+            , m_point_2{0.0f}
+            , m_point_3{0.0f}
+        {}
+        constexpr Triangle(const glm::vec3& p_point_1, const glm::vec3& p_point_2, const glm::vec3& p_point_3) noexcept
+            : m_point_1(p_point_1)
+            , m_point_2(p_point_2)
+            , m_point_3(p_point_3)
+        {}
+        constexpr bool operator==(const Triangle& p_other) const { return m_point_1 == p_other.m_point_1 && m_point_2 == p_other.m_point_2 && m_point_3 == p_other.m_point_3; }
 
         // Transform all the points in the triangle by the trasnformation matrix applying around the centroid of the triangle.
-        void transform(const glm::mat4& pTransformation);
-        void translate(const glm::vec3& pTranslation);
+        void transform(const glm::mat4& p_transform);
+        void translate(const glm::vec3& p_translate);
 
         // Returns the current world-space centroid of the triangle.
         glm::vec3 centroid() const;
+        // Get the normalised direction vector representing the normal of the triangle.
+        glm::vec3 normal() const;
 
-        bool operator==(const Triangle& pOther) const { return mPoint1 == pOther.mPoint1 && mPoint2 == pOther.mPoint2 && mPoint3 == pOther.mPoint3; }
     };
 } // namespace Geometry

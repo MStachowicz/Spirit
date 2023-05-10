@@ -12,7 +12,7 @@
 
 namespace Geometry
 {
-    struct Ray;
+    class Ray;
 }
 namespace Component
 {
