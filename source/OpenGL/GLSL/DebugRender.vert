@@ -1,7 +1,7 @@
 #version 420 core
 
 layout (location = 0) in vec3 VertexPosition;
-layout (location = 2) in vec3 VertexColour;
+layout (location = 4) in vec4 VertexColour;
 
 layout(shared) uniform ViewProperties
 {
@@ -14,5 +14,5 @@ out vec4 FragmentColour;
 void main()
 {
     gl_Position    = viewProperties.projection * viewProperties.view * vec4(VertexPosition, 1.0);
-	FragmentColour = vec4(VertexColour, 1.0);
+	FragmentColour = VertexColour;
 }

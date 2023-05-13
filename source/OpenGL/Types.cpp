@@ -714,23 +714,25 @@ namespace OpenGL
         int get_attribute_index(VertexAttribute p_attribute)
         {
             switch (p_attribute)
-            {
+            {// Each index has to be unique. If changing any pre-existing attributes. Change all the occurrences in the GLSL shaders.
                 case VertexAttribute::Position3D:          return 0; // X, Y and Z position components
                 case VertexAttribute::Normal3D:            return 1; // X, Y and Z direction components
                 case VertexAttribute::ColourRGB:           return 2; // Red, Green and Blue components
+                case VertexAttribute::ColourRGBA:          return 4; // Red, Green and Blue components
                 case VertexAttribute::TextureCoordinate2D: return 3; // X and Y components
-                default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+                default: ASSERT(false, "Could not determine the index of the attribute p_attribute. If adding a new attribute, be sure to specify \"(location = 'NewIndex')\" in the GLSL shader source."); return 0; // Always
             }
         }
         int get_attribute_stride(VertexAttribute p_attribute)
         {
             switch (p_attribute)
             {
-                case VertexAttribute::Position3D:          return sizeof(glm::vec3); // X, Y and Z position components
-                case VertexAttribute::Normal3D:            return sizeof(glm::vec3); // X, Y and Z direction components
-                case VertexAttribute::ColourRGB:           return sizeof(glm::vec3); // Red, Green and Blue components
-                case VertexAttribute::TextureCoordinate2D: return sizeof(glm::vec2); // X and Y components
-                default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+                case VertexAttribute::Position3D:          return sizeof(float) * 3; // X, Y and Z position components
+                case VertexAttribute::Normal3D:            return sizeof(float) * 3; // X, Y and Z direction components
+                case VertexAttribute::ColourRGB:           return sizeof(float) * 3; // Red, Green and Blue components
+                case VertexAttribute::ColourRGBA:          return sizeof(float) * 4; // Red, Green, Blue and Alpha components
+                case VertexAttribute::TextureCoordinate2D: return sizeof(float) * 2; // X and Y components
+                default: ASSERT(false, "Could not determine the size of the attribute p_attribute."); return 0; // Always
             }
         }
         int get_attribute_component_count(VertexAttribute p_attribute)
@@ -740,8 +742,9 @@ namespace OpenGL
                 case VertexAttribute::Position3D:          return 3; // X, Y and Z position components
                 case VertexAttribute::Normal3D:            return 3; // X, Y and Z direction components
                 case VertexAttribute::ColourRGB:           return 3; // Red, Green and Blue components
+                case VertexAttribute::ColourRGBA:          return 4; // Red, Green, Blue and Alpha components
                 case VertexAttribute::TextureCoordinate2D: return 2; // X and Y components
-                default: ASSERT(false, "Could not determine the size of the attribute p_attribute"); return 0; // Always
+                default: ASSERT(false, "Could not determine the component count of the p_attribute."); return 0; // Always
             }
         }
         const char* get_attribute_identifier(VertexAttribute p_attribute)
@@ -751,8 +754,9 @@ namespace OpenGL
                 case VertexAttribute::Position3D:          return "VertexPosition";
                 case VertexAttribute::Normal3D:            return "VertexNormal";
                 case VertexAttribute::ColourRGB:           return "VertexColour";
+                case VertexAttribute::ColourRGBA:          return "VertexColour";
                 case VertexAttribute::TextureCoordinate2D: return "VertexTexCoord";
-                default: ASSERT(false, "Could not convert VertexAttribute to a std::string"); return ""; // Always
+                default: ASSERT(false, "Could not convert VertexAttribute to an identifier. If adding a new attribute, be sure to use the identifier added here for it."); return ""; // Always
             }
         }
         DataType get_attribute_type(VertexAttribute p_attribute)
@@ -762,8 +766,9 @@ namespace OpenGL
                 case VertexAttribute::Position3D:          return DataType::Float;
                 case VertexAttribute::Normal3D:            return DataType::Float;
                 case VertexAttribute::ColourRGB:           return DataType::Float;
+                case VertexAttribute::ColourRGBA:          return DataType::Float;
                 case VertexAttribute::TextureCoordinate2D: return DataType::Float;
-                default: ASSERT(false, "Could not convert VertexAttribute to a std::string"); return DataType::Unknown; // Always
+                default: ASSERT(false, "Could not convert VertexAttribute to a datatype. If adding a new attribute, be sure to use the corresponding data type added here for it."); return DataType::Unknown; // Always
             }
         }
     }

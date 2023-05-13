@@ -4,6 +4,7 @@
 #include "Shader.hpp"
 
 #include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
 
 #include <array>
 #include <optional>
@@ -33,11 +34,11 @@ namespace OpenGL
         constexpr inline static std::array<VertexAttribute, 2> Attributes =
         {
             VertexAttribute::Position3D,
-            VertexAttribute::ColourRGB
+            VertexAttribute::ColourRGBA
         };
 
         glm::vec3 position;
-        glm::vec3 colour;
+        glm::vec4 colour;
     };
 
     // Immediate mode debug rendering. All members implemented statically to allow ease of use anywhere.
@@ -47,7 +48,6 @@ namespace OpenGL
     // Likewise destruction happens in deinit to allow destructing GL types before we release the context.
     class DebugRenderer
     {
-
         static inline std::vector<DebugVert> m_debug_verts = {};
         static inline std::optional<VAO> m_debug_VAO = std::nullopt;
         static inline std::optional<VBO> m_debug_VBO = std::nullopt;
@@ -60,10 +60,10 @@ namespace OpenGL
         static void clear();
         static void render(System::SceneSystem& p_scene);
 
-        static void add(const Geometry::Cylinder& p_cylinder, const glm::vec3& p_colour = glm::vec3(1.f));
-        static void add(const Geometry::Plane& p_plane, const glm::vec3& p_colour = glm::vec3(1.f));
-        static void add(const Geometry::Ray& p_ray, const glm::vec3& p_colour = glm::vec3(1.f));
-        static void add(const Geometry::Sphere& p_sphere, const glm::vec3& p_colour = glm::vec3(1.f));
-        static void add(const Geometry::Triangle& p_triangle, const glm::vec3& p_colour = glm::vec3(1.f));
+        static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Plane& p_plane, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Ray& p_ray, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour = glm::vec4(1.f));
     };
 }

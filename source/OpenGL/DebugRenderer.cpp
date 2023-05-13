@@ -55,11 +55,11 @@ namespace OpenGL
         }
     }
 
-    void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec3& p_colour/*= glm::vec3(1.f)*/)
+    void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Generate the points for the shape and push to relevant _verts container
     }
-    void DebugRenderer::add(const Geometry::Plane& p_plane, const glm::vec3& p_colour/*= glm::vec3(1.f)*/)
+    void DebugRenderer::add(const Geometry::Plane& p_plane, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         //auto plane_verts = p_plane.get_vertices();
         //m_debug_verts.insert(m_debug_verts.end(), {
@@ -68,16 +68,16 @@ namespace OpenGL
         //    { plane_verts[2], p_colour},
         //    { plane_verts[3], p_colour} });
     }
-    void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec3& p_colour/*= glm::vec3(1.f)*/)
+    void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Generate the points for the shape and push to relevant _verts container
     }
-    void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec3& p_colour/*= glm::vec3(1.f)*/)
+    void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Generate the points for the shape and push to relevant _verts container
     }
 
-    void DebugRenderer::add(const Geometry::Triangle& p_triangle, const glm::vec3& p_colour)
+    void DebugRenderer::add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour)
     {
         m_debug_verts.insert(m_debug_verts.end(), {
             {p_triangle.m_point_1, p_colour},
