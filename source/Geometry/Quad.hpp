@@ -9,6 +9,7 @@
 namespace Geometry
 {
     class Plane;
+    class Triangle;
 
     // A quadrilateral. Four-sided polygon, having four edges (sides) and four corners (vertices).
     // Quad is a 2-dimensional shape.
@@ -26,6 +27,8 @@ namespace Geometry
             , m_point_3{p_point_3}
             , m_point_4{p_point_4}
         {}
+        // Construct a unit quad at the centroid position of p_triangle.
+        Quad(const Triangle& p_triangle) noexcept;
         // Construct a unit quad inside the plane.
         Quad(const Plane& p_plane) noexcept;
 
