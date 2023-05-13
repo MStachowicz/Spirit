@@ -42,22 +42,25 @@ source/Component/Collider.cpp
 source/Component/Collider.hpp
 source/Component/DirectionalLight.cpp
 source/Component/DirectionalLight.hpp
+source/Component/Input.cpp
+source/Component/Input.hpp
+source/Component/Label.hpp
 source/Component/Mesh.cpp
 source/Component/Mesh.hpp
-source/Component/Label.hpp
 source/Component/PointLight.cpp
 source/Component/PointLight.hpp
 source/Component/RigidBody.cpp
 source/Component/RigidBody.hpp
 source/Component/SpotLight.cpp
 source/Component/SpotLight.hpp
-source/Component/Texture.hpp
 source/Component/Texture.cpp
+source/Component/Texture.hpp
 source/Component/Transform.cpp
 source/Component/Transform.hpp
 )
 target_include_directories(Component
 PUBLIC source/Component
+PUBLIC source
 PRIVATE source/External/stb
 PRIVATE source/External/ASSIMP/include
 )
@@ -66,6 +69,7 @@ PUBLIC Geometry
 PUBLIC OpenGL
 PUBLIC GLM
 PUBLIC Utility # Used in headers of Mesh and Texture
+PRIVATE Platform
 PRIVATE ImGui
 PRIVATE assimp
 )

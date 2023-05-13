@@ -9,6 +9,7 @@
 // Component
 #include "Camera.hpp"
 #include "Transform.hpp"
+#include "Component/Input.hpp"
 
 // Utility
 #include "Logger.hpp"
@@ -35,17 +36,9 @@ namespace System
 
         if (!m_input.keyboard_captured_by_UI())
         {
-            mSceneSystem.getCurrentScene().foreach([this](Component::Camera& p_camera)
+            mSceneSystem.getCurrentScene().foreach([this](ECS::Entity& p_entity, Component::Input& p_input)
             {
-                if (p_camera.m_primary_camera)
-                {
-                    if (m_input.is_key_down(Platform::Key::W)) p_camera.move(Component::Camera::move_direction::Forward);
-                    if (m_input.is_key_down(Platform::Key::S)) p_camera.move(Component::Camera::move_direction::Backward);
-                    if (m_input.is_key_down(Platform::Key::A)) p_camera.move(Component::Camera::move_direction::Left);
-                    if (m_input.is_key_down(Platform::Key::D)) p_camera.move(Component::Camera::move_direction::Right);
-                    if (m_input.is_key_down(Platform::Key::E)) p_camera.move(Component::Camera::move_direction::Up);
-                    if (m_input.is_key_down(Platform::Key::Q)) p_camera.move(Component::Camera::move_direction::Down);
-                }
+                p_input.m_function(p_entity, mSceneSystem.getCurrentScene(), m_input);
             });
         }
 

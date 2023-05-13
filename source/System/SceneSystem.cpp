@@ -8,6 +8,7 @@
 #include "Camera.hpp"
 #include "Collider.hpp"
 #include "DirectionalLight.hpp"
+#include "Input.hpp"
 #include "Label.hpp"
 #include "Mesh.hpp"
 #include "PointLight.hpp"
@@ -47,10 +48,10 @@ namespace System
         return primaryCamera;
     }
 
+    // Lines up all the available primitive meshes along the x axis with the camera facing them.
     void SceneSystem::primitiveMeshScene()
     {
-        // Lines up all the available primitive meshes along the x axis with the camera facing them.
-        mStorage.addEntity(Component::Camera(true), Component::Label("Camera"));
+        mStorage.addEntity(Component::Camera(true), Component::Input(Component::Input::Move), Component::Label("Camera"));
 
 
         constexpr float primitiveCount         = 5.f; // Number of available primitives.
