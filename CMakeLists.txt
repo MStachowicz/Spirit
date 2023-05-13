@@ -103,16 +103,18 @@ add_library(Geometry
 source/Geometry/AABB.cpp
 source/Geometry/AABB.hpp
 source/Geometry/Cylinder.hpp
+source/Geometry/Geometry.hpp
+source/Geometry/Geometry.cpp
 source/Geometry/Intersect.cpp
 source/Geometry/Intersect.hpp
 source/Geometry/Plane.cpp
 source/Geometry/Plane.hpp
+source/Geometry/Quad.cpp
+source/Geometry/Quad.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Triangle.hpp
 source/Geometry/Triangle.cpp
-source/Geometry/Geometry.hpp
-source/Geometry/Geometry.cpp
 )
 target_include_directories(Geometry
 PUBLIC source/Geometry
