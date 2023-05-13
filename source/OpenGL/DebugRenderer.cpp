@@ -7,6 +7,7 @@
 // GEOMETRY
 #include "Cylinder.hpp"
 #include "Plane.hpp"
+#include "Quad.hpp"
 #include "Ray.hpp"
 #include "Sphere.hpp"
 #include "Triangle.hpp"
@@ -16,6 +17,8 @@
 
 namespace OpenGL
 {
+    static constexpr float Z_Far_Scaler = 1000.f; // Scale the geometry that extends infinitely by this to give it an infinite appearance.
+
     void DebugRenderer::init()
     {
         m_debug_VAO = VAO();
@@ -39,14 +42,13 @@ namespace OpenGL
 
     void DebugRenderer::render(System::SceneSystem& p_scene)
     {
-        auto camera = p_scene.getPrimaryCamera();
-
-        m_debug_shader->use();
-        toggle_cull_face(false); // Disable culling since some geometry will be 2D and facing away from us.
-        set_depth_test_type(DepthTestType::Always);
-
         if (!m_debug_verts.empty())
         {
+            m_debug_shader->use();
+            toggle_cull_face(false); // Disable culling since some geometry will be 2D and facing away from us.
+            set_depth_test_type(DepthTestType::Less);
+            set_polygon_mode(PolygonMode::Fill);
+
             m_debug_VAO->bind();
             m_debug_VBO = VBO(); // TODO: Dont delete VBO here? Just set_data
             m_debug_VBO->bind();
@@ -61,12 +63,18 @@ namespace OpenGL
     }
     void DebugRenderer::add(const Geometry::Plane& p_plane, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
-        //auto plane_verts = p_plane.get_vertices();
-        //m_debug_verts.insert(m_debug_verts.end(), {
-        //    { plane_verts[0], p_colour},
-        //    { plane_verts[1], p_colour},
-        //    { plane_verts[2], p_colour},
-        //    { plane_verts[3], p_colour} });
+        // Because a Plane is infinite, we represent it as a quad bigger than camera z-far which gives it an infinite appearance.
+        auto quad = Geometry::Quad(p_plane);
+        quad.scale(Z_Far_Scaler);
+        auto triangles = quad.get_triangles(); // Use triangles since OpenGL deprecated Quad primitive rendering.
+
+        m_debug_verts.insert(m_debug_verts.end(), {
+            {triangles[0].m_point_1, p_colour},
+            {triangles[0].m_point_2, p_colour},
+            {triangles[0].m_point_3, p_colour},
+            {triangles[1].m_point_1, p_colour},
+            {triangles[1].m_point_2, p_colour},
+            {triangles[1].m_point_3, p_colour}, });
     }
     void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
