@@ -19,6 +19,11 @@ namespace Component
         , mInertiaTensor{glm::identity<glm::mat3>()}
     {}
 
+    void RigidBody::apply_linear_force(const glm::vec3& p_force)
+    {
+        mForce += p_force;
+    }
+
     void RigidBody::DrawImGui()
     {
         if(ImGui::TreeNode("Rigid body"))

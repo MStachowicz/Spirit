@@ -37,9 +37,8 @@ namespace System
         auto& scene = mSceneSystem.getCurrentScene();
         scene.foreach([this, &pDeltaTime, &scene](ECS::Entity& pEntity, Component::RigidBody& pRigidBody, Component::Transform& pTransform)
         {
-            // F = ma
             if (pRigidBody.mApplyGravity)
-                pRigidBody.mForce = pRigidBody.mMass * mGravity;
+                pRigidBody.mForce += pRigidBody.mMass * mGravity; // F = ma
 
             { // Linear motion
                 // Change in momentum is equal to the force = dp/dt = F
@@ -52,6 +51,8 @@ namespace System
                 // Integrate velocity to find new position: dx/dt = v
                 const auto changeInPosition = pRigidBody.mVelocity * pDeltaTime.count(); // dx = v dt
                 pTransform.mPosition += changeInPosition;
+
+                pRigidBody.mForce = glm::vec3(0.f); // Reset back to 0 after applying the force on the body.
             }
 
             { // Angular motion
