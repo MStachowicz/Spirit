@@ -111,6 +111,8 @@ source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
 source/Geometry/Intersect.cpp
 source/Geometry/Intersect.hpp
+source/Geometry/Line.cpp
+source/Geometry/Line.hpp
 source/Geometry/Plane.cpp
 source/Geometry/Plane.hpp
 source/Geometry/Quad.cpp
