@@ -341,4 +341,20 @@ namespace Geometry
         else
             return true;
     }
+
+    bool intersect_plane_plane_static(const Plane& p_plane_1, const Plane& p_plane_2, glm::vec3& out_direction, glm::vec3& out_point_on_intersection_line)
+    {
+        // Compute direction of intersection line
+        out_direction = glm::cross(p_plane_1.m_normal, p_plane_2.m_normal);
+
+        // If d is (near) zero, the planes are parallel (and separated)
+        // or coincident, so they’re not considered intersecting
+        const float denom = glm::dot(out_direction, out_direction);
+        if (denom < Epsilon)
+            return false;
+
+        // Compute point on intersection line
+        out_point_on_intersection_line = glm::cross(p_plane_1.m_distance * p_plane_2.m_normal - p_plane_2.m_distance * p_plane_1.m_normal, out_direction) / denom;
+        return true;
+    }
 } // namespace Geometry
