@@ -6,6 +6,7 @@
 
 // GEOMETRY
 #include "Cylinder.hpp"
+#include "Line.hpp"
 #include "Plane.hpp"
 #include "Quad.hpp"
 #include "Ray.hpp"
@@ -36,24 +37,34 @@ namespace OpenGL
     void DebugRenderer::clear()
     {
         m_debug_verts.clear();
+        m_debug_line_verts.clear();
         m_debug_VAO->bind();
         m_debug_VBO->clear();
     }
 
     void DebugRenderer::render(System::SceneSystem& p_scene)
     {
+        if (m_debug_verts.empty() && m_debug_line_verts.empty())
+            return;
+
+        m_debug_shader->use();
+        toggle_cull_face(false); // Disable culling since some geometry will be 2D and facing away from us.
+        set_depth_test_type(DepthTestType::Less);
+        set_polygon_mode(PolygonMode::Fill);
+
+        m_debug_VAO->bind();
+        m_debug_VBO = VBO(); // TODO: Dont delete VBO here? Just set_data
+        m_debug_VBO->bind();
+
         if (!m_debug_verts.empty())
         {
-            m_debug_shader->use();
-            toggle_cull_face(false); // Disable culling since some geometry will be 2D and facing away from us.
-            set_depth_test_type(DepthTestType::Less);
-            set_polygon_mode(PolygonMode::Fill);
-
-            m_debug_VAO->bind();
-            m_debug_VBO = VBO(); // TODO: Dont delete VBO here? Just set_data
-            m_debug_VBO->bind();
             m_debug_VBO->set_data(m_debug_verts);
             draw_arrays(PrimitiveMode::Triangles, 0, static_cast<GLsizei>(m_debug_verts.size()));
+        }
+        if (!m_debug_line_verts.empty())
+        {
+            m_debug_VBO->set_data(m_debug_line_verts);
+            draw_arrays(PrimitiveMode::Lines, 0, static_cast<GLsizei>(m_debug_line_verts.size()));
         }
     }
 
@@ -61,6 +72,12 @@ namespace OpenGL
     {
         // Generate the points for the shape and push to relevant _verts container
     }
+
+    void DebugRenderer::add(const Geometry::Line& p_line, const glm::vec4& p_colour/*= glm::vec4(1.f)*/)
+    {
+        m_debug_line_verts.insert(m_debug_line_verts.end(), {{p_line.m_start, p_colour}, {p_line.m_end, p_colour} });
+    }
+
     void DebugRenderer::add(const Geometry::Plane& p_plane, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Because a Plane is infinite, we represent it as a quad bigger than camera z-far which gives it an infinite appearance.
@@ -74,12 +91,15 @@ namespace OpenGL
             {triangles[0].m_point_3, p_colour},
             {triangles[1].m_point_1, p_colour},
             {triangles[1].m_point_2, p_colour},
-            {triangles[1].m_point_3, p_colour}, });
+            {triangles[1].m_point_3, p_colour} });
     }
+
     void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
-        // Generate the points for the shape and push to relevant _verts container
+        // Because a Ray extends infinitely, we represent it as a Line extending in both start and end directions beyond camera z-far which gives it an infinite appearance.
+        add(Geometry::Line(p_ray.m_start - p_ray.m_direction * Z_Far_Scaler, p_ray.m_start + p_ray.m_direction * Z_Far_Scaler), p_colour);
     }
+
     void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Generate the points for the shape and push to relevant _verts container

@@ -17,6 +17,7 @@ namespace Geometry
     class Ray;
     class Sphere;
     class Triangle;
+    class Line;
 }
 namespace ECS
 {
@@ -49,6 +50,7 @@ namespace OpenGL
     class DebugRenderer
     {
         static inline std::vector<DebugVert> m_debug_verts = {};
+        static inline std::vector<DebugVert> m_debug_line_verts = {}; // Drawn using GL_Lines, append in pairs of DebugVert
         static inline std::optional<VAO> m_debug_VAO = std::nullopt;
         static inline std::optional<VBO> m_debug_VBO = std::nullopt;
         static inline std::optional<Shader> m_debug_shader = std::nullopt;
@@ -61,6 +63,7 @@ namespace OpenGL
         static void render(System::SceneSystem& p_scene);
 
         static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Line& p_line, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Plane& p_plane, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Ray& p_ray, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour = glm::vec4(1.f));
