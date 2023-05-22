@@ -92,7 +92,7 @@ namespace Utility
 
     glm::vec3 get_direction_from_cursor(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::mat4& p_projection, const glm::mat4& p_view)
     {
-        ASSERT(p_cursor_pos.x > 0.f && p_cursor_pos.y > 0.f, "[UTILITY] Mouse coordinates cannot be negative, did you miss a Window::capturingMouse() check before calling");
+        ASSERT(p_cursor_pos.x >= 0.f && p_cursor_pos.y >= 0.f, "[UTILITY] Mouse coordinates cannot be negative, did you miss a Input::cursor_captured() check before calling");
 
         // VIEWPORT [0 - WINDOWSIZE] to OpenGL NDC [-1 - 1]
         const glm::vec2 normalizedDisplayCoords = glm::vec2((2.f * p_cursor_pos.x) / p_window_size.x - 1.f, (2.f * p_cursor_pos.y) / p_window_size.y - 1.f);
