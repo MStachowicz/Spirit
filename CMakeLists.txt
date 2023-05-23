@@ -127,6 +127,7 @@ PUBLIC source/Geometry
 )
 target_link_libraries(Geometry
 PUBLIC GLM
+PRIVATE Utility
 )
 # Geometry end ----------------------------------------------------------------------------------
 

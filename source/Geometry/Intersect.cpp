@@ -1,9 +1,12 @@
 #include "Intersect.hpp"
 
 #include "AABB.hpp"
+#include "Line.hpp"
 #include "Plane.hpp"
 #include "Ray.hpp"
 #include "Triangle.hpp"
+
+#include "Logger.hpp"
 
 #include <glm/glm.hpp>
 #include <limits>
@@ -356,5 +359,33 @@ namespace Geometry
         // Compute point on intersection line
         out_point_on_intersection_line = glm::cross(p_plane_1.m_distance * p_plane_2.m_normal - p_plane_2.m_distance * p_plane_1.m_normal, out_direction) / denom;
         return true;
+    }
+
+    bool intersect_line_triangle(const Line& p_line, const Triangle& p_triangle)
+    {
+        // Below works for a double-sided triangle (both CW or CCW depending on which side it is viewed),
+        // p_line passes on the inside if all three scalar triple products (u,v,w) have the same sign (ignoring zeroes).
+        // The code does not handle the case when p_line is in the same plane as p_triangle.
+
+        const glm::vec3 pq = p_line.m_end - p_line.m_start;
+        const glm::vec3 pa = p_triangle.m_point_1 - p_line.m_start;
+        const glm::vec3 pb = p_triangle.m_point_2 - p_line.m_start;
+        const glm::vec3 pc = p_triangle.m_point_3 - p_line.m_start;
+
+        const glm::vec3 m = glm::cross(pq, pc); // m allows us to avoid an extra cross product below.
+        const auto u      = glm::dot(pb, m);    // triple_product(pq, pc, pb);
+        const auto v      = -glm::dot(pa, m);   // triple_product(pq, pa, pc);
+        const auto w      = triple_product(pq, pb, pa);
+
+        if (u == 0 && v == 0 && w == 0)
+            ASSERT(false, "[INTERSECT] Line is in the plane of the triangle. This isn't handled yet (intersect_line_line).");
+
+        return (u <= 0.f && v <= 0.f && w <= 0.f) || (u >= 0.f && v >= 0.f && w >= 0.f); // have the same sign (ignoring zeroes)
+    }
+
+    float triple_product(const glm::vec3& u, const glm::vec3& v, const glm::vec3& w)
+    {
+        // [uvw] = [vwu] = [wuv] = −[uwv] = −[vuw] = −[wvu]
+        return glm::dot(glm::cross(u, v), w); // [uvw]
     }
 } // namespace Geometry
