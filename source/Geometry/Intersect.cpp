@@ -382,6 +382,37 @@ namespace Geometry
 
         return (u <= 0.f && v <= 0.f && w <= 0.f) || (u >= 0.f && v >= 0.f && w >= 0.f); // have the same sign (ignoring zeroes)
     }
+    bool intersect_line_triangle(const Line& p_line, const Triangle& p_triangle, glm::vec3& out_intersection_point)
+    {
+        // Identical to the above function but uses u, v, w to determine the intersection point to return.
+
+        const glm::vec3 pq = p_line.m_end - p_line.m_start;
+        const glm::vec3 pa = p_triangle.m_point_1 - p_line.m_start;
+        const glm::vec3 pb = p_triangle.m_point_2 - p_line.m_start;
+        const glm::vec3 pc = p_triangle.m_point_3 - p_line.m_start;
+
+        const glm::vec3 m = glm::cross(pq, pc); // m allows us to avoid an extra cross product below.
+        auto u      = glm::dot(pb, m);    // triple_product(pq, pc, pb);
+        auto v      = -glm::dot(pa, m);   // triple_product(pq, pa, pc);
+        auto w      = triple_product(pq, pb, pa);
+
+        if (u == 0 && v == 0 && w == 0)
+            ASSERT(false, "[INTERSECT] Line is in the plane of the triangle. This isn't handled yet (intersect_line_line).");
+
+        if ((u <= 0.f && v <= 0.f && w <= 0.f) || (u >= 0.f && v >= 0.f && w >= 0.f)) // have the same sign (ignoring zeroes)
+        {
+            // Compute the barycentric coordinates (u, v, w) determining out_intersection_point,
+            // r = (u * a) + (v * b) + (w * c)
+            const float denom = 1.0f / (u + v + w);
+            u *= denom;
+            v *= denom;
+            w *= denom; // w = 1.0f - u - v;
+            out_intersection_point = (u * p_triangle.m_point_1) + (v * p_triangle.m_point_2) + (w * p_triangle.m_point_3);
+            return true;
+        }
+        else
+            return false;
+    }
 
     float triple_product(const glm::vec3& u, const glm::vec3& v, const glm::vec3& w)
     {
