@@ -3,6 +3,8 @@
 #include "glm/fwd.hpp"
 #include "glm/vec3.hpp"
 
+#include <array>
+
 namespace Geometry
 {
     class Triangle
@@ -32,6 +34,7 @@ namespace Geometry
         glm::vec3 centroid() const;
         // Get the normalised direction vector representing the normal of the triangle.
         glm::vec3 normal() const;
-
+        // Subdivide this triangle into 4 new triangles contained inside the original.
+        std::array<Triangle, 4> subdivide() const;
     };
 } // namespace Geometry

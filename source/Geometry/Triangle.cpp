@@ -29,4 +29,13 @@ namespace Geometry
         m_point_2 += p_translate;
         m_point_3 += p_translate;
     }
+
+    std::array<Triangle, 4> Triangle::subdivide() const
+    {
+        // Find the midpoint of all 3 edges and construct the 4 Triangles.
+        const auto a = (m_point_1 + m_point_2) / 2.f;
+        const auto b = (m_point_2 + m_point_3) / 2.f;
+        const auto c = (m_point_3 + m_point_1) / 2.f;
+        return {Triangle{m_point_1, a, c}, Triangle{m_point_2, b, a}, Triangle{m_point_3, c, b}, Triangle{a, b, c}};
+    }
 }
