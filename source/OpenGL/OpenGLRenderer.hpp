@@ -144,6 +144,9 @@ namespace OpenGL
 
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
         OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
+
+        void start_frame();
+        void end_frame();
         // Draw the current state of the ECS.
         void draw();
 

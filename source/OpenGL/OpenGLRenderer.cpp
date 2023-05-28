@@ -127,7 +127,7 @@ namespace OpenGL
             draw_arrays(PrimitiveMode::Triangles, 0, GLMeshData.mDrawSize);
     }
 
-    void OpenGLRenderer::draw()
+    void OpenGLRenderer::start_frame()
     {
         { // Prepare mScreenFramebuffer for rendering
             const auto window_size = m_window.size();
@@ -149,7 +149,10 @@ namespace OpenGL
             Shader::set_block_uniform("ViewProperties.view", mViewInformation.mView);
             Shader::set_block_uniform("ViewProperties.projection", mViewInformation.mProjection);
         }
+    }
 
+    void OpenGLRenderer::draw()
+    {
         { // Setup the GL state for rendering the scene, the default setup can be overriden by the Debug options struct
             set_polygon_mode(PolygonMode::Fill);
 
@@ -214,8 +217,10 @@ namespace OpenGL
         });
 
         renderDebug();
-        //renderImGui();
+    }
 
+    void OpenGLRenderer::end_frame()
+    {
         { // Draw the colour output to the from mScreenFramebuffer texture to the default FBO
             // Unbind after completing draw to ensure all subsequent actions apply to the default FBO and not mScreenFrameBuffer.
             // Disable depth testing to not cull the screen quad the screen texture will be applied onto.
@@ -239,13 +244,6 @@ namespace OpenGL
             mScreenFramebuffer.bindColourTexture();
             draw(*mMeshSystem.mPlanePrimitive);
         }
-
-        //ASSERT(pointLightDrawCount == 4, "Only an exact number of 4 pointlights is supported.");
-        //ASSERT(directionalLightDrawCount == 1, "Only one directional light is supported.");
-        //ASSERT(spotLightDrawCount == 1, "Only one spotlight light is supported.");
-        pointLightDrawCount       = 0;
-        directionalLightDrawCount = 0;
-        spotLightDrawCount        = 0;
     }
 
     void OpenGLRenderer::drawArrow(const glm::vec3& pOrigin, const glm::vec3& pDirection, const float pLength, const glm::vec3& p_colour /*= glm::vec3(1.f,1.f,1.f)*/)
