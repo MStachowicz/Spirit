@@ -55,6 +55,9 @@ namespace OpenGL
         static inline std::optional<VBO> m_debug_VBO = std::nullopt;
         static inline std::optional<Shader> m_debug_shader = std::nullopt;
 
+        // Append vertices of a icosahedron of p_radius at p_position with p_subdivisions to m_debug_verts.
+        static void append_sphere_verts(const glm::vec3& p_point, float p_radius, uint8_t p_subdivisions = 0, const glm::vec4& p_colour = glm::vec4(1.f));
+
     public:
         static void init();
         static void deinit();
