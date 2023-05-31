@@ -13,12 +13,14 @@ namespace Platform
         , m_cursor_delta{0.f, 0.f}
         , m_cursor_mode{CursorMode::Normal}
         , m_handle{nullptr} // Initial value set in Window constructor
+        , m_captured_this_frame{false}
         , m_key_event{}
         , m_mouse_event{}
     {}
 
     void Input::update()
     {
+        m_captured_this_frame = false;
         m_cursor_delta = {0.f, 0.f};
         glfwPollEvents();
     }
@@ -50,6 +52,7 @@ namespace Platform
                 LOG("[INPUT] Cursor mode set to hidden");
                 break;
             case CursorMode::Captured:
+                m_captured_this_frame = true;
                 glfwSetInputMode(m_handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 LOG("[INPUT] Cursor mode set to captured");
                 break;

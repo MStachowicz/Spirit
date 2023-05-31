@@ -48,6 +48,7 @@ namespace Platform
         glm::vec2 m_cursor_position; // The cursor position relative to the upper left corner of the window.
         glm::vec2 m_cursor_delta;    // The pixels the mouse cursor moved by since the last Input::update call.
         CursorMode m_cursor_mode;
+        bool m_captured_this_frame;
 
         // The remaining functions allow Platform::Window to callback into Input.
         friend class Window;
@@ -76,7 +77,7 @@ namespace Platform
         // Set the cursor style for the window associated with this Input.
         void set_cursor_mode(const CursorMode& p_cursor_mode);
         CursorMode cursor_mode() const { return m_cursor_mode; };
-        bool cursor_captured() const { return m_cursor_mode == CursorMode::Captured; }
+        bool cursor_captured() const { return m_cursor_mode == CursorMode::Captured && !m_captured_this_frame; }
 
         // Is the mouse hovering over any UI elements. Click events during this state will generally be absorbed by the UI.
         bool cursor_over_UI() const;
