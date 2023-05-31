@@ -210,7 +210,7 @@ namespace OpenGL
             {
                 mUniformColourShader.use();
                 mUniformColourShader.set_uniform("model", pTransform.mModel);
-                mUniformColourShader.set_uniform("colour", glm::vec3(0.f, 1.f, 0.f));
+                mUniformColourShader.set_uniform("colour", glm::vec3(0.06f, 0.44f, 0.81f));
             }
 
             draw(*pMesh.mModel);
