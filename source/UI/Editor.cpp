@@ -284,9 +284,6 @@ namespace UI
             bool VSync = m_window.get_VSync();
             if (ImGui::Checkbox("VSync", &VSync)) m_window.set_VSync(VSync);
             ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
-            ImGui::SliderFloat("Field of view", &mOpenGLRenderer.mViewInformation.mFOV, 1.f, 120.f);
-            ImGui::SliderFloat("Z near plane", &mOpenGLRenderer.mViewInformation.mZNearPlane, 0.001f, 15.f);
-            ImGui::SliderFloat("Z far plane", &mOpenGLRenderer.mViewInformation.mZFarPlane, 15.f, 300.f);
             ImGui::Separator();
 
             if (ImGui::TreeNode("PostProcessing"))

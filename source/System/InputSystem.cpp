@@ -41,12 +41,6 @@ namespace System
                 p_input.m_function(p_entity, mSceneSystem.getCurrentScene(), m_input);
             });
         }
-
-        mSceneSystem.getCurrentScene().foreach([this](Component::Camera& p_camera)
-        {
-            if (p_camera.m_primary_camera)
-                p_camera.look(m_input.cursor_delta());
-        });
     }
     // use onKeyPressed to perform one-time actions. e.g. UI events are best not repeated every frame.
     // On the other hand, game logic is best suited to Platform::Core::is_key_down since this alows repeated events.

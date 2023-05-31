@@ -21,6 +21,8 @@ namespace System
         Component::Camera* getPrimaryCamera();
 
     private:
+        void add_default_camera();
+
         void constructBouncingBallScene();
         void constructBoxScene();
         void primitiveMeshScene();

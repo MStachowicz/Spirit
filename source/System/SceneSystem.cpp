@@ -25,9 +25,11 @@
 namespace System
 {
     SceneSystem::SceneSystem(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem)
-        : mTextureSystem(pTextureSystem)
+        : mStorage{}
+        , mTextureSystem(pTextureSystem)
         , mMeshSystem(pMeshSystem)
     {
+        add_default_camera();
         primitiveMeshScene();
         //constructBoxScene();
         //constructBouncingBallScene();
@@ -39,7 +41,7 @@ namespace System
 
         getCurrentScene().foreach([&primaryCamera](Component::Camera& pCamera)
         {
-            if (pCamera.m_primary_camera)
+            if (pCamera.m_primary)
             {
                 primaryCamera = &pCamera;
                 return;
@@ -48,95 +50,103 @@ namespace System
         return primaryCamera;
     }
 
+    void SceneSystem::add_default_camera()
+    {
+        Component::Transform camera_transform;
+        camera_transform.mPosition = {0.f, 5.f, 20.f};
+        auto camera = Component::Camera(glm::vec3(0.f, 0.f, 1.f), true);
+        camera.look_at(glm::vec3(0.f), camera_transform.mPosition);
+
+        mStorage.addEntity(
+            camera_transform,
+            camera,
+            Component::Label("Camera"),
+            Component::RigidBody(),
+            Component::Input(Component::Input::Camera_Move_Look));
+    }
+
     // Lines up all the available primitive meshes along the x axis with the camera facing them.
     void SceneSystem::primitiveMeshScene()
     {
-        mStorage.addEntity(Component::Camera(true), Component::Input(Component::Input::Move), Component::Label("Camera"));
+        constexpr float mesh_count   = 5.f;
+        constexpr float mesh_width   = 2.f;
+        constexpr float mesh_padding = 1.f;
+        constexpr float half_count   = (mesh_count - 1) / 2.f;
+        constexpr float start_x      = -half_count * (mesh_width + mesh_padding);
+        constexpr float increment    = mesh_width + mesh_padding;
 
+        float running_x = start_x;
 
-        constexpr float primitiveCount         = 5.f; // Number of available primitives.
-        constexpr float primitiveExtents       = 2.f; // The scale of all the primitives. Primitives are in the object space [-1 - 1].
-        constexpr float spaceBetweenPrimitives = 1.f; // Space from the end of one primitive mesh to starts of next.
-        constexpr float incrementPerPrimitive  = primitiveExtents + spaceBetweenPrimitives;
-        float runningXPosition = -((primitiveCount / 2.f) * incrementPerPrimitive) - (primitiveExtents);
-        auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
-        auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
-        auto directions        = Utility::File::textureDirectory / "directions.jpg";
-
-        {
-            Component::Transform transform;
-            transform.mPosition          = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-            Component::Label name        = Component::Label("cube");
-
+        { // Textured cube
             Component::Texture texture;
-            texture.mDiffuse  = mTextureSystem.getTexture(containerDiffuse);
-            texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
+            texture.mDiffuse  = mTextureSystem.getTexture(Utility::File::textureDirectory / "metalContainerDiffuse.png");
+            texture.mSpecular = mTextureSystem.getTexture(Utility::File::textureDirectory / "metalContainerSpecular.png");
+            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto mesh         = Component::Mesh{mMeshSystem.mCubePrimitive};
 
-            Component::Mesh mesh         = {mMeshSystem.mCubePrimitive};
-            Component::Collider collider = Component::Collider(transform, mesh);
-            Component::RigidBody rigidBody;
-            mStorage.addEntity(mesh, transform, collider, rigidBody, name, texture);
+            mStorage.addEntity(
+                Component::Label{"Cube"},
+                Component::RigidBody{},
+                transform,
+                mesh,
+                Component::Collider{transform, mesh},
+                texture);
+            running_x += increment;
         }
-        {
-            Component::Transform transform;
-            transform.mPosition   = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-            Component::Label name = Component::Label("cube 2");
+        { // Cone
+            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto mesh         = Component::Mesh{mMeshSystem.mConePrimitive};
 
-            Component::Texture texture;
-            texture.mDiffuse = mTextureSystem.getTexture(containerDiffuse);
-            texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
-
-            Component::Mesh mesh         = {mMeshSystem.mCubePrimitive};
-            Component::Collider collider = Component::Collider(transform, mesh);
-            Component::RigidBody rigidBody;
-            mStorage.addEntity(mesh, transform, collider, rigidBody, name, texture);
+            mStorage.addEntity(
+                Component::Label{"Cone"},
+                Component::RigidBody{},
+                transform,
+                mesh,
+                Component::Collider{transform, mesh});
+            running_x += increment;
         }
-        //{
-        //    Component::Transform transform;
-        //    transform.mPosition          = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-        //    Component::Label name        = Component::Label("cone");
-        //    Component::Mesh mesh         = {mMeshSystem.mConePrimitive};
-        //    Component::Collider collider = Component::Collider(transform, mesh);
-        //    Component::RigidBody rigidBody;
-        //    mStorage.addEntity(mesh, transform, collider, rigidBody, name);
-        //}
-        //{
-        //    Component::Transform transform;
-        //    transform.mPosition          = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-        //    Component::Label name        = Component::Label("cylinder");
-        //    Component::Mesh mesh         = {mMeshSystem.mCylinderPrimitive};
-        //    Component::Collider collider = Component::Collider(transform, mesh);
-        //    Component::RigidBody rigidBody;
-        //    mStorage.addEntity(mesh, transform, collider, rigidBody, name);
-        //}
-        //{
-        //    Component::Transform transform;
-        //    transform.mPosition          = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-        //    Component::Label name        = Component::Label("plane");
-        //    Component::Texture texture;
-        //    texture.mDiffuse = mTextureSystem.mTextureManager.getOrCreate([&directions](const Data::Texture& pTexture) { return pTexture.mFilePath == directions; }, directions);
-        //    Component::Mesh mesh         = {mMeshSystem.mPlanePrimitive};
-        //    Component::Collider collider = Component::Collider(transform, mesh);
-        //    Component::RigidBody rigidBody;
-        //    mStorage.addEntity(mesh, transform, collider, rigidBody, texture, name);
-        //}
-        //{
-        //    Component::Transform transform;
-        //    transform.mPosition          = glm::vec3(runningXPosition += incrementPerPrimitive, 0.f, 0.f);
-        //    Component::Label name        = Component::Label("sphere");
-        //    Component::Mesh mesh         = {mMeshSystem.mSpherePrimitive};
-        //    Component::Collider collider = Component::Collider(transform, mesh);
-        //    Component::RigidBody rigidBody;
-        //    mStorage.addEntity(mesh, transform, collider, rigidBody, name);
-        //}
+        { // Cylinder
+            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto mesh         = Component::Mesh{mMeshSystem.mCylinderPrimitive};
+
+            mStorage.addEntity(
+                Component::Label{"Cylinder"},
+                Component::RigidBody{},
+                transform,
+                mesh,
+                Component::Collider{transform, mesh});
+            running_x += increment;
+        }
+        { // Plane/quad
+            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto mesh         = Component::Mesh{mMeshSystem.mPlanePrimitive};
+
+            mStorage.addEntity(
+                Component::Label{"Plane"},
+                Component::RigidBody{},
+                transform,
+                mesh,
+                Component::Collider{transform, mesh});
+            running_x += increment;
+        }
+        { // Sphere
+            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto mesh         = Component::Mesh{mMeshSystem.mSpherePrimitive};
+
+            mStorage.addEntity(
+                Component::Label{"Sphere"},
+                Component::RigidBody{},
+                transform,
+                mesh,
+                Component::Collider{transform, mesh});
+            running_x += increment;
+        }
     }
 
     void SceneSystem::constructBoxScene()
     {
         const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
         const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
-
-        mStorage.addEntity(Component::Camera(true), Component::Label("Camera"));
 
         {// Cubes
             for (size_t i = 0; i < 100; i += 2)
@@ -194,8 +204,6 @@ namespace System
     {
         const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
         const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
-
-        mStorage.addEntity(Component::Camera(true), Component::Label("Camera"));
 
         { // Ball
             Component::Transform transform;

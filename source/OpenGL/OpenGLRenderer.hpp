@@ -115,9 +115,6 @@ namespace OpenGL
             glm::mat4 mView;
             glm::vec3 mViewPosition;
             glm::mat4 mProjection;
-            float mZNearPlane;
-            float mZFarPlane;
-            float mFOV;
         };
 
         Platform::Window& m_window;

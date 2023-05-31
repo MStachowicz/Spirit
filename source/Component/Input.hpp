@@ -24,7 +24,7 @@ namespace Component
     class Input
     {
     public:
-        static InputFunction Move; // Basic move functionality. Depends on Entity owning a Transform component.
+        static InputFunction Camera_Move_Look; // Basic move functionality. Depends on Entity owning Camera+Transform+RigidBody components.
 
         Input(const InputFunction& p_input_func) noexcept
             : m_function{p_input_func}

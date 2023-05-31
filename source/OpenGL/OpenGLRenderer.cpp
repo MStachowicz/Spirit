@@ -74,9 +74,6 @@ namespace OpenGL
         : mView{glm::identity<glm::mat4>()}
         , mViewPosition{0.f}
         , mProjection{glm::identity<glm::mat4>()}
-        , mZNearPlane{0.1f}
-        , mZFarPlane{100.f}
-        , mFOV{45.f}
     {}
 
     OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)
@@ -139,15 +136,18 @@ namespace OpenGL
         }
 
         { // Set global shader uniforms.
-            if (auto* primaryCamera = mSceneSystem.getPrimaryCamera())
+            mSceneSystem.getCurrentScene().foreach([this](Component::Camera& p_camera, Component::Transform& p_transform)
             {
-                mViewInformation.mView         = primaryCamera->get_view();
-                mViewInformation.mViewPosition = primaryCamera->get_position();
-            }
-            mViewInformation.mProjection = glm::perspective(glm::radians(mViewInformation.mFOV), m_window.aspect_ratio(), mViewInformation.mZNearPlane, mViewInformation.mZFarPlane);
+                if (p_camera.m_primary)
+                {
+                    mViewInformation.mViewPosition = p_transform.mPosition;
+                    mViewInformation.mView         = p_camera.get_view(p_transform.mPosition);// glm::lookAt(p_transform.mPosition, p_transform.mPosition + p_transform.mDirection, camera_up);
+                    mViewInformation.mProjection   = glm::perspective(glm::radians(p_camera.m_FOV), m_window.aspect_ratio(), p_camera.m_near, p_camera.m_far);
 
-            Shader::set_block_uniform("ViewProperties.view", mViewInformation.mView);
-            Shader::set_block_uniform("ViewProperties.projection", mViewInformation.mProjection);
+                    Shader::set_block_uniform("ViewProperties.view", mViewInformation.mView);
+                    Shader::set_block_uniform("ViewProperties.projection", mViewInformation.mProjection);
+                }
+            });
         }
     }
 
@@ -414,7 +414,10 @@ namespace OpenGL
         {
             scene.foreach([&](Component::Transform& pTransform, Component::Mesh& pMesh)
             {
-                drawArrow(pTransform.mPosition, pTransform.mDirection, 1.f);
+                auto axes = pTransform.get_local_axes();
+                drawArrow(pTransform.mPosition, axes[0], 1.f, glm::vec3(1.f, 0.f, 0.f));
+                drawArrow(pTransform.mPosition, axes[1], 1.f, glm::vec3(0.f, 1.f, 0.f));
+                drawArrow(pTransform.mPosition, axes[2], 1.f, glm::vec3(0.f, 0.f, 1.f));
             });
         }
     }
