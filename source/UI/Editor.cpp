@@ -57,6 +57,7 @@ namespace UI
         , mSceneSystem{pSceneSystem}
         , mCollisionSystem{pCollisionSystem}
         , mOpenGLRenderer{pOpenGLRenderer}
+        , m_click_rays{}
         , mSelectedEntities{}
         , m_console{}
         , mWindowsToDisplay{}
@@ -92,6 +93,7 @@ namespace UI
                     {
                         const auto& view_info = mOpenGLRenderer.mViewInformation;
                         auto cursorRay = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.mViewPosition, view_info.mProjection, view_info.mView);
+                        m_click_rays.emplace_back(cursorRay);
                         auto entitiesUnderMouse = mCollisionSystem.getEntitiesAlongRay(cursorRay);
 
                         if (!entitiesUnderMouse.empty())
@@ -102,15 +104,12 @@ namespace UI
                             mSelectedEntities.push_back(entityCollided);
                             LOG("[EDITOR] Entity{} has been selected", entityCollided.ID);
                         }
-
-                        const auto mouseRayCylinder = Geometry::Cylinder(mSceneSystem.getPrimaryCamera()->get_position(), mSceneSystem.getPrimaryCamera()->get_position() + (cursorRay.m_direction * 1000.f), 0.02f);
-                        mOpenGLRenderer.mDebugOptions.mCylinders.push_back(mouseRayCylinder);
                     }
                     break;
                 }
                 case Platform::MouseButton::Middle:
                 {
-                    mOpenGLRenderer.mDebugOptions.mCylinders.clear();
+                    m_click_rays.clear();
                     break;
                 }
                 case Platform::MouseButton::Right: break;
@@ -125,6 +124,8 @@ namespace UI
     {
         m_duration_between_draws.push_back(p_duration_since_last_draw);
 
+        for (const auto& ray : m_click_rays)
+            OpenGL::DebugRenderer::add(ray);
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("View"))

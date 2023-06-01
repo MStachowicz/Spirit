@@ -140,11 +140,12 @@ source/UI/Console.cpp
 )
 target_include_directories(UI
 PUBLIC source/UI
+PUBLIC source
 )
 target_link_libraries(UI
+PUBLIC Geometry
 PRIVATE System
 PRIVATE Platform
-PRIVATE Geometry
 PRIVATE OpenGL
 PRIVATE ECS
 PRIVATE Utility

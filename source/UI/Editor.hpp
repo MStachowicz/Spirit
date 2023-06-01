@@ -3,6 +3,8 @@
 // UI
 #include "Console.hpp"
 
+#include "Geometry/Ray.hpp"
+
 // GLM
 #include "glm/fwd.hpp"
 #include "glm/vec3.hpp"
@@ -70,6 +72,7 @@ namespace UI
 
         OpenGL::OpenGLRenderer&  mOpenGLRenderer;
 
+        std::vector<Geometry::Ray> m_click_rays; // On mouse click save the Ray to render.
         std::vector<ECS::Entity> mSelectedEntities;
         Console m_console;
         Windows mWindowsToDisplay; // All the windows currently being displayed

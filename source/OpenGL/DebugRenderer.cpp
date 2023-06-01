@@ -100,7 +100,7 @@ namespace OpenGL
     void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Because a Ray extends infinitely, we represent it as a Line extending in both start and end directions beyond camera z-far which gives it an infinite appearance.
-        add(Geometry::Line(p_ray.m_start - p_ray.m_direction * Z_Far_Scaler, p_ray.m_start + p_ray.m_direction * Z_Far_Scaler), p_colour);
+        add(Geometry::Line(p_ray.m_start, p_ray.m_start + p_ray.m_direction * Z_Far_Scaler), p_colour);
     }
 
     void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
