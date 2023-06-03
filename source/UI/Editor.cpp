@@ -23,6 +23,8 @@
 
 // GEOMETRY
 #include "Geometry.hpp"
+#include "Line.hpp"
+#include "Triangle.hpp"
 
 // OPENGL
 #include "OpenGLRenderer.hpp"
@@ -139,6 +141,7 @@ namespace UI
                     ImGui::MenuItem("FPS Timer", NULL, &mWindowsToDisplay.FPSTimer);
                     ImGui::MenuItem("Graphics", NULL, &mWindowsToDisplay.Graphics);
                     ImGui::MenuItem("Physics", NULL, &mWindowsToDisplay.Physics);
+                    ImGui::MenuItem("Visualise collisions", NULL, &mWindowsToDisplay.collision_visualisation);
 
                     ImGui::EndMenu();
                 }
@@ -169,15 +172,16 @@ namespace UI
             }
             ImGui::EndMenuBar();
         }
-        if (mWindowsToDisplay.Entity)           drawEntityTreeWindow();
-        if (mWindowsToDisplay.Console)          drawConsoleWindow();
-        if (mWindowsToDisplay.Performance)      drawPerformanceWindow();
-        if (mWindowsToDisplay.Graphics)         drawGraphicsWindow();
-        if (mWindowsToDisplay.Physics)          drawPhysicsWindow();
-        if (mWindowsToDisplay.ImGuiDemo)        ImGui::ShowDemoWindow(&mWindowsToDisplay.ImGuiDemo);
-        if (mWindowsToDisplay.ImGuiMetrics)     ImGui::ShowMetricsWindow(&mWindowsToDisplay.ImGuiMetrics);
-        if (mWindowsToDisplay.ImGuiStack)       ImGui::ShowStackToolWindow(&mWindowsToDisplay.ImGuiStack);
-        if (mWindowsToDisplay.ImGuiAbout)       ImGui::ShowAboutWindow(&mWindowsToDisplay.ImGuiAbout);
+        if (mWindowsToDisplay.Entity)                   drawEntityTreeWindow();
+        if (mWindowsToDisplay.Console)                  drawConsoleWindow();
+        if (mWindowsToDisplay.Performance)              drawPerformanceWindow();
+        if (mWindowsToDisplay.Graphics)                 drawGraphicsWindow();
+        if (mWindowsToDisplay.Physics)                  drawPhysicsWindow();
+        if (mWindowsToDisplay.collision_visualisation)  draw_collision_visualisation();
+        if (mWindowsToDisplay.ImGuiDemo)                ImGui::ShowDemoWindow(&mWindowsToDisplay.ImGuiDemo);
+        if (mWindowsToDisplay.ImGuiMetrics)             ImGui::ShowMetricsWindow(&mWindowsToDisplay.ImGuiMetrics);
+        if (mWindowsToDisplay.ImGuiStack)               ImGui::ShowStackToolWindow(&mWindowsToDisplay.ImGuiStack);
+        if (mWindowsToDisplay.ImGuiAbout)               ImGui::ShowAboutWindow(&mWindowsToDisplay.ImGuiAbout);
         if (mWindowsToDisplay.ImGuiStyleEditor)
         {
             ImGui::Begin("Dear ImGui Style Editor", &mWindowsToDisplay.ImGuiStyleEditor);
@@ -274,6 +278,58 @@ namespace UI
     void Editor::drawConsoleWindow()
     {
         m_console.draw("Console", &mWindowsToDisplay.Console);
+    }
+
+    void Editor::draw_collision_visualisation()
+    {
+        constexpr auto Collided_Colour     = glm::vec4(0.f, 1.f, 0.f, 1.f);
+        constexpr auto Not_Collided_Colour = glm::vec4(1.f, 0.f, 0.f, 1.f);
+
+        if (ImGui::Begin("Collision visualisation", &mWindowsToDisplay.collision_visualisation))
+        {
+            if (ImGui::TreeNode("Triangle - Line"))
+            {
+                ImGui::Text("When the cursor is visible, hover over the red triangle at the origin to test collision.");
+                ImGui::Separator();
+
+                static glm::vec3 point1      = {0.f, 0.f, 0.f};
+                static glm::vec3 point2      = {0.5f, 1.f, 0.f};
+                static glm::vec3 point3      = {1.f, 0.f, 0.f};
+                static glm::vec3 translation = glm::vec3(2.f, 0.f, 0.f);
+
+                ImGui::Slider("Point 1##Triangle-Line", point1, -10.f, 10.f);
+                ImGui::Slider("Point 2##Triangle-Line", point2, -10.f, 10.f);
+                ImGui::Slider("Point 3##Triangle-Line", point3, -10.f, 10.f);
+                ImGui::Slider("Translation##Triangle-Line", translation, -5.f, 5.f);
+                auto t = Geometry::Triangle(point1, point2, point3);
+                t.translate(translation);
+
+                glm::vec3 collision_point;
+                bool collided = false;
+
+                if (!m_input.cursor_captured())
+                {
+                    const auto& view_info = mOpenGLRenderer.mViewInformation;
+                    auto cursorRay        = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.mViewPosition, view_info.mProjection, view_info.mView);
+                    collided              = Geometry::intersect_line_triangle(Geometry::Line(cursorRay.m_start, cursorRay.m_start + (cursorRay.m_direction * 1000.f)), t, collision_point);
+                }
+
+                if (collided)
+                {
+                    OpenGL::DebugRenderer::add(t, Collided_Colour);
+                    OpenGL::DebugRenderer::add(Geometry::Sphere(collision_point, 0.05f), glm::vec4(1.f));
+                    ImGui::TextColored(Collided_Colour, "Triangle cursor collision at point: [%f, %f, %f]", collision_point.x, collision_point.y, collision_point.z);
+                }
+                else
+                {
+                    OpenGL::DebugRenderer::add(t, Not_Collided_Colour);
+                    ImGui::TextColored(Not_Collided_Colour, "No triangle cursor collision");
+                }
+
+                ImGui::TreePop();
+            }
+        }
+        ImGui::End();
     }
 
     void Editor::drawGraphicsWindow()
