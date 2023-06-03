@@ -1,6 +1,6 @@
 #include "Application.hpp"
 
-Application::Application(Platform::Input& p_input, Platform::Window& p_window)
+Application::Application(Platform::Input& p_input, Platform::Window& p_window) noexcept
     : m_input{p_input}
     , m_window{p_window}
     , mTextureSystem{}
@@ -17,6 +17,10 @@ Application::Application(Platform::Input& p_input, Platform::Window& p_window)
     , maxFrameDelta{std::chrono::milliseconds(250)}
 {
     Logger::s_editor_sink = &mEditor;
+}
+Application::~Application() noexcept
+{
+    Logger::s_editor_sink = nullptr;
 }
 
 void Application::simulationLoop()

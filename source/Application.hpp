@@ -37,7 +37,8 @@
 class Application
 {
 public:
-    Application(Platform::Input& p_input, Platform::Window& p_window);
+    Application(Platform::Input& p_input, Platform::Window& p_window) noexcept;
+    ~Application() noexcept;
     void simulationLoop();
 
 private:
