@@ -14,6 +14,7 @@ namespace Geometry
 {
     class Cylinder;
     class Plane;
+    class Quad;
     class Ray;
     class Sphere;
     class Triangle;
@@ -68,6 +69,7 @@ namespace OpenGL
         static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Line& p_line, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Plane& p_plane, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Quad& p_quad, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Ray& p_ray, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour = glm::vec4(1.f));

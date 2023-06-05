@@ -86,8 +86,12 @@ namespace OpenGL
         // Because a Plane is infinite, we represent it as a quad bigger than camera z-far which gives it an infinite appearance.
         auto quad = Geometry::Quad(p_plane);
         quad.scale(Z_Far_Scaler);
-        auto triangles = quad.get_triangles(); // Use triangles since OpenGL deprecated Quad primitive rendering.
+        add(quad, p_colour);
+    }
 
+    void DebugRenderer::add(const Geometry::Quad& p_quad, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
+    {
+        auto triangles = p_quad.get_triangles(); // Use triangles since OpenGL deprecated Quad primitive rendering.
         m_debug_verts.insert(m_debug_verts.end(), {
             {triangles[0].m_point_1, p_colour},
             {triangles[0].m_point_2, p_colour},
@@ -99,7 +103,7 @@ namespace OpenGL
 
     void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
-        // Because a Ray extends infinitely, we represent it as a Line extending in both start and end directions beyond camera z-far which gives it an infinite appearance.
+        // Because a Ray extends infinitely, we represent it as a Line extending beyond camera z-far which gives it an infinite appearance.
         add(Geometry::Line(p_ray.m_start, p_ray.m_start + p_ray.m_direction * Z_Far_Scaler), p_colour);
     }
 
