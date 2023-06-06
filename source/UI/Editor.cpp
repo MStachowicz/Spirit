@@ -23,7 +23,7 @@
 
 // GEOMETRY
 #include "Geometry.hpp"
-#include "Line.hpp"
+#include "LineSegment.hpp"
 #include "Triangle.hpp"
 
 // OPENGL
@@ -128,6 +128,7 @@ namespace UI
 
         for (const auto& ray : m_click_rays)
             OpenGL::DebugRenderer::add(ray);
+
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("View"))
@@ -301,8 +302,8 @@ namespace UI
                 ImGui::Slider("Point 2##Triangle-Line", point2, -10.f, 10.f);
                 ImGui::Slider("Point 3##Triangle-Line", point3, -10.f, 10.f);
                 ImGui::Slider("Translation##Triangle-Line", translation, -5.f, 5.f);
-                auto t = Geometry::Triangle(point1, point2, point3);
-                t.translate(translation);
+                auto triangle_1 = Geometry::Triangle(point1, point2, point3);
+                triangle_1.translate(translation);
 
                 glm::vec3 collision_point;
                 bool collided = false;
@@ -311,18 +312,18 @@ namespace UI
                 {
                     const auto& view_info = mOpenGLRenderer.mViewInformation;
                     auto cursorRay        = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.mViewPosition, view_info.mProjection, view_info.mView);
-                    collided              = Geometry::intersect_line_triangle(Geometry::Line(cursorRay.m_start, cursorRay.m_start + (cursorRay.m_direction * 1000.f)), t, collision_point);
+                    collided              = Geometry::intersect_ray_triangle(cursorRay, triangle_1, collision_point);
                 }
 
                 if (collided)
                 {
-                    OpenGL::DebugRenderer::add(t, Collided_Colour);
+                    OpenGL::DebugRenderer::add(triangle_1, Collided_Colour);
                     OpenGL::DebugRenderer::add(Geometry::Sphere(collision_point, 0.05f), glm::vec4(1.f));
                     ImGui::TextColored(Collided_Colour, "Triangle cursor collision at point: [%f, %f, %f]", collision_point.x, collision_point.y, collision_point.z);
                 }
                 else
                 {
-                    OpenGL::DebugRenderer::add(t, Not_Collided_Colour);
+                    OpenGL::DebugRenderer::add(triangle_1, Not_Collided_Colour);
                     ImGui::TextColored(Not_Collided_Colour, "No triangle cursor collision");
                 }
 

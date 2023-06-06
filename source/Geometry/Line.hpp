@@ -4,16 +4,17 @@
 
 namespace Geometry
 {
-    // A directed line segment. A finite section of a geometric line from m_start to m_end.
+    // An infinitely long object with no width, depth, or curvature. Defined by two points along the line.
     class Line
     {
     public:
-        constexpr Line(const glm::vec3& p_start, const glm::vec3& p_end) noexcept
-            : m_start{p_start}
-            , m_end{p_end}
+        // Construct a line from a pair of points on the line.
+        constexpr Line(const glm::vec3& p_point_1, const glm::vec3& p_point_2) noexcept
+            : m_point_1{p_point_1}
+            , m_point_2{p_point_2}
         {}
 
-        glm::vec3 m_start;
-        glm::vec3 m_end;
+        glm::vec3 m_point_1;
+        glm::vec3 m_point_2;
     };
 }

@@ -6,7 +6,7 @@
 
 // GEOMETRY
 #include "Cylinder.hpp"
-#include "Line.hpp"
+#include "LineSegment.hpp"
 #include "Plane.hpp"
 #include "Quad.hpp"
 #include "Ray.hpp"
@@ -76,7 +76,7 @@ namespace OpenGL
         // Generate the points for the shape and push to relevant _verts container
     }
 
-    void DebugRenderer::add(const Geometry::Line& p_line, const glm::vec4& p_colour/*= glm::vec4(1.f)*/)
+    void DebugRenderer::add(const Geometry::LineSegment& p_line, const glm::vec4& p_colour/*= glm::vec4(1.f)*/)
     {
         m_debug_line_verts.insert(m_debug_line_verts.end(), {{p_line.m_start, p_colour}, {p_line.m_end, p_colour} });
     }
@@ -104,7 +104,7 @@ namespace OpenGL
     void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Because a Ray extends infinitely, we represent it as a Line extending beyond camera z-far which gives it an infinite appearance.
-        add(Geometry::Line(p_ray.m_start, p_ray.m_start + p_ray.m_direction * Z_Far_Scaler), p_colour);
+        add(Geometry::LineSegment(p_ray.m_start, p_ray.m_start + p_ray.m_direction * Z_Far_Scaler), p_colour);
     }
 
     void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)

@@ -367,10 +367,10 @@ namespace Geometry
         // p_line passes on the inside if all three scalar triple products (u,v,w) have the same sign (ignoring zeroes).
         // The code does not handle the case when p_line is in the same plane as p_triangle.
 
-        const glm::vec3 pq = p_line.m_end - p_line.m_start;
-        const glm::vec3 pa = p_triangle.m_point_1 - p_line.m_start;
-        const glm::vec3 pb = p_triangle.m_point_2 - p_line.m_start;
-        const glm::vec3 pc = p_triangle.m_point_3 - p_line.m_start;
+        const glm::vec3 pq = p_line.m_point_2 - p_line.m_point_1;
+        const glm::vec3 pa = p_triangle.m_point_1 - p_line.m_point_1;
+        const glm::vec3 pb = p_triangle.m_point_2 - p_line.m_point_1;
+        const glm::vec3 pc = p_triangle.m_point_3 - p_line.m_point_1;
 
         const glm::vec3 m = glm::cross(pq, pc); // m allows us to avoid an extra cross product below.
         const auto u      = glm::dot(pb, m);    // triple_product(pq, pc, pb);
@@ -386,10 +386,10 @@ namespace Geometry
     {
         // Identical to the above function but uses u, v, w to determine the intersection point to return.
 
-        const glm::vec3 pq = p_line.m_end - p_line.m_start;
-        const glm::vec3 pa = p_triangle.m_point_1 - p_line.m_start;
-        const glm::vec3 pb = p_triangle.m_point_2 - p_line.m_start;
-        const glm::vec3 pc = p_triangle.m_point_3 - p_line.m_start;
+        const glm::vec3 pq = p_line.m_point_2 - p_line.m_point_1;
+        const glm::vec3 pa = p_triangle.m_point_1 - p_line.m_point_1;
+        const glm::vec3 pb = p_triangle.m_point_2 - p_line.m_point_1;
+        const glm::vec3 pc = p_triangle.m_point_3 - p_line.m_point_1;
 
         const glm::vec3 m = glm::cross(pq, pc); // m allows us to avoid an extra cross product below.
         auto u      = glm::dot(pb, m);    // triple_product(pq, pc, pb);
@@ -412,6 +412,30 @@ namespace Geometry
         }
         else
             return false;
+    }
+    bool intersect_ray_triangle(const Ray& p_ray, const Triangle& p_triangle)
+    {
+        //#TODO - Collision detection pg 190 5.3.6
+        ASSERT(false, "Not implemented 'intersect_ray_triangle'");
+        return false;
+    }
+    bool intersect_ray_triangle(const Ray& p_ray, const Triangle& p_triangle, glm::vec3& out_collision_point)
+    {
+        //#TODO - Collision detection pg 190 5.3.6
+        ASSERT(false, "Not implemented 'intersect_ray_triangle'");
+        return false;
+    }
+    bool intersect_line_segment_triangle(const LineSegment& p_line_segment, const Triangle& p_triangle)
+    {
+        //#TODO - Collision detection pg 190 5.3.6
+        ASSERT(false, "Not implemented 'intersect_line_segment_triangle'");
+        return false;
+    }
+    bool intersect_line_segment_triangle(const LineSegment& p_line_segment, const Triangle& p_triangle, glm::vec3& out_collision_point)
+    {
+        //#TODO - Collision detection pg 190 5.3.6
+        ASSERT(false, "Not implemented 'intersect_line_segment_triangle'");
+        return false;
     }
 
     float triple_product(const glm::vec3& u, const glm::vec3& v, const glm::vec3& w)
