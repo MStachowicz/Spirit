@@ -181,6 +181,8 @@ PRIVATE ImGui
 add_library(OpenGL
 source/OpenGL/OpenGLRenderer.hpp
 source/OpenGL/OpenGLRenderer.cpp
+source/OpenGL/GridRenderer.hpp
+source/OpenGL/GridRenderer.cpp
 source/OpenGL/DebugRenderer.hpp
 source/OpenGL/DebugRenderer.cpp
 source/OpenGL/GLState.hpp

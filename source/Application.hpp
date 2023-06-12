@@ -19,6 +19,7 @@
 // OpenGL
 #include "OpenGLRenderer.hpp"
 #include "DebugRenderer.hpp"
+#include "OpenGL/GridRenderer.hpp"
 
 // Utility
 #include "File.hpp"
@@ -50,6 +51,7 @@ private:
     System::SceneSystem mSceneSystem;
 
     OpenGL::OpenGLRenderer mOpenGLRenderer;
+    OpenGL::GridRenderer m_grid_renderer;
 
     System::CollisionSystem mCollisionSystem;
     System::PhysicsSystem mPhysicsSystem;
@@ -129,6 +131,7 @@ private:
                 m_window.start_ImGui_frame();
                 mOpenGLRenderer.start_frame();
 
+                m_grid_renderer.draw();
                 mOpenGLRenderer.draw();
                 mEditor.draw(durationSinceLastRenderTick);
                 OpenGL::DebugRenderer::render(mSceneSystem);

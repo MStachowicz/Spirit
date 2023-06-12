@@ -7,6 +7,7 @@ Application::Application(Platform::Input& p_input, Platform::Window& p_window) n
     , mMeshSystem{mTextureSystem}
     , mSceneSystem{mTextureSystem, mMeshSystem}
     , mOpenGLRenderer{m_window, mSceneSystem, mMeshSystem, mTextureSystem}
+    , m_grid_renderer{}
     , mCollisionSystem{mSceneSystem, mMeshSystem}
     , mPhysicsSystem{mSceneSystem, mCollisionSystem}
     , mInputSystem{m_input, m_window, mSceneSystem}
