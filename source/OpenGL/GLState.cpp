@@ -207,6 +207,12 @@ namespace OpenGL
         glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &size);
         return size;
     }
+    GLint get_max_shader_storage_block_size()
+    {
+        GLint size;
+        glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
+        return size;
+    }
     GLHandle get_current_shader_program()
     {
         GLint handle;

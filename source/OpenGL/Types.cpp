@@ -465,6 +465,184 @@ namespace OpenGL
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
+    ShaderStorageBlockVariable::ShaderStorageBlockVariable(GLHandle p_parent_shader_program, GLuint p_variable_index) noexcept
+        : m_identifier{""}
+        , m_type{DataType::Unknown}
+        , m_offset{-1}
+        , m_array_size{-1}
+        , m_array_stride{-1}
+        , m_matrix_stride{-1}
+        , m_is_row_major{-1}
+        , m_top_level_array_size{-1}
+        , m_top_level_array_stride{-1}
+    {
+        // Use OpenGL introspection API to Query the shader program for properties of its Uniform resources.
+        // https://www.khronos.org/opengl/wiki/Program_Introspection
+        // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGetProgramResource.xhtml
+        static constexpr size_t property_count = 9;
+        static constexpr GLenum property_query[property_count] = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR, GL_TOP_LEVEL_ARRAY_SIZE, GL_TOP_LEVEL_ARRAY_STRIDE};
+        GLint property_values[property_count] = {-1};
+        glGetProgramResourceiv(p_parent_shader_program, GL_UNIFORM, p_variable_index, property_count, &property_query[0], property_count, NULL, &property_values[0]);
+
+        m_identifier.resize(property_values[0]);
+        glGetProgramResourceName(p_parent_shader_program, GL_UNIFORM, p_variable_index, property_values[0], NULL, m_identifier.data());
+        ASSERT(!m_identifier.empty(), "Failed to get name of uniform variable in shader with handle {}", p_parent_shader_program);
+        m_identifier.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+
+        m_type                   = convert(property_values[1]);
+        m_offset                 = property_values[2];
+        m_array_size             = property_values[3];
+        m_array_stride           = property_values[4];
+        m_matrix_stride          = property_values[5];
+        m_is_row_major           = property_values[6];
+        m_top_level_array_size   = property_values[7];
+        m_top_level_array_stride = property_values[8];
+    }
+
+        SSBO::SSBO(const std::string& p_storage_block_identifier, GLsizei p_size, const std::vector<ShaderStorageBlockVariable>& p_variables) noexcept
+        : m_handle{0}
+        , m_size{p_size}
+        , m_binding_point{0}
+        , m_variables{p_variables}
+        , m_identifier{p_storage_block_identifier}
+    {
+        glGenBuffers(1, &m_handle);
+
+        bind();
+        // Supplying NULL as p_data to buffer_data reserves the Bytes but does not assign to them.
+        buffer_data(BufferType::ShaderStorageBuffer, m_size, NULL, BufferUsage::StaticDraw);
+
+        // Bind ourselves to the first available binding point.
+        {
+            // #TODO Don't create an array of max_size because this could be arbitrarily large - Serach for first false || push_back then + check if the index hasnt reached the max instead.
+            if (s_binding_points.empty()) // First SSBO construction
+                s_binding_points = std::vector<bool>(get_max_shader_storage_binding_points(), false);
+
+            auto it = std::find(s_binding_points.begin(), s_binding_points.end(), false);
+            ASSERT(it != s_binding_points.end(), "[OPENGL][SSBO] No remaining shader storage block binding points to bind to."); // Always
+            (*it) = true;
+            m_binding_point = std::distance(s_binding_points.begin(), it);
+        }
+
+        bind_buffer_range(BufferType::ShaderStorageBuffer, m_binding_point, m_handle, 0, m_size);
+
+        if constexpr (LogGLTypeEvents) LOG("SSBO '{}' created with GLHandle {}, size {}B binding point {} at address {}", m_identifier, m_handle, m_size, m_binding_point, (void*)(this));
+    }
+    SSBO::~SSBO() noexcept
+    {
+        if (m_handle != 0)
+        {
+            glDeleteBuffers(1, &m_handle);
+            s_binding_points[m_binding_point] = false;
+            if constexpr (LogGLTypeEvents) LOG("SSBO '{}' free resource. GLHandle: {} Size: {}B bounding point: {}", m_identifier, m_handle, m_size, m_binding_point);
+        }
+
+        if constexpr (LogGLTypeEvents) LOG("UBO '{}' destroyed address: {}", m_identifier, m_handle, (void*)(this));
+    }
+    SSBO::SSBO(SSBO&& p_other) noexcept
+        : m_handle{std::exchange(p_other.m_handle, 0)}
+        , m_size{std::exchange(p_other.m_size, 0)}
+        , m_binding_point{std::exchange(p_other.m_binding_point, 0)}
+        , m_variables{std::exchange(p_other.m_variables, {})}
+        , m_identifier{p_other.m_identifier}
+    {
+        if constexpr (LogGLTypeEvents) LOG("SSBO '{}' move-constructed with GLHandle {} at address {}", m_identifier, m_handle, (void*)(this));
+    }
+    SSBO& SSBO::operator=(SSBO&& p_other) noexcept
+    {
+        if (this != &p_other)
+        {
+            // Free the existing resource.
+            if (m_handle != 0)
+            {
+                glDeleteBuffers(1, &m_handle);
+                s_binding_points[m_binding_point] = false;
+                if constexpr (LogGLTypeEvents) LOG("SSBO '{}' free resource. GLHandle: {} Size: {}B bounding point: {}", m_identifier, m_handle, m_size, m_binding_point);
+            }
+
+            // Take the m_handle from p_other source object.
+            // Assign the p_other m_handle to 0 so ~SSBO doesnt call glDeleteBuffers on m_handle.
+            m_handle        = std::exchange(p_other.m_handle, 0);
+            m_size          = std::exchange(p_other.m_size, 0);
+            m_binding_point = std::exchange(p_other.m_binding_point, 0);
+            m_variables     = std::exchange(p_other.m_variables, {});
+            m_identifier    = p_other.m_identifier; // p_other retains the m_identifier for output in destruction.
+        }
+
+        if constexpr (LogGLTypeEvents) LOG("SSBO '{}' move-assigned with GLHandle {} at address {}", m_identifier, m_handle, (void*)(this));
+        return *this;
+    }
+    void SSBO::bind() const
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_handle);
+    }
+
+    ShaderStorageBlock::ShaderStorageBlock(GLHandle p_shader_program, GLuint p_shader_storage_block_index) noexcept
+        : m_identifier{""}
+        , m_index{p_shader_storage_block_index}
+        , m_parent_shader_program{p_shader_program}
+        , m_variables{}
+        , m_buffer_backing{std::nullopt}
+    {
+        static constexpr size_t Property_Count = 4;
+        // GL_BUFFER_BINDING is unused, returns the binding point (layout(binding = X)) for the ShaderStorageBlock
+        // We set this manually after constructing a SSBO and binding this ShaderStorageBlock to its m_buffer_backing m_uniform_binding_point.
+        static constexpr GLenum property_query[Property_Count] = {GL_NAME_LENGTH, GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE};
+        GLint property_values[Property_Count] = {-1};
+        glGetProgramResourceiv(p_shader_program, GL_SHADER_STORAGE_BLOCK, m_index, Property_Count, &property_query[0], Property_Count, NULL, &property_values[0]);
+
+        m_identifier.resize(property_values[0]);
+        glGetProgramResourceName(p_shader_program, GL_SHADER_STORAGE_BLOCK, m_index, property_values[0], NULL, m_identifier.data());
+        ASSERT(!m_identifier.empty(), "Failed to get name of shader storage block in shader with handle {}", p_shader_program);
+        m_identifier.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
+
+        ASSERT(m_index == glGetProgramResourceIndex(p_shader_program, GL_SHADER_STORAGE_BLOCK, m_identifier.c_str()), "shader storage block index given doesnt match the shader program index for the same name block!");
+
+        const GLint active_variables_count = property_values[1];
+        if (active_variables_count > 0)
+        {
+            // Get the array of active variable indices associated with the shader storage block. (GL_ACTIVE_VARIABLES)
+            // The indices correspond in size to GL_NUM_ACTIVE_VARIABLES
+
+            std::vector<GLint> variable_indices(active_variables_count);
+            static constexpr GLenum active_variable_query[1] = {GL_ACTIVE_VARIABLES};
+            glGetProgramResourceiv(p_shader_program, GL_SHADER_STORAGE_BLOCK, m_index, 1, active_variable_query, active_variables_count, NULL, &variable_indices[0]);
+
+            for (GLint variable_index : variable_indices)
+                m_variables.emplace_back(p_shader_program, static_cast<GLuint>(variable_index));
+        }
+
+        const GLint buffer_data_size = property_values[3];
+        ASSERT(buffer_data_size <= get_max_shader_storage_block_size(), "[OPENGL][SHADER] ShaderStorageBlock larger than max size.");
+
+        // To find a SSBO that can back this shader storage block:
+        // The names of the blocks have to match.
+        // The variables must be the same and listed in the same order.
+        // #TODO: the block must be marked as shared
+        m_buffer_backing = s_shader_storage_block_binding_points.getOrCreate([this](const SSBO& p_SSBO)
+        {
+            if (p_SSBO.m_identifier == m_identifier)
+            {
+                if (p_SSBO.m_variables == m_variables)
+                    return true;
+                else
+                {
+                    ASSERT(false, "[OPENGL][SHADER] shader storage block '{}' identifier repeated with different variables! Did you mess up the order or names of types in the block? Have any variables been optimised away?", m_identifier);
+                    return false;
+                }
+            }
+            else
+                return false;
+        }, m_identifier, buffer_data_size, m_variables);
+
+        ASSERT(m_variables.size() == active_variables_count && (*m_buffer_backing)->m_variables == m_variables, "Failed to retrieve all the UniformBlockVariables of block '{}'", m_identifier);
+
+        // Bind the UniformBlock to the binding point the buffer backing SSBO is bound to. SSBO constrcutor called the corresponding bind_buffer_range to the same binding point.
+        shader_storage_block_binding(m_parent_shader_program, m_index, (*m_buffer_backing)->m_binding_point);
+
+        if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] ShaderStorageBlock '{}' bound to point index {}", m_identifier, (*m_buffer_backing)->m_binding_point);
+    }
+
     UniformBlockVariable::UniformBlockVariable(GLHandle p_shader_program, GLuint p_block_variable_index) noexcept
         : m_name{""}
         , m_type{DataType::Unknown}
@@ -511,6 +689,7 @@ namespace OpenGL
 
         // Bind ourselves to the first available binding point.
         {
+            // #TODO Don't create an array of max_size because this could be arbitrarily large - Serach for first false || push_back then + check if the index hasnt reached the max instead.
             if (s_binding_points.empty()) // First UBO construction
                 s_binding_points = std::vector<bool>(get_max_uniform_binding_points(), false);
 

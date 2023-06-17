@@ -16,9 +16,10 @@ namespace OpenGL
         : m_name{p_name}
         , m_handle{0}
         , m_texture_units{0}
-        , m_shader_storage_block_count{0}
         , m_vertex_attributes{}
-        //, m_uniform_blocks{}
+        , m_uniform_blocks{}
+        , m_shader_storage_blocks{}
+        , m_uniforms{}
     {
         const auto shaderPath = Utility::File::GLSLShaderDirectory / p_name;
 
@@ -82,16 +83,15 @@ namespace OpenGL
                     m_uniforms.emplace_back(m_handle, uniform_index);
             }
         }
-
         { // m_uniform_blocks setup
             const GLint block_count = get_uniform_block_count(m_handle);
             for (int block_index = 0; block_index < block_count; block_index++)
                 m_uniform_blocks.emplace_back(m_handle, block_index);
         }
-
-        { // m_shader_storage_block setup
-            m_shader_storage_block_count = get_shader_storage_block_count(m_handle);
-
+        { // m_shader_storage_blocks
+            const GLint block_count = get_shader_storage_block_count(m_handle);
+            for (int block_index = 0; block_index < block_count; block_index++)
+                m_shader_storage_blocks.emplace_back(m_handle, block_index);
         }
 
         { // Setup the available texture units.

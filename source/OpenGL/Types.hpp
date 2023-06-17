@@ -190,6 +190,110 @@ namespace OpenGL
         UniformBlock(GLHandle p_shader_program, GLuint p_uniform_block_index) noexcept;
     };
 
+    // Variables found in Shader objects and their ShaderStorageBlocks.
+    // Provides data the Shader class uses to actually set the data.
+    class ShaderStorageBlockVariable
+    {
+        friend class Shader; // Shader requires access to set the data via the m_offset or the m_location.
+
+        std::string m_identifier; // The identifier used for the variable in the GLSL shader.
+        DataType m_type;
+        GLint m_offset;        // The byte offset relative to the base of the buffer range.
+
+
+        // Array-only - number of active array elements. The size is in units of the type associated with the property m_type.
+        // For active variables not corresponding to an array of basic types, the value is 0.
+        GLint m_array_size;
+        // Array-only - byte difference between consecutive elements in an array type.
+        // For active variables not declared as an array of basic types, value is 0.
+        // For active variables not backed by a buffer object regardless of the variable type, value is -1.
+        GLint m_array_stride;
+        // Matrix-only - stride between columns of a column-major matrix or rows of a row-major matrix.
+        // For active variables not declared as a matrix or array of matrices, value is 0.
+        // For active variables not backed by a buffer object, value is -1, regardless of the variable type.
+        GLint m_matrix_stride;
+        // Matrix-only - is it a row-major matrix.
+        // For active variables backed by a buffer object, declared as a single matrix or array of matrices, and stored in row-major order, value is 1.
+        // For all other active variables, value is 0.
+        GLint m_is_row_major;
+        // Number of active array elements of the top-level shader storage block member.
+        // If the top-level block member is not an array, the value is 1. If it is an array with no declared size, the value is 0.
+        GLint m_top_level_array_size;
+        // Stride between array elements of the top-level shader storage block member.
+        // For arrays, the value written is the difference, in basic machine units, between the offsets of the active variable for consecutive elements in the top-level array.
+        // For top-level block members not declared as an array, value is 0.
+        GLint m_top_level_array_stride;
+
+    public:
+
+        // Extract information about the ShaderStorageBlock variable in p_parent_shader_program with index p_variable_index.
+        //@param p_parent_shader_program Shader that owns this ShaderStorageBlockVariable.
+        //@param p_variable_index Index of the variable in the p_parent_shader_program.
+        ShaderStorageBlockVariable(GLHandle p_parent_shader_program, GLuint p_variable_index) noexcept;
+        constexpr bool operator==(const ShaderStorageBlockVariable& p_other) const = default;
+    };
+
+    // A Shader Storage block Object (SSBO)
+    // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
+    // Compared to UBO's SSBOs:
+    // Can be much larger. The spec guarantees that SSBOs can be up to 128MB. Most implementations will let you allocate a size up to the limit of GPU memory.
+    // Are writable, even atomically. SSBOs reads and writes use incoherent memory accesses, so they need the appropriate barriers, just as Image Load Store operations.
+    // Can have variable storage, up to whatever buffer range was bound for that particular buffer. This means that you can have an array of arbitrary length in an SSBO (at the end, rather).
+    // The actual size of the array, based on the range of the buffer bound, can be queried at runtime in the shader using the length function on the unbounded array variable.
+    // SSBO access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
+    // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
+    class SSBO
+    {
+        // The available binding points for ShaderStorageBlocks and SSBOs. False = unused index.
+        // When SSBOs are constructed they bind themselves to the first available index and resign themselves on destruction.
+        // SSBO and binding points have a 1:1 relationship, whereas multiple ShaderStorageBlock objects can bind themselves to one binding point.
+        // The size of the list can never be larger than GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS.
+        static inline std::vector<bool> s_binding_points = {};
+
+        GLHandle m_handle;
+        GLsizei m_size; // Size in bytes of the entire buffer. The fixed portion of the SSBO cannot exceed GL_MAX_SHADER_STORAGE_BLOCK_SIZE.
+
+    public:
+        SSBO(const std::string& p_storage_block_identifier, GLsizei p_size, const std::vector<ShaderStorageBlockVariable>& p_variables) noexcept;
+        ~SSBO() noexcept;
+
+        SSBO(const SSBO& p_other)            = delete;
+        SSBO& operator=(const SSBO& p_other) = delete;
+        SSBO(SSBO&& p_other)            noexcept;
+        SSBO& operator=(SSBO&& p_other) noexcept;
+
+        void bind() const;
+
+        GLuint m_binding_point; // The assigned binding point for this SSBO.
+        std::vector<ShaderStorageBlockVariable> m_variables; // A copy of the variables this buffer is backing.
+        std::string m_identifier; // Identifier of the ShaderStorageBlock(s) that use this SSBO as backing.
+    };
+
+    // ShaderStorageBlock are GLSL interface blocks which group ShaderStorageBlockVariable's.
+    // ShaderStorageBlock's are buffer-backed using Shader Storage Block Objects objects SSBO.
+    // Blocks declared with the GLSL shared keyword can be used with any program that defines a block with the same elements in the same order.
+    // Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
+    // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Shader_storage_blocks
+    class ShaderStorageBlock
+    {
+        friend class Shader; // Shader requires access to shader_storage_block_binding_points allowing it to expose the set_block_uniform API.
+
+        std::string m_identifier; // Identifier of the block in m_parent_shader_program.
+        GLuint m_index;           // Index of the StorageBlock in its m_parent_shader_program.
+        GLHandle m_parent_shader_program;
+
+        std::vector<ShaderStorageBlockVariable> m_variables;        // All the variables this block defines.
+        std::optional<Utility::ResourceRef<SSBO>> m_buffer_backing; // The SSBO that backs the ShaderStorageBlockVariable. In ShaderStorageBlock marked shared, the SSBO is reused and can be set once.
+
+        // Pool of SSBO objects that can be used to back the StorageBlock.
+        static inline Utility::ResourceManager<SSBO> s_shader_storage_block_binding_points = {};
+    public:
+        // Process a ShaderStorageBlock which is part of p_shader_program at p_shader_storage_block_index.
+        //@param p_shader_program Shader program that owns this StorageBlock.
+        //@param p_shader_storage_block_index Index of the shader storage block, not to be confused with buffer binding point.
+        ShaderStorageBlock(GLHandle p_shader_program, GLuint p_shader_storage_block_index) noexcept;
+    };
+
     // Handle for an OpenGL VBO. Data can be pushed to the GPU by calling setData with the type of vertex attribute being pushed.
     class VBO
     {
@@ -323,19 +427,6 @@ namespace OpenGL
         std::optional<Texture> mColourAttachment;
         std::optional<RBO> mDepthAttachment;
         int mBufferClearBitField; // Bit field sent to OpenGL clear buffers before next draw.
-    };
-
-    // A Shader Storage block Object (SSBO)
-    // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
-    // Compared to UBO's SSBOs:
-    // Can be much larger. The spec guarantees that SSBOs can be up to 128MB. Most implementations will let you allocate a size up to the limit of GPU memory.
-    // Are writable, even atomically. SSBOs reads and writes use incoherent memory accesses, so they need the appropriate barriers, just as Image Load Store operations.
-    // Can have variable storage, up to whatever buffer range was bound for that particular buffer. This means that you can have an array of arbitrary length in an SSBO (at the end, rather).
-    // The actual size of the array, based on the range of the buffer bound, can be queried at runtime in the shader using the length function on the unbounded array variable.
-    // SSBO access will likely be slower than UBO access. At the very least, UBOs will be no slower than SSBOs.
-    // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
-    class SSBO
-    {
     };
 
     class Mesh

@@ -423,6 +423,8 @@ namespace OpenGL
     GLint get_max_shader_storage_binding_points();
     // Get the max size in bytes a UniformBlock can have.
     GLint get_max_uniform_block_size();
+    // Get the max size in bytes a ShaderStorageBlock can have (only pertains to the fixed-size portion of the block, size can exceed this ignoring variable sized arrays).
+    GLint get_max_shader_storage_block_size();
     // Returns the shader program object that is currently active, or 0 if no program object is active.
     GLHandle get_current_shader_program();
 
