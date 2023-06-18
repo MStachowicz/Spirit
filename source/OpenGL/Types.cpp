@@ -482,10 +482,10 @@ namespace OpenGL
         static constexpr size_t property_count = 9;
         static constexpr GLenum property_query[property_count] = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET, GL_ARRAY_SIZE, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE, GL_IS_ROW_MAJOR, GL_TOP_LEVEL_ARRAY_SIZE, GL_TOP_LEVEL_ARRAY_STRIDE};
         GLint property_values[property_count] = {-1};
-        glGetProgramResourceiv(p_parent_shader_program, GL_UNIFORM, p_variable_index, property_count, &property_query[0], property_count, NULL, &property_values[0]);
+        glGetProgramResourceiv(p_parent_shader_program, GL_BUFFER_VARIABLE, p_variable_index, property_count, &property_query[0], property_count, NULL, &property_values[0]);
 
         m_identifier.resize(property_values[0]);
-        glGetProgramResourceName(p_parent_shader_program, GL_UNIFORM, p_variable_index, property_values[0], NULL, m_identifier.data());
+        glGetProgramResourceName(p_parent_shader_program, GL_BUFFER_VARIABLE, p_variable_index, property_values[0], NULL, m_identifier.data());
         ASSERT(!m_identifier.empty(), "Failed to get name of uniform variable in shader with handle {}", p_parent_shader_program);
         m_identifier.pop_back(); // glGetProgramResourceName appends the null terminator remove it here.
 
