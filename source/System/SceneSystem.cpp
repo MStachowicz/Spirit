@@ -73,6 +73,7 @@ namespace System
         constexpr float mesh_padding = 1.f;
         constexpr float half_count   = (mesh_count - 1) / 2.f;
         constexpr float start_x      = -half_count * (mesh_width + mesh_padding);
+        constexpr float start_y      = 1.f;
         constexpr float increment    = mesh_width + mesh_padding;
 
         float running_x = start_x;
@@ -81,7 +82,7 @@ namespace System
             Component::Texture texture;
             texture.mDiffuse  = mTextureSystem.getTexture(Utility::File::textureDirectory / "metalContainerDiffuse.png");
             texture.mSpecular = mTextureSystem.getTexture(Utility::File::textureDirectory / "metalContainerSpecular.png");
-            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mCubePrimitive};
 
             mStorage.addEntity(
@@ -94,7 +95,7 @@ namespace System
             running_x += increment;
         }
         { // Cone
-            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mConePrimitive};
 
             mStorage.addEntity(
@@ -106,7 +107,7 @@ namespace System
             running_x += increment;
         }
         { // Cylinder
-            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mCylinderPrimitive};
 
             mStorage.addEntity(
@@ -118,7 +119,7 @@ namespace System
             running_x += increment;
         }
         { // Plane/quad
-            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mPlanePrimitive};
 
             mStorage.addEntity(
@@ -130,7 +131,7 @@ namespace System
             running_x += increment;
         }
         { // Sphere
-            auto transform    = Component::Transform{glm::vec3(running_x, 0.f, -mesh_width)};
+            auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mSpherePrimitive};
 
             mStorage.addEntity(
@@ -149,7 +150,7 @@ namespace System
 
             { // Red point light in-front of the box.
                 auto point_light      = Component::PointLight{};
-                point_light.mPosition = glm::vec3(-8.f, 0.f, 1.f);
+                point_light.mPosition = glm::vec3(-8.f, start_y, 1.f);
                 point_light.mColour   = glm::vec3(1.f, 0.f, 0.f);
                 mStorage.addEntity(Component::Label{"Point light 2"}, point_light);
             }
