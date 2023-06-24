@@ -15,7 +15,6 @@ namespace OpenGL
     Shader::Shader(const char* p_name)
         : m_name{p_name}
         , m_handle{0}
-        , m_texture_units{0}
         , m_vertex_attributes{}
         , m_uniform_blocks{}
         , m_shader_storage_blocks{}
@@ -92,20 +91,6 @@ namespace OpenGL
             const GLint block_count = get_shader_storage_block_count(m_handle);
             for (int block_index = 0; block_index < block_count; block_index++)
                 m_shader_storage_blocks.emplace_back(m_handle, block_index);
-        }
-
-        { // Setup the available texture units.
-            // We have to tell OpenGL which texture unit each shader 'uniform sampler2D' belongs to by setting each sampler using glUniform1i.
-            // We only have to set this once.
-            if (m_texture_units > 0)
-            {
-                use();
-                for (int j = 0; j < m_texture_units; j++)
-                {
-                    const std::string textureUniform_name = "texture" + std::to_string(j);
-                    set_uniform(textureUniform_name.c_str(), j);
-                }
-            }
         }
 
         // Delete the shaders after linking as they're no longer needed, they will be flagged for deletion,
