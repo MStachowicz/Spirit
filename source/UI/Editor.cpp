@@ -259,6 +259,7 @@ namespace UI
                                 textureComponent.mDiffuse = mTextureSystem.getTexture(availableTextures[selected]);
                             if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
                                 textureComponent.mSpecular = mTextureSystem.getTexture(availableTextures[selected]);
+                            ImGui::Slider("Shininess", textureComponent.m_shininess, 1.f, 512.f, "%.1f");
 
                             ImGui::TreePop();
                         }
