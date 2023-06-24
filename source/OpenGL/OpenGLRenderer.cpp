@@ -76,19 +76,19 @@ namespace OpenGL
         , mProjection{glm::identity<glm::mat4>()}
     {}
 
-    OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)
+    OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)noexcept
         : m_window{p_window}
         , mScreenFramebuffer{}
         , mSceneSystem{pSceneSystem}
         , mMeshSystem{pMeshSystem}
-        , pointLightDrawCount{0}
-        , spotLightDrawCount{0}
-        , directionalLightDrawCount{0}
         , mPostProcessingOptions{}
         , mUniformColourShader{"uniformColour"}
         , mTextureShader{"texture1"}
         , mScreenTextureShader{"screenTexture"}
         , mSkyBoxShader{"skybox"}
+        , m_phong_renderer{}
+        , m_missing_texture{pTextureSystem.mTextureManager.create(Utility::File::textureDirectory / "missing.png")}
+        , m_blank_texture{pTextureSystem.mTextureManager.create(Utility::File::textureDirectory / "black.jpg")}
         , mViewInformation{}
         , mDebugOptions{}
     {
@@ -149,6 +149,8 @@ namespace OpenGL
                 }
             });
         }
+
+        m_phong_renderer.update_light_data(mSceneSystem.getCurrentScene());
     }
 
     void OpenGLRenderer::draw()
@@ -186,34 +188,26 @@ namespace OpenGL
         }
 
         auto& scene = mSceneSystem.getCurrentScene();
-        scene.foreach([&](ECS::Entity& pEntity, Component::Transform& pTransform, Component::Mesh& pMesh )
+        scene.foreach([&](ECS::Entity& pEntity, Component::Transform& p_transform, Component::Mesh& p_mesh)
         {
             if (scene.hasComponents<Component::Texture>(pEntity))
             {
                 auto& texComponent = scene.getComponent<Component::Texture>(pEntity);
-
-                mTextureShader.use();
-                mTextureShader.set_uniform("model", pTransform.mModel);
-
-                if (texComponent.mDiffuse.has_value())
-                {
-                    set_active_texture(0);
-                    texComponent.mDiffuse.value()->m_GL_texture.bind();
-                }
-                //   if (texComponent.mSpecular.has_value())
-                //   {
-                //       set_active_texture(1);
-                //       texComponent.mSpecular.value()->mGLTexture.bind();
-                //   }
+                m_phong_renderer.set_draw_data(
+                    mViewInformation.mViewPosition,
+                    p_transform.mModel,
+                    texComponent.mDiffuse.has_value()  ? texComponent.mDiffuse.value()->m_GL_texture  : m_missing_texture->m_GL_texture,
+                    texComponent.mSpecular.has_value() ? texComponent.mSpecular.value()->m_GL_texture : m_blank_texture->m_GL_texture,
+                    texComponent.m_shininess);
             }
             else
             {
                 mUniformColourShader.use();
-                mUniformColourShader.set_uniform("model", pTransform.mModel);
+                mUniformColourShader.set_uniform("model", p_transform.mModel);
                 mUniformColourShader.set_uniform("colour", glm::vec3(0.06f, 0.44f, 0.81f));
             }
 
-            draw(*pMesh.mModel);
+            draw(*p_mesh.mModel);
         });
 
         renderDebug();
@@ -420,67 +414,5 @@ namespace OpenGL
                 drawArrow(pTransform.mPosition, axes[2], 1.f, glm::vec3(0.f, 0.f, 1.f));
             });
         }
-    }
-
-    void OpenGLRenderer::setupLights()
-    {
-        mSceneSystem.getCurrentScene().foreach([this](Component::PointLight& pPointLight)
-        {
-            setShaderVariables(pPointLight);
-        });
-        mSceneSystem.getCurrentScene().foreach([this](Component::DirectionalLight& pDirectionalLight)
-        {
-            setShaderVariables(pDirectionalLight);
-        });
-        mSceneSystem.getCurrentScene().foreach([this](Component::SpotLight& pSpotLight)
-        {
-            setShaderVariables(pSpotLight);
-        });
-    }
-    void OpenGLRenderer::setShaderVariables(const Component::PointLight& pPointLight)
-    {
-        const std::string uniform     = "Lights.mPointLights[" + std::to_string(pointLightDrawCount) + "]";
-        const glm::vec3 diffuseColour = pPointLight.mColour * pPointLight.mDiffuseIntensity;
-        const glm::vec3 ambientColour = diffuseColour * pPointLight.mAmbientIntensity;
-
-        //Shader::set_block_uniform((uniform + ".position").c_str(), pPointLight.mPosition);
-        //Shader::set_block_uniform((uniform + ".ambient").c_str(), ambientColour);
-        //Shader::set_block_uniform((uniform + ".diffuse").c_str(), diffuseColour);
-        //Shader::set_block_uniform((uniform + ".specular").c_str(), glm::vec3(pPointLight.mSpecularIntensity));
-        //Shader::set_block_uniform((uniform + ".constant").c_str(), pPointLight.mConstant);
-        //Shader::set_block_uniform((uniform + ".linear").c_str(), pPointLight.mLinear);
-        //Shader::set_block_uniform((uniform + ".quadratic").c_str(), pPointLight.mQuadratic);
-
-        pointLightDrawCount++;
-    }
-    void OpenGLRenderer::setShaderVariables(const Component::DirectionalLight& pDirectionalLight)
-    {
-        const glm::vec3 diffuseColour = pDirectionalLight.mColour * pDirectionalLight.mDiffuseIntensity;
-        const glm::vec3 ambientColour = diffuseColour * pDirectionalLight.mAmbientIntensity;
-
-        //Shader::set_block_uniform("Lights.mDirectionalLight.direction", pDirectionalLight.mDirection);
-        //Shader::set_block_uniform("Lights.mDirectionalLight.ambient", ambientColour);
-        //Shader::set_block_uniform("Lights.mDirectionalLight.diffuse", diffuseColour);
-        //Shader::set_block_uniform("Lights.mDirectionalLight.specular", glm::vec3(pDirectionalLight.mSpecularIntensity));
-
-        directionalLightDrawCount++;
-    }
-    void OpenGLRenderer::setShaderVariables(const Component::SpotLight& pSpotLight)
-    {
-        const glm::vec3 diffuseColour = pSpotLight.mColour * pSpotLight.mDiffuseIntensity;
-        const glm::vec3 ambientColour = diffuseColour * pSpotLight.mAmbientIntensity;
-
-        //Shader::set_block_uniform("Lights.mSpotLight.position", pSpotLight.mPosition);
-        //Shader::set_block_uniform("Lights.mSpotLight.direction", pSpotLight.mDirection);
-        //Shader::set_block_uniform("Lights.mSpotLight.diffuse", diffuseColour);
-        //Shader::set_block_uniform("Lights.mSpotLight.ambient", ambientColour);
-        //Shader::set_block_uniform("Lights.mSpotLight.specular", glm::vec3(pSpotLight.mSpecularIntensity));
-        //Shader::set_block_uniform("Lights.mSpotLight.constant", pSpotLight.mConstant);
-        //Shader::set_block_uniform("Lights.mSpotLight.linear", pSpotLight.mLinear);
-        //Shader::set_block_uniform("Lights.mSpotLight.quadratic", pSpotLight.mQuadratic);
-        //Shader::set_block_uniform("Lights.mSpotLight.cutOff", pSpotLight.mCutOff);
-        //Shader::set_block_uniform("Lights.mSpotLight.cutOff", pSpotLight.mOuterCutOff);
-
-        spotLightDrawCount++;
     }
 } // namespace OpenGL

@@ -4,6 +4,7 @@
 #include "GLState.hpp"
 #include "Types.hpp"
 #include "Shader.hpp"
+#include "PhongRenderer.hpp"
 
 // GEOMETRY
 #include "Cylinder.hpp"
@@ -13,6 +14,9 @@
 #include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"
 #include "glm/vec3.hpp"
+
+#include "Utility/ResourceManager.hpp"
+#include "Component/Texture.hpp"
 
 // STD
 #include <filesystem>
@@ -128,9 +132,10 @@ namespace OpenGL
         Shader mScreenTextureShader;
         Shader mSkyBoxShader;
 
-        int pointLightDrawCount;
-        int spotLightDrawCount;
-        int directionalLightDrawCount;
+        PhongRenderer m_phong_renderer;
+        TextureRef m_missing_texture;
+        TextureRef m_blank_texture;
+
     public:
         ViewInformation mViewInformation;
         PostProcessingOptions mPostProcessingOptions;
@@ -140,7 +145,7 @@ namespace OpenGL
         void showPhysicsOptions();
 
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-        OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem);
+        OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem) noexcept;
 
         void start_frame();
         void end_frame();
@@ -148,10 +153,6 @@ namespace OpenGL
         void draw();
 
     private:
-        void setShaderVariables(const Component::PointLight& pPointLight);
-        void setShaderVariables(const Component::DirectionalLight& pDirectionalLight);
-        void setShaderVariables(const Component::SpotLight& pSpotLight);
-        void setupLights();
 
         void draw(const Data::Model& pModel);
         void draw(const Data::CompositeMesh& pComposite);

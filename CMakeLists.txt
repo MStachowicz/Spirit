@@ -187,6 +187,8 @@ source/OpenGL/DebugRenderer.hpp
 source/OpenGL/DebugRenderer.cpp
 source/OpenGL/GLState.hpp
 source/OpenGL/GLState.cpp
+source/OpenGL/PhongRenderer.hpp
+source/OpenGL/PhongRenderer.cpp
 source/OpenGL/Types.hpp
 source/OpenGL/Types.cpp
 source/OpenGL/Shader.hpp
@@ -195,6 +197,7 @@ source/OpenGL/Shader.cpp
 target_include_directories(OpenGL
 PUBLIC source/OpenGL
 PRIVATE source/External/GLFW/include
+PRIVATE source
 )
 target_link_libraries(OpenGL
 PRIVATE Utility # ToIndex used in header for size of Shader::attribute arrays.
