@@ -9,6 +9,7 @@
 #include <optional>
 #include <typeindex>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 #include "Meta.hpp"
@@ -29,6 +30,8 @@ namespace ECS
     {
     public:
         EntityID ID;
+
+        Entity(size_t i) : ID(i) {}
 
         operator EntityID () const { return ID; } // Implicitly convert an Entity to an EntityID.
     };
@@ -116,7 +119,7 @@ namespace ECS
                 if constexpr (!std::is_same_v<Entity, std::decay_t<ComponentType>>) // Ignore any Entity params supplied.
                     componentBitset.set(get_ID<ComponentType>());
             };
-            (setComponentBit.operator()<ComponentTypes>(), ...);
+            (setComponentBit.template operator()<ComponentTypes>(), ...);
 
             return componentBitset;
         }

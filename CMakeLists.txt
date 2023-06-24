@@ -266,18 +266,18 @@ PRIVATE GLM
     # ImGui ---------------------------------------------------------------------------------------
     # ImGui has no cMakeLists.txt file so need to generate a library for it
     add_library(ImGui
-    source/External/imgui/imgui_demo.cpp
-    source/External/imgui/imgui_draw.cpp
-    source/External/imgui/imgui_tables.cpp
-    source/External/imgui/imgui_widgets.cpp
-    source/External/imgui/imgui.cpp
-    source/External/imgui/backends/imgui_impl_opengl3.cpp
-    source/External/imgui/backends/imgui_impl_glfw.cpp
+    source/External/ImGui/imgui_demo.cpp
+    source/External/ImGui/imgui_draw.cpp
+    source/External/ImGui/imgui_tables.cpp
+    source/External/ImGui/imgui_widgets.cpp
+    source/External/ImGui/imgui.cpp
+    source/External/ImGui/backends/imgui_impl_opengl3.cpp
+    source/External/ImGui/backends/imgui_impl_glfw.cpp
     source/External/ImGuiUser/imgui_user.h
     source/External/ImGuiUser/imgui_user_config.h
     )
     target_include_directories(ImGui
-    PUBLIC source/External/imgui
+    PUBLIC source/External/ImGui
     PUBLIC source/External/ImGuiUser # Seperate folder to avoid comitting to ImGui
     PRIVATE source/External/GLFW/include
     )
@@ -308,12 +308,17 @@ PRIVATE GLM
     # GLM end -------------------------------------------------------------------------------------
 
     # ASSIMP --------------------------------------------------------------------------------------
+    set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+    if (WIN32)
     # Remove all supported filetypes for import and export.
     # Enable only OBJ files for import.
-    set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
+    else()
+    set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+    endif (WIN32)
+
     add_subdirectory(source/External/ASSIMP External/ASSIMP)
     # ASSIMP end ----------------------------------------------------------------------------------
 

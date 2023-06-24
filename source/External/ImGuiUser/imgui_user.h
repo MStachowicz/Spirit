@@ -11,6 +11,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 // Add extra functions within the ImGui:: namespace here.
 namespace ImGui

@@ -22,7 +22,7 @@ namespace Test
         GeometryTester geometryTester;
         geometryTester.run(pRunPerformanceTests);
 
-        LOG("All Unit tests complete - Time taken: {}\n{}", stopwatch.duration_since_start<float, std::milli>(), seperator);
+        LOG("All Unit tests complete - Time taken: {}ms\n{}", stopwatch.duration_since_start<float, std::milli>().count(), seperator);
     }
 
     UnitTest::UnitTest(const bool& pCondition, const std::string& pName, const std::string& pFailMessage) noexcept
@@ -78,16 +78,16 @@ namespace Test
                     output += std::format("UNIT TEST '{}' - FAILED - {}\n", test.mName, test.mFailMessage);
             }
             for (const auto& test : mPerformanceTests)
-                output += std::format("PERF TEST '{}' - TOOK {}\n", test.mName, test.mTimeTaken);
+                output += std::format("PERF TEST '{}' - TOOK {}ms\n", test.mName, test.mTimeTaken.count());
 
             output += std::format("***************** {} TEST SUMMARY *****************\n", mName);
             output += std::format("----------------- UNIT TESTS -----------------\n");
-            output += std::format("TOTAL TESTS: {}\nPASSED: {}\nFAILED: {}\nTIME TAKEN: {}\n", mUnitTests.size(), mUnitTestsPassed, mUnitTestsFailed, mTimeTakenUnitTests);
+            output += std::format("TOTAL TESTS: {}\nPASSED: {}\nFAILED: {}\nTIME TAKEN: {}ms\n", mUnitTests.size(), mUnitTestsPassed, mUnitTestsFailed, mTimeTakenUnitTests.count());
 
             if (pRunPerformanceTests)
             {
                 output += std::format("----------------- PERFORMANCE TESTS -----------------\n");
-                output += std::format("TOTAL TESTS: {}\nTIME TAKEN: {}\n", mPerformanceTests.size(), mTimeTakenPerformanceTests);
+                output += std::format("TOTAL TESTS: {}\nTIME TAKEN: {}ms\n", mPerformanceTests.size(), mTimeTakenPerformanceTests.count());
             }
             output += seperator;
         }

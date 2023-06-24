@@ -31,7 +31,7 @@
 #include "TestManager.hpp"
 
 // STD
-#include <Chrono>
+#include <chrono>
 
 // Application manages the ownership and calling of all the Systems.
 // Taking an OS window it renders and updates the state of an ECS.
@@ -81,8 +81,8 @@ private:
         using Duration  = decltype(Clock::duration{} + physicsTimestep);
         using TimePoint = std::chrono::time_point<Clock, Duration>;
 
-        LOG("Target physics ticks per second: {} (timestep: {} = {})", pPhysicsTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep), physicsTimestep);
-        LOG("Target render ticks per second:  {} (timestep: {} = {})", pRenderTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(renderTimestep), renderTimestep);
+        LOG("Target physics ticks per second: {} (timestep: {}ms = {})", pPhysicsTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count(), physicsTimestep);
+        LOG("Target render ticks per second:  {} (timestep: {}ms = {})", pRenderTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(renderTimestep).count(), renderTimestep);
 
         Duration durationSinceLastPhysicsTick   = Duration::zero();     // Accumulated time since the last physics update.
         Duration durationSinceLastRenderTick    = Duration::zero();     // Accumulated time since the last render.
