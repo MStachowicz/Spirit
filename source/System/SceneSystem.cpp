@@ -53,8 +53,8 @@ namespace System
     void SceneSystem::add_default_camera()
     {
         Component::Transform camera_transform;
-        camera_transform.mPosition = {0.f, 5.f, 20.f};
-        auto camera = Component::Camera(glm::vec3(0.f, 0.f, 1.f), true);
+        camera_transform.mPosition = {0.f, 7.f, 12.5f};
+        auto camera = Component::Camera(glm::vec3(0.f, -0.5f, 0.5f), true);
         camera.look_at(glm::vec3(0.f), camera_transform.mPosition);
 
         mStorage.addEntity(
@@ -140,6 +140,27 @@ namespace System
                 mesh,
                 Component::Collider{transform, mesh});
             running_x += increment;
+        }
+
+        { // Lights
+            mStorage.addEntity(Component::Label{"Directional light 1"}, Component::DirectionalLight{});
+
+            mStorage.addEntity(Component::Label{"Point light 1"}, Component::PointLight{});
+
+            { // Red point light in-front of the box.
+                auto point_light      = Component::PointLight{};
+                point_light.mPosition = glm::vec3(-8.f, 0.f, 1.f);
+                point_light.mColour   = glm::vec3(1.f, 0.f, 0.f);
+                mStorage.addEntity(Component::Label{"Point light 2"}, point_light);
+            }
+            { // Spotlight over the box pointing down onto it.
+                auto spotlight              = Component::SpotLight{};
+                spotlight.mPosition         = glm::vec3(start_x, 3.f, -mesh_width);
+                spotlight.mColour           = glm::vec3(0.f, 0.f, 1.f);
+                spotlight.mDirection        = glm::vec3(0.f, -.1f, 0.f);
+                spotlight.mDiffuseIntensity = 3.f;
+                mStorage.addEntity(Component::Label{"Spotlight 1"}, spotlight);
+            }
         }
     }
 
