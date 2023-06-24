@@ -543,7 +543,7 @@ namespace OpenGL
             case DataType::Int:                  return std::is_same_v<T, int>;
             case DataType::UnsignedInt:          return std::is_same_v<T, unsigned int>;
             case DataType::Bool:                 return std::is_same_v<T, bool>;
-            case DataType::Sampler2D:            return false; // Setting texture sampler types uses int to set their bound texture unit. The actual texture being sampled is set by setting active an texture unit and using bindTexture.
+            case DataType::Sampler2D:            return std::is_same_v<T, int>; // Setting texture sampler types uses int to set their bound texture unit. The actual texture being sampled is set by calling glActiveTexture followed by glBindTexture.
             case DataType::SamplerCube:          return false;
             case DataType::Vec2:                 return std::is_same_v<T, glm::vec2>;
             case DataType::Vec3:                 return std::is_same_v<T, glm::vec3>;

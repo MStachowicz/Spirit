@@ -499,7 +499,7 @@ namespace OpenGL
         m_top_level_array_stride = property_values[8];
     }
 
-        SSBO::SSBO(const std::string& p_storage_block_identifier, GLsizei p_size, const std::vector<ShaderStorageBlockVariable>& p_variables) noexcept
+    SSBO::SSBO(const std::string& p_storage_block_identifier, GLsizei p_size, const std::vector<ShaderStorageBlockVariable>& p_variables) noexcept
         : m_handle{0}
         , m_size{p_size}
         , m_binding_point{0}
@@ -635,9 +635,10 @@ namespace OpenGL
                 return false;
         }, m_identifier, buffer_data_size, m_variables);
 
-        ASSERT(m_variables.size() == active_variables_count && (*m_buffer_backing)->m_variables == m_variables, "Failed to retrieve all the UniformBlockVariables of block '{}'", m_identifier);
+        ASSERT(m_variables.size() == active_variables_count && (*m_buffer_backing)->m_variables == m_variables, "Failed to retrieve all the ShaderStorageBlock of block '{}'", m_identifier);
 
-        // Bind the UniformBlock to the binding point the buffer backing SSBO is bound to. SSBO constrcutor called the corresponding bind_buffer_range to the same binding point.
+        // Bind the ShaderStorageBlock to the binding point the buffer backing SSBO is bound to.
+        // SSBO constrcutor called the corresponding bind_buffer_range to the same binding point.
         shader_storage_block_binding(m_parent_shader_program, m_index, (*m_buffer_backing)->m_binding_point);
 
         if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] ShaderStorageBlock '{}' bound to point index {}", m_identifier, (*m_buffer_backing)->m_binding_point);

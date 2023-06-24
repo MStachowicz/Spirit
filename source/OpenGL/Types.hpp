@@ -194,12 +194,10 @@ namespace OpenGL
     // Provides data the Shader class uses to actually set the data.
     class ShaderStorageBlockVariable
     {
-        friend class Shader; // Shader requires access to set the data via the m_offset or the m_location.
-
+    public:
         std::string m_identifier; // The identifier used for the variable in the GLSL shader.
         DataType m_type;
-        GLint m_offset;        // The byte offset relative to the base of the buffer range.
-
+        GLint m_offset; // The byte offset relative to the base of the buffer range.
 
         // Array-only - number of active array elements. The size is in units of the type associated with the property m_type.
         // For active variables not corresponding to an array of basic types, the value is 0.
@@ -217,14 +215,13 @@ namespace OpenGL
         // For all other active variables, value is 0.
         GLint m_is_row_major;
         // Number of active array elements of the top-level shader storage block member.
-        // If the top-level block member is not an array, the value is 1. If it is an array with no declared size, the value is 0.
+        // If the top-level block member is not an array, the value is 1.
+        // If it is an array with no declared size, the value is 0, assignable size can be found calling array_size().
         GLint m_top_level_array_size;
         // Stride between array elements of the top-level shader storage block member.
         // For arrays, the value written is the difference, in basic machine units, between the offsets of the active variable for consecutive elements in the top-level array.
         // For top-level block members not declared as an array, value is 0.
         GLint m_top_level_array_stride;
-
-    public:
 
         // Extract information about the ShaderStorageBlock variable in p_parent_shader_program with index p_variable_index.
         //@param p_parent_shader_program Shader that owns this ShaderStorageBlockVariable.
@@ -244,6 +241,7 @@ namespace OpenGL
     // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
     class SSBO
     {
+    public:
         // The available binding points for ShaderStorageBlocks and SSBOs. False = unused index.
         // When SSBOs are constructed they bind themselves to the first available index and resign themselves on destruction.
         // SSBO and binding points have a 1:1 relationship, whereas multiple ShaderStorageBlock objects can bind themselves to one binding point.
@@ -253,7 +251,6 @@ namespace OpenGL
         GLHandle m_handle;
         GLsizei m_size; // Size in bytes of the entire buffer. The fixed portion of the SSBO cannot exceed GL_MAX_SHADER_STORAGE_BLOCK_SIZE.
 
-    public:
         SSBO(const std::string& p_storage_block_identifier, GLsizei p_size, const std::vector<ShaderStorageBlockVariable>& p_variables) noexcept;
         ~SSBO() noexcept;
 
