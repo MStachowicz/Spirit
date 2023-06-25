@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <stdint.h>
 
 // A Dispatched job will receive this as function argument
 struct JobDispatchArgs

@@ -47,7 +47,7 @@ namespace Utility
         const auto& found = executablePath.string().find("Zephyr");
         ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string());
 
-        rootDirectory = executablePath.string().substr(0, found + 6); // offset substr by length of "Zephyr"
+        rootDirectory = std::filesystem::path("..");
         LOG("Root directory initialised to '{}'", rootDirectory.string());
 
         GLSLShaderDirectory = std::filesystem::path(rootDirectory / "source" / "OpenGL" / "GLSL");

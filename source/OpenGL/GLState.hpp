@@ -8,8 +8,15 @@ using GLuint     = unsigned int;
 using GLboolean  = unsigned char;
 using GLenum     = unsigned int;
 using GLsizei    = int;
+
+#if defined(_WIN64)
 using GLsizeiptr = signed long long int;
 using GLintptr   = signed long long int;
+#else
+using GLsizeiptr = signed long int;
+using GLintptr   = signed long int;
+#endif
+
 using GLHandle   = unsigned int; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
 //using GLenum   = Corresponding enum type in OpenGL namespace
 //using GLdouble = double; // Unused

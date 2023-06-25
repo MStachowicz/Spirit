@@ -17,7 +17,7 @@ namespace System
         , mCubePrimitive{mModelManager.create(Utility::File::modelDirectory / "cube" / "cube.obj", mTextureSystem.mTextureManager)}
         , mCylinderPrimitive{mModelManager.create(Utility::File::modelDirectory / "cylinder" / "cylinder_32.obj", mTextureSystem.mTextureManager)}
         , mPlanePrimitive{mModelManager.create(Utility::File::modelDirectory / "plane" / "plane.obj", mTextureSystem.mTextureManager)}
-        , mSpherePrimitive{mModelManager.create(Utility::File::modelDirectory / "sphere" / "Icosphere_2.obj", mTextureSystem.mTextureManager)}
+        , mSpherePrimitive{mModelManager.create(Utility::File::modelDirectory / "Sphere" / "Icosphere_2.obj", mTextureSystem.mTextureManager)}
     {
         Utility::File::forEachFileRecursive(Utility::File::modelDirectory,
             [&](const std::filesystem::directory_entry& entry)

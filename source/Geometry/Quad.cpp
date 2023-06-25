@@ -89,6 +89,6 @@ namespace Geometry
 
     std::array<Triangle, 2> Quad::get_triangles() const
     {
-        return std::array<Triangle, 2>({{m_point_1, m_point_2, m_point_3}, {m_point_3, m_point_4, m_point_1}});
+        return std::array<Triangle, 2>({Triangle{m_point_1, m_point_2, m_point_3}, Triangle{m_point_3, m_point_4, m_point_1}});
     }
 }

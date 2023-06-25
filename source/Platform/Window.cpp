@@ -14,7 +14,6 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#else
 #endif
 
 namespace Platform
@@ -188,7 +187,7 @@ namespace Platform
 #ifdef _WIN32
         return (GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXPADDEDBORDER));
 #else
-        static_assert(false, "Not implemented get_taskbar_height for this platform.");
+        // Not implemented get_taskbar_height for this platform
         return 0;
 #endif
     }
