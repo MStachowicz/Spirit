@@ -1,6 +1,7 @@
 #include "File.hpp"
 
 #include "Logger.hpp"
+#include "Utility/Config.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -12,13 +13,6 @@
 
 namespace Utility
 {
-    std::filesystem::path File::executablePath;
-    std::filesystem::path File::rootDirectory;
-    std::filesystem::path File::GLSLShaderDirectory;
-    std::filesystem::path File::textureDirectory;
-    std::filesystem::path File::modelDirectory;
-
-
     Image::Image(const std::filesystem::path& p_path)
         : m_data{nullptr}
         , m_filepath{p_path}
@@ -26,6 +20,8 @@ namespace Utility
         , m_height{0}
         , m_number_of_channels{0}
     {
+        ASSERT(File::exists(p_path), "[FILE][IMAGE] Path '{}' does not exist.", p_path.string());
+
         // OpenGL expects 0 coordinate on y-axis to be the bottom side of the image, images usually have 0 at the top of y-axis
         // Flip textures here to account for this.
         stbi_set_flip_vertically_on_load(false);
@@ -37,28 +33,6 @@ namespace Utility
     {
         stbi_image_free(m_data);
     }
-
-    void File::setupDirectories(const std::string& pExecutePath)
-    {
-        ASSERT(!pExecutePath.empty(), "Cannot initialise directories with no executable path given");
-        ASSERT(exists(pExecutePath), "path to exe not found");
-        executablePath = pExecutePath;
-
-        const auto& found = executablePath.string().find("Zephyr");
-        ASSERT(found != std::string::npos, "Failed to find Zephyr in the supplied executable path {}", executablePath.string());
-
-        rootDirectory = std::filesystem::path("..");
-        LOG("Root directory initialised to '{}'", rootDirectory.string());
-
-        GLSLShaderDirectory = std::filesystem::path(rootDirectory / "source" / "OpenGL" / "GLSL");
-        LOG("Shader directory initialised to '{}'", GLSLShaderDirectory.string());
-
-        textureDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Textures");
-        LOG("Texture directory initialised to '{}'", textureDirectory.string());
-
-        modelDirectory = std::filesystem::path(rootDirectory / "source" / "Resources" / "Models");
-        LOG("Model directory initialised to '{}'", modelDirectory.string());
-    };
 
     std::string File::readFromFile(const std::filesystem::path& pPath)
     {

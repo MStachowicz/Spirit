@@ -51,3 +51,6 @@ _deps
 
 # Windows folder settings
 *.ini
+
+#Generated
+Config.hpp

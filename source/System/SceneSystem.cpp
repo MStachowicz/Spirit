@@ -20,7 +20,7 @@
 // Geometry
 #include "Geometry.hpp"
 
-#include "File.hpp"
+#include "Config.hpp"
 
 namespace System
 {
@@ -80,8 +80,8 @@ namespace System
 
         { // Textured cube
             Component::Texture texture;
-            texture.mDiffuse  = mTextureSystem.getTexture(Utility::File::textureDirectory / "metalContainerDiffuse.png");
-            texture.mSpecular = mTextureSystem.getTexture(Utility::File::textureDirectory / "metalContainerSpecular.png");
+            texture.mDiffuse  = mTextureSystem.getTexture(Config::Texture_Directory / "metalContainerDiffuse.png");
+            texture.mSpecular = mTextureSystem.getTexture(Config::Texture_Directory / "metalContainerSpecular.png");
             auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mCubePrimitive};
 
@@ -167,8 +167,8 @@ namespace System
 
     void SceneSystem::constructBoxScene()
     {
-        const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
-        const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
+        const auto containerDiffuse  = Config::Texture_Directory / "metalContainerDiffuse.png";
+        const auto containerSpecular = Config::Texture_Directory / "metalContainerSpecular.png";
 
         {// Cubes
             for (size_t i = 0; i < 100; i += 2)
@@ -224,8 +224,8 @@ namespace System
     }
     void SceneSystem::constructBouncingBallScene()
     {
-        const auto containerDiffuse  = Utility::File::textureDirectory / "metalContainerDiffuse.png";
-        const auto containerSpecular = Utility::File::textureDirectory / "metalContainerSpecular.png";
+        const auto containerDiffuse  = Config::Texture_Directory / "metalContainerDiffuse.png";
+        const auto containerSpecular = Config::Texture_Directory / "metalContainerSpecular.png";
 
         { // Ball
             Component::Transform transform;

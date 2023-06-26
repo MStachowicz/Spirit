@@ -5,6 +5,7 @@
 // Utility
 #include "Logger.hpp"
 #include "File.hpp"
+#include "Config.hpp"
 
 // External
 #include "glad/gl.h"
@@ -16,6 +17,19 @@
 
 namespace Platform
 {
+    void Core::initialise_directories()
+    {
+        ASSERT(Utility::File::exists(Config::Source_Directory), "CMake configured CMAKE_CURRENT_SOURCE_DIR does not exist!",     Config::Source_Directory.string());
+        ASSERT(Utility::File::exists(Config::GLSL_Shader_Directory), "Setting GLSL directory failed. Path '{}' does not exist.", Config::GLSL_Shader_Directory.string());
+        ASSERT(Utility::File::exists(Config::Texture_Directory), "Setting texture directory failed. Path '{}' does not exist.",  Config::Texture_Directory.string());
+        ASSERT(Utility::File::exists(Config::Model_Directory), "Setting model directory failed. Path '{}' does not exist.",      Config::Model_Directory.string());
+
+        LOG("[INIT][FILE] CMake configured source directory: '{}'", Config::Source_Directory.string());
+        LOG("[INIT][FILE] Shader directory initialised to '{}'",    Config::GLSL_Shader_Directory.string());
+        LOG("[INIT][FILE] Texture directory initialised to '{}'",   Config::Texture_Directory.string());
+        LOG("[INIT][FILE] Model directory initialised to '{}'",     Config::Model_Directory.string());
+    }
+
     void Core::initialise_GLFW()
     {
         glfwSetErrorCallback([](int p_error, const char* p_description){ LOG_ERROR("[GLFW] Error: {}: {}", p_error, p_description); });
@@ -23,8 +37,8 @@ namespace Platform
         ASSERT(initalisedGLFW == GLFW_TRUE, "[INIT] GLFW initialisation failed");
 
         // Set Graphics context version
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenGLMajorVersion);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OpenGLMinorVersion);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, Config::OpenGL_Version_Major);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, Config::OpenGL_Version_Minor);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         LOG("[INIT] Initialised GLFW");
@@ -45,7 +59,7 @@ namespace Platform
         (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
         ImGui_ImplGlfw_InitForOpenGL(p_window.m_handle, true);
-        ImGui_ImplOpenGL3_Init(OpenGLVersion);
+        ImGui_ImplOpenGL3_Init(Config::GLSL_Version_String);
         io.DisplaySize = p_window.size();
 
         LOG("[INIT] Initialised ImGui");

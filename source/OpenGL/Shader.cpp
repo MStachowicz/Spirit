@@ -2,6 +2,7 @@
 
 #include "Utility.hpp"
 #include "File.hpp"
+#include "Config.hpp"
 
 #include "glad/gl.h" // OpenGL functions
 
@@ -20,7 +21,7 @@ namespace OpenGL
         , m_shader_storage_blocks{}
         , m_uniforms{}
     {
-        const auto shaderPath = Utility::File::GLSLShaderDirectory / p_name;
+        const auto shaderPath = Config::GLSL_Shader_Directory / p_name;
 
         unsigned int vertexShader;
         auto vertexShaderPath = shaderPath;

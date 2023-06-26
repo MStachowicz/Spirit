@@ -161,11 +161,10 @@ int main(int argc, char *argv[])
 {
     {
         Utility::Stopwatch stopwatch;
-        Utility::File::setupDirectories(argv[0]);
 
         // Library init order is important here
         // GLFW <- Window/GL context <- OpenGL functions <- ImGui <- App
-
+        Platform::Core::initialise_directories();
         Platform::Core::initialise_GLFW();
         Platform::Input input   = Platform::Input();
         Platform::Window window = Platform::Window(1920, 1080, input);

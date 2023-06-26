@@ -25,6 +25,7 @@
 // UTILITY
 #include "Logger.hpp"
 #include "Utility.hpp"
+#include "Config.hpp"
 
 // PLATFORM
 #include "Core.hpp"
@@ -87,8 +88,8 @@ namespace OpenGL
         , mScreenTextureShader{"screenTexture"}
         , mSkyBoxShader{"skybox"}
         , m_phong_renderer{}
-        , m_missing_texture{pTextureSystem.mTextureManager.create(Utility::File::textureDirectory / "missing.png")}
-        , m_blank_texture{pTextureSystem.mTextureManager.create(Utility::File::textureDirectory / "black.jpg")}
+        , m_missing_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "missing.png")}
+        , m_blank_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "black.jpg")}
         , mViewInformation{}
         , mDebugOptions{}
     {

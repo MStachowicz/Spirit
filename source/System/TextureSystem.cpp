@@ -2,6 +2,7 @@
 
 #include "File.hpp"
 #include "Utility.hpp"
+#include "Config.hpp"
 
 namespace System
 {
@@ -9,7 +10,7 @@ namespace System
         : mAvailableTextures{}
         , mTextureManager{}
     {
-        Utility::File::forEachFile(Utility::File::textureDirectory, [&](auto& entry)
+        Utility::File::forEachFile(Config::Texture_Directory, [&](auto& entry)
         {
             if (entry.is_regular_file())
                 mAvailableTextures.push_back(entry.path());

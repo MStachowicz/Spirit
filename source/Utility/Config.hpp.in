@@ -1,0 +1,17 @@
+// This is a CMake generated file. Edit the Config.hpp.in file to add new config properties that will be generated here.
+#pragma once
+
+#include <filesystem>
+
+namespace Config
+{
+    inline const auto Source_Directory        = std::filesystem::path("${SOURCE_DIRECTORY}");
+    inline const auto GLSL_Shader_Directory   = std::filesystem::path(Source_Directory / "source" / "OpenGL" / "GLSL");
+    inline const auto Texture_Directory       = std::filesystem::path(Source_Directory / "source" / "Resources" / "Textures");
+    inline const auto Model_Directory         = std::filesystem::path(Source_Directory / "source" / "Resources" / "Models");
+
+    inline const char* OpenGL_Version_String  = "${OPENGL_VERSION_STRING}";
+    inline const char* GLSL_Version_String    = "${GLSL_VERSION_STRING}";
+    inline constexpr int OpenGL_Version_Major = ${OPENGL_VERSION_MAJOR};
+    inline constexpr int OpenGL_Version_Minor = ${OPENGL_VERSION_MINOR};
+} // namespace Config

@@ -14,12 +14,8 @@ namespace Platform
     class Core // Working name
     {
     public:
-        // CONSTANTS
-        static constexpr int OpenGLMajorVersion = 4;
-        static constexpr int OpenGLMinorVersion = 3;
-        static constexpr const char* const OpenGLVersion = "#version 430";
-
         // INIT
+        static void initialise_directories();
         static void initialise_GLFW();
         static void initialise_OpenGL();
         static void initialise_ImGui(const Window& p_window);

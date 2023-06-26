@@ -6,6 +6,7 @@
 // Utility
 #include "File.hpp"
 #include "Logger.hpp"
+#include "Config.hpp"
 
 namespace System
 {
@@ -13,13 +14,13 @@ namespace System
         : mTextureSystem{pTextureSystem}
         , mAvailableModels{}
         , mModelManager{}
-        , mConePrimitive{mModelManager.create(Utility::File::modelDirectory / "cone" / "cone_32.obj", mTextureSystem.mTextureManager)}
-        , mCubePrimitive{mModelManager.create(Utility::File::modelDirectory / "cube" / "cube.obj", mTextureSystem.mTextureManager)}
-        , mCylinderPrimitive{mModelManager.create(Utility::File::modelDirectory / "cylinder" / "cylinder_32.obj", mTextureSystem.mTextureManager)}
-        , mPlanePrimitive{mModelManager.create(Utility::File::modelDirectory / "plane" / "plane.obj", mTextureSystem.mTextureManager)}
-        , mSpherePrimitive{mModelManager.create(Utility::File::modelDirectory / "Sphere" / "Icosphere_2.obj", mTextureSystem.mTextureManager)}
+        , mConePrimitive{mModelManager.create(Config::Model_Directory / "cone" / "cone_32.obj", mTextureSystem.mTextureManager)}
+        , mCubePrimitive{mModelManager.create(Config::Model_Directory / "cube" / "cube.obj", mTextureSystem.mTextureManager)}
+        , mCylinderPrimitive{mModelManager.create(Config::Model_Directory / "cylinder" / "cylinder_32.obj", mTextureSystem.mTextureManager)}
+        , mPlanePrimitive{mModelManager.create(Config::Model_Directory / "plane" / "plane.obj", mTextureSystem.mTextureManager)}
+        , mSpherePrimitive{mModelManager.create(Config::Model_Directory / "Sphere" / "Icosphere_2.obj", mTextureSystem.mTextureManager)}
     {
-        Utility::File::forEachFileRecursive(Utility::File::modelDirectory,
+        Utility::File::forEachFileRecursive(Config::Model_Directory,
             [&](const std::filesystem::directory_entry& entry)
             {
                 if (entry.is_regular_file() && entry.path().has_extension() && entry.path().extension() == ".obj")

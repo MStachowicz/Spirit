@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+set(OPENGL_VERSION_MAJOR  4)
+set(OPENGL_VERSION_MINOR  3)
+set(OPENGL_VERSION_STRING "${OPENGL_VERSION_MAJOR}.${OPENGL_VERSION_MINOR}")
+set(GLSL_VERSION_STRING   "#version ${OPENGL_VERSION_MAJOR}${OPENGL_VERSION_MINOR}0")
 
 # Zephyr ------------------------------------------------------------------------------------------
 project(Zephyr)
@@ -213,6 +218,8 @@ PRIVATE glfw
 # OpenGL end ----------------------------------------------------------------------------------
 
 # ------------------------ Utility ------------------------------------------------------------
+configure_file(source/Utility/Config.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/source/Utility/Config.hpp)
+
 add_library(Utility
 source/Utility/EventDispatcher.hpp
 source/Utility/JobSystem/JobSystem.cpp
@@ -299,7 +306,7 @@ PRIVATE GLM
 
     # GLAD ----------------------------------------------------------------------------------------
     add_subdirectory(source/External/GLAD2/cmake External/GLAD2)
-    glad_add_library(glad_GL API gl:core=4.3)
+    glad_add_library(glad_GL API gl:core=${OPENGL_VERSION_MAJOR}.${OPENGL_VERSION_MINOR})
     # GLAD end ------------------------------------------------------------------------------------
 
     # GLM -----------------------------------------------------------------------------------------
