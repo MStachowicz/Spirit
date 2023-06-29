@@ -45,7 +45,7 @@
 namespace OpenGL
 {
     OpenGLRenderer::DebugOptions::DebugOptions()
-        : mShowLightPositions{false}
+        : mShowLightPositions{true}
         , mVisualiseNormals{false}
         , mForceClearColour{false}
         , mClearColour{0.f, 0.f, 0.f, 0.f}
@@ -88,8 +88,10 @@ namespace OpenGL
         , mScreenTextureShader{"screenTexture"}
         , mSkyBoxShader{"skybox"}
         , m_phong_renderer{}
+        , m_light_position_renderer{}
         , m_missing_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "missing.png")}
         , m_blank_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "black.jpg")}
+        , m_cube{pMeshSystem.mCubePrimitive}
         , mViewInformation{}
         , mDebugOptions{}
     {
@@ -370,16 +372,7 @@ namespace OpenGL
         }
 
         if (mDebugOptions.mShowLightPositions)
-        {
-            mUniformColourShader.use();
-
-            mSceneSystem.getCurrentScene().foreach([this](Component::PointLight& pPointLight)
-            {
-                mUniformColourShader.set_uniform("model", Utility::GetModelMatrix(pPointLight.mPosition, glm::vec3(0.f), glm::vec3(0.1f)));
-                mUniformColourShader.set_uniform("colour", pPointLight.mColour);
-                draw(*mMeshSystem.mCubePrimitive);
-            });
-        }
+            m_light_position_renderer.draw(scene, m_cube->mCompositeMesh.mChildMeshes[0].mMeshes[0].mGLData);
 
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 1.f, glm::vec3(1.f, 0.f, 0.f));
         drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, glm::vec3(0.f, 1.f, 0.f));

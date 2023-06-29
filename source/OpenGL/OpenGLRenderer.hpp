@@ -5,6 +5,7 @@
 #include "Types.hpp"
 #include "Shader.hpp"
 #include "PhongRenderer.hpp"
+#include "LightPositionRenderer.hpp"
 
 // GEOMETRY
 #include "Cylinder.hpp"
@@ -17,6 +18,7 @@
 
 #include "Utility/ResourceManager.hpp"
 #include "Component/Texture.hpp"
+#include "Component/Mesh.hpp"
 
 // STD
 #include <filesystem>
@@ -133,8 +135,10 @@ namespace OpenGL
         Shader mSkyBoxShader;
 
         PhongRenderer m_phong_renderer;
+        LightPositionRenderer m_light_position_renderer;
         TextureRef m_missing_texture;
         TextureRef m_blank_texture;
+        ModelRef m_cube;
 
     public:
         ViewInformation mViewInformation;
