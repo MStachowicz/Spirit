@@ -284,7 +284,7 @@ namespace OpenGL
                 p_storage.foreach([this, &i](Component::DirectionalLight& p_directional_light)
                 {
                     const glm::vec3 diffuse  = p_directional_light.mColour * p_directional_light.mDiffuseIntensity;
-                    const glm::vec3 ambient  = diffuse * p_directional_light.mAmbientIntensity;
+                    const glm::vec3 ambient  = p_directional_light.mColour * p_directional_light.mAmbientIntensity;
                     const glm::vec3 specular = glm::vec3(p_directional_light.mSpecularIntensity);
 
                     buffer_sub_data(BufferType::ShaderStorageBuffer, m_directional_light_direction_offset + (m_directional_light_array_stride * i), sizeof(p_directional_light.mDirection), &p_directional_light.mDirection);
@@ -326,7 +326,7 @@ namespace OpenGL
                 p_storage.foreach([this, &i](Component::PointLight& p_point_light)
                 {
                     const glm::vec3 diffuse  = p_point_light.mColour * p_point_light.mDiffuseIntensity;
-                    const glm::vec3 ambient  = diffuse * p_point_light.mAmbientIntensity;
+                    const glm::vec3 ambient  = p_point_light.mColour * p_point_light.mAmbientIntensity;
                     const glm::vec3 specular = glm::vec3(p_point_light.mSpecularIntensity);
 
                     buffer_sub_data(BufferType::ShaderStorageBuffer, m_point_light_position_offset  + (m_point_light_array_stride * i), sizeof(p_point_light.mPosition), &p_point_light.mPosition);
@@ -371,7 +371,7 @@ namespace OpenGL
                 p_storage.foreach([this, &i](Component::SpotLight& p_spotlight)
                 {
                     const glm::vec3 diffuse  = p_spotlight.mColour * p_spotlight.mDiffuseIntensity;
-                    const glm::vec3 ambient  = diffuse * p_spotlight.mAmbientIntensity;
+                    const glm::vec3 ambient  = p_spotlight.mColour * p_spotlight.mAmbientIntensity;
                     const glm::vec3 specular = glm::vec3(p_spotlight.mSpecularIntensity);
 
                     buffer_sub_data(BufferType::ShaderStorageBuffer, m_spot_light_position_offset     + (m_spot_light_array_stride * i), sizeof(p_spotlight.mPosition),    &p_spotlight.mPosition);
