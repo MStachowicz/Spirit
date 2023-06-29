@@ -445,6 +445,6 @@ namespace OpenGL
         std::optional<VBO> mVertexNormals;
         std::optional<VBO> mVertexTextureCoordinates;
         std::optional<EBO> mEBO;
-        int mDrawSize; // Depending on if the mesh is indexed or array based, this is the number of
+        int mDrawSize; // Depending on if the mesh is indexed or array based, this is the element size or array size parameter to glDraw.
     };
 }
