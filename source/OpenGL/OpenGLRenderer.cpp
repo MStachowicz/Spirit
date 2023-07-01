@@ -4,9 +4,7 @@
 #include "Storage.hpp"
 
 // COMPONENTS
-#include "DirectionalLight.hpp"
-#include "PointLight.hpp"
-#include "SpotLight.hpp"
+#include "Component/Lights.hpp"
 #include "Texture.hpp"
 #include "Collider.hpp"
 #include "Camera.hpp"

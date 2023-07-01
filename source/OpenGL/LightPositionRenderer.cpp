@@ -1,7 +1,7 @@
 #include "LightPositionRenderer.hpp"
 #include "GLState.hpp"
 
-#include "Component/PointLight.hpp"
+#include "Component/Lights.hpp"
 
 #include "ECS/Storage.hpp"
 

@@ -7,13 +7,11 @@
 // Component
 #include "Camera.hpp"
 #include "Collider.hpp"
-#include "DirectionalLight.hpp"
 #include "Input.hpp"
 #include "Label.hpp"
 #include "Mesh.hpp"
-#include "PointLight.hpp"
+#include "Component/Lights.hpp"
 #include "RigidBody.hpp"
-#include "SpotLight.hpp"
 #include "Texture.hpp"
 #include "Transform.hpp"
 

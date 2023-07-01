@@ -1,8 +1,6 @@
 #include "PhongRenderer.hpp"
 
-#include "Component/DirectionalLight.hpp"
-#include "Component/PointLight.hpp"
-#include "Component/SpotLight.hpp"
+#include "Component/Lights.hpp"
 
 #include "ECS/Storage.hpp"
 
