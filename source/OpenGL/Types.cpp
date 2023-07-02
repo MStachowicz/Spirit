@@ -467,7 +467,7 @@ namespace OpenGL
 
     ShaderStorageBlockVariable::ShaderStorageBlockVariable(GLHandle p_parent_shader_program, GLuint p_variable_index) noexcept
         : m_identifier{""}
-        , m_type{DataType::Unknown}
+        , m_type{ShaderDataType::Unknown}
         , m_offset{-1}
         , m_array_size{-1}
         , m_array_stride{-1}
@@ -646,7 +646,7 @@ namespace OpenGL
 
     UniformBlockVariable::UniformBlockVariable(GLHandle p_shader_program, GLuint p_block_variable_index) noexcept
         : m_name{""}
-        , m_type{DataType::Unknown}
+        , m_type{ShaderDataType::Unknown}
         , m_offset{-1}
         , m_array_size{-1}
         , m_array_stride{-1}
@@ -939,16 +939,16 @@ namespace OpenGL
                 default: ASSERT(false, "Could not convert VertexAttribute to an identifier. If adding a new attribute, be sure to use the identifier added here for it."); return ""; // Always
             }
         }
-        DataType get_attribute_type(VertexAttribute p_attribute)
+        ShaderDataType get_attribute_type(VertexAttribute p_attribute)
         {
             switch (p_attribute)
             {
-                case VertexAttribute::Position3D:          return DataType::Float;
-                case VertexAttribute::Normal3D:            return DataType::Float;
-                case VertexAttribute::ColourRGB:           return DataType::Float;
-                case VertexAttribute::ColourRGBA:          return DataType::Float;
-                case VertexAttribute::TextureCoordinate2D: return DataType::Float;
-                default: ASSERT(false, "Could not convert VertexAttribute to a datatype. If adding a new attribute, be sure to use the corresponding data type added here for it."); return DataType::Unknown; // Always
+                case VertexAttribute::Position3D:          return ShaderDataType::Float;
+                case VertexAttribute::Normal3D:            return ShaderDataType::Float;
+                case VertexAttribute::ColourRGB:           return ShaderDataType::Float;
+                case VertexAttribute::ColourRGBA:          return ShaderDataType::Float;
+                case VertexAttribute::TextureCoordinate2D: return ShaderDataType::Float;
+                default: ASSERT(false, "Could not convert VertexAttribute to a datatype. If adding a new attribute, be sure to use the corresponding data type added here for it."); return ShaderDataType::Unknown; // Always
             }
         }
     }

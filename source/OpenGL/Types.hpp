@@ -53,7 +53,7 @@ namespace OpenGL
         // Returns the stride of the attribute i.e. the sizeof.
         int get_attribute_stride(VertexAttribute p_attribute);
         // The data type of each component in the attribute. e.g. vec3=GL_FLOAT, int=GL_INT
-        DataType get_attribute_type(VertexAttribute p_attribute);
+        ShaderDataType get_attribute_type(VertexAttribute p_attribute);
         // Returns the attribute as a string matching the naming used within GLSL shaders.
         // e.g. All vertex position attributes will use the identifier "VertexPosition"
         const char* get_attribute_identifier(VertexAttribute p_attribute);
@@ -110,7 +110,7 @@ namespace OpenGL
         friend class Shader; // Shader requires access to set the data via the m_offset or the m_location.
 
         std::string m_name;    // The identifier used for the variable in the GLSL shader.
-        DataType m_type;
+        ShaderDataType m_type;
         GLint m_offset;        // The byte offset relative to the base of the buffer range.
         GLint m_array_size;    // For array variables the number of active array elements. 0 if not an array.
         GLint m_array_stride;  // Byte different between consecutive elements in an array type. 0 if not an array.
@@ -196,7 +196,7 @@ namespace OpenGL
     {
     public:
         std::string m_identifier; // The identifier used for the variable in the GLSL shader.
-        DataType m_type;
+        ShaderDataType m_type;
         GLint m_offset; // The byte offset relative to the base of the buffer range.
 
         // Array-only - number of active array elements. The size is in units of the type associated with the property m_type.

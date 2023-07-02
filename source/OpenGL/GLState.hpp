@@ -6,7 +6,7 @@
 using GLint      = int;
 using GLuint     = unsigned int;
 using GLboolean  = unsigned char;
-using GLenum     = unsigned int;
+using GLenum     = unsigned int; // Usually replaced by the enums in OpenGL namespace.
 using GLsizei    = int;
 
 #if defined(_WIN64)
@@ -18,9 +18,8 @@ using GLintptr   = signed long int;
 #endif
 
 using GLHandle   = unsigned int; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
-//using GLenum   = Corresponding enum type in OpenGL namespace
 //using GLdouble = double; // Unused
-//using GLfloat  = float; // Unused
+//using GLfloat  = float;  // Unused
 
 // Define wrappers to strongly type GLenum types.
 // All the wrappers provide helper functions to extract the values or string representations.
@@ -28,7 +27,7 @@ namespace OpenGL
 {
     constexpr inline static bool LogGLTypeEvents = false;
 
-    enum class DataType : uint8_t
+    enum class ShaderDataType : uint8_t
     {
         Float, Vec2, Vec3, Vec4,
         Double, DVec2, DVec3, DVec4,
@@ -109,6 +108,129 @@ namespace OpenGL
         DynamicDraw,
         DynamicRead,
         DynamicCopy
+    };
+    enum class TextureType : uint8_t
+    {
+        Texture_1D,                   // Images in this texture all are 1-dimensional. They have width, but no height or depth.
+        Texture_2D,                   // Images in this texture all are 2-dimensional. They have width and height, but no depth.
+        Texture_3D,                   // Images in this texture all are 3-dimensional. They have width, height, and depth.
+        Texture_rectangle,            // The image in this texture (only one image. No mipmapping) is 2-dimensional. Texture coordinates used for these textures are not normalized.
+        Texture_buffer,               // The image in this texture (only one image. No mipmapping) is 1-dimensional. The storage for this data comes from a Buffer Object.
+        Texture_cube_map,             // There are exactly 6 distinct sets of 2D images, each image being of the same size and must be of a square size. These images act as 6 faces of a cube.
+        Texture_1D_array,             // Images in this texture all are 1-dimensional. However, it contains multiple sets of 1-dimensional images, all within one texture. The array length is part of the texture's size.
+        Texture_2D_array,             // Images in this texture all are 2-dimensional. However, it contains multiple sets of 2-dimensional images, all within one texture. The array length is part of the texture's size.
+        Texture_cube_map_array,       // Images in this texture are all cube maps. It contains multiple sets of cube maps, all within one texture. The array length * 6 (number of cube faces) is part of the texture size.
+        Texture_2D_multisample,       // The image in this texture (only one image. No mipmapping) is 2-dimensional. Each pixel in these images contains multiple samples instead of just one value.
+        Texture_2D_multisample_array, // Combines 2D array and 2D multisample types. No mipmapping.
+    };
+    // An Image Format describes the way that the images in Textures and Renderbuffers store their data.
+    // There are three basic kinds of image formats:
+    // color
+    // depth
+    // depth/stencil.
+    // Unless otherwise specified all formats can be used for textures and renderbuffers equally AND can be multisampled equally.
+    // e.g. GL_RGBA32F is a floating-point format where each component is a 32-bit IEEE floating-point value.
+    enum class ImageFormat : uint8_t
+    {
+        R8,             // Bit layout per component: 8     (internal format = GL_RED)
+        R8_SNORM,       // Bit layout per component: s8    (internal format = GL_RED)
+        R16,            // Bit layout per component: 16    (internal format = GL_RED)
+        R16_SNORM,      // Bit layout per component: s16   (internal format = GL_RED)
+        RG8,            // Bit layout per component: 8, 8  (internal format = GL_RG)
+        RG8_SNORM,      // Bit layout per component: s8, s8    (internal format = GL_RG)
+        RG16,           // Bit layout per component: 16, 16    (internal format = GL_RG)
+        RG16_SNORM,     // Bit layout per component: s16, s16  (internal format = GL_RG)
+        R3_G3_B2,       // Bit layout per component: 3, 3, 2   (internal format = GL_RGB)
+        RGB4,           // Bit layout per component: 4, 4, 4   (internal format = GL_RGB)
+        RGB5,           // Bit layout per component: 5, 5, 5   (internal format = GL_RGB)
+        RGB8,           // Bit layout per component: 8, 8, 8   (internal format = GL_RGB)
+        RGB8_SNORM,     // Bit layout per component: s8, s8, s8    (internal format = GL_RGB)
+        RGB10,          // Bit layout per component: 10, 10, 10    (internal format = GL_RGB)
+        RGB12,          // Bit layout per component: 12, 12, 12    (internal format = GL_RGB)
+        RGB16_SNORM,    // Bit layout per component: 16, 16, 16    (internal format = GL_RGB)
+        RGBA2,          // Bit layout per component: 2, 2, 2, 2    (internal format = GL_RGB)
+        RGBA4,          // Bit layout per component: 4, 4, 4, 4    (internal format = GL_RGB)
+        RGB5_A1,        // Bit layout per component: 5, 5, 5, 1    (internal format = GL_RGBA)
+        RGBA8,          // Bit layout per component: 8, 8, 8, 8    (internal format = GL_RGBA)
+        RGBA8_SNORM,    // Bit layout per component: s8, s8, s8, s8    (internal format = GL_RGBA)
+        RGB10_A2,       // Bit layout per component: 10, 10, 10, 2     (internal format = GL_RGBA)
+        RGB10_A2UI,     // Bit layout per component: ui10, ui10,ui10, ui2  (internal format = GL_RGBA)
+        RGBA12,         // Bit layout per component: 12, 12, 12, 12    (internal format = GL_RGBA)
+        RGBA16,         // Bit layout per component: 16, 16, 16, 16    (internal format = GL_RGBA)
+        SRGB8,          // Bit layout per component: 8, 8, 8   (internal format = GL_RGB)
+        SRGB8_ALPHA8,   // Bit layout per component: 8, 8, 8, 8    (internal format = GL_RGBA)
+        R16F,           // Bit layout per component: f16   (internal format = GL_RED)
+        RG16F,          // Bit layout per component: f16,  f16     (internal format = GL_RG)
+        RGB16F,         // Bit layout per component: f16, f16, f16     (internal format = GL_RGB)
+        RGBA16F,        // Bit layout per component: f16, f16, f16, f16    (internal format = GL_RGBA)
+        R32F,           // Bit layout per component: f32,  (internal format = GL_RED)
+        RG32F,          // Bit layout per component: f32, f32,     (internal format = GL_RG)
+        RGB32F,         // Bit layout per component: f32, f32, f32     (internal format = GL_RGB)
+        RGBA32F,        // Bit layout per component: f32, f32, f32, f32    (internal format = GL_RGBA)
+        R11F_G11F_B10F, // Bit layout per component: f11, f11, f10     (internal format = GL_RGB)
+        RGB9_E5,        // Bit layout per component: 9, 9, 9,   RGB 9,9,9 + 5 shared bits  (internal format = GL_RGB)
+        R8I,            // Bit layout per component: i8,   (internal format = GL_RED)
+        R8UI,           // Bit layout per component: ui8,  (internal format = GL_RED)
+        R16I,           // Bit layout per component: i16,  (internal format = GL_RED)
+        R16UI,          // Bit layout per component: ui16,     (internal format = GL_RED)
+        R32I,           // Bit layout per component: i32,  (internal format = GL_RED)
+        R32UI,          // Bit layout per component: ui32,     (internal format = GL_RED)
+        RG8I,           // Bit layout per component: i8, i8,   (internal format = GL_RG)
+        RG8UI,          // Bit layout per component: ui8, ui8,     (internal format = GL_RG)
+        RG16I,          // Bit layout per component: i16, i16,     (internal format = GL_RG)
+        RG16UI,         // Bit layout per component: ui16, ui16,   (internal format = GL_RG)
+        RG32I,          // Bit layout per component: i32, i32,     (internal format = GL_RG)
+        RG32UI,         // Bit layout per component: ui32, ui32,   (internal format = GL_RG)
+        RGB8I,          // Bit layout per component: i8, i8, i8    (internal format = GL_RGB)
+        RGB8UI,         // Bit layout per component: ui8, ui8, ui8     (internal format = GL_RGB)
+        RGB16I,         // Bit layout per component: i16, i16, i16     (internal format = GL_RGB)
+        RGB16UI,        // Bit layout per component: ui16, ui16, ui16  (internal format = GL_RGB)
+        RGB32I,         // Bit layout per component: i32, i32, i32     (internal format = GL_RGB)
+        RGB32UI,        // Bit layout per component: ui32, ui32, ui32  (internal format = GL_RGB)
+        RGBA8I,         // Bit layout per component: i8, i8, i8, i8    (internal format = GL_RGBA)
+        RGBA8UI,        // Bit layout per component: ui8, ui8, ui8, ui8    (internal format = GL_RGBA)
+        RGBA16I,        // Bit layout per component: i16, i16, i16, i16    (internal format = GL_RGBA)
+        RGBA16UI,       // Bit layout per component: ui16, ui16, ui16, ui16    (internal format = GL_RGBA)
+        RGBA32I,        // Bit layout per component: i32, i32, i32, i32    (internal format = GL_RGBA)
+        RGBA32UI,       // Bit layout per component: ui32, ui32, ui32, ui32    (internal format = GL_RGBA)
+        depth_component_32F, // Bit layout per component: f32
+        depth_component_24,  // Bit layout per component: 24
+        depth_component_16,  // Bit layout per component: 16
+        depth_32F_stencil_8, // Bit layout per component: f32, 8
+        depth_24_stencil_8,  // Bit layout per component: 24, 8
+        stencil_index_8      // Bit layout per component: 8
+    };
+    enum class PixelDataFormat : uint8_t
+    {
+        RED,
+        RG,
+        RGB,
+        BGR,
+        RGBA,
+        DEPTH_COMPONENT,
+        STENCIL_INDEX
+    };
+    enum class PixelDataType : uint8_t
+    {
+        UNSIGNED_BYTE,
+        BYTE,
+        UNSIGNED_SHORT,
+        SHORT,
+        UNSIGNED_INT,
+        INT,
+        FLOAT,
+        UNSIGNED_BYTE_3_3_2,
+        UNSIGNED_BYTE_2_3_3_REV,
+        UNSIGNED_SHORT_5_6_5,
+        UNSIGNED_SHORT_5_6_5_REV,
+        UNSIGNED_SHORT_4_4_4_4,
+        UNSIGNED_SHORT_4_4_4_4_REV,
+        UNSIGNED_SHORT_5_5_5_1,
+        UNSIGNED_SHORT_1_5_5_5_REV,
+        UNSIGNED_INT_8_8_8_8,
+        UNSIGNED_INT_8_8_8_8_REV,
+        UNSIGNED_INT_10_10_10_2,
+        UNSIGNED_INT_2_10_10_10_REV
     };
     enum class ShaderProgramType : uint8_t
     {
@@ -276,6 +398,8 @@ namespace OpenGL
 }
 
 // OpenGL functions using the strongly typed enums defined by us.
+// Not all functions accept all the enum values. For example in tex_storage_3D the TextureType p_target only accepts two values.
+// Reading the param comments will clearly state the valid combinations.
 namespace OpenGL
 {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -308,8 +432,59 @@ namespace OpenGL
     // p_polygon_mode: Specifies how polygons will be rasterized.
     // Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
     void set_polygon_mode(PolygonMode p_polygon_mode);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// TEXTURE FUNCTIONS
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     // Selects active texture unit subsequent texture state calls will affect. The number of texture units an implementation supports is implementation dependent, but must be at least 80.
-    void set_active_texture(int pUnitPosition);
+    void active_texture(int pUnitPosition);
+
+    // Simultaneously specify storage for all levels of a three-dimensional array.
+    //@param p_target Specifies the target to which the texture object is bound for glTexStorage3D. Must be one of GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_CUBE_MAP_ARRAY, GL_PROXY_TEXTURE_3D, GL_PROXY_TEXTURE_2D_ARRAY or GL_PROXY_TEXTURE_CUBE_MAP_ARRAY.
+    //@param p_texture Specifies the texture object name for glTextureStorage3D. The effective target of texture must be one of the valid non-proxy target values above.
+    //@param p_levels Specify the number of texture levels.
+    //@param p_internal_format Specifies the sized internal format to be used to store texture image data.
+    //@param p_width Specifies the width of the texture, in texels.
+    //@param p_height Specifies the height of the texture, in texels.
+    //@param p_depth Specifies the depth of the texture, in texels.
+    //@link https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexStorage3D.xhtml
+    void tex_storage_3D(TextureType p_target, GLsizei p_levels, ImageFormat p_internal_format, GLsizei p_width, GLsizei p_height, GLsizei p_depth);
+
+    // Specify a three-dimensional texture sub-image
+    //@param p_target Specifies the target to which the texture is bound for glTexSubImage3D. Must be TextureType::texture_3D or TextureType::texture_2D_array.
+    //@param p_level Specifies the level-of-detail number. Level 0 is the base image level. Level n is the nth mipmap reduction image.
+    //@param p_xoffset Specifies a texel offset in the x direction within the texture array.
+    //@param p_yoffset Specifies a texel offset in the y direction within the texture array.
+    //@param p_zoffset Specifies a texel offset in the z direction within the texture array.
+    //@param p_width Specifies the width of the texture subimage.
+    //@param p_height Specifies the height of the texture subimage.
+    //@param p_depth Specifies the depth of the texture subimage.
+    //@param p_format Specifies the format of the pixel data. The following values are accepted: GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_DEPTH_COMPONENT, and GL_STENCIL_INDEX.
+    //@param type Specifies the data type of the pixel data. The following values are accepted: GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2, GL_UNSIGNED_BYTE_2_3_3_REV, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_5_6_5_REV, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_4_4_4_4_REV, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_1_5_5_5_REV, GL_UNSIGNED_INT_8_8_8_8, GL_UNSIGNED_INT_8_8_8_8_REV, GL_UNSIGNED_INT_10_10_10_2, and GL_UNSIGNED_INT_2_10_10_10_REV.
+    //@param p_pixels Specifies a pointer to the image data in memory.
+    //@link https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexSubImage3D.xhtml
+    void tex_sub_image_3D(TextureType p_target, GLint p_level, GLint p_xoffset, GLint p_yoffset, GLint p_zoffset, GLsizei p_width, GLsizei p_height, GLsizei p_depth, PixelDataFormat p_format, PixelDataType p_type, const void * p_pixels);
+
+    // The max width and height of a 1D or 2D texture the GPU supports
+    //@returns The single max for the width, height (1:1).
+    GLint max_texture_size();
+    // The max width, height, depth of a 3D texture that your GPU supports.
+    //@returns The single max for the width, height and depth (1:1:1).
+    GLint max_3D_texture_size();
+    // The max width and height of a a cubemap texture that your GPU supports
+    //@returns The single max for the width, height (1:1).
+    GLint max_cube_map_texture_size();
+    // The number of image-units/samplers the GPU supports in the fragment shader.
+    GLint max_texture_image_units();
+    // Max number of image-units/samplers the GPU supports in the vertex shader. This might return 0 for certain GPUs.
+    GLint max_vertex_texture_image_units();
+    // Max number of image-units/samplers the GPU supports in the geometry shader.
+    GLint max_geometry_texture_image_units();
+    // Max number of image-units/samplers the GPU supports in the vertex + geometry + fragment shaders combined.
+    GLint max_combined_texture_image_units();
+    // Max number of array levels for ArrayTexture objects.
+    GLint max_array_texture_layers();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// DRAW FUNCTIONS
@@ -472,7 +647,7 @@ namespace OpenGL
     // and converted to floating point. Otherwise, values will be converted to floats directly without normalization.
     //@param p_stride Byte stride from one attribute to the next, allowing vertices and attributes to be packed into a single array or stored in separate arrays.
     //@param p_pointer Offset of the first component of the first generic vertex attribute in the array in the data store of the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
-    void vertex_attrib_pointer(GLuint p_index, GLint p_size, DataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer);
+    void vertex_attrib_pointer(GLuint p_index, GLint p_size, ShaderDataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer);
     // Creates and initializes a buffer object's data store. The Buffer currently bound to target is used.
     // While creating the new storage, any pre-existing data store is deleted. The new data store is created with the specified size in bytes and usage.
     // When replacing the entire data store, consider using buffer_sub_data rather than completely recreating the data store with buffer_data. This avoids the cost of reallocating the data store.
@@ -522,7 +697,7 @@ namespace OpenGL
 {
     const char* get_name(Function p_function);
     const char* get_name(ShaderProgramType p_shader_program_type);
-    const char* get_name(DataType p_data_type);
+    const char* get_name(ShaderDataType p_data_type);
     const char* get_name(GLSLVariableType p_variable_type);
     const char* get_name(BufferType p_buffer_type);
     const char* get_name(BufferUsage p_buffer_usage);
@@ -537,98 +712,102 @@ namespace OpenGL
     const char* get_name(FramebufferTarget p_framebuffer_target);
     const char* get_name(ErrorType p_error_type);
 
-    // Convert a GLEnum value to the DataType wrapper.
-    DataType convert(int p_data_type);
-    // Assert the OpenGL p_type and type T match up. Used to runtime assert the DataType of variables matches the templated set functions.
+    // Convert a GLEnum value to the ShaderDataType wrapper.
+    ShaderDataType convert(int p_data_type);
+    // Assert the OpenGL p_type and type T match up. Used to runtime assert the ShaderDataType of variables matches the templated set functions.
     template <typename T>
-    constexpr bool assert_type(DataType p_type)
+    constexpr bool assert_type(ShaderDataType p_type)
     {
         switch (p_type)
         {
-            case DataType::Float:                return std::is_same_v<T, float>;
-            case DataType::Double:               return std::is_same_v<T, double>;
-            case DataType::Int:                  return std::is_same_v<T, int>;
-            case DataType::UnsignedInt:          return std::is_same_v<T, unsigned int>;
-            case DataType::Bool:                 return std::is_same_v<T, bool>;
-            case DataType::Sampler2D:            return std::is_same_v<T, int>; // Setting texture sampler types uses int to set their bound texture unit. The actual texture being sampled is set by calling glActiveTexture followed by glBindTexture.
-            case DataType::SamplerCube:          return false;
-            case DataType::Vec2:                 return std::is_same_v<T, glm::vec2>;
-            case DataType::Vec3:                 return std::is_same_v<T, glm::vec3>;
-            case DataType::Vec4:                 return std::is_same_v<T, glm::vec4>;
-            case DataType::DVec2:                return std::is_same_v<T, glm::dvec2>;
-            case DataType::DVec3:                return std::is_same_v<T, glm::dvec3>;
-            case DataType::DVec4:                return std::is_same_v<T, glm::dvec4>;
-            case DataType::IVec2:                return std::is_same_v<T, glm::ivec2>;
-            case DataType::IVec3:                return std::is_same_v<T, glm::ivec3>;
-            case DataType::IVec4:                return std::is_same_v<T, glm::ivec4>;
-            case DataType::UVec2:                return std::is_same_v<T, glm::uvec2>;
-            case DataType::UVec3:                return std::is_same_v<T, glm::uvec3>;
-            case DataType::UVec4:                return std::is_same_v<T, glm::uvec4>;
-            case DataType::BVec2:                return std::is_same_v<T, glm::bvec2>;
-            case DataType::BVec3:                return std::is_same_v<T, glm::bvec3>;
-            case DataType::BVec4:                return std::is_same_v<T, glm::bvec4>;
-            case DataType::Mat2:                 return std::is_same_v<T, glm::mat2>;
-            case DataType::Mat3:                 return std::is_same_v<T, glm::mat3>;
-            case DataType::Mat4:                 return std::is_same_v<T, glm::mat4>;
-            case DataType::Mat2x3:               return std::is_same_v<T, glm::mat2x3>;
-            case DataType::Mat2x4:               return std::is_same_v<T, glm::mat2x4>;
-            case DataType::Mat3x2:               return std::is_same_v<T, glm::mat3x2>;
-            case DataType::Mat3x4:               return std::is_same_v<T, glm::mat3x4>;
-            case DataType::Mat4x2:               return std::is_same_v<T, glm::mat4x2>;
-            case DataType::Mat4x3:               return std::is_same_v<T, glm::mat4x3>;
-            case DataType::Dmat2:                return std::is_same_v<T, glm::dmat2>;
-            case DataType::Dmat3:                return std::is_same_v<T, glm::dmat3>;
-            case DataType::Dmat4:                return std::is_same_v<T, glm::dmat4>;
-            case DataType::Dmat2x3:              return std::is_same_v<T, glm::dmat2x3>;
-            case DataType::Dmat2x4:              return std::is_same_v<T, glm::dmat2x4>;
-            case DataType::Dmat3x2:              return std::is_same_v<T, glm::dmat3x2>;
-            case DataType::Dmat3x4:              return std::is_same_v<T, glm::dmat3x4>;
-            case DataType::Dmat4x2:              return std::is_same_v<T, glm::dmat4x2>;
-            case DataType::Dmat4x3:              return std::is_same_v<T, glm::dmat4x3>;
-            case DataType::Sampler1D:            return false; // Remaining types have not been implemented.
-            case DataType::Sampler3D:            return false;
-            case DataType::Sampler1DShadow:      return false;
-            case DataType::Sampler2DShadow:      return false;
-            case DataType::Sampler1DArray:       return false;
-            case DataType::Sampler2DArray:       return false;
-            case DataType::Sampler1DArrayShadow: return false;
-            case DataType::Sampler2DArrayShadow: return false;
-            case DataType::Sampler2DMS:          return false;
-            case DataType::Sampler2DMSArray:     return false;
-            case DataType::SamplerCubeShadow:    return false;
-            case DataType::SamplerBuffer:        return false;
-            case DataType::Sampler2DRect:        return false;
-            case DataType::Sampler2DRectShadow:  return false;
-            case DataType::Isampler1D:           return false;
-            case DataType::Isampler2D:           return false;
-            case DataType::Isampler3D:           return false;
-            case DataType::IsamplerCube:         return false;
-            case DataType::Isampler1DArray:      return false;
-            case DataType::Isampler2DArray:      return false;
-            case DataType::Isampler2DMS:         return false;
-            case DataType::Isampler2DMSArray:    return false;
-            case DataType::IsamplerBuffer:       return false;
-            case DataType::Isampler2DRect:       return false;
-            case DataType::Usampler1D:           return false;
-            case DataType::Usampler2D:           return false;
-            case DataType::Usampler3D:           return false;
-            case DataType::UsamplerCube:         return false;
-            case DataType::Usampler2DArray:      return false;
-            case DataType::Usampler2DMS:         return false;
-            case DataType::Usampler2DMSArray:    return false;
-            case DataType::UsamplerBuffer:       return false;
-            case DataType::Usampler2DRect:       return false;
-            case DataType::Unknown:              return false;
+            case ShaderDataType::Float:                return std::is_same_v<T, float>;
+            case ShaderDataType::Double:               return std::is_same_v<T, double>;
+            case ShaderDataType::Int:                  return std::is_same_v<T, int>;
+            case ShaderDataType::UnsignedInt:          return std::is_same_v<T, unsigned int>;
+            case ShaderDataType::Bool:                 return std::is_same_v<T, bool>;
+            case ShaderDataType::Sampler2D:            return std::is_same_v<T, int>; // Setting texture sampler types uses int to set their bound texture unit. The actual texture being sampled is set by calling glActiveTexture followed by glBindTexture.
+            case ShaderDataType::SamplerCube:          return false;
+            case ShaderDataType::Vec2:                 return std::is_same_v<T, glm::vec2>;
+            case ShaderDataType::Vec3:                 return std::is_same_v<T, glm::vec3>;
+            case ShaderDataType::Vec4:                 return std::is_same_v<T, glm::vec4>;
+            case ShaderDataType::DVec2:                return std::is_same_v<T, glm::dvec2>;
+            case ShaderDataType::DVec3:                return std::is_same_v<T, glm::dvec3>;
+            case ShaderDataType::DVec4:                return std::is_same_v<T, glm::dvec4>;
+            case ShaderDataType::IVec2:                return std::is_same_v<T, glm::ivec2>;
+            case ShaderDataType::IVec3:                return std::is_same_v<T, glm::ivec3>;
+            case ShaderDataType::IVec4:                return std::is_same_v<T, glm::ivec4>;
+            case ShaderDataType::UVec2:                return std::is_same_v<T, glm::uvec2>;
+            case ShaderDataType::UVec3:                return std::is_same_v<T, glm::uvec3>;
+            case ShaderDataType::UVec4:                return std::is_same_v<T, glm::uvec4>;
+            case ShaderDataType::BVec2:                return std::is_same_v<T, glm::bvec2>;
+            case ShaderDataType::BVec3:                return std::is_same_v<T, glm::bvec3>;
+            case ShaderDataType::BVec4:                return std::is_same_v<T, glm::bvec4>;
+            case ShaderDataType::Mat2:                 return std::is_same_v<T, glm::mat2>;
+            case ShaderDataType::Mat3:                 return std::is_same_v<T, glm::mat3>;
+            case ShaderDataType::Mat4:                 return std::is_same_v<T, glm::mat4>;
+            case ShaderDataType::Mat2x3:               return std::is_same_v<T, glm::mat2x3>;
+            case ShaderDataType::Mat2x4:               return std::is_same_v<T, glm::mat2x4>;
+            case ShaderDataType::Mat3x2:               return std::is_same_v<T, glm::mat3x2>;
+            case ShaderDataType::Mat3x4:               return std::is_same_v<T, glm::mat3x4>;
+            case ShaderDataType::Mat4x2:               return std::is_same_v<T, glm::mat4x2>;
+            case ShaderDataType::Mat4x3:               return std::is_same_v<T, glm::mat4x3>;
+            case ShaderDataType::Dmat2:                return std::is_same_v<T, glm::dmat2>;
+            case ShaderDataType::Dmat3:                return std::is_same_v<T, glm::dmat3>;
+            case ShaderDataType::Dmat4:                return std::is_same_v<T, glm::dmat4>;
+            case ShaderDataType::Dmat2x3:              return std::is_same_v<T, glm::dmat2x3>;
+            case ShaderDataType::Dmat2x4:              return std::is_same_v<T, glm::dmat2x4>;
+            case ShaderDataType::Dmat3x2:              return std::is_same_v<T, glm::dmat3x2>;
+            case ShaderDataType::Dmat3x4:              return std::is_same_v<T, glm::dmat3x4>;
+            case ShaderDataType::Dmat4x2:              return std::is_same_v<T, glm::dmat4x2>;
+            case ShaderDataType::Dmat4x3:              return std::is_same_v<T, glm::dmat4x3>;
+            case ShaderDataType::Sampler1D:            return false; // Remaining types have not been implemented.
+            case ShaderDataType::Sampler3D:            return false;
+            case ShaderDataType::Sampler1DShadow:      return false;
+            case ShaderDataType::Sampler2DShadow:      return false;
+            case ShaderDataType::Sampler1DArray:       return false;
+            case ShaderDataType::Sampler2DArray:       return false;
+            case ShaderDataType::Sampler1DArrayShadow: return false;
+            case ShaderDataType::Sampler2DArrayShadow: return false;
+            case ShaderDataType::Sampler2DMS:          return false;
+            case ShaderDataType::Sampler2DMSArray:     return false;
+            case ShaderDataType::SamplerCubeShadow:    return false;
+            case ShaderDataType::SamplerBuffer:        return false;
+            case ShaderDataType::Sampler2DRect:        return false;
+            case ShaderDataType::Sampler2DRectShadow:  return false;
+            case ShaderDataType::Isampler1D:           return false;
+            case ShaderDataType::Isampler2D:           return false;
+            case ShaderDataType::Isampler3D:           return false;
+            case ShaderDataType::IsamplerCube:         return false;
+            case ShaderDataType::Isampler1DArray:      return false;
+            case ShaderDataType::Isampler2DArray:      return false;
+            case ShaderDataType::Isampler2DMS:         return false;
+            case ShaderDataType::Isampler2DMSArray:    return false;
+            case ShaderDataType::IsamplerBuffer:       return false;
+            case ShaderDataType::Isampler2DRect:       return false;
+            case ShaderDataType::Usampler1D:           return false;
+            case ShaderDataType::Usampler2D:           return false;
+            case ShaderDataType::Usampler3D:           return false;
+            case ShaderDataType::UsamplerCube:         return false;
+            case ShaderDataType::Usampler2DArray:      return false;
+            case ShaderDataType::Usampler2DMS:         return false;
+            case ShaderDataType::Usampler2DMSArray:    return false;
+            case ShaderDataType::UsamplerBuffer:       return false;
+            case ShaderDataType::Usampler2DRect:       return false;
+            case ShaderDataType::Unknown:              return false;
             default:                             return false;
         }
     }
 
 
     int convert(ShaderProgramType p_shader_program_type);
-    int convert(DataType p_data_type);
+    int convert(ShaderDataType p_data_type);
     int convert(GLSLVariableType p_variable_type);
     int convert(BufferType p_buffer_type);
     int convert(BufferUsage p_buffer_usage);
+    int convert(TextureType p_texture_type);
+    int convert(ImageFormat p_image_format);
+    int convert(PixelDataFormat p_pixel_format);
+    int convert(PixelDataType p_pixel_data_type);
     int convert(ShaderResourceType p_resource_type);
     int convert(ShaderResourceProperty p_shader_resource_property);
     int convert(DepthTestType p_depth_test_type);

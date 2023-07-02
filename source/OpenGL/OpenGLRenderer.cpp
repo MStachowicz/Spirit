@@ -235,7 +235,7 @@ namespace OpenGL
                 mScreenTextureShader.set_uniform("offset", mPostProcessingOptions.mKernelOffset);
             }
 
-            set_active_texture(0);
+            active_texture(0);
             mScreenFramebuffer.bindColourTexture();
             draw(*mMeshSystem.mPlanePrimitive);
         }

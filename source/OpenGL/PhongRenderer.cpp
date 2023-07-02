@@ -69,27 +69,27 @@ namespace OpenGL
                 {
                     if (var.m_identifier == "number_of_directional_lights")
                     {
-                        ASSERT(var.m_type == DataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_directional_lights to be a uint.");
+                        ASSERT(var.m_type == ShaderDataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_directional_lights to be a uint.");
                         m_directional_light_count_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "directional_lights[0].direction")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].direction to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].direction to be a vec3.");
                         m_directional_light_direction_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "directional_lights[0].ambient")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].ambient to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].ambient to be a vec3.");
                         m_directional_light_ambient_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "directional_lights[0].diffuse")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].diffuse to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].diffuse to be a vec3.");
                         m_directional_light_diffuse_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "directional_lights[0].specular")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].specular to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].specular to be a vec3.");
                         m_directional_light_specular_offset = var.m_offset;
                     }
                     else
@@ -121,42 +121,42 @@ namespace OpenGL
                 {
                     if (var.m_identifier == "number_of_point_lights")
                     {
-                        ASSERT(var.m_type == DataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_point_lights to be a uint.");
+                        ASSERT(var.m_type == ShaderDataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_point_lights to be a uint.");
                         m_point_light_count_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].position")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].position to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].position to be a vec3.");
                         m_point_light_position_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].constant")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected point_lights[0].constant to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected point_lights[0].constant to be a float.");
                         m_point_light_constant_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].linear")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected point_lights[0].linear to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected point_lights[0].linear to be a float.");
                         m_point_light_linear_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].quadratic")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected point_lights[0].quadratic to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected point_lights[0].quadratic to be a float.");
                         m_point_light_quadratic_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].ambient")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].ambient to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].ambient to be a vec3.");
                         m_point_light_ambient_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].diffuse")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].diffuse to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].diffuse to be a vec3.");
                         m_point_light_diffuse_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "point_lights[0].specular")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].specular to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].specular to be a vec3.");
                         m_point_light_specular_offset = var.m_offset;
                     }
                     else
@@ -188,57 +188,57 @@ namespace OpenGL
                 {
                     if (var.m_identifier == "number_of_spot_lights")
                     {
-                        ASSERT(var.m_type == DataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_spot_lights to be a uint.");
+                        ASSERT(var.m_type == ShaderDataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_spot_lights to be a uint.");
                         m_spot_light_count_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].position")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].position to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].position to be a vec3.");
                         m_spot_light_position_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].direction")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].direction to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].direction to be a vec3.");
                         m_spot_light_direction_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].cutoff")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].cutoff to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].cutoff to be a float.");
                         m_spot_light_cutoff_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].outer_cutoff")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].outer_cutoff to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].outer_cutoff to be a float.");
                         m_spot_light_outer_cutoff_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].constant")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].constant to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].constant to be a float.");
                         m_spot_light_constant_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].linear")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].linear to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].linear to be a float.");
                         m_spot_light_linear_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].quadratic")
                     {
-                        ASSERT(var.m_type == DataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].quadratic to be a float.");
+                        ASSERT(var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].quadratic to be a float.");
                         m_spot_light_quadratic_offset = var.m_offset;
                     }
                     else if (var.m_identifier == "spot_lights[0].ambient")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].ambient to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].ambient to be a vec3.");
                         m_spot_light_ambient_offset = var.m_offset;
             }
                     else if (var.m_identifier == "spot_lights[0].diffuse")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].diffuse to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].diffuse to be a vec3.");
                         m_spot_light_diffuse_offset = var.m_offset;
             }
                     else if (var.m_identifier == "spot_lights[0].specular")
                     {
-                        ASSERT(var.m_type == DataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].specular to be a vec3.");
+                        ASSERT(var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].specular to be a vec3.");
                         m_spot_light_specular_offset = var.m_offset;
         }
                     else
@@ -397,11 +397,11 @@ namespace OpenGL
 
         // For both textures, set the texture unit the samplers belong to.
         m_phong_shader.set_uniform("diffuse", 0);
-        set_active_texture(0);
+        active_texture(0);
         p_diffuse_texture.bind();
 
         m_phong_shader.set_uniform("specular", 1);
-        set_active_texture(1);
+        active_texture(1);
         p_specular_texture.bind();
     }
 } // namespace OpenGL
