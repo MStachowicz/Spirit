@@ -8,6 +8,7 @@ namespace Component
     {
     public:
         DirectionalLight() noexcept;
+        DirectionalLight(float p_ambient_intensity, float m_diffuse_intensity) noexcept;
 
         glm::vec3 mDirection;
         glm::vec3 mColour;
@@ -22,6 +23,7 @@ namespace Component
     {
     public:
         PointLight() noexcept;
+        PointLight(const glm::vec3& p_position) noexcept;
 
         glm::vec3 mPosition;
         glm::vec3 mColour;

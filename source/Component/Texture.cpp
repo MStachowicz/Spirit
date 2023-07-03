@@ -15,3 +15,17 @@ namespace Data
         LOG("Data::Texture '{}' loaded", m_image_ref->m_filepath.string());
     }
 }
+
+namespace Component
+{
+    Texture::Texture() noexcept
+        : mDiffuse{std::nullopt}
+        , mSpecular{std::nullopt}
+        , m_shininess{32.f}
+    {}
+    Texture::Texture(const TextureRef& m_diffuse) noexcept
+        : mDiffuse{m_diffuse}
+        , mSpecular{std::nullopt}
+        , m_shininess{32.f}
+    {}
+}

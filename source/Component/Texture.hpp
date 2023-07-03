@@ -40,8 +40,11 @@ namespace Component
     class Texture
     {
     public:
-        std::optional<TextureRef> mDiffuse  = std::nullopt; // Texture mapping diffuse.
-        std::optional<TextureRef> mSpecular = std::nullopt; // Texture mapping specular.
-        float m_shininess = 32.f;
+        Texture() noexcept;
+        Texture(const TextureRef& m_diffuse) noexcept;
+
+        std::optional<TextureRef> mDiffuse;
+        std::optional<TextureRef> mSpecular;
+        float m_shininess;
     };
 }; // namespace Component

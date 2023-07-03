@@ -66,6 +66,22 @@ namespace System
     // Lines up all the available primitive meshes along the x axis with the camera facing them.
     void SceneSystem::primitiveMeshScene()
     {
+        { // Plane/quad
+            auto transform    = Component::Transform{glm::vec3(0.f, 0.f, 0.f)};
+            transform.mScale  = glm::vec3(10.f, 10.f, 1.f);
+            transform.look_at(glm::vec3(0.f, -20.f, 0.f));
+            auto mesh         = Component::Mesh{mMeshSystem.mPlanePrimitive};
+
+            mStorage.addEntity(
+                Component::Label{"Floor"},
+                Component::RigidBody{},
+                Component::Texture{mTextureSystem.getTexture(Config::Texture_Directory / "wood_floor.png")},
+                transform,
+                mesh,
+                Component::Collider{transform, mesh});
+        }
+
+
         constexpr float mesh_count   = 5.f;
         constexpr float mesh_width   = 2.f;
         constexpr float mesh_padding = 1.f;
@@ -142,9 +158,9 @@ namespace System
         }
 
         { // Lights
-            mStorage.addEntity(Component::Label{"Directional light 1"}, Component::DirectionalLight{});
+            mStorage.addEntity(Component::Label{"Directional light 1"}, Component::DirectionalLight{0.05f, 0.5f});
 
-            mStorage.addEntity(Component::Label{"Point light 1"}, Component::PointLight{});
+            mStorage.addEntity(Component::Label{"Point light 1"}, Component::PointLight{glm::vec3(-4.5f, 1.f, -4.5f)});
 
             { // Red point light in-front of the box.
                 auto point_light      = Component::PointLight{};

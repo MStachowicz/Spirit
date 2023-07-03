@@ -7,10 +7,17 @@
 namespace Component
 {
     DirectionalLight::DirectionalLight() noexcept
-        : mDirection{glm::vec3(0.f, 0.f, 1.f)}
+        : mDirection{glm::vec3(0.f, -1.f, 0.f)}
         , mColour{glm::vec3(1.f, 1.f, 1.f)}
         , mAmbientIntensity{0.05f}
         , mDiffuseIntensity{0.15f}
+        , mSpecularIntensity{0.5f}
+    {}
+    DirectionalLight::DirectionalLight(float p_ambient_intensity, float m_diffuse_intensity) noexcept
+        : mDirection{glm::vec3(0.f, -1.f, 0.f)}
+        , mColour{glm::vec3(1.f, 1.f, 1.f)}
+        , mAmbientIntensity{p_ambient_intensity}
+        , mDiffuseIntensity{m_diffuse_intensity}
         , mSpecularIntensity{0.5f}
     {}
     void DirectionalLight::DrawImGui()
@@ -38,6 +45,17 @@ namespace Component
         , mLinear{0.09f}
         , mQuadratic{0.032f}
     {}
+    PointLight::PointLight(const glm::vec3& p_position) noexcept
+        : mPosition{p_position}
+        , mColour{glm::vec3(1.f, 1.f, 1.f)}
+        , mAmbientIntensity{0.05f}
+        , mDiffuseIntensity{0.8f}
+        , mSpecularIntensity{1.0f}
+        , mConstant{1.f}
+        , mLinear{0.09f}
+        , mQuadratic{0.032f}
+    {}
+
     void PointLight::DrawImGui()
     {
         if(ImGui::TreeNode("Point light"))
