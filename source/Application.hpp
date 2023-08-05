@@ -23,7 +23,6 @@
 
 // Utility
 #include "File.hpp"
-#include "JobSystem.hpp"
 #include "Logger.hpp"
 #include "Stopwatch.hpp"
 
@@ -171,8 +170,6 @@ int main(int argc, char *argv[])
         Platform::Core::initialise_OpenGL();
         OpenGL::DebugRenderer::init();
         Platform::Core::initialise_ImGui(window);
-
-        //JobSystem::initialise();
         //Test::runUnitTests(false);
 
         LOG("[INIT] Number of arguments passed on launch: {}", argc);
