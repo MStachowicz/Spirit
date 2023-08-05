@@ -113,6 +113,8 @@ source/Geometry/AABB.hpp
 source/Geometry/Cylinder.hpp
 source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
+source/Geometry/Frustrum.hpp
+source/Geometry/Frustrum.cpp
 source/Geometry/Intersect.cpp
 source/Geometry/Intersect.hpp
 source/Geometry/Line.cpp
@@ -130,6 +132,7 @@ source/Geometry/Triangle.cpp
 )
 target_include_directories(Geometry
 PUBLIC source/Geometry
+PUBLIC source
 )
 target_link_libraries(Geometry
 PUBLIC GLM
