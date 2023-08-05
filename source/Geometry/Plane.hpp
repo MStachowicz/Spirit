@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
 
 namespace Geometry
 {
@@ -16,5 +17,10 @@ namespace Geometry
 
         // Constructs a plane from a world space position and direction intialising the normal of the plane to pDirection.
         Plane(const glm::vec3& p_point, const glm::vec3& p_direction) noexcept;
+        // Construct a plane from a plane equation.
+        //@param p_equation Equation of a plane in the form 'x + y + z + w = 0'
+        Plane(const glm::vec4& p_equation) noexcept;
+
+        void normalise();
     };
 }
