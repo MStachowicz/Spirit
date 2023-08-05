@@ -9,6 +9,8 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtx/quaternion.hpp"
 
+#include "Utility/Logger.hpp"
+
 #include <string>
 #include <vector>
 #include <algorithm>
