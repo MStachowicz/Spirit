@@ -12,8 +12,10 @@ namespace Test
         void runUnitTests()        override;
         void runPerformanceTests() override;
 
+        static void draw_frustrum_debugger_UI(float aspect_ratio);
     private:
         void runAABBTests();
         void runTriangleTests();
+        void run_frustrum_tests();
     };
 } // namespace Test

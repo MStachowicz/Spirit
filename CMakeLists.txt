@@ -153,12 +153,14 @@ PUBLIC source
 )
 target_link_libraries(UI
 PUBLIC Geometry
+PUBLIC GLM
 PRIVATE System
 PRIVATE Platform
 PRIVATE OpenGL
 PRIVATE ECS
 PRIVATE Utility
 PRIVATE ImGui
+PRIVATE Test #Included to easily add calls to visualisation functions in testers
 )
 # UI end --------------------------------------------------------------------------------
 
@@ -267,6 +269,8 @@ PRIVATE Utility
 PRIVATE ECS
 PRIVATE Geometry
 PRIVATE GLM
+PRIVATE ImGui
+PRIVATE OpenGL
 )
 # Test end ---------------------------------------------------------------------------------
 
@@ -294,6 +298,7 @@ PRIVATE GLM
 
     target_link_libraries(ImGui
     PUBLIC GLM
+    PUBLIC Utility # imgui_user_config uses logger
     )
     # ImGui end -----------------------------------------------------------------------------------
 

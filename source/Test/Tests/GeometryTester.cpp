@@ -4,6 +4,7 @@
 #include "Intersect.hpp"
 #include "AABB.hpp"
 #include "Triangle.hpp"
+#include "Geometry/Frustrum.hpp"
 
 #include "Stopwatch.hpp"
 #include "Utility.hpp"
@@ -11,6 +12,9 @@
 #include "glm/glm.hpp"
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+
+#include "imgui.h"
+#include "OpenGL/DebugRenderer.hpp"
 
 #include <array>
 
@@ -20,6 +24,7 @@ namespace Test
     {
         runAABBTests();
         runTriangleTests();
+        run_frustrum_tests();
     }
     void GeometryTester::runPerformanceTests()
     {
@@ -312,5 +317,131 @@ namespace Test
         {// Edge cases
             runUnitTest({Geometry::intersect_triangle_triangle_static(control, control), "Triangle v Triangle - equal triangles", "Expected collision to be true"});
         }
+    }
+
+
+    void GeometryTester::run_frustrum_tests()
+    {
+        { // Create an 'identity' ortho projection and check the planes resulting.
+            float ortho_size = 1.f;
+            float near       = -1.f;
+            float far        = 1.f;
+            auto projection  = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near, far);
+            auto frustrum    = Geometry::Frustrum(projection);
+
+            runUnitTest({frustrum.m_left.m_distance   == ortho_size, "Frustrum from ortho projection identity - distance - left", "Distance should match the ortho size"});
+            runUnitTest({frustrum.m_right.m_distance  == ortho_size, "Frustrum from ortho projection identity - distance - right", "Distance should match the ortho size"});
+            runUnitTest({frustrum.m_bottom.m_distance == ortho_size, "Frustrum from ortho projection identity - distance - bottom", "Distance should match the ortho size"});
+            runUnitTest({frustrum.m_top.m_distance    == ortho_size, "Frustrum from ortho projection identity - distance - top", "Distance should match the ortho size"});
+            runUnitTest({frustrum.m_near.m_distance   == -1.f, "Frustrum from ortho projection identity - distance - near", "Distance should match the near size"});
+            runUnitTest({frustrum.m_far.m_distance    == -1.f, "Frustrum from ortho projection identity - distance - far", "Distance should match the far size"});
+
+            runUnitTest({frustrum.m_left.m_normal   == glm::vec3(1.f, 0.f, 0.f), "Frustrum from ortho projection identity - normal - left", "Should be pointing towards the negative x-axis"});
+            runUnitTest({frustrum.m_right.m_normal  == glm::vec3(-1.f, 0.f, 0.f), "Frustrum from ortho projection identity - normal - right", "Should be pointing towards the positive x-axis"});
+            runUnitTest({frustrum.m_bottom.m_normal == glm::vec3(0.f, 1.f, 0.f), "Frustrum from ortho projection identity - normal - bottom", "Should be pointing towards the negative y-axis"});
+            runUnitTest({frustrum.m_top.m_normal    == glm::vec3(0.f, -1.f, 0.f), "Frustrum from ortho projection identity - normal - top", "Should be pointing towards the positive y-axis"});
+            runUnitTest({frustrum.m_near.m_normal   == glm::vec3(0.f, 0.f, 1.f), "Frustrum from ortho projection identity - normal - near", "Should be pointing towards the negative z-axis"});
+            runUnitTest({frustrum.m_far.m_normal    == glm::vec3(0.f, 0.f, -1.f), "Frustrum from ortho projection identity - normal - far", "Should be pointing towards the positive z-axis"});
+        }
+        { // Create an 'non-identity' ortho projection and check the planes resulting. Previous test can get away with non-normalising of the plane equations, but this test uses a non-1 ortho_size.
+            float ortho_size = 15.f;
+            float near       = 0.f;
+            float far        = 10.f;
+            auto projection  = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near, far);
+            auto frustrum    = Geometry::Frustrum(projection);
+
+            auto error_threshold_equality = [](float value_1, float value_2, float threshold = std::numeric_limits<float>::epsilon(), float power = 0.f)
+            {
+                auto adjusted_threshold = threshold * std::pow(10.f, power);
+                return std::abs(value_1 - value_2) <= adjusted_threshold;
+            };
+
+            runUnitTest({error_threshold_equality(frustrum.m_left.m_distance, ortho_size, std::numeric_limits<float>::epsilon(), 1.f), "Frustrum from ortho projection - distance - left", "Distance should match the ortho size"});
+            runUnitTest({error_threshold_equality(frustrum.m_left.m_distance, ortho_size, std::numeric_limits<float>::epsilon(), 1.f), "Frustrum from ortho projection - distance - left", "Distance should match the ortho size"});
+            runUnitTest({error_threshold_equality(frustrum.m_right.m_distance, ortho_size, std::numeric_limits<float>::epsilon(), 1.f), "Frustrum from ortho projection - distance - right", "Distance should match the ortho size"});
+            runUnitTest({error_threshold_equality(frustrum.m_bottom.m_distance, ortho_size, std::numeric_limits<float>::epsilon(), 1.f), "Frustrum from ortho projection - distance - bottom", "Distance should match the ortho size"});
+            runUnitTest({error_threshold_equality(frustrum.m_top.m_distance, ortho_size, std::numeric_limits<float>::epsilon(), 1.f), "Frustrum from ortho projection - distance - top", "Distance should match the ortho size"});
+            runUnitTest({frustrum.m_near.m_distance   == 0.f, "Frustrum from ortho projection - distance - near", "Distance should match the near size"});
+            runUnitTest({frustrum.m_far.m_distance    == -10.f, "Frustrum from ortho projection - distance - far", "Distance should match the far size"});
+
+            runUnitTest({frustrum.m_left.m_normal   == glm::vec3(1.f, 0.f, 0.f), "Frustrum from ortho projection - normal - left", "Should be pointing towards the negative x-axis"});
+            runUnitTest({frustrum.m_right.m_normal  == glm::vec3(-1.f, 0.f, 0.f), "Frustrum from ortho projection - normal - right", "Should be pointing towards the positive x-axis"});
+            runUnitTest({frustrum.m_bottom.m_normal == glm::vec3(0.f, 1.f, 0.f), "Frustrum from ortho projection - normal - bottom", "Should be pointing towards the negative y-axis"});
+            runUnitTest({frustrum.m_top.m_normal    == glm::vec3(0.f, -1.f, 0.f), "Frustrum from ortho projection - normal - top", "Should be pointing towards the positive y-axis"});
+            runUnitTest({frustrum.m_near.m_normal   == glm::vec3(0.f, 0.f, 1.f), "Frustrum from ortho projection - normal - near", "Should be pointing towards the negative z-axis"});
+            runUnitTest({frustrum.m_far.m_normal    == glm::vec3(0.f, 0.f, -1.f), "Frustrum from ortho projection - normal - far", "Should be pointing towards the positive z-axis"});
+        }
+    }
+
+    void draw_frustrum_debugger_UI(float aspect_ratio)
+    {
+        // Use this ImGui + OpenGL::DebugRenderer function to visualise Projection generated Geometry::Frustrums.
+        // A projection-only generated frustrum is positioned at [0, 0, 0] in the positive-z direction.
+        // OpenGL clip coordinates are in the [-1 - 1] range thus the default generate ortho projection has a near = -1, far = 1.
+        if (ImGui::Begin("Frustrum visualiser"))
+        {
+            enum class ProjectionType
+            {
+                Ortho,
+                Perspective
+            };
+            static const std::vector<std::pair<ProjectionType, const char*>> projection_options =
+            {
+                {ProjectionType::Ortho,       "Ortho"},
+                {ProjectionType::Perspective, "Perspective"}
+            };
+            static ProjectionType projection_type = ProjectionType::Ortho;
+            static float near        = -1.f;
+            static float far         = 1.f;
+            static float ortho_size  = 1.f;
+            static bool use_near_far = true;
+            static float fov         = 90.f;
+            static bool transpose    = false;
+
+            ImGui::ComboContainer("Projection type", projection_type, projection_options);
+
+            ImGui::Separator();
+            glm::mat4 projection;
+            if (projection_type == ProjectionType::Ortho)
+            {
+
+                ImGui::Checkbox("use near far", &use_near_far);
+                if (use_near_far)
+                {
+                    ImGui::Slider("near", near, -1.f, 20.f);
+                    ImGui::Slider("far", far, 1.f, 20.f);
+                }
+                ImGui::Slider("ortho_size", ortho_size, 1.f, 20.f);
+
+                if (use_near_far)
+                    projection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near, far);
+                else
+                    projection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size);
+            }
+            else if (projection_type == ProjectionType::Perspective)
+            {
+                ImGui::Slider("FOV", fov, 1.f, 180.f);
+                ImGui::Slider("Aspect ratio", aspect_ratio, 0.f, 5.f);
+                ImGui::Slider("near", near, -1.f, 20.f);
+                ImGui::Slider("far", far, 1.f, 20.f);
+                projection = glm::perspective(glm::radians(fov), aspect_ratio, near, far);
+            }
+
+            ImGui::Separator();
+            ImGui::Checkbox("transpose", &transpose);
+            if (transpose)
+                projection = glm::transpose(projection);
+
+            Geometry::Frustrum frustrum = Geometry::Frustrum(projection);
+            ImGui::Text("LEFT  \nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_left.m_normal.x, frustrum.m_left.m_normal.y, frustrum.m_left.m_normal.z, frustrum.m_left.m_distance);
+            ImGui::Text("RIGHT \nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_right.m_normal.x, frustrum.m_right.m_normal.y, frustrum.m_right.m_normal.z, frustrum.m_right.m_distance);
+            ImGui::Text("BOTTOM\nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_bottom.m_normal.x, frustrum.m_bottom.m_normal.y, frustrum.m_bottom.m_normal.z, frustrum.m_bottom.m_distance);
+            ImGui::Text("TOP   \nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_top.m_normal.x, frustrum.m_top.m_normal.y, frustrum.m_top.m_normal.z, frustrum.m_top.m_distance);
+            ImGui::Text("NEAR  \nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_near.m_normal.x, frustrum.m_near.m_normal.y, frustrum.m_near.m_normal.z, frustrum.m_near.m_distance);
+            ImGui::Text("FAR   \nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_far.m_normal.x, frustrum.m_far.m_normal.y, frustrum.m_far.m_normal.z, frustrum.m_far.m_distance);
+            ImGui::Text("PROJECTION", projection);
+            OpenGL::DebugRenderer::add(frustrum, glm::vec4(218.f / 255.f, 112.f / 255.f, 214.f / 255.f, 0.5f));
+        }
+        ImGui::End();
     }
 } // namespace Test
