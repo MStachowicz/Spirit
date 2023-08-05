@@ -6,8 +6,9 @@
 namespace Geometry
 {
     // Axis alligned bounding box
-    struct AABB
+    class AABB
     {
+    public:
         glm::vec3 mMin;
         glm::vec3 mMax;
 
