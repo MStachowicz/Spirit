@@ -23,23 +23,35 @@
             {
                 "value": "host=x64",
                 "strategy": "set"
-            },
-            "cacheVariables":
-            {
-                "CMAKE_INSTALL_PREFIX": "install/${presetName}"
             }
         },
         {
-            "name": "Ninja",
-            "description": "Build using Ninja",
+            "name": "gdb-release",
+            "displayName": "GDB Release",
+            "description": "Build using gcc and g++ release.",
             "generator": "Ninja",
             "binaryDir": "build/${presetName}",
-            "cacheVariables":
-            {
-                "CMAKE_INSTALL_PREFIX": "install/${presetName}"
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "gdb-debug",
+            "displayName": "GDB Debug",
+            "description": "Build using gcc and g++ debug.",
+            "generator": "Ninja",
+            "binaryDir": "build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
             }
         }
     ],
+
+
     "buildPresets":
     [
         {
@@ -67,26 +79,28 @@
             "verbose": true,
             "targets": ["Zephyr"]
         },
+
+
         {
-            "name": "ninja-release",
+            "name": "gdb-release",
             "displayName": "Release",
-            "configurePreset": "Ninja",
+            "configurePreset": "gdb-release",
             "configuration": "Release",
             "verbose": false,
             "targets": ["Zephyr"]
         },
         {
-            "name": "ninja-debug",
+            "name": "gdb-debug",
             "displayName": "Debug",
-            "configurePreset": "Ninja",
+            "configurePreset": "gdb-debug",
             "configuration": "Debug",
-            "verbose": false,
+            "verbose": true,
             "targets": ["Zephyr"]
         },
         {
-            "name": "ninja-clean-debug",
+            "name": "gdb-clean-debug",
             "displayName": "Clean and Debug",
-            "configurePreset": "Ninja",
+            "configurePreset": "gdb-debug",
             "configuration": "Debug",
             "cleanFirst": true,
             "verbose": true,
