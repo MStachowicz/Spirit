@@ -13,6 +13,7 @@
 namespace Geometry
 {
     class Cylinder;
+    class Frustrum;
     class Plane;
     class Quad;
     class Ray;
@@ -67,6 +68,7 @@ namespace OpenGL
         static void render(System::SceneSystem& p_scene);
 
         static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
+        static void add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::LineSegment& p_line, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Plane& p_plane, const glm::vec4& p_colour = glm::vec4(1.f));
         static void add(const Geometry::Quad& p_quad, const glm::vec4& p_colour = glm::vec4(1.f));

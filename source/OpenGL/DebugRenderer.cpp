@@ -4,19 +4,20 @@
 #include "SceneSystem.hpp"
 #include "Camera.hpp"
 
-// GEOMETRY
-#include "Cylinder.hpp"
-#include "LineSegment.hpp"
-#include "Plane.hpp"
-#include "Quad.hpp"
-#include "Ray.hpp"
-#include "Sphere.hpp"
-#include "Triangle.hpp"
+#include "Geometry/Cylinder.hpp"
+#include "Geometry/Frustrum.hpp"
+#include "Geometry/Geometry.hpp"
+#include "Geometry/Intersect.hpp"
+#include "Geometry/LineSegment.hpp"
+#include "Geometry/Plane.hpp"
+#include "Geometry/Quad.hpp"
+#include "Geometry/Ray.hpp"
+#include "Geometry/Sphere.hpp"
+#include "Geometry/Triangle.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" // perspective, translate, rotate
 
-#include "Geometry.hpp"
 
 namespace OpenGL
 {
@@ -74,6 +75,46 @@ namespace OpenGL
     void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
     {
         // Generate the points for the shape and push to relevant _verts container
+    }
+
+    void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour/*= glm::vec3(1.f)*/)
+    {
+        glm::vec3 near_top_left, near_top_right, near_bottom_left, near_bottom_right, far_top_left, far_top_right, far_bottom_left, far_bottom_right;
+
+        if (Geometry::intersect_plane_plane_plane(p_frustrum.m_near,    p_frustrum.m_top,    p_frustrum.m_left,  near_top_left)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right, near_top_right)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left,  near_bottom_left)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right, near_bottom_right)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left,  far_top_left)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right, far_top_right)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left,  far_bottom_left)
+            && Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right, far_bottom_right))
+        { // If possible, collide all the planes to find the quad positions representing the frustrum.
+            add(Geometry::Sphere(near_top_left, 0.1f));
+            add(Geometry::Sphere(near_top_right, 0.1f));
+            add(Geometry::Sphere(near_bottom_left, 0.1f));
+            add(Geometry::Sphere(near_bottom_right, 0.1f));
+            add(Geometry::Sphere(far_top_left, 0.1f));
+            add(Geometry::Sphere(far_top_right, 0.1f));
+            add(Geometry::Sphere(far_bottom_left, 0.1f));
+            add(Geometry::Sphere(far_bottom_right, 0.1f));
+
+            add(Geometry::Quad(near_top_left, far_top_left, far_bottom_left, near_bottom_left),         glm::vec4(1.f, 0.f, 0.f, p_colour.w));
+            add(Geometry::Quad(near_top_right, far_top_right, far_bottom_right, near_bottom_right),     glm::vec4(1.f, 0.f, 0.f, p_colour.w));
+            add(Geometry::Quad(near_top_left, near_top_right, far_top_right, far_top_left),             glm::vec4(0.f, 1.f, 0.f, p_colour.w));
+            add(Geometry::Quad(near_bottom_left, near_bottom_right, far_bottom_right, far_bottom_left), glm::vec4(0.f, 1.f, 0.f, p_colour.w));
+            add(Geometry::Quad(near_top_left, near_top_right, near_bottom_right, near_bottom_left),     glm::vec4(0.f, 0.f, 1.f, p_colour.w));
+            add(Geometry::Quad(far_top_left, far_top_right, far_bottom_right, far_bottom_left),         glm::vec4(0.f, 0.f, 1.f, p_colour.w));
+        }
+        else
+        {
+            add(p_frustrum.m_left, p_colour);
+            add(p_frustrum.m_right, p_colour);
+            add(p_frustrum.m_bottom, p_colour);
+            add(p_frustrum.m_top, p_colour);
+            add(p_frustrum.m_near, p_colour);
+            add(p_frustrum.m_far, p_colour);
+        }
     }
 
     void DebugRenderer::add(const Geometry::LineSegment& p_line, const glm::vec4& p_colour/*= glm::vec4(1.f)*/)

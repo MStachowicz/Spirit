@@ -13,6 +13,7 @@ namespace Geometry
 
     // A quadrilateral. Four-sided polygon, having four edges (sides) and four corners (vertices).
     // Quad is a 2-dimensional shape.
+    // Stored quad points are in CCW winding order.
     class Quad
     {
     public:
@@ -21,6 +22,7 @@ namespace Geometry
         glm::vec3 m_point_3;
         glm::vec3 m_point_4;
 
+        // Construct a quad from its 4 corner points. Points expected in CCW order.
         constexpr Quad(const glm::vec3& p_point_1, const glm::vec3& p_point_2, const glm::vec3& p_point_3, const glm::vec3& p_point_4) noexcept
             : m_point_1{p_point_1}
             , m_point_2{p_point_2}
