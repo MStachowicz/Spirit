@@ -1,8 +1,6 @@
 #pragma once
 
-#include "glm/vec3.hpp"
-
-#include <optional>
+#include "glm/fwd.hpp"
 
 // The functions in this file can be categorised in two ways.
 // 1. Interference detection functions: whether two (static) objects are overlapping at their given positions and orientations.
@@ -28,8 +26,11 @@ namespace Geometry
     bool intersect(const AABB& p_AABB, const AABB& p_AABB_2);
     bool intersect(const AABB& p_AABB, const Ray& p_ray, glm::vec3* p_intersection_point = nullptr, float* p_length_along_ray = nullptr);
     bool intersect_triangle_triangle_static(const Triangle& p_triangle_1, const Triangle& p_triangle_2, bool p_test_co_planar = true);
-    // Check if the planes intersect. If they do, returns information about the intersection line, its out_direction and a out_point_on_intersection_line
+    // Check if the planes intersect. If they do, returns information about the intersection line, its out_direction and a out_point_on_intersection_line.
+    // #TODO: return a Line
     bool intersect_plane_plane_static(const Plane& p_plane_1, const Plane& p_plane_2, glm::vec3& out_direction, glm::vec3& out_point_on_intersection_line);
+    // Intersect 3 planes and return the single point they collide at.
+    bool intersect_plane_plane_plane(const Plane& p_plane, const Plane& p_plane_2, const Plane& p_plane_3, glm::vec3& out_collision_point);
 
     bool intersect_line_triangle(const Line& p_line, const Triangle& p_triangle);
     bool intersect_ray_triangle(const Ray& p_ray, const Triangle& p_triangle);

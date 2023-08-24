@@ -361,6 +361,20 @@ namespace Geometry
         return true;
     }
 
+    bool intersect_plane_plane_plane(const Plane& p_plane, const Plane& p_plane_2, const Plane& p_plane_3, glm::vec3& out_collision_point)
+    {
+        const glm::vec3 u = glm::cross(p_plane_2.m_normal, p_plane_3.m_normal);
+        const float denom = glm::dot(p_plane.m_normal, u);
+
+        if (std::abs(denom) < Epsilon)
+            return false;
+        else
+        {
+            out_collision_point = (p_plane.m_distance * u + glm::cross(p_plane.m_normal, p_plane_3.m_distance * p_plane_2.m_normal - p_plane_2.m_distance * p_plane_3.m_normal)) / denom;
+            return true;
+        }
+    }
+
     bool intersect_line_triangle(const Line& p_line, const Triangle& p_triangle)
     {
         // Below works for a double-sided triangle (both CW or CCW depending on which side it is viewed),
