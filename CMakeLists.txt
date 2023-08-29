@@ -72,7 +72,7 @@ target_link_libraries(Component
 PUBLIC Geometry
 PUBLIC OpenGL
 PUBLIC GLM
-PUBLIC Utility # Used in headers of Mesh and Texture
+PUBLIC Utility # Used in headers of Mesh, Texture, Input
 PRIVATE Platform
 PRIVATE ImGui
 PRIVATE assimp
@@ -101,6 +101,7 @@ target_link_libraries(System
 PUBLIC Component
 PUBLIC Geometry
 PUBLIC ECS #SceneSystem.hpp uses ECS storage
+PUBLIC Utility
 PRIVATE Utility
 PRIVATE Platform
 )
@@ -241,7 +242,6 @@ source/Utility/Utility.hpp
 )
 target_include_directories(Utility
 PUBLIC source/Utility
-PUBLIC source/Utility/JobSystem
 PRIVATE source/External/stb
 )
 target_link_libraries(Utility

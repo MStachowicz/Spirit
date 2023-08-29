@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Platform/Input.hpp"
+#include "Utility/Config.hpp"
 
 #include <functional>
 
@@ -16,7 +17,7 @@ namespace ECS
 
 namespace Component
 {
-    using InputFunction = std::function<void(const ECS::Entity&, ECS::Storage&, Platform::Input&)>;
+    using InputFunction = std::function<void(const DeltaTime& p_delta_time, const ECS::Entity&, ECS::Storage&, Platform::Input&)>;
 
     // Input component lets you attach a function to be called on every InputSystem::update.
     // The InputFunction has access to the Entity owener, the Storage it's contained in and the Input state.

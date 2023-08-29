@@ -2,9 +2,11 @@
 
 #include "glm/glm.hpp"
 
-#include "Transform.hpp"
+#include "Component/Transform.hpp"
 
 #include "Geometry/Frustrum.hpp"
+
+#include "Utility/Config.hpp"
 
 namespace Component
 {
@@ -52,7 +54,7 @@ namespace Component
 
         // Move the position of the camera. Because Camera doesnt store a position, the Transform or RigidBody will be updated instead.
         // If m_body_move is true, the RigidBody is used if available, otherwise the position is updated directly.
-        void move(Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body);
+        void move(const DeltaTime& p_delta_time, Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body = nullptr);
 
         // Focus the view direction on p_point.
         //@param p_point The point in world-space the camera should focus on.

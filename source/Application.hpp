@@ -61,19 +61,21 @@ private:
     bool mSimulationLoopParamsChanged;       // True when the template params of simulationLoop change, causes an exit from the loop and re-run
     int mPhysicsTicksPerSecond;              // The number of physics updates to perform per second. This is equivalent to the pPhysicsTicksPerSecond template param of simulationLoop.
     int mRenderTicksPerSecond;               // The number of renders to perform per second. This is equivalent to the pRenderTicksPerSecond template param of simulationLoop.
+    int m_input_ticks_per_second;            // The number of input system updates to perform every second;
     std::chrono::milliseconds maxFrameDelta; // If the time between loops is beyond this, cap at this duration
 
     // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
     // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
     // pPhysicsTicksPerSecond: The target number of physics ticks per second. This template parameter is always equivalent to mPhysicsTicksPerSecond.
     // pRenderTicksPerSecond: The target number of renders per second. This template parameter is always equivalent to mRenderTicksPerSecond.
-    template <int pPhysicsTicksPerSecond, int pRenderTicksPerSecond>
+    template <int pPhysicsTicksPerSecond, int pRenderTicksPerSecond, int p_input_ticks_per_second>
     void simulationLoop()
     {
         using Clock = std::chrono::steady_clock;
 
         constexpr auto physicsTimestep = std::chrono::duration<Clock::rep, std::ratio<1, pPhysicsTicksPerSecond>>{1};
         constexpr auto renderTimestep  = std::chrono::duration<Clock::rep, std::ratio<1, pRenderTicksPerSecond>>{1};
+        constexpr auto input_timestep  = std::chrono::duration<Clock::rep, std::ratio<1, p_input_ticks_per_second>>{1};
 
         // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both a Clock::duration and 1/60 of a second.
         // Time-based arithmetic will have no truncation error, or any round-off error if Clock::duration is integral-based (std::chrono::nanoseconds for steady_clock is integral based).
@@ -82,9 +84,11 @@ private:
 
         LOG("Target physics ticks per second: {} (timestep: {}ms = {})", pPhysicsTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count(), physicsTimestep);
         LOG("Target render ticks per second:  {} (timestep: {}ms = {})", pRenderTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(renderTimestep).count(), renderTimestep);
+        LOG("Target input ticks per second:   {} (timestep: {}ms = {})", p_input_ticks_per_second, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(input_timestep).count(), input_timestep);
 
         Duration durationSinceLastPhysicsTick   = Duration::zero();     // Accumulated time since the last physics update.
         Duration durationSinceLastRenderTick    = Duration::zero();     // Accumulated time since the last render.
+        Duration duration_since_last_input_tick = Duration::zero();     // Accumulated time since the last input update.
         Duration durationSinceLastFrame         = Duration::zero();     // Time between this frame and last frame.
         Duration durationApplicationRunning     = Duration::zero();     // Total time the application has been running.
 
@@ -99,11 +103,15 @@ private:
         {
             OpenGL::DebugRenderer::clear();
 
-            m_input.update(); // Poll events then check close_requested.
-            if (m_window.close_requested() || mSimulationLoopParamsChanged)
-                break;
+            if (duration_since_last_input_tick >= input_timestep)
+            {
+                m_input.update(); // Poll events then check close_requested.
+                if (m_window.close_requested() || mSimulationLoopParamsChanged)
+                    break;
 
-            mInputSystem.update();
+                mInputSystem.update(input_timestep);
+                duration_since_last_input_tick = Duration::zero();
+            }
 
             timeFrameStarted = Clock::now();
             durationSinceLastFrame = timeFrameStarted - timeLastFrameStarted;
@@ -114,6 +122,7 @@ private:
             durationApplicationRunning      += durationSinceLastFrame;
             durationSinceLastPhysicsTick    += durationSinceLastFrame;
             durationSinceLastRenderTick     += durationSinceLastFrame;
+            duration_since_last_input_tick  += durationSinceLastFrame;
 
             // Apply physics updates until accumulated time is below physicsTimestep step
             while (durationSinceLastPhysicsTick >= physicsTimestep)
@@ -144,9 +153,10 @@ private:
             }
         }
 
-        const auto totalTimeSeconds = std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1>>>(durationApplicationRunning);
-        const float renderFPS = static_cast<float>(mEditor.mDrawCount) / totalTimeSeconds.count();
+        const auto totalTimeSeconds = std::chrono::duration_cast<std::chrono::seconds>(durationApplicationRunning);
+        const float renderFPS  = static_cast<float>(mEditor.mDrawCount)          / totalTimeSeconds.count();
         const float physicsFPS = static_cast<float>(mPhysicsSystem.mUpdateCount) / totalTimeSeconds.count();
+        const float input_FPS  = static_cast<float>(mInputSystem.m_update_count) / totalTimeSeconds.count();
 
         LOG("------------------------------------------------------------------------");
         LOG("Total simulation time: {}", totalTimeSeconds);
@@ -154,6 +164,8 @@ private:
         LOG("Averaged physics updates per second: {}/s (target: {}/s)", physicsFPS, pPhysicsTicksPerSecond);
         LOG("Total rendered frames: {}", mEditor.mDrawCount);
         LOG("Averaged render frames per second: {}/s (target: {}/s)", renderFPS, pRenderTicksPerSecond);
+        LOG("Total input updates: {}", mInputSystem.m_update_count);
+        LOG("Averaged input updates per second: {}/s (target: {}/s)", input_FPS, p_input_ticks_per_second);
     }
 };
 

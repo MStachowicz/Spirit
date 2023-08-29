@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Utility/Config.hpp"
+
 #include <stdint.h>
 
 namespace Platform
@@ -20,8 +22,9 @@ namespace System
     {
     public:
         InputSystem(Platform::Input& p_input, Platform::Window& p_window, SceneSystem& pSceneSystem);
-        void update();
+        void update(const DeltaTime& p_delta_time);
 
+        size_t m_update_count;
     private:
         void on_key_event(Platform::Key p_key, Platform::Action p_action);
 

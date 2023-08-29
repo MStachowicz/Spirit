@@ -61,10 +61,10 @@ namespace Component
             m_pitch = -Pitch_Limit;
     }
 
-    void Camera::move(Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body)
+    void Camera::move(const DeltaTime& p_delta_time, Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body)
     {
         // #TODO add Shift modifier = half speed.
-        float adjusted_speed = m_move_speed * 0.005f; // #TODO fix this hack, InputSystem updates poll without limit, m_move_speed is not actually m/s
+        float adjusted_speed = m_move_speed * p_delta_time.count();
 
         if (p_body && m_body_move)
         {
@@ -77,12 +77,12 @@ namespace Component
         }
         else if (p_transform)
         {
-            if (p_direction == Transform::MoveDirection::Forward)  p_transform->mPosition += (forward()  * adjusted_speed * 0.05f);
-            if (p_direction == Transform::MoveDirection::Backward) p_transform->mPosition += (-forward() * adjusted_speed * 0.05f);
-            if (p_direction == Transform::MoveDirection::Right)    p_transform->mPosition += (right()    * adjusted_speed * 0.05f);
-            if (p_direction == Transform::MoveDirection::Left)     p_transform->mPosition += (-right()   * adjusted_speed * 0.05f);
-            if (p_direction == Transform::MoveDirection::Up)       p_transform->mPosition += (up()       * adjusted_speed * 0.05f);
-            if (p_direction == Transform::MoveDirection::Down)     p_transform->mPosition += (-up()      * adjusted_speed * 0.05f);
+            if (p_direction == Transform::MoveDirection::Forward)  p_transform->mPosition += (forward()  * adjusted_speed);
+            if (p_direction == Transform::MoveDirection::Backward) p_transform->mPosition += (-forward() * adjusted_speed);
+            if (p_direction == Transform::MoveDirection::Right)    p_transform->mPosition += (right()    * adjusted_speed);
+            if (p_direction == Transform::MoveDirection::Left)     p_transform->mPosition += (-right()   * adjusted_speed);
+            if (p_direction == Transform::MoveDirection::Up)       p_transform->mPosition += (up()       * adjusted_speed);
+            if (p_direction == Transform::MoveDirection::Down)     p_transform->mPosition += (-up()      * adjusted_speed);
         }
     }
 

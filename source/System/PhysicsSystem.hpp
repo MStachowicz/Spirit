@@ -2,7 +2,7 @@
 
 #include "glm/vec3.hpp"
 
-#include <chrono>
+#include "Utility/Config.hpp"
 
 namespace System
 {
@@ -14,8 +14,6 @@ namespace System
     class PhysicsSystem
     {
     public:
-        using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a float precision duration in seconds.
-
         PhysicsSystem(SceneSystem& pSceneSystem, CollisionSystem& pCollisionSystem);
         void integrate(const DeltaTime& pDeltaTime);
 

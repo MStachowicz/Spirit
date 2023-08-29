@@ -22,23 +22,26 @@
 namespace System
 {
     InputSystem::InputSystem(Platform::Input& p_input, Platform::Window& p_window, System::SceneSystem& pSceneSystem)
-        : m_input{p_input}
+        : m_update_count{0}
+        , m_input{p_input}
         , m_window{p_window}
         , mSceneSystem{pSceneSystem}
     {
         m_input.m_key_event.subscribe(this, &InputSystem::on_key_event);
     }
 
-    void InputSystem::update()
+    void InputSystem::update(const DeltaTime& p_delta_time)
     {
+        m_update_count++;
+
         if (!m_input.cursor_captured())
             return;
 
         if (!m_input.keyboard_captured_by_UI())
         {
-            mSceneSystem.getCurrentScene().foreach([this](ECS::Entity& p_entity, Component::Input& p_input)
+            mSceneSystem.getCurrentScene().foreach([&](ECS::Entity& p_entity, Component::Input& p_input)
             {
-                p_input.m_function(p_entity, mSceneSystem.getCurrentScene(), m_input);
+                p_input.m_function(p_delta_time, p_entity, mSceneSystem.getCurrentScene(), m_input);
             });
         }
     }
