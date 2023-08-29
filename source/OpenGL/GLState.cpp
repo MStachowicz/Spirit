@@ -67,9 +67,9 @@ namespace OpenGL
 /// TEXTURE FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void active_texture(int p_texture_unit_position)
+    void active_texture(GLenum p_texture)
     {
-        glActiveTexture(GL_TEXTURE0 + p_texture_unit_position);
+        glActiveTexture(GL_TEXTURE0 + p_texture);
     }
     void tex_storage_3D(TextureType p_target, GLsizei p_levels, ImageFormat p_internal_format, GLsizei p_width, GLsizei p_height, GLsizei p_depth)
     {

@@ -437,8 +437,11 @@ namespace OpenGL
 /// TEXTURE FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Selects active texture unit subsequent texture state calls will affect. The number of texture units an implementation supports is implementation dependent, but must be at least 80.
-    void active_texture(int pUnitPosition);
+    // Selects active texture unit
+    // The number of texture units is implementation dependent, but must be at least 80. texture must be one of GL_TEXTUREi, where i ranges from zero to the value of GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS minus one.
+    // The initial value is GL_TEXTURE0.
+    //@param p_texture Specifies which texture unit to make active.
+    void active_texture(GLenum p_texture);
 
     // Simultaneously specify storage for all levels of a three-dimensional array.
     //@param p_target Specifies the target to which the texture object is bound for glTexStorage3D. Must be one of GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_CUBE_MAP_ARRAY, GL_PROXY_TEXTURE_3D, GL_PROXY_TEXTURE_2D_ARRAY or GL_PROXY_TEXTURE_CUBE_MAP_ARRAY.
