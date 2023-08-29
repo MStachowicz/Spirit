@@ -23,9 +23,9 @@
 namespace System
 {
     SceneSystem::SceneSystem(System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem)
-        : mStorage{}
-        , mTextureSystem(pTextureSystem)
+        : mTextureSystem(pTextureSystem)
         , mMeshSystem(pMeshSystem)
+        , m_scene{}
     {
         add_default_camera();
         primitiveMeshScene();
@@ -33,11 +33,11 @@ namespace System
         //constructBouncingBallScene();
     }
 
-    Component::Camera* SceneSystem::getPrimaryCamera()
+    Component::Camera* Scene::get_primary_camera()
     {
         Component::Camera* primaryCamera = nullptr;
 
-        getCurrentScene().foreach([&primaryCamera](Component::Camera& pCamera)
+        m_entities.foreach([&primaryCamera](Component::Camera& pCamera)
         {
             if (pCamera.m_primary)
             {
@@ -48,6 +48,29 @@ namespace System
         return primaryCamera;
     }
 
+    void SceneSystem::update_scene_bounds()
+    {
+        m_scene.m_bound.mMin = glm::vec3(0.f);
+        m_scene.m_bound.mMax = glm::vec3(0.f);
+
+        getCurrentScene().foreach([&scene = m_scene.m_entities, &scene_bounds = m_scene.m_bound](ECS::Entity p_entity, Component::Transform& p_transform, Component::Mesh& p_mesh)
+        {
+            if (scene.hasComponents<Component::Collider>(p_entity))
+            {
+                auto& collider = scene.getComponent<Component::Collider>(p_entity);
+                scene_bounds.unite(collider.mWorldAABB);
+            }
+            else
+            {
+                p_mesh.mModel->forEachMesh([&transform = p_transform, &scene_bounds = scene_bounds](const Data::Mesh& p_mesh_data)
+                {
+                    const auto world_AABB = p_mesh_data.mAABB.transform(p_mesh_data.mAABB, transform.mPosition, glm::mat4_cast(transform.mOrientation), transform.mScale);
+                    scene_bounds.unite(world_AABB);
+                });
+            }
+        });
+    }
+
     void SceneSystem::add_default_camera()
     {
         Component::Transform camera_transform;
@@ -55,7 +78,7 @@ namespace System
         auto camera = Component::Camera(glm::vec3(0.f, -0.5f, 0.5f), true);
         camera.look_at(glm::vec3(0.f), camera_transform.mPosition);
 
-        mStorage.addEntity(
+        m_scene.m_entities.addEntity(
             camera_transform,
             camera,
             Component::Label("Camera"),
@@ -72,7 +95,7 @@ namespace System
             transform.look_at(glm::vec3(0.f, -20.f, 0.f));
             auto mesh         = Component::Mesh{mMeshSystem.mPlanePrimitive};
 
-            mStorage.addEntity(
+            m_scene.m_entities.addEntity(
                 Component::Label{"Floor"},
                 Component::RigidBody{},
                 Component::Texture{mTextureSystem.getTexture(Config::Texture_Directory / "wood_floor.png")},
@@ -87,7 +110,7 @@ namespace System
         constexpr float mesh_padding = 1.f;
         constexpr float half_count   = (mesh_count - 1) / 2.f;
         constexpr float start_x      = -half_count * (mesh_width + mesh_padding);
-        constexpr float start_y      = 1.f;
+        constexpr float start_y      = 2.f;
         constexpr float increment    = mesh_width + mesh_padding;
 
         float running_x = start_x;
@@ -99,7 +122,7 @@ namespace System
             auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mCubePrimitive};
 
-            mStorage.addEntity(
+            m_scene.m_entities.addEntity(
                 Component::Label{"Cube"},
                 Component::RigidBody{},
                 transform,
@@ -112,7 +135,7 @@ namespace System
             auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mConePrimitive};
 
-            mStorage.addEntity(
+            m_scene.m_entities.addEntity(
                 Component::Label{"Cone"},
                 Component::RigidBody{},
                 transform,
@@ -124,7 +147,7 @@ namespace System
             auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mCylinderPrimitive};
 
-            mStorage.addEntity(
+            m_scene.m_entities.addEntity(
                 Component::Label{"Cylinder"},
                 Component::RigidBody{},
                 transform,
@@ -136,7 +159,7 @@ namespace System
             auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mPlanePrimitive};
 
-            mStorage.addEntity(
+            m_scene.m_entities.addEntity(
                 Component::Label{"Plane"},
                 Component::RigidBody{},
                 transform,
@@ -148,7 +171,7 @@ namespace System
             auto transform    = Component::Transform{glm::vec3(running_x, start_y, -mesh_width)};
             auto mesh         = Component::Mesh{mMeshSystem.mSpherePrimitive};
 
-            mStorage.addEntity(
+            m_scene.m_entities.addEntity(
                 Component::Label{"Sphere"},
                 Component::RigidBody{},
                 transform,
@@ -158,23 +181,23 @@ namespace System
         }
 
         { // Lights
-            mStorage.addEntity(Component::Label{"Directional light 1"}, Component::DirectionalLight{0.05f, 0.5f});
+            m_scene.m_entities.addEntity(Component::Label{"Directional light 1"}, Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.f, 0.5f});
 
-            mStorage.addEntity(Component::Label{"Point light 1"}, Component::PointLight{glm::vec3(-4.5f, 1.f, -4.5f)});
+            m_scene.m_entities.addEntity(Component::Label{"Point light 1"}, Component::PointLight{glm::vec3(6.f, 3.2f, -4.5f)});
 
             { // Red point light in-front of the box.
                 auto point_light      = Component::PointLight{};
                 point_light.mPosition = glm::vec3(-8.f, start_y, 1.f);
                 point_light.mColour   = glm::vec3(1.f, 0.f, 0.f);
-                mStorage.addEntity(Component::Label{"Point light 2"}, point_light);
+                m_scene.m_entities.addEntity(Component::Label{"Point light 2"}, point_light);
             }
             { // Spotlight over the box pointing down onto it.
                 auto spotlight              = Component::SpotLight{};
-                spotlight.mPosition         = glm::vec3(start_x, 3.f, -mesh_width);
+                spotlight.mPosition         = glm::vec3(start_x, 5.f, -mesh_width);
                 spotlight.mColour           = glm::vec3(0.f, 0.f, 1.f);
                 spotlight.mDirection        = glm::vec3(0.f, -.1f, 0.f);
                 spotlight.mDiffuseIntensity = 3.f;
-                mStorage.addEntity(Component::Label{"Spotlight 1"}, spotlight);
+                m_scene.m_entities.addEntity(Component::Label{"Spotlight 1"}, spotlight);
             }
         }
     }
@@ -197,7 +220,7 @@ namespace System
                 texture.mSpecular = mTextureSystem.getTexture(containerSpecular);
                 Component::RigidBody rigidBody;
 
-                mStorage.addEntity(mesh, transform, collider, rigidBody, name, texture);
+                m_scene.m_entities.addEntity(mesh, transform, collider, rigidBody, name, texture);
             }
         }
         {// Lights
@@ -219,7 +242,7 @@ namespace System
                     Component::PointLight pointLight;
                     pointLight.mPosition = pointLightPositions[i];
                     pointLight.mColour   = pointLightColours[i];
-                    mStorage.addEntity(pointLight, name);
+                    m_scene.m_entities.addEntity(pointLight, name);
                 }
             }
             {// Directional light
@@ -228,11 +251,11 @@ namespace System
                 directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
                 directionalLight.mAmbientIntensity = 0.7f;
                 directionalLight.mDiffuseIntensity = 0.3f;
-                mStorage.addEntity(directionalLight, name);
+                m_scene.m_entities.addEntity(directionalLight, name);
             }
             {// Spotlight
                 Component::Label name = Component::Label("Spot light");
-                mStorage.addEntity(Component::SpotLight(), name);
+                m_scene.m_entities.addEntity(Component::SpotLight(), name);
             }
         }
     }
@@ -256,7 +279,7 @@ namespace System
 
             Component::RigidBody rigidBody;
             rigidBody.mMass = 1.f;
-            mStorage.addEntity(mesh, transform, collider, rigidBody, name);
+            m_scene.m_entities.addEntity(mesh, transform, collider, rigidBody, name);
         }
         { // Floor
             Component::Transform transform;
@@ -269,7 +292,7 @@ namespace System
 
             Component::RigidBody rigidBody;
             rigidBody.mMass = 1.f;
-            mStorage.addEntity(mesh, transform, collider, rigidBody, name);
+            m_scene.m_entities.addEntity(mesh, transform, collider, rigidBody, name);
         }
         {// Lights
             {// Point light
@@ -290,18 +313,18 @@ namespace System
                     Component::PointLight pointLight;
                     pointLight.mPosition = pointLightPositions[i];
                     pointLight.mColour   = pointLightColours[i];
-                    mStorage.addEntity(pointLight, name);
+                    m_scene.m_entities.addEntity(pointLight, name);
                 }
             }
             {// Directional light
                 Component::Label name = Component::Label("Directional light");
                 Component::DirectionalLight directionalLight;
                 directionalLight.mDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
-                mStorage.addEntity(directionalLight, name);
+                m_scene.m_entities.addEntity(directionalLight, name);
             }
             {// Spotlight
                 Component::Label name = Component::Label("Spot light");
-                mStorage.addEntity(Component::SpotLight(), name);
+                m_scene.m_entities.addEntity(Component::SpotLight(), name);
             }
         }
     }

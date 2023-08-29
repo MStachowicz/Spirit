@@ -121,6 +121,7 @@ private:
                 durationSinceLastPhysicsTick -= physicsTimestep;
                 physicsTime                  += physicsTimestep;
                 mPhysicsSystem.integrate(physicsTimestep); // PhysicsSystem::Integrate takes a floating point rep duration, conversion here is troublesome.
+                mSceneSystem.update_scene_bounds();
             }
 
             if (durationSinceLastRenderTick >= renderTimestep)
