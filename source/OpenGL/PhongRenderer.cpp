@@ -3,6 +3,10 @@
 #include "Component/Lights.hpp"
 
 #include "ECS/Storage.hpp"
+#include "System/SceneSystem.hpp"
+
+#include "glm/mat4x4.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 namespace OpenGL
 {
@@ -250,11 +254,26 @@ namespace OpenGL
         }
     }
 
-    void PhongRenderer::update_light_data(ECS::Storage& p_storage)
+    void PhongRenderer::update_light_data(System::Scene& p_scene, const Texture& p_shadow_map)
     {
+        m_phong_shader.use();
+
+        { // Set Directional light shadow data
+            p_scene.m_entities.foreach([this, &p_scene](Component::DirectionalLight& p_light)
+            {
+                m_phong_shader.set_uniform("light_proj_view", p_light.get_view_proj(p_scene.m_bound));
+            });
+
+            m_phong_shader.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
+
+            active_texture(2);
+            m_phong_shader.set_uniform("shadow_map", 2);
+            p_shadow_map.bind();
+        }
+
         { // Set DirectonalLight buffer data
             GLuint directional_light_count = 0;
-            p_storage.foreach([this, &directional_light_count](Component::DirectionalLight& p_directional_light) { directional_light_count++; });
+            p_scene.m_entities.foreach([this, &directional_light_count](Component::DirectionalLight& p_directional_light) { directional_light_count++; });
 
             m_directional_lights_buffer->bind();
             {
@@ -279,7 +298,7 @@ namespace OpenGL
                 buffer_sub_data(BufferType::ShaderStorageBuffer, m_directional_light_count_offset, sizeof(directional_light_count), &directional_light_count);
 
                 GLuint i = 0;
-                p_storage.foreach([this, &i](Component::DirectionalLight& p_directional_light)
+                p_scene.m_entities.foreach([this, &i](Component::DirectionalLight& p_directional_light)
                 {
                     const glm::vec3 diffuse  = p_directional_light.mColour * p_directional_light.mDiffuseIntensity;
                     const glm::vec3 ambient  = p_directional_light.mColour * p_directional_light.mAmbientIntensity;
@@ -296,7 +315,7 @@ namespace OpenGL
         }
         { // Set PointLight buffer data
             GLuint point_light_count = 0;
-            p_storage.foreach([this, &point_light_count](Component::PointLight& p_point_light) { point_light_count++; });
+            p_scene.m_entities.foreach([this, &point_light_count](Component::PointLight& p_point_light) { point_light_count++; });
 
             m_point_lights_buffer->bind();
             {
@@ -321,7 +340,7 @@ namespace OpenGL
                 buffer_sub_data(BufferType::ShaderStorageBuffer, m_point_light_count_offset, sizeof(point_light_count), &point_light_count);
 
                 GLuint i = 0;
-                p_storage.foreach([this, &i](Component::PointLight& p_point_light)
+                p_scene.m_entities.foreach([this, &i](Component::PointLight& p_point_light)
                 {
                     const glm::vec3 diffuse  = p_point_light.mColour * p_point_light.mDiffuseIntensity;
                     const glm::vec3 ambient  = p_point_light.mColour * p_point_light.mAmbientIntensity;
@@ -341,7 +360,7 @@ namespace OpenGL
         }
         { // Set Spotlight buffer data
             GLuint spot_light_count = 0;
-            p_storage.foreach([this, &spot_light_count](Component::SpotLight& p_spot_light) { spot_light_count++; });
+            p_scene.m_entities.foreach([this, &spot_light_count](Component::SpotLight& p_spot_light) { spot_light_count++; });
 
             m_spot_lights_buffer->bind();
             {
@@ -366,7 +385,7 @@ namespace OpenGL
                 buffer_sub_data(BufferType::ShaderStorageBuffer, m_spot_light_count_offset, sizeof(spot_light_count), &spot_light_count);
 
                 GLuint i = 0;
-                p_storage.foreach([this, &i](Component::SpotLight& p_spotlight)
+                p_scene.m_entities.foreach([this, &i](Component::SpotLight& p_spotlight)
                 {
                     const glm::vec3 diffuse  = p_spotlight.mColour * p_spotlight.mDiffuseIntensity;
                     const glm::vec3 ambient  = p_spotlight.mColour * p_spotlight.mAmbientIntensity;

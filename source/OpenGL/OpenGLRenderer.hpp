@@ -6,6 +6,7 @@
 #include "Shader.hpp"
 #include "PhongRenderer.hpp"
 #include "LightPositionRenderer.hpp"
+#include "ShadowMapper.hpp"
 
 // GEOMETRY
 #include "Cylinder.hpp"
@@ -136,6 +137,7 @@ namespace OpenGL
 
         PhongRenderer m_phong_renderer;
         LightPositionRenderer m_light_position_renderer;
+        ShadowMapper m_shadow_mapper;
         TextureRef m_missing_texture;
         TextureRef m_blank_texture;
         ModelRef m_cube;

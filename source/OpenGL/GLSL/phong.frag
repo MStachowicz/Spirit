@@ -2,10 +2,11 @@
 
 uniform vec3 view_position;
 uniform float shininess;
-uniform sampler2D diffuse; // Diffuse texture
-uniform sampler2D specular; // Specular texture
+uniform sampler2D diffuse;
+uniform sampler2D specular;
 
-
+uniform sampler2D shadow_map;
+uniform float PCF_bias;
 
 struct DirectionalLight
 {
@@ -67,11 +68,13 @@ buffer SpotLightsBuffer
 vec4 spot_light_contribution(SpotLight p_light, vec3 p_frag_normal, vec3 p_frag_pos, vec3 p_view_direction);
 
 
+float shadow_calculation(vec4 frag_position_light_space);
 
 in VS_OUT {
     vec3 position;
     vec3 normal;
     vec2 tex_coord;
+    vec4 position_light_space;
 } fs_in;
 out vec4 Colour;
 
@@ -112,7 +115,10 @@ vec4 directional_light_contribution(DirectionalLight p_light, vec3 p_frag_normal
     vec3 diffuse  = p_light.diffuse  * diff * vec3(texture(diffuse, fs_in.tex_coord));
     vec3 specular = p_light.specular * spec * vec3(texture(specular, fs_in.tex_coord));
 
-    return vec4((ambient + diffuse + specular).xyz, 1.0);
+    float shadow = shadow_calculation(fs_in.position_light_space);
+    //shadow = 0.0;
+    return vec4((ambient + (shadow * (diffuse + specular))).xyz, 1.0);
+    //return vec4((ambient + diffuse + specular).xyz, 1.0);
 }
 vec4 point_light_contribution(PointLight p_light, vec3 p_frag_normal, vec3 p_frag_pos, vec3 p_view_direction)
 {
@@ -162,4 +168,19 @@ vec4 spot_light_contribution(SpotLight p_light, vec3 p_frag_normal, vec3 p_frag_
     vec3 specular = p_light.specular * spec * vec3(texture(specular, fs_in.tex_coord) * attenuation * intensity);
 
     return vec4((ambient + diffuse + specular).xyz, 1.0);
+}
+
+float shadow_calculation(vec4 frag_position_light_space)
+{
+    // If the depth of the frag_position_light_space is larger than the closest depth from the light perspective.
+    // The fragment being rendered is ocluded.
+
+    // perform perspective divide + transfrom to [0,1] texture space
+    vec3 projected_coords = ((frag_position_light_space.xyz / frag_position_light_space.w) * 0.5) + 0.5;
+    // get depth of current fragment from light's perspective
+    float frag_depth_light_space = projected_coords.z;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closest_depth = texture(shadow_map, projected_coords.xy).r;
+    // check whether current frag pos is in shadow
+    return frag_depth_light_space + PCF_bias > closest_depth ? 0.5 : 1.0;
 }

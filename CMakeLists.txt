@@ -196,6 +196,8 @@ source/OpenGL/LightPositionRenderer.hpp
 source/OpenGL/LightPositionRenderer.cpp
 source/OpenGL/DebugRenderer.hpp
 source/OpenGL/DebugRenderer.cpp
+source/OpenGL/ShadowMapper.hpp
+source/OpenGL/ShadowMapper.cpp
 source/OpenGL/GLState.hpp
 source/OpenGL/GLState.cpp
 source/OpenGL/PhongRenderer.hpp

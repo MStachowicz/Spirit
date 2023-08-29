@@ -7,7 +7,10 @@ namespace ECS
 {
     class Storage;
 }
-
+namespace System
+{
+    class Scene;
+}
 namespace OpenGL
 {
     class PhongRenderer
@@ -58,7 +61,7 @@ namespace OpenGL
 
         // Update the storage block buffer object data for all the lights in p_storage.
         // Only needs to happen once per frame or on changes to a light.
-        void update_light_data(ECS::Storage& p_storage);
+        void update_light_data(System::Scene& p_scene, const Texture& p_shadow_map);
 
         // Set the uniform and material data related to a specific draw call.
         void set_draw_data(const glm::vec3& p_view_position, const glm::mat4& p_model, const Texture& p_diffuse_texture, const Texture& p_specular_texture, float p_shininess);

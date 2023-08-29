@@ -1,4 +1,5 @@
 #include "OpenGLRenderer.hpp"
+#include "OpenGL/DebugRenderer.hpp"
 
 // ECS
 #include "Storage.hpp"
@@ -87,6 +88,7 @@ namespace OpenGL
         , mSkyBoxShader{"skybox"}
         , m_phong_renderer{}
         , m_light_position_renderer{}
+        , m_shadow_mapper{p_window}
         , m_missing_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "missing.png")}
         , m_blank_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "black.jpg")}
         , m_cube{pMeshSystem.mCubePrimitive}
@@ -127,15 +129,6 @@ namespace OpenGL
 
     void OpenGLRenderer::start_frame()
     {
-        { // Prepare mScreenFramebuffer for rendering
-            const auto window_size = m_window.size();
-            mScreenFramebuffer.resize(window_size.x, window_size.y);
-            set_viewport(0, 0, window_size.x, window_size.y);
-            mScreenFramebuffer.bind();
-            mScreenFramebuffer.clearBuffers();
-            ASSERT(mScreenFramebuffer.isComplete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
-        }
-
         { // Set global shader uniforms.
             mSceneSystem.getCurrentScene().foreach([this](Component::Camera& p_camera, Component::Transform& p_transform)
             {
@@ -151,11 +144,24 @@ namespace OpenGL
             });
         }
 
-        m_phong_renderer.update_light_data(mSceneSystem.getCurrentScene());
+        FBO::unbind();
+
+        m_shadow_mapper.shadow_pass(mSceneSystem.m_scene);
+
+        { // Prepare mScreenFramebuffer for rendering
+            const auto window_size = m_window.size();
+            mScreenFramebuffer.resize(window_size.x, window_size.y);
+            set_viewport(0, 0, window_size.x, window_size.y);
+            mScreenFramebuffer.bind();
+            mScreenFramebuffer.clearBuffers();
+            ASSERT(mScreenFramebuffer.isComplete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
+        }
     }
 
     void OpenGLRenderer::draw()
     {
+        m_phong_renderer.update_light_data(mSceneSystem.m_scene, m_shadow_mapper.get_depth_map());
+
         { // Setup the GL state for rendering the scene, the default setup can be overriden by the Debug options struct
             set_polygon_mode(PolygonMode::Fill);
 
@@ -237,6 +243,7 @@ namespace OpenGL
 
             active_texture(0);
             mScreenFramebuffer.bindColourTexture();
+
             draw(*mMeshSystem.mPlanePrimitive);
         }
     }
