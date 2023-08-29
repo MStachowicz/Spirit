@@ -142,7 +142,7 @@ namespace OpenGL
                 if (p_camera.m_primary)
                 {
                     mViewInformation.mViewPosition = p_transform.mPosition;
-                    mViewInformation.mView         = p_camera.get_view(p_transform.mPosition);// glm::lookAt(p_transform.mPosition, p_transform.mPosition + p_transform.mDirection, camera_up);
+                    mViewInformation.mView         = p_camera.view(p_transform.mPosition);// glm::lookAt(p_transform.mPosition, p_transform.mPosition + p_transform.mDirection, camera_up);
                     mViewInformation.mProjection   = glm::perspective(glm::radians(p_camera.m_FOV), m_window.aspect_ratio(), p_camera.m_near, p_camera.m_far);
 
                     Shader::set_block_uniform("ViewProperties.view", mViewInformation.mView);

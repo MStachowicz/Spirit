@@ -4,6 +4,8 @@
 
 #include "Transform.hpp"
 
+#include "Geometry/Frustrum.hpp"
+
 namespace Component
 {
     class RigidBody;
@@ -59,13 +61,18 @@ namespace Component
 
         // Get the view transformation matrix taking vertices from world-space to view-space.
         //@param p_eye_position Position of the camera.
-        glm::mat4 get_view(const glm::vec3& p_eye_position) const;
+        glm::mat4 view(const glm::vec3& p_eye_position) const;
+        //@param p_aspect_ratio Aspect ratio of the parent window (width / height).
+        //@return The projection matrix. Used to transform points into clip-space.
+        glm::mat4 projection(const float p_aspect_ratio) const;
         //@return Camera local normalised up direction.
         glm::vec3 up() const;
         //@return Camera local normalised right direction.
         glm::vec3 right() const;
         //@return Camera local normalised forward direction.
         glm::vec3 forward() const;
+        //@return The view frustrum of the camera.
+        Geometry::Frustrum frustrum(const float p_aspect_ratio, const glm::vec3& p_eye_position) const;
 
         void draw_UI(Component::Transform* p_transform = nullptr);
     };

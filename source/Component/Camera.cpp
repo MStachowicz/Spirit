@@ -119,8 +119,31 @@ namespace Component
         const float sin_yaw   = glm::sin(m_yaw);
         return glm::normalize(glm::vec3{-sin_yaw * cos_pitch, sin_pitch, -cos_pitch * cos_yaw});
     }
+    Geometry::Frustrum Camera::frustrum(const float p_aspect_ratio, const glm::vec3& p_eye_position) const
+    {
+        const float cos_pitch = glm::cos(m_pitch);
+        const float sin_pitch = glm::sin(m_pitch);
+        const float cos_yaw   = glm::cos(m_yaw);
+        const float sin_yaw   = glm::sin(m_yaw);
 
-    glm::mat4 Camera::get_view(const glm::vec3& p_eye_position) const
+        const auto xaxis = -glm::vec3(cos_yaw, 0, -sin_yaw);
+        const auto yaxis = -glm::vec3(sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch);
+        const auto zaxis = -glm::vec3(sin_yaw * cos_pitch, -sin_pitch, cos_pitch * cos_yaw);
+
+        // Create a 4x4 view matrix from the right, up, forward and eye position vectors
+        const glm::mat4 view = {
+            glm::vec4(xaxis.x, yaxis.x, zaxis.x, 0.f),
+            glm::vec4(xaxis.y, yaxis.y, zaxis.y, 0.f),
+            glm::vec4(xaxis.z, yaxis.z, zaxis.z, 0.f),
+            glm::vec4(glm::dot(xaxis, p_eye_position), glm::dot(yaxis, p_eye_position), glm::dot(zaxis, p_eye_position), 1.f)};
+
+        return Geometry::Frustrum(projection(p_aspect_ratio) * view);
+    }
+    glm::mat4 Camera::projection(const float p_aspect_ratio) const
+    {
+        return glm::perspective(glm::radians(m_FOV), p_aspect_ratio, m_near, m_far);
+    }
+    glm::mat4 Camera::view(const glm::vec3& p_eye_position) const
     {
         // Compute the axes of the view matrix. This is derived from the concatenation of a rotation about the X axis followed by a rotation
         // about the Y axis. Then we build the view matrix by taking advantage of the fact that the final column of the matrix is just the
@@ -131,16 +154,16 @@ namespace Component
         const float cos_yaw   = glm::cos(m_yaw);
         const float sin_yaw   = glm::sin(m_yaw);
 
-        const glm::vec3 xaxis = {cos_yaw, 0, -sin_yaw};
+        const glm::vec3 xaxis = {cos_yaw, 0.f, -sin_yaw};
         const glm::vec3 yaxis = {sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch};
         const glm::vec3 zaxis = {sin_yaw * cos_pitch, -sin_pitch, cos_pitch * cos_yaw};
 
         // Create a 4x4 view matrix from the right, up, forward and eye position vectors
         return {
-            glm::vec4(xaxis.x, yaxis.x, zaxis.x, 0),
-            glm::vec4(xaxis.y, yaxis.y, zaxis.y, 0),
-            glm::vec4(xaxis.z, yaxis.z, zaxis.z, 0),
-            glm::vec4(-glm::dot(xaxis, p_eye_position), -glm::dot(yaxis, p_eye_position), -glm::dot(zaxis, p_eye_position), 1)};
+            glm::vec4(xaxis.x, yaxis.x, zaxis.x, 0.f),
+            glm::vec4(xaxis.y, yaxis.y, zaxis.y, 0.f),
+            glm::vec4(xaxis.z, yaxis.z, zaxis.z, 0.f),
+            glm::vec4(-glm::dot(xaxis, p_eye_position), -glm::dot(yaxis, p_eye_position), -glm::dot(zaxis, p_eye_position), 1.f)};
     }
 
     void Camera::draw_UI(Component::Transform* p_transform/*= nullptr*/)
