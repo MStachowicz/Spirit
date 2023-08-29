@@ -319,7 +319,6 @@ namespace Test
         }
     }
 
-
     void GeometryTester::run_frustrum_tests()
     {
         { // Create an 'identity' ortho projection and check the planes resulting.
@@ -373,7 +372,7 @@ namespace Test
         }
     }
 
-    void draw_frustrum_debugger_UI(float aspect_ratio)
+    void GeometryTester::draw_frustrum_debugger_UI(float aspect_ratio)
     {
         // Use this ImGui + OpenGL::DebugRenderer function to visualise Projection generated Geometry::Frustrums.
         // A projection-only generated frustrum is positioned at [0, 0, 0] in the positive-z direction.
@@ -386,17 +385,15 @@ namespace Test
                 Perspective
             };
             static const std::vector<std::pair<ProjectionType, const char*>> projection_options =
-            {
-                {ProjectionType::Ortho,       "Ortho"},
-                {ProjectionType::Perspective, "Perspective"}
-            };
+                {{ProjectionType::Ortho, "Ortho"}, {ProjectionType::Perspective, "Perspective"}};
             static ProjectionType projection_type = ProjectionType::Ortho;
-            static float near        = -1.f;
-            static float far         = 1.f;
-            static float ortho_size  = 1.f;
-            static bool use_near_far = true;
-            static float fov         = 90.f;
-            static bool transpose    = false;
+            static float near                     = 0.1f;
+            static float far                      = 2.f;
+            static float ortho_size               = 1.f;
+            static bool use_near_far              = true;
+            static float fov                      = 90.f;
+            static bool transpose                 = false;
+            static bool apply_view                = true;
 
             ImGui::ComboContainer("Projection type", projection_type, projection_options);
 
@@ -404,7 +401,6 @@ namespace Test
             glm::mat4 projection;
             if (projection_type == ProjectionType::Ortho)
             {
-
                 ImGui::Checkbox("use near far", &use_near_far);
                 if (use_near_far)
                 {
@@ -431,6 +427,52 @@ namespace Test
             ImGui::Checkbox("transpose", &transpose);
             if (transpose)
                 projection = glm::transpose(projection);
+
+            ImGui::Checkbox("apply view matrix", &apply_view);
+            if (apply_view)
+            {
+                ImGui::Separator();
+                static glm::vec3 eye_position = glm::vec3(0.f, 0.f, 0.f);
+                static glm::vec3 center       = glm::vec3(0.5f, 0.f, 0.5f);
+                static glm::vec3 up           = glm::vec3(0.f, 1.f, 0.f);
+                static glm::mat4 view;
+                static bool inverse_view     = false;
+                static bool transpose_view   = false;
+                static bool swap_order       = false;
+                static bool flip_view_dir    = true;
+                static bool inverse_position = true;
+
+                ImGui::Slider("Position", eye_position, 0.f, 20.f);
+                ImGui::Slider("look direction", center, 0.f, 20.f);
+                ImGui::Slider("up direction", up, 0.f, 20.f);
+                ImGui::Checkbox("Inverse view", &inverse_view);
+                ImGui::Checkbox("Transpose view", &transpose_view);
+                ImGui::Checkbox("Swap order", &swap_order);
+                ImGui::Checkbox("Flip view direction", &flip_view_dir);
+                ImGui::Checkbox("inverse position", &inverse_position);
+
+                glm::vec3 view_position = inverse_position ? -eye_position : eye_position;
+                glm::vec3 view_look_at  = flip_view_dir ? view_position - center : view_position + center;
+                view                    = glm::lookAt(view_position, view_look_at, up);
+
+                if (swap_order)
+                {
+                    if (inverse_view)
+                        view = glm::inverse(view);
+                    if (transpose_view)
+                        view = glm::transpose(view);
+                }
+                else
+                {
+                    if (transpose_view)
+                        view = glm::transpose(view);
+                    if (inverse_view)
+                        view = glm::inverse(view);
+                }
+                projection = projection * view;
+                ImGui::Text("VIEW", view);
+                ImGui::Separator();
+            }
 
             Geometry::Frustrum frustrum = Geometry::Frustrum(projection);
             ImGui::Text("LEFT  \nNormal: [%.3f, %.3f, %.3f]\nDistance: %.6f\n", frustrum.m_left.m_normal.x, frustrum.m_left.m_normal.y, frustrum.m_left.m_normal.z, frustrum.m_left.m_distance);
