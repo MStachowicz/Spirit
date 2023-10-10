@@ -4,7 +4,6 @@
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 
-#include <array>
 #include <vector>
 
 namespace OpenGL
@@ -13,7 +12,6 @@ namespace OpenGL
     {
         struct GridVert
         {
-            constexpr inline static std::array<VertexAttribute, 2> Attributes = { VertexAttribute::Position3D, VertexAttribute::ColourRGBA };
             glm::vec3 m_position = glm::vec3{0.f};
             glm::vec4 m_colour   = glm::vec4{1.f};
         };

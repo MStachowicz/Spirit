@@ -47,7 +47,14 @@ namespace OpenGL
         }
 
         m_line_VAO.bind();
-        m_line_VBO.set_data(m_line_points);
+        vertex_attrib_pointer(0, 3, ShaderDataType::Float, false, sizeof(float) * 7, (void*)0);                   // XYZ
+        enable_vertex_attrib_array(0);
+        vertex_attrib_pointer(4, 4, ShaderDataType::Float, false, sizeof(float) * 7, (void*)(3 * sizeof(float))); // RGBA
+        enable_vertex_attrib_array(4);
+
+        m_line_VBO.bind();
+        auto size = sizeof(GridVert) * m_line_points.size();
+        buffer_data(BufferType::ArrayBuffer, size, &m_line_points.front(), BufferUsage::StaticDraw);
     }
     void GridRenderer::draw()
     {
