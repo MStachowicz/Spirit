@@ -14,6 +14,7 @@
 #include "RigidBody.hpp"
 #include "Texture.hpp"
 #include "Transform.hpp"
+#include "Component/ParticleEmitter.hpp"
 
 // Geometry
 #include "Geometry.hpp"
@@ -199,6 +200,12 @@ namespace System
                 spotlight.mDiffuseIntensity = 3.f;
                 m_scene.m_entities.addEntity(Component::Label{"Spotlight 1"}, spotlight);
             }
+        }
+
+        { // Particle
+            m_scene.m_entities.addEntity(
+                Component::Label{"Particle emitter"},
+                Component::ParticleEmitter{mTextureSystem.getTexture(Config::Texture_Directory / "marcy.jpeg")});
         }
     }
 

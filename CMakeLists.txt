@@ -53,6 +53,8 @@ source/Component/Input.hpp
 source/Component/Label.hpp
 source/Component/Mesh.cpp
 source/Component/Mesh.hpp
+source/Component/ParticleEmitter.hpp
+source/Component/ParticleEmitter.cpp
 source/Component/RigidBody.cpp
 source/Component/RigidBody.hpp
 source/Component/Lights.cpp
