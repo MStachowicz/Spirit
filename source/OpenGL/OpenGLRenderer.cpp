@@ -87,6 +87,7 @@ namespace OpenGL
         , mScreenTextureShader{"screenTexture"}
         , mSkyBoxShader{"skybox"}
         , m_phong_renderer{}
+        , m_particle_renderer{}
         , m_light_position_renderer{}
         , m_shadow_mapper{p_window}
         , m_missing_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "missing.png")}
@@ -158,7 +159,7 @@ namespace OpenGL
         }
     }
 
-    void OpenGLRenderer::draw()
+    void OpenGLRenderer::draw(const DeltaTime& delta_time)
     {
         m_phong_renderer.update_light_data(mSceneSystem.m_scene, m_shadow_mapper.get_depth_map());
 
@@ -216,6 +217,8 @@ namespace OpenGL
 
             draw(*p_mesh.mModel);
         });
+
+        m_particle_renderer.update(delta_time, mSceneSystem.m_scene, glm::vec3());
 
         renderDebug();
     }

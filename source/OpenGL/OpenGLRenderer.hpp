@@ -7,6 +7,7 @@
 #include "PhongRenderer.hpp"
 #include "LightPositionRenderer.hpp"
 #include "ShadowMapper.hpp"
+#include "OpenGL/ParticleRenderer.hpp"
 
 // GEOMETRY
 #include "Cylinder.hpp"
@@ -136,6 +137,7 @@ namespace OpenGL
         Shader mSkyBoxShader;
 
         PhongRenderer m_phong_renderer;
+        ParticleRenderer m_particle_renderer;
         LightPositionRenderer m_light_position_renderer;
         ShadowMapper m_shadow_mapper;
         TextureRef m_missing_texture;
@@ -156,7 +158,7 @@ namespace OpenGL
         void start_frame();
         void end_frame();
         // Draw the current state of the ECS.
-        void draw();
+        void draw(const DeltaTime& delta_time);
 
     private:
 

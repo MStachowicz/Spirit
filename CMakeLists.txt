@@ -104,7 +104,6 @@ PUBLIC Component
 PUBLIC Geometry
 PUBLIC ECS #SceneSystem.hpp uses ECS storage
 PUBLIC Utility
-PRIVATE Utility
 PRIVATE Platform
 )
 # System end ----------------------------------------------------------------------------------
@@ -199,6 +198,8 @@ source/OpenGL/LightPositionRenderer.hpp
 source/OpenGL/LightPositionRenderer.cpp
 source/OpenGL/DebugRenderer.hpp
 source/OpenGL/DebugRenderer.cpp
+source/OpenGL/ParticleRenderer.cpp
+source/OpenGL/ParticleRenderer.hpp
 source/OpenGL/ShadowMapper.hpp
 source/OpenGL/ShadowMapper.cpp
 source/OpenGL/GLState.hpp
