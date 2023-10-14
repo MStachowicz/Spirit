@@ -11,6 +11,7 @@
 
 #include "Utility/Logger.hpp"
 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -43,12 +44,26 @@ namespace ImGui
     {
         return SliderFloat3(label, &p_vec3.x, v_min, v_max, format, flags);
     }
-
     inline bool Slider(const char* label, float& p_float, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
     {
         return SliderFloat(label, &p_float, v_min, v_max, format, flags);
     }
-
+    inline bool Slider(const char* label, int& p_v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
+    {
+        return SliderInt(label, &p_v, v_min, v_max, format, flags);
+    }
+    inline bool Slider(const char* label, unsigned int& p_v, unsigned int v_min, unsigned int v_max, const char* format = "%u", ImGuiSliderFlags flags = 0)
+    {
+        return SliderScalar(label, ImGuiDataType_U32, &p_v, &v_min, &v_max, format, flags);
+    }
+    template <typename Rep, typename Period>
+    bool Slider(const char* label, std::chrono::duration<Rep, Period>& p_v, const std::chrono::duration<Rep, Period>& v_min, const std::chrono::duration<Rep, Period>& v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    {
+        Rep count = p_v.count();
+        bool modified = Slider(label, count, v_min.count(), v_max.count(), format, flags);
+        p_v = std::chrono::duration<Rep, Period>(count);
+        return modified;
+    }
 
     // Given a list of p_options, create a selectable dropown that returns true on selection and returns the out_selected_index of p_options.
     // Prefer the Typed option when possible, this one is handy when you already have access to a list of stringified p_options.
