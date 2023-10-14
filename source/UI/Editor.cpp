@@ -231,6 +231,8 @@ namespace UI
                         scene.getComponentMutable<Component::PointLight&>(pEntity).DrawImGui();
                     if (scene.hasComponents<Component::Camera>(pEntity))
                         scene.getComponentMutable<Component::Camera>(pEntity).draw_UI();
+                    if (scene.hasComponents<Component::ParticleEmitter>(pEntity))
+                        scene.getComponentMutable<Component::ParticleEmitter>(pEntity).draw_UI(mTextureSystem);
                     if (scene.hasComponents<Component::Mesh>(pEntity))
                     {
                         auto& mesh = scene.getComponentMutable<Component::Mesh>(pEntity);

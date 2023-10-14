@@ -75,6 +75,7 @@ PUBLIC Geometry
 PUBLIC OpenGL
 PUBLIC GLM
 PUBLIC Utility # Used in headers of Mesh, Texture, Input
+PRIVATE System
 PRIVATE Platform
 PRIVATE ImGui
 PRIVATE assimp
