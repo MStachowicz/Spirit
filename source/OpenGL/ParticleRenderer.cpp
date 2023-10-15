@@ -40,29 +40,32 @@ namespace OpenGL
                 {
                     p_emitter.time_to_next_spawn = p_emitter.spawn_period; // Reset time.
 
-                    ASSERT(p_emitter.particles.size() <= p_emitter.max_particle_count, "Particles container grew larger than max particle count limit!");
-                    auto remaining_size     = p_emitter.max_particle_count - static_cast<unsigned int>(p_emitter.particles.size());
-                    auto new_particle_count = std::min(remaining_size, p_emitter.spawn_count);
+                    auto current_particle_count = static_cast<unsigned int>(p_emitter.particles.size()); // TODO: Casting down, check size_t fits into the uint
+                    if (current_particle_count < p_emitter.max_particle_count)
+                    {
+                        auto remaining_size     = p_emitter.max_particle_count - current_particle_count;
+                        auto new_particle_count = std::min(remaining_size, p_emitter.spawn_count);
 
-                    if (new_particle_count > 0)
-                    {// Create random number generators for each component
-                        ASSERT(p_emitter.emit_velocity_min.x < p_emitter.emit_velocity_max.x
-                            && p_emitter.emit_velocity_min.y < p_emitter.emit_velocity_max.y
-                            && p_emitter.emit_velocity_min.z < p_emitter.emit_velocity_max.z, "ParticleEmitter min not smaller than max"); // Always
+                        if (new_particle_count > 0)
+                        {// Create random number generators for each component
+                            ASSERT(p_emitter.emit_velocity_min.x < p_emitter.emit_velocity_max.x
+                                && p_emitter.emit_velocity_min.y < p_emitter.emit_velocity_max.y
+                                && p_emitter.emit_velocity_min.z < p_emitter.emit_velocity_max.z, "ParticleEmitter min not smaller than max"); // Always
 
-                        auto rd           = std::random_device();
-                        auto gen          = std::mt19937(rd());
-                        auto distribution = std::uniform_real_distribution<float>(0.f, 1.f);
+                            auto rd           = std::random_device();
+                            auto gen          = std::mt19937(rd());
+                            auto distribution = std::uniform_real_distribution<float>(0.f, 1.f);
 
-                        for (auto i = 0; i < new_particle_count; i++)
-                        {
-                            auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
-                                p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
-                                p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
-                                p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
-                                1.f
-                            };
-                            p_emitter.particles.push_back({glm::vec4(p_emitter.emit_position, 1.f), vel, p_emitter.lifetime});
+                            for (auto i = 0; i < new_particle_count; i++)
+                            {
+                                auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
+                                    p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
+                                    p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
+                                    p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
+                                    1.f
+                                };
+                                p_emitter.particles.push_back({glm::vec4(p_emitter.emit_position, 1.f), vel, p_emitter.lifetime});
+                            }
                         }
                     }
                 }
