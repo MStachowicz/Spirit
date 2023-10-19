@@ -205,7 +205,7 @@ namespace System
         { // Particle
             m_scene.m_entities.addEntity(
                 Component::Label{"Particle emitter"},
-                Component::ParticleEmitter{mTextureSystem.getTexture(Config::Texture_Directory / "marcy.jpeg")});
+                Component::ParticleEmitter{mTextureSystem.getTexture(Config::Texture_Directory / "smoke.png")});
         }
     }
 

@@ -10,11 +10,11 @@ namespace Component
     ParticleEmitter::ParticleEmitter(const TextureRef& p_texture)
         : diffuse{p_texture}
         , emit_position{glm::vec3(0.f)}
-        , emit_velocity_min{glm::vec3(-0.5f, 0.9f, -0.5f)}
-        , emit_velocity_max{glm::vec3( 0.5f, 1.f,  0.5f)}
-        , spawn_period{1.f}
+        , emit_velocity_min{glm::vec3(0.f, 1.5f, -0.8f)}
+        , emit_velocity_max{glm::vec3(0.8f, 2.f,  0.2f)}
+        , spawn_period{0.4f}
         , time_to_next_spawn{0.f} // Spawn on creation.
-        , spawn_count{3u}
+        , spawn_count{4u}
         , lifetime{7.f}
         , max_particle_count{1'000u}
         , particles{}
