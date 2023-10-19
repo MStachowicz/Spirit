@@ -32,13 +32,14 @@ namespace Component
         {
             ImGui::Text("Particle count: %zu", particles.size());
 
-            std::vector<std::string> textures_available;
+            std::vector<std::string> texture_names;
+            texture_names.reserve(p_texture_system.mAvailableTextures.size());
             for (const auto& path : p_texture_system.mAvailableTextures)
-                textures_available.push_back(path.stem().string());
+                texture_names.push_back(path.stem().string());
 
             size_t selected_index;
-            if (ImGui::ComboContainer("Texture", diffuse->m_image_ref->name().c_str(), textures_available, selected_index))
-                diffuse = p_texture_system.getTexture(textures_available[selected_index]);
+            if (ImGui::ComboContainer("Texture", diffuse->m_image_ref->name().c_str(), texture_names, selected_index))
+                diffuse = p_texture_system.getTexture(p_texture_system.mAvailableTextures[selected_index]);
 
             ImGui::Slider("Emit position", emit_position, -10.f, 10.f, "%.3fm");
 
