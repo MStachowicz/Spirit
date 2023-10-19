@@ -45,23 +45,22 @@ namespace Component
 
             constexpr auto correction_magnitude = 1.f;
             if (ImGui::Slider("Emit velocity min", emit_velocity_min, -10.f, 10.f, "%.3fm/s"))
-            {
-                if (emit_velocity_min.x > emit_velocity_max.x)
-                    emit_velocity_max.x = emit_velocity_min.x + correction_magnitude;
-                if (emit_velocity_min.y > emit_velocity_max.y)
-                    emit_velocity_max.y = emit_velocity_min.y + correction_magnitude;
-                if (emit_velocity_min.z > emit_velocity_max.z)
-                    emit_velocity_max.z = emit_velocity_min.z + correction_magnitude;
-            }
+
+            if (emit_velocity_min.x > emit_velocity_max.x)
+                emit_velocity_max.x = emit_velocity_min.x + correction_magnitude;
+            if (emit_velocity_min.y > emit_velocity_max.y)
+                emit_velocity_max.y = emit_velocity_min.y + correction_magnitude;
+            if (emit_velocity_min.z > emit_velocity_max.z)
+                emit_velocity_max.z = emit_velocity_min.z + correction_magnitude;
+
             if (ImGui::Slider("Emit velocity max", emit_velocity_max, -10.f, 10.f, "%.3fm/s"))
-            {
-                if (emit_velocity_max.x < emit_velocity_min.x)
-                    emit_velocity_min.x = emit_velocity_max.x - correction_magnitude;
-                if (emit_velocity_max.y < emit_velocity_min.y)
-                    emit_velocity_min.y = emit_velocity_max.y - correction_magnitude;
-                if (emit_velocity_max.z < emit_velocity_min.z)
-                    emit_velocity_min.z = emit_velocity_max.z - correction_magnitude;
-            }
+
+            if (emit_velocity_max.x < emit_velocity_min.x)
+                emit_velocity_min.x = emit_velocity_max.x - correction_magnitude;
+            if (emit_velocity_max.y < emit_velocity_min.y)
+                emit_velocity_min.y = emit_velocity_max.y - correction_magnitude;
+            if (emit_velocity_max.z < emit_velocity_min.z)
+                emit_velocity_min.z = emit_velocity_max.z - correction_magnitude;
 
             ASSERT(emit_velocity_min.x < emit_velocity_max.x
                 && emit_velocity_min.y < emit_velocity_max.y
