@@ -5,6 +5,8 @@
 #include "OpenGL/GLState.hpp"
 #include "OpenGL/Types.hpp"
 
+#include "glm/gtx/norm.hpp"
+
 #include <random>
 
 namespace OpenGL
@@ -34,7 +36,7 @@ namespace OpenGL
         {
             constexpr auto zero_seconds = std::chrono::seconds(0);
 
-            { // Spawning new particles every spawn_period
+            {// Spawning new particles every spawn_period
                 p_emitter.time_to_next_spawn -= p_delta_time;
                 if (p_emitter.time_to_next_spawn <= zero_seconds)
                 {
@@ -85,6 +87,17 @@ namespace OpenGL
                         ++it;
                     }
                 }
+            }
+            if (p_emitter.sort_by_distance_to_camera)
+            {
+                const auto camera_position = glm::vec4(p_camera_position, 0.f);
+                for (auto& particle : p_emitter.particles)
+                    particle.distance_to_camera = glm::distance2(camera_position, particle.position);
+
+                std::sort(p_emitter.particles.begin(), p_emitter.particles.end(), [](const auto& lhs, const auto& rhs)
+                {
+                    return lhs.distance_to_camera > rhs.distance_to_camera;
+                });
             }
 
             {// Upload the particle data to the SSBO in particle_shader

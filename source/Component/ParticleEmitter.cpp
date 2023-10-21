@@ -18,6 +18,7 @@ namespace Component
         , lifetime{7.f}
         , max_particle_count{1'000u}
         , particles{}
+        , sort_by_distance_to_camera{false}
     {
         ASSERT(emit_velocity_min.x < emit_velocity_max.x
             && emit_velocity_min.y < emit_velocity_max.y
@@ -71,6 +72,8 @@ namespace Component
             ImGui::Slider("Spawn count", spawn_count, 0u, 100u);
             ImGui::Slider("Lifetime", lifetime, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
             ImGui::Slider("Max particle count", max_particle_count, 0u, 1'000'000u);
+            ImGui::Checkbox("Sort by distance to camera", &sort_by_distance_to_camera);
+
             ImGui::TreePop();
         }
     }

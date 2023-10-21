@@ -218,7 +218,7 @@ namespace OpenGL
             draw(*p_mesh.mModel);
         });
 
-        m_particle_renderer.update(delta_time, mSceneSystem.m_scene, glm::vec3());
+        m_particle_renderer.update(delta_time, mSceneSystem.m_scene, mViewInformation.mViewPosition);
 
         renderDebug();
     }

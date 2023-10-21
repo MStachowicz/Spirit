@@ -203,9 +203,9 @@ namespace System
         }
 
         { // Particle
-            m_scene.m_entities.addEntity(
-                Component::Label{"Particle emitter"},
-                Component::ParticleEmitter{mTextureSystem.getTexture(Config::Texture_Directory / "smoke.png")});
+            auto particle_emitter = Component::ParticleEmitter{mTextureSystem.getTexture(Config::Texture_Directory / "smoke.png")};
+            particle_emitter.sort_by_distance_to_camera = true;
+            m_scene.m_entities.addEntity(Component::Label{"Particle emitter"}, particle_emitter);
         }
     }
 
