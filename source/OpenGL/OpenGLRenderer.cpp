@@ -11,6 +11,7 @@
 #include "Camera.hpp"
 #include "Mesh.hpp"
 #include "Transform.hpp"
+#include "Terrain.hpp"
 
 // SYSTEMS
 #include "MeshSystem.hpp"
@@ -217,6 +218,21 @@ namespace OpenGL
 
             draw(*p_mesh.mModel);
         });
+
+        {// Draw terrain
+            scene.foreach([&](Component::Terrain& p_terrain)
+            {
+                m_phong_renderer.set_draw_data(
+                    mViewInformation.mViewPosition,
+                    glm::translate(glm::identity<glm::mat4>(), p_terrain.position),
+                    p_terrain.texture.has_value() ? (*p_terrain.texture)->m_GL_texture : m_missing_texture->m_GL_texture,
+                    m_blank_texture->m_GL_texture,
+                    64.f);
+
+                p_terrain.mesh.draw();
+            });
+        }
+
 
         m_particle_renderer.update(delta_time, mSceneSystem.m_scene, mViewInformation.mViewPosition);
 

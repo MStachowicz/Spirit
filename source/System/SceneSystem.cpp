@@ -15,6 +15,7 @@
 #include "Texture.hpp"
 #include "Transform.hpp"
 #include "Component/ParticleEmitter.hpp"
+#include "Component/Terrain.hpp"
 
 // Geometry
 #include "Geometry.hpp"
@@ -206,6 +207,10 @@ namespace System
             auto particle_emitter = Component::ParticleEmitter{mTextureSystem.getTexture(Config::Texture_Directory / "smoke.png")};
             particle_emitter.sort_by_distance_to_camera = true;
             m_scene.m_entities.addEntity(Component::Label{"Particle emitter"}, particle_emitter);
+        }
+        { // Terrain
+            auto terrain = Component::Terrain{100, 100};
+            m_scene.m_entities.addEntity(Component::Label{"Terrain"}, terrain);
         }
     }
 

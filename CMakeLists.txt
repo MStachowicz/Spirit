@@ -59,6 +59,8 @@ source/Component/RigidBody.cpp
 source/Component/RigidBody.hpp
 source/Component/Lights.cpp
 source/Component/Lights.hpp
+source/Component/Terrain.cpp
+source/Component/Terrain.hpp
 source/Component/Texture.cpp
 source/Component/Texture.hpp
 source/Component/Transform.cpp

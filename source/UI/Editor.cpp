@@ -18,6 +18,7 @@
 #include "RigidBody.hpp"
 #include "Texture.hpp"
 #include "Transform.hpp"
+#include "Terrain.hpp"
 
 // GEOMETRY
 #include "Geometry.hpp"
@@ -233,6 +234,8 @@ namespace UI
                         scene.getComponentMutable<Component::Camera>(pEntity).draw_UI();
                     if (scene.hasComponents<Component::ParticleEmitter>(pEntity))
                         scene.getComponentMutable<Component::ParticleEmitter>(pEntity).draw_UI(mTextureSystem);
+                    if (scene.hasComponents<Component::Terrain>(pEntity))
+                        scene.getComponentMutable<Component::Terrain>(pEntity).draw_UI(mTextureSystem);
                     if (scene.hasComponents<Component::Mesh>(pEntity))
                     {
                         auto& mesh = scene.getComponentMutable<Component::Mesh>(pEntity);
