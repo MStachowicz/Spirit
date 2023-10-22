@@ -32,7 +32,7 @@ namespace Component
         , m_pitch{get_pitch_yaw(p_view_direction).x}
         , m_yaw{get_pitch_yaw(p_view_direction).y}
         , m_look_sensitivity{0.1f}
-        , m_move_speed{1.f}
+        , m_move_speed{7.f}
         , m_body_move{false}
         , m_primary{p_make_primary}
     {}
