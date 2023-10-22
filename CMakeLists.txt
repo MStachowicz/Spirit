@@ -240,6 +240,7 @@ source/Utility/File.cpp
 source/Utility/File.hpp
 source/Utility/Logger.hpp
 source/Utility/Logger.cpp
+source/Utility/PerlinNoise.hpp
 source/Utility/Stopwatch.hpp
 source/Utility/Utility.cpp
 source/Utility/Utility.hpp
