@@ -311,6 +311,7 @@ namespace OpenGL
     FBO::FBO() noexcept
         : m_handle{0}
         , mColourAttachment{}
+        , m_depth_map{}
         , mDepthAttachment{}
         , mBufferClearBitField{0}
     {
@@ -329,10 +330,10 @@ namespace OpenGL
 
         if constexpr (LogGLTypeEvents) LOG("FBO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
-
     FBO::FBO(FBO&& p_other) noexcept
         : m_handle{std::move(p_other.m_handle)}
         , mColourAttachment{std::move(p_other.mColourAttachment)}
+        , m_depth_map{std::move(p_other.m_depth_map)}
         , mDepthAttachment{std::move(p_other.mDepthAttachment)}
         , mBufferClearBitField{std::move(p_other.mBufferClearBitField)}
     {
@@ -356,7 +357,6 @@ namespace OpenGL
         if constexpr (LogGLTypeEvents) LOG("FBO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
         return *this;
     }
-
 
     void FBO::bind() const
     {
@@ -413,7 +413,8 @@ namespace OpenGL
     }
     void FBO::attachDepthBuffer(const int& pWidth, const int& pHeight)
     {
-        ASSERT(!mDepthAttachment.has_value(), "FBO already has an attached depth buffer");
+        ASSERT(!mDepthAttachment.has_value(), "[OPENGL][FBO] FBO already has an attached depth buffer.");
+        ASSERT(!m_depth_map.has_value(), "[OPENGL][FBO] FBO already has an attached depth buffer Texture map.");
 
         bind();
         mDepthAttachment = RBO();
@@ -428,10 +429,38 @@ namespace OpenGL
         mBufferClearBitField |= GL_DEPTH_BUFFER_BIT;
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
     }
+    void FBO::attach_depth_buffer(const glm::uvec2& p_resolution)
+    {
+        ASSERT(!mDepthAttachment.has_value() && !m_depth_map.has_value(), "[OPENGL][FBO] FBO already has an attached depth buffer.");
+
+        mBufferClearBitField |= GL_DEPTH_BUFFER_BIT;
+
+        m_depth_map = Texture();
+        m_depth_map->bind();
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, p_resolution.x, p_resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        // attach depth texture as FBO's depth buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, m_handle);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depth_map->getHandle(), 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
     void FBO::detachDepthBuffer()
     {
-        ASSERT(mDepthAttachment.has_value(), "There is no attached depth buffer to remove from FBO");
-        mDepthAttachment.reset();
+        ASSERT(mDepthAttachment.has_value() || m_depth_map.has_value(), "[OPENGL][FBO] There is no attached depth buffer to remove from FBO.");
+
+        if (mDepthAttachment.has_value())
+            mDepthAttachment.reset();
+        else if (m_depth_map.has_value())
+            m_depth_map.reset();
+
         mBufferClearBitField &= ~GL_DEPTH_BUFFER_BIT;
     }
     void FBO::resize(const int& pWidth, const int& pHeight)
@@ -441,10 +470,16 @@ namespace OpenGL
             detachColourBuffer();
             attachColourBuffer(pWidth, pHeight);
         }
+
         if (mDepthAttachment.has_value())
         {
             detachDepthBuffer();
             attachDepthBuffer(pWidth, pHeight);
+        }
+        else if (m_depth_map.has_value())
+        {
+            detachDepthBuffer();
+            attach_depth_buffer(glm::uvec2(pWidth, pHeight));
         }
     }
     bool FBO::isComplete() const

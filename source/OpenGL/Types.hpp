@@ -413,17 +413,20 @@ namespace OpenGL
         void attachColourBuffer(const int& pWidth, const int& pHeight);
         void detachColourBuffer();
         void attachDepthBuffer(const int& pWidth, const int& pHeight);
+        void attach_depth_buffer(const glm::uvec2& p_resolution);
         void detachDepthBuffer();
         void resize(const int& pWidth, const int& pHeight);
         bool isComplete() const;
 
         static void unbind();
-    private:
-        GLHandle m_handle;
 
         std::optional<Texture> mColourAttachment;
+        std::optional<Texture> m_depth_map;
         std::optional<RBO> mDepthAttachment;
         int mBufferClearBitField; // Bit field sent to OpenGL clear buffers before next draw.
+
+    private:
+        GLHandle m_handle;
     };
 
     class Mesh
@@ -439,12 +442,13 @@ namespace OpenGL
 
         // Construct an OpenGL mesh from mesh data.
         Mesh(const Data::Mesh& pMeshData) noexcept;
+        void draw() const;
 
         VAO mVAO;
         std::optional<VBO> mVertexPositions;
         std::optional<VBO> mVertexNormals;
         std::optional<VBO> mVertexTextureCoordinates;
         std::optional<EBO> mEBO;
-        int mDrawSize; // Depending on if the mesh is indexed or array based, this is the element size or array size parameter to glDraw.
+        GLsizei mDrawSize; // Depending on if the mesh is indexed or array based, this is the element size or array size parameter to glDraw.
     };
 }
