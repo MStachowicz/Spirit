@@ -215,7 +215,7 @@ source/OpenGL/Shader.cpp
 target_include_directories(OpenGL
 PUBLIC source/OpenGL
 PRIVATE source/External/GLFW/include
-PRIVATE source
+PUBLIC source
 )
 target_link_libraries(OpenGL
 PRIVATE Utility # ToIndex used in header for size of Shader::attribute arrays.
@@ -240,6 +240,7 @@ source/Utility/File.cpp
 source/Utility/File.hpp
 source/Utility/Logger.hpp
 source/Utility/Logger.cpp
+source/Utility/MeshBuilder.hpp
 source/Utility/PerlinNoise.hpp
 source/Utility/Stopwatch.hpp
 source/Utility/Utility.cpp
@@ -252,6 +253,7 @@ PRIVATE source/External/stb
 target_link_libraries(Utility
 PUBLIC GLM
 PUBLIC Geometry
+PUBLIC OpenGL
 PRIVATE UI # Logger.cpp uses Editor for output
 )
 # Utility end ---------------------------------------------------------------------------------
