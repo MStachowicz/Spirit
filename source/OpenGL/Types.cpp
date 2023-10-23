@@ -856,7 +856,6 @@ namespace OpenGL
         if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] UniformBlock '{}' bound to point index {}", m_name, (*m_buffer_backing)->m_uniform_binding_point);
     }
 
-
     Mesh::Mesh(Mesh&& p_other) noexcept
         : mVAO{std::move(p_other.mVAO)}
         , mVertexPositions{std::move(p_other.mVertexPositions)}
@@ -922,6 +921,16 @@ namespace OpenGL
         }
 
         if constexpr (LogGLTypeEvents) LOG("OpenGL::Mesh constructed with VAO {} at address {}", mVAO.getHandle(), (void*)(this));
+    }
+
+    void Mesh::draw() const
+    {
+        mVAO.bind();
+
+        if (mEBO.has_value())
+            draw_elements(PrimitiveMode::Triangles, mDrawSize);
+        else
+            draw_arrays(PrimitiveMode::Triangles, 0, mDrawSize);
     }
 
     namespace impl
