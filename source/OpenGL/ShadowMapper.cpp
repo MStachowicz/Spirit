@@ -44,7 +44,7 @@ namespace OpenGL
             set_viewport(0, 0, m_resolution.x, m_resolution.y);
             m_depth_map_FBO.clearBuffers();
             m_shadow_depth_shader.use();
-            toggle_cull_face(false);
+            set_cull_face(false);
 
             set_depth_test(true);
             set_depth_test_type(DepthTestType::Less);

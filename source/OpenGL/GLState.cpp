@@ -3,64 +3,174 @@
 #include "Logger.hpp"
 
 #include "glm/vec4.hpp"
+#include "glm/vec2.hpp"
 
 #include "glad/gl.h" // OpenGL functions
 
 namespace OpenGL
 {
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// GENERAL STATE FUNCTIONS
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // OpenGL::State is a cpp only class so can only be accessed within the GLState.cpp. This allows us
+    // to encapsulate the state of the OpenGL context and prevent other parts of the program from modifying it directly.
+    // State prevents excess gl function calls by only allowing them to be called if there is a state change.
+    class State
+    {
+    public:
+        State()
+            : depth_test_enabled(true)
+            , depth_test_type(DepthTestType::Less)
+            , blending_enabled(false)
+            , source_factor(BlendFactorType::SourceAlpha)
+            , destination_factor(BlendFactorType::OneMinusSourceAlpha)
+            , cull_face_enabled(true)
+            , cull_face_type(CullFaceType::Back)
+            , front_face_orientation(FrontFaceOrientation::CounterClockwise)
+            , polygon_mode(PolygonMode::Fill)
+            , clear_colour(0.0f, 0.0f, 0.0f, 0.0f)
+            , viewport_position(0, 0)
+            , viewport_size(0, 0)
+        {
+            if (depth_test_enabled) glEnable(GL_DEPTH_TEST);
+            else                    glDisable(GL_DEPTH_TEST);
+            if (blending_enabled)   glEnable(GL_BLEND);
+            else                    glDisable(GL_BLEND);
+            if (cull_face_enabled)  glEnable(GL_CULL_FACE);
+            else                    glDisable(GL_CULL_FACE);
+
+            glDepthFunc(convert(depth_test_type));
+            glBlendFunc(convert(source_factor), convert(destination_factor));
+            glCullFace(convert(cull_face_type));
+            glFrontFace(convert(front_face_orientation));
+            glPolygonMode(GL_FRONT_AND_BACK, convert(polygon_mode));
+            glClearColor(clear_colour[0], clear_colour[1], clear_colour[2], clear_colour[3]);
+            glViewport(viewport_position.x, viewport_position.y, viewport_size.x, viewport_size.y);
+        }
+
+        bool depth_test_enabled;
+        DepthTestType depth_test_type;
+
+        bool blending_enabled;
+        BlendFactorType source_factor;
+        BlendFactorType destination_factor;
+
+        bool cull_face_enabled;
+        CullFaceType cull_face_type;
+        FrontFaceOrientation front_face_orientation;
+
+        PolygonMode polygon_mode;
+
+        glm::vec4 clear_colour;
+        glm::ivec2 viewport_position;
+        glm::ivec2 viewport_size;
+    };
+    static State& state()
+    {
+        // State accessor allows us to delay instantiation of the state until the
+        // OpenGL context is initialised in Core::initialise_OpenGL.
+        static State instance;
+        return instance;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// GENERAL STATE FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     void set_depth_test(bool p_depth_test)
     {
-        if (p_depth_test)
-            glEnable(GL_DEPTH_TEST);
-        else
-            glDisable(GL_DEPTH_TEST);
+        if (p_depth_test != state().depth_test_enabled)
+        {
+            if (p_depth_test)
+                glEnable(GL_DEPTH_TEST);
+            else
+                glDisable(GL_DEPTH_TEST);
+            state().depth_test_enabled = p_depth_test;
+        }
     }
     void set_depth_test_type(DepthTestType p_type)
     {
-        glDepthFunc(convert(p_type));
+        if (p_type != state().depth_test_type)
+        {
+            glDepthFunc(convert(p_type));
+            state().depth_test_type = p_type;
+        }
     }
-    void toggle_blending(bool p_blend)
+
+    void set_blending(bool p_blend)
     {
-        if (p_blend)
-            glEnable(GL_BLEND);
-        else
-            glDisable(GL_BLEND);
+        if (p_blend != state().blending_enabled)
+        {
+            if (p_blend)
+                glEnable(GL_BLEND);
+            else
+                glDisable(GL_BLEND);
+
+            state().blending_enabled = p_blend;
+        }
     }
     void set_blend_func(BlendFactorType p_source_factor, BlendFactorType p_destination_factor)
     {
-        ASSERT(glIsEnabled(GL_BLEND), "Blending has to be enabled to set blend function.");
-        glBlendFunc(convert(p_source_factor), convert(p_destination_factor)); // It is also possible to set individual RGBA factors using glBlendFuncSeparate().
+        ASSERT(state().blending_enabled, "Blending has to be enabled to set blend function.");
+
+        if (p_source_factor != state().source_factor || p_destination_factor != state().destination_factor)
+        {
+            glBlendFunc(convert(p_source_factor), convert(p_destination_factor)); // It is also possible to set individual RGBA factors using glBlendFuncSeparate().
+            state().source_factor      = p_source_factor;
+            state().destination_factor = p_destination_factor;
+        }
     }
-    void toggle_cull_face(bool p_cull)
+
+    void set_cull_face(bool p_cull)
     {
-        if (p_cull)
-            glEnable(GL_CULL_FACE);
-        else
-            glDisable(GL_CULL_FACE);
+        if (p_cull != state().cull_face_enabled)
+        {
+            if (p_cull)
+                glEnable(GL_CULL_FACE);
+            else
+                glDisable(GL_CULL_FACE);
+
+            state().cull_face_enabled = p_cull;
+        }
     }
-    void set_cull_face_type(CullFacesType p_cull_face_type)
+    void set_cull_face_type(CullFaceType p_cull_face_type)
     {
-        glCullFace(convert(p_cull_face_type));
+        if (p_cull_face_type != state().cull_face_type)
+        {
+            glCullFace(convert(p_cull_face_type));
+            state().cull_face_type = p_cull_face_type;
+        }
     }
     void set_front_face_orientation(FrontFaceOrientation p_front_face_orientation)
     {
-        glFrontFace(convert(p_front_face_orientation));
-    }
-    void set_clear_colour(const glm::vec4& p_colour)
-    {
-        glClearColor(p_colour[0], p_colour[1], p_colour[2], p_colour[3]);
-    }
-    void set_viewport(GLint p_x, GLint p_y, GLsizei p_width, GLsizei p_height)
-    {
-        glViewport(p_x, p_y, p_width, p_height);
+        if (p_front_face_orientation != state().front_face_orientation)
+        {
+            glFrontFace(convert(p_front_face_orientation));
+            state().front_face_orientation = p_front_face_orientation;
+        }
     }
     void set_polygon_mode(PolygonMode p_polygon_mode)
     {
-        glPolygonMode(GL_FRONT_AND_BACK, convert(p_polygon_mode));
+        if (p_polygon_mode != state().polygon_mode)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, convert(p_polygon_mode));
+            state().polygon_mode = p_polygon_mode;
+        }
+    }
+
+    void set_clear_colour(const glm::vec4& p_colour)
+    {
+        if (p_colour != state().clear_colour)
+        {
+            glClearColor(p_colour[0], p_colour[1], p_colour[2], p_colour[3]);
+            state().clear_colour = p_colour;
+        }
+    }
+    void set_viewport(GLint p_x, GLint p_y, GLsizei p_width, GLsizei p_height)
+    {
+        if (p_x != state().viewport_position.x || p_y != state().viewport_position.y || p_width != state().viewport_size.x || p_height != state().viewport_size.y)
+        {
+            glViewport(p_x, p_y, p_width, p_height);
+            state().viewport_position = { p_x, p_y };
+            state().viewport_size     = { p_width, p_height };
+        }
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -673,14 +783,14 @@ namespace OpenGL
             default: ASSERT(false, "[OPENGL] Unknown BlendFactorType requested"); return "";
         }
     }
-    const char* get_name(CullFacesType p_cull_faces_type)
+    const char* get_name(CullFaceType p_cull_faces_type)
     {
         switch (p_cull_faces_type)
         {
-            case CullFacesType::Back:                                           return "Back";
-            case CullFacesType::Front:                                          return "Front";
-            case CullFacesType::FrontAndBack:                                   return "Front and Back";
-            default: ASSERT(false, "[OPENGL] Unknown CullFacesType requested"); return "";
+            case CullFaceType::Back:                                           return "Back";
+            case CullFaceType::Front:                                          return "Front";
+            case CullFaceType::FrontAndBack:                                   return "Front and Back";
+            default: ASSERT(false, "[OPENGL] Unknown CullFaceType requested"); return "";
         }
     }
     const char* get_name(FrontFaceOrientation p_front_face_orientation)
@@ -1099,14 +1209,14 @@ namespace OpenGL
             default: ASSERT(false, "[OPENGL] Unknown BlendFactorType requested"); return 0;
         }
     }
-    int convert(CullFacesType p_cull_faces_type)
+    int convert(CullFaceType p_cull_faces_type)
     {
         switch (p_cull_faces_type)
         {
-            case CullFacesType::Back:                                           return GL_BACK;
-            case CullFacesType::Front:                                          return GL_FRONT;
-            case CullFacesType::FrontAndBack:                                   return GL_FRONT_AND_BACK;
-            default: ASSERT(false, "[OPENGL] Unknown CullFacesType requested"); return 0;
+            case CullFaceType::Back:                                           return GL_BACK;
+            case CullFaceType::Front:                                          return GL_FRONT;
+            case CullFaceType::FrontAndBack:                                   return GL_FRONT_AND_BACK;
+            default: ASSERT(false, "[OPENGL] Unknown CullFaceType requested"); return 0;
         }
     }
     int convert(FrontFaceOrientation p_front_face_orientation)

@@ -61,7 +61,7 @@ namespace OpenGL
         if (!m_line_points.empty())
         {
             m_grid_shader.use();
-            toggle_cull_face(false);
+            set_cull_face(false);
             set_depth_test(true);
             set_depth_test_type(DepthTestType::Less);
             set_polygon_mode(PolygonMode::Fill);

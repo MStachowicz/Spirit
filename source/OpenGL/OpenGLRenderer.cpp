@@ -54,8 +54,8 @@ namespace OpenGL
         , mForceBlendType{false}
         , mForcedSourceBlendType{BlendFactorType::SourceAlpha}
         , mForcedDestinationBlendType{BlendFactorType::OneMinusSourceAlpha}
-        , mForceCullFacesType{false}
-        , mForcedCullFacesType{CullFacesType::Back}
+        , mForceCullFaceType{false}
+        , mForcedCullFaceType{CullFaceType::Back}
         , mForceFrontFaceOrientationType{false}
         , mForcedFrontFaceOrientationType{FrontFaceOrientation::CounterClockwise}
         , mShowOrientations{false}
@@ -172,11 +172,11 @@ namespace OpenGL
             else
                 set_clear_colour(glm::vec4(0.f));
 
-            toggle_cull_face(true);
-            if (mDebugOptions.mForceCullFacesType)
-                set_cull_face_type(mDebugOptions.mForcedCullFacesType);
+            set_cull_face(true);
+            if (mDebugOptions.mForceCullFaceType)
+                set_cull_face_type(mDebugOptions.mForcedCullFaceType);
             else
-                set_cull_face_type(CullFacesType::Back);
+                set_cull_face_type(CullFaceType::Back);
 
             if (mDebugOptions.mForceFrontFaceOrientationType)
                 set_front_face_orientation(mDebugOptions.mForcedFrontFaceOrientationType);
@@ -189,7 +189,7 @@ namespace OpenGL
             else
                 set_depth_test_type(DepthTestType::Less);
 
-            toggle_blending(true);
+            set_blending(true);
             if (mDebugOptions.mForceBlendType)
                 set_blend_func(mDebugOptions.mForcedSourceBlendType, mDebugOptions.mForcedDestinationBlendType);
             else
@@ -246,7 +246,7 @@ namespace OpenGL
             // Disable depth testing to not cull the screen quad the screen texture will be applied onto.
             FBO::unbind();
             set_depth_test(false);
-            toggle_cull_face(false);
+            set_cull_face(false);
             set_polygon_mode(PolygonMode::Fill);
             glClear(GL_COLOR_BUFFER_BIT);
 
@@ -356,7 +356,7 @@ namespace OpenGL
     void OpenGLRenderer::renderDebug()
     {
         auto& scene = mSceneSystem.getCurrentScene();
-        toggle_cull_face(true);
+        set_cull_face(true);
 
         {// Render all the collision geometry by pushing all the mesh triangles transformed in world-space.
             mDebugOptions.mDebugPoints.clear();
@@ -386,7 +386,7 @@ namespace OpenGL
                     mDebugOptions.mDebugPointsVBO.bind();
                     mDebugOptions.mDebugPointsVBO.setData(mDebugOptions.mDebugPoints, VertexAttribute::Position3D);
 
-                    toggle_cull_face(false); // Disable culling to show exact geometry
+                    set_cull_face(false); // Disable culling to show exact geometry
                     mDebugOptions.mCollisionGeometryShader.set_uniform("viewPosition", mViewInformation.mViewPosition);
                     mDebugOptions.mCollisionGeometryShader.set_uniform("colour", glm::vec4(0.f, 1.f, 0.f, 0.5f));
                     mDebugOptions.mCollisionGeometryShader.set_uniform("model", glm::mat4(1.f));

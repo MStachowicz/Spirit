@@ -51,7 +51,7 @@ namespace OpenGL
             return;
 
         m_debug_shader->use();
-        toggle_cull_face(false); // Disable culling since some geometry will be 2D and facing away from us.
+        set_cull_face(false); // Disable culling since some geometry will be 2D and facing away from us.
         set_depth_test(true);
         set_depth_test_type(DepthTestType::Less);
         set_polygon_mode(PolygonMode::Fill);

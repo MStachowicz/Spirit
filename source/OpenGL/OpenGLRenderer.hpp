@@ -84,8 +84,8 @@ namespace OpenGL
             BlendFactorType mForcedSourceBlendType;
             BlendFactorType mForcedDestinationBlendType;
 
-            bool mForceCullFacesType;
-            CullFacesType mForcedCullFacesType;
+            bool mForceCullFaceType;
+            CullFaceType mForcedCullFaceType;
 
             bool mForceFrontFaceOrientationType;
             FrontFaceOrientation mForcedFrontFaceOrientationType;

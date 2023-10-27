@@ -426,19 +426,19 @@ namespace UI
                 if (!mOpenGLRenderer.mDebugOptions.mForceBlendType) ImGui::EndDisabled();
             }
             { // Cull face options
-                const std::vector<std::pair<OpenGL::CullFacesType, const char*>> cullFaceOptions =
+                const std::vector<std::pair<OpenGL::CullFaceType, const char*>> cullFaceOptions =
                 {
-                    { OpenGL::CullFacesType::Back, "Back" },
-                    { OpenGL::CullFacesType::Front, "Front" },
-                    { OpenGL::CullFacesType::FrontAndBack, "FrontAndBack" }
+                    { OpenGL::CullFaceType::Back, "Back" },
+                    { OpenGL::CullFaceType::Front, "Front" },
+                    { OpenGL::CullFaceType::FrontAndBack, "FrontAndBack" }
                 };
 
-                ImGui::Checkbox("Force cull face type", &mOpenGLRenderer.mDebugOptions.mForceCullFacesType);
-                if (!mOpenGLRenderer.mDebugOptions.mForceCullFacesType) ImGui::BeginDisabled();
+                ImGui::Checkbox("Force cull face type", &mOpenGLRenderer.mDebugOptions.mForceCullFaceType);
+                if (!mOpenGLRenderer.mDebugOptions.mForceCullFaceType) ImGui::BeginDisabled();
                 {
-                    ImGui::ComboContainer("Forced cull faces type", mOpenGLRenderer.mDebugOptions.mForcedCullFacesType, cullFaceOptions );
+                    ImGui::ComboContainer("Forced cull faces type", mOpenGLRenderer.mDebugOptions.mForcedCullFaceType, cullFaceOptions );
                 }
-                if (!mOpenGLRenderer.mDebugOptions.mForceCullFacesType) ImGui::EndDisabled();
+                if (!mOpenGLRenderer.mDebugOptions.mForceCullFaceType) ImGui::EndDisabled();
 
                 const std::vector<std::pair<OpenGL::FrontFaceOrientation, const char*>> frontFaceOrientationOptions =
                 {
@@ -465,8 +465,8 @@ namespace UI
                 mOpenGLRenderer.mDebugOptions.mForceBlendType = false;
                 mOpenGLRenderer.mDebugOptions.mForcedSourceBlendType = OpenGL::BlendFactorType::SourceAlpha;
                 mOpenGLRenderer.mDebugOptions.mForcedDestinationBlendType = OpenGL::BlendFactorType::OneMinusSourceAlpha;
-                mOpenGLRenderer.mDebugOptions.mForceCullFacesType = false;
-                mOpenGLRenderer.mDebugOptions.mForcedCullFacesType = OpenGL::CullFacesType::Back;
+                mOpenGLRenderer.mDebugOptions.mForceCullFaceType = false;
+                mOpenGLRenderer.mDebugOptions.mForcedCullFaceType = OpenGL::CullFaceType::Back;
                 mOpenGLRenderer.mDebugOptions.mForceFrontFaceOrientationType = false;
                 mOpenGLRenderer.mDebugOptions.mForcedFrontFaceOrientationType = OpenGL::FrontFaceOrientation::CounterClockwise;
             }

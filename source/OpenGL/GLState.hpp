@@ -22,7 +22,6 @@ using GLHandle   = unsigned int; // A GLHandle is an ID used by OpenGL to point 
 //using GLfloat  = float;  // Unused
 
 // Define wrappers to strongly type GLenum types.
-// All the wrappers provide helper functions to extract the values or string representations.
 namespace OpenGL
 {
     constexpr inline static bool LogGLTypeEvents = false;
@@ -319,8 +318,8 @@ namespace OpenGL
         ConstantAlpha,             // Factor is equal to the alpha component of the constant colour vector.
         OneMinusConstantAlpha,     // Factor is equal to 1 minus alpha of the constant colour vector.
     };
-    enum class CullFacesType : uint8_t
-{
+    enum class CullFaceType : uint8_t
+    {
         Back,          // Culls only the back faces (Default OpenGL setting).
         Front,         // Culls only the front faces.
         FrontAndBack  // Culls both the front and back faces.
@@ -395,27 +394,21 @@ namespace OpenGL
         shader_storage_block_binding,
         copy_buffer_sub_data
     };
-}
 
-// OpenGL functions using the strongly typed enums defined by us.
-// Not all functions accept all the enum values. For example in tex_storage_3D the TextureType p_target only accepts two values.
-// Reading the param comments will clearly state the valid combinations.
-namespace OpenGL
-{
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// GENERAL STATE FUNCTIONS
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// GENERAL STATE FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void set_depth_test(bool p_depth_test);
 	void set_depth_test_type(DepthTestType p_type);
 	// Specifies if objects with alpha values <1 should be blended using function set with set_blend_func().
-    void toggle_blending(bool p_blend);
+    void set_blending(bool p_blend);
     // Specifies how the RGBA factors of source and destination are blended to give the final pixel colour when encountering transparent objects.
     void set_blend_func(BlendFactorType p_source_factor, BlendFactorType p_destination_factor);
     // Specifies if facets specified by set_front_face_orientation are candidates for culling.
-    void toggle_cull_face(bool p_cull);
+    void set_cull_face(bool p_cull);
     // Specifies which facets are candidates for culling.
-    void set_cull_face_type(CullFacesType p_cull_face_type);
+    void set_cull_face_type(CullFaceType p_cull_face_type);
     // The orientation of front-facing polygons. Used to mark facets for culling.
     void set_front_face_orientation(FrontFaceOrientation p_front_face_orientation);
     // The red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
@@ -708,7 +701,7 @@ namespace OpenGL
     const char* get_name(ShaderResourceProperty p_shader_resource_property);
     const char* get_name(DepthTestType p_depth_test_type);
     const char* get_name(BlendFactorType p_blend_factor_type);
-    const char* get_name(CullFacesType p_cull_faces_type);
+    const char* get_name(CullFaceType p_cull_faces_type);
     const char* get_name(FrontFaceOrientation p_front_face_orientation);
     const char* get_name(PolygonMode p_polygon_mode);
     const char* get_name(PrimitiveMode p_primitive_mode);
@@ -815,7 +808,7 @@ namespace OpenGL
     int convert(ShaderResourceProperty p_shader_resource_property);
     int convert(DepthTestType p_depth_test_type);
     int convert(BlendFactorType p_blend_factor_type);
-    int convert(CullFacesType p_cull_faces_type);
+    int convert(CullFaceType p_cull_faces_type);
     int convert(FrontFaceOrientation p_front_face_orientation);
     int convert(PolygonMode p_polygon_mode);
     int convert(PrimitiveMode p_primitive_mode);
