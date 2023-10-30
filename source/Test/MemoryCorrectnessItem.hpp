@@ -49,7 +49,7 @@ namespace Test
             return errorCount;
         }
 
-        MemoryCorrectnessItem(const int pID = 0);
+        MemoryCorrectnessItem();
         ~MemoryCorrectnessItem();
         MemoryCorrectnessItem(const MemoryCorrectnessItem& pOther);
         MemoryCorrectnessItem(MemoryCorrectnessItem&& pOther);

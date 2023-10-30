@@ -7,7 +7,7 @@
 
 namespace Test
 {
-    MemoryCorrectnessItem::MemoryCorrectnessItem(const int pID /*= 0*/)
+    MemoryCorrectnessItem::MemoryCorrectnessItem()
         : mID(instanceID++)
     {
         if constexpr (verbose)
