@@ -22,13 +22,12 @@ namespace Utility
         int m_height; // Height in pixels
         int m_number_of_channels; // RGBA
 
-        Image(const std::filesystem::path& p_path);
-        ~Image();
-
-        Image(const Image& p_other) = delete;
-        Image(Image&& p_other) = delete;
+        Image(const std::filesystem::path& p_path) noexcept;
+        ~Image() noexcept;
+        Image(Image&& p_other) noexcept;
+        Image& operator=(Image&& p_other) noexcept;
+        Image(const Image& p_other)            = delete;
         Image& operator=(const Image& p_other) = delete;
-        Image& operator=(Image&& p_other) = delete;
 
         // Raw access to the image pixel data. Access for read only.
         std::byte* get_data() const { return m_data; }

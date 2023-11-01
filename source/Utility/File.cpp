@@ -13,7 +13,7 @@
 
 namespace Utility
 {
-    Image::Image(const std::filesystem::path& p_path)
+    Image::Image(const std::filesystem::path& p_path) noexcept
         : m_data{nullptr}
         , m_filepath{p_path}
         , m_width{0}
@@ -29,9 +29,31 @@ namespace Utility
         m_data = (std::byte*)(stbi_load(m_filepath.string().c_str(), &m_width, &m_height, &m_number_of_channels, 0));
         ASSERT(m_data != nullptr, "Failed to load texture at path '{}'", m_filepath.string());
     }
-    Image::~Image()
+    Image::~Image() noexcept
     {
-        stbi_image_free(m_data);
+        if (m_data)
+            stbi_image_free(m_data);
+    }
+
+    Image::Image(Image&& p_other) noexcept
+        : m_data{std::exchange(p_other.m_data, nullptr)}
+        , m_filepath{std::exchange(p_other.m_filepath, {})}
+        , m_width{std::exchange(p_other.m_width, 0)}
+        , m_height{std::exchange(p_other.m_height, 0)}
+        , m_number_of_channels{std::exchange(p_other.m_number_of_channels, 0)}
+    {}
+
+    Image& Image::operator=(Image&& p_other) noexcept
+    {
+        if (this != &p_other)
+        {
+            m_data               = std::exchange(p_other.m_data, nullptr);
+            m_filepath           = std::exchange(p_other.m_filepath, {});
+            m_width              = std::exchange(p_other.m_width, 0);
+            m_height             = std::exchange(p_other.m_height, 0);
+            m_number_of_channels = std::exchange(p_other.m_number_of_channels, 0);
+        }
+        return *this;
     }
 
     std::string File::readFromFile(const std::filesystem::path& pPath)
