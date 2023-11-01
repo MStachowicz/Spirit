@@ -230,7 +230,7 @@ namespace OpenGL
         constexpr bool operator==(const ShaderStorageBlockVariable& p_other) const = default;
     };
 
-    // A Shader Storage block Object (SSBO)
+    // A Shader Storage block Object (ShaderStorageBlock)
     // SSBOs are a lot like Uniform Buffer Objects (UBO's). SSBOs are bound to ShaderStorageBlockBindingPoint's, just as UBO's are bound to UniformBlockBindingPoint's.
     // Compared to UBO's SSBOs:
     // Can be much larger. The spec guarantees that SSBOs can be up to 128MB. Most implementations will let you allocate a size up to the limit of GPU memory.
@@ -289,6 +289,13 @@ namespace OpenGL
         //@param p_shader_program Shader program that owns this StorageBlock.
         //@param p_shader_storage_block_index Index of the shader storage block, not to be confused with buffer binding point.
         ShaderStorageBlock(GLHandle p_shader_program, GLuint p_shader_storage_block_index) noexcept;
+
+        ~ShaderStorageBlock()                                       = default;
+        ShaderStorageBlock(ShaderStorageBlock&& p_other)            = default;
+        ShaderStorageBlock& operator=(ShaderStorageBlock&& p_other) = default;
+
+        ShaderStorageBlock(const ShaderStorageBlock& p_other)            = delete;
+        ShaderStorageBlock& operator=(const ShaderStorageBlock& p_other) = delete;
     };
 
     // Handle for an OpenGL VBO. Data can be pushed to the GPU by calling setData with the type of vertex attribute being pushed.

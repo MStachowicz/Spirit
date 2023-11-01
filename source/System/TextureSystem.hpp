@@ -24,7 +24,7 @@ namespace System
 
         TextureRef getTexture(const std::filesystem::path& pFilePath)
         {
-            return mTextureManager.getOrCreate([&pFilePath](const Data::Texture& pTexture)
+            return mTextureManager.get_or_create([&pFilePath](const Data::Texture& pTexture)
             {
                 return pTexture.m_image_ref->m_filepath == pFilePath;
             }, pFilePath);

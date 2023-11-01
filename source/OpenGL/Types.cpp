@@ -572,7 +572,7 @@ namespace OpenGL
             if constexpr (LogGLTypeEvents) LOG("SSBO '{}' free resource. GLHandle: {} Size: {}B bounding point: {}", m_identifier, m_handle, m_size, m_binding_point);
         }
 
-        if constexpr (LogGLTypeEvents) LOG("UBO '{}' destroyed address: {}", m_identifier, m_handle, (void*)(this));
+        if constexpr (LogGLTypeEvents) LOG("SSBO '{}' destroyed address: {}", m_identifier, m_handle, (void*)(this));
     }
     SSBO::SSBO(SSBO&& p_other) noexcept
         : m_handle{std::exchange(p_other.m_handle, 0)}
@@ -654,7 +654,7 @@ namespace OpenGL
         // The names of the blocks have to match.
         // The variables must be the same and listed in the same order.
         // #TODO: the block must be marked as shared
-        m_buffer_backing = s_shader_storage_block_binding_points.getOrCreate([this](const SSBO& p_SSBO)
+        m_buffer_backing = s_shader_storage_block_binding_points.get_or_create([this](const SSBO& p_SSBO)
         {
             if (p_SSBO.m_identifier == m_identifier)
             {
@@ -832,7 +832,7 @@ namespace OpenGL
         // The names of the blocks have to match.
         // The variables must be the same and listed in the same order.
         // TODO: the block must be marked as shared?
-        m_buffer_backing = uniform_block_binding_points.getOrCreate([this](const UBO& p_UBO)
+        m_buffer_backing = uniform_block_binding_points.get_or_create([this](const UBO& p_UBO)
         {
             if (p_UBO.m_uniform_block_name == m_name)
             {

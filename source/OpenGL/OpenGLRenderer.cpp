@@ -91,8 +91,8 @@ namespace OpenGL
         , m_particle_renderer{}
         , m_light_position_renderer{}
         , m_shadow_mapper{p_window}
-        , m_missing_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "missing.png")}
-        , m_blank_texture{pTextureSystem.mTextureManager.create(Config::Texture_Directory / "black.jpg")}
+        , m_missing_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
+        , m_blank_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
         , m_cube{pMeshSystem.mCubePrimitive}
         , mViewInformation{}
         , mDebugOptions{}

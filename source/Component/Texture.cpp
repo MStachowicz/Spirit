@@ -8,8 +8,8 @@
 
 namespace Data
 {
-    Texture::Texture(const std::filesystem::path& p_filepath)
-        : m_image_ref{Utility::File::s_image_files.getOrCreate([&p_filepath](const Utility::Image& p_image){ return p_image.m_filepath == p_filepath; }, p_filepath)}
+    Texture::Texture(const std::filesystem::path& p_filepath) noexcept
+        : m_image_ref{Utility::File::s_image_files.get_or_create([&p_filepath](const Utility::Image& p_image){ return p_image.m_filepath == p_filepath; }, p_filepath)}
         , m_GL_texture{*m_image_ref}
     {
         LOG("Data::Texture '{}' loaded", m_image_ref->m_filepath.string());

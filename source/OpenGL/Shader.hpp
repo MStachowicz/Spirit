@@ -66,7 +66,7 @@ namespace OpenGL
         template<typename T>
         static inline void set_block_uniform(const char* p_name, const T& p_data)
         {
-            UniformBlock::uniform_block_binding_points.for_each([&p_name, &p_data](const UBO& p_UBO)
+            UniformBlock::uniform_block_binding_points.for_each([&p_name, &p_data](UBO& p_UBO)
             {
                 for (const auto& variable : p_UBO.m_variables)
                 {

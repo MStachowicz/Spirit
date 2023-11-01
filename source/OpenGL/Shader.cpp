@@ -90,6 +90,7 @@ namespace OpenGL
         }
         { // m_shader_storage_blocks
             const GLint block_count = get_shader_storage_block_count(m_handle);
+            m_shader_storage_blocks.reserve(block_count);
             for (int block_index = 0; block_index < block_count; block_index++)
                 m_shader_storage_blocks.emplace_back(m_handle, block_index);
         }

@@ -66,7 +66,7 @@ namespace Platform
         }
         { // Set the taskbar icon for the window
             const auto icon_path = Config::Texture_Directory / "Icons" / "Icon.png";
-            auto icon_image      = Utility::File::s_image_files.getOrCreate([&icon_path](const Utility::Image& p_image) { return p_image.m_filepath == icon_path; }, icon_path);
+            auto icon_image      = Utility::File::s_image_files.get_or_create([&icon_path](const Utility::Image& p_image) { return p_image.m_filepath == icon_path; }, icon_path);
             GLFWimage icon;
             icon.pixels = (unsigned char*)(icon_image->get_data());
             icon.width  = icon_image->m_width;

@@ -10,12 +10,6 @@
 // STD
 #include <filesystem>
 #include <optional>
-#include <string>
-
-namespace System
-{
-    class TextureSystem;
-}
 
 namespace Data
 {
@@ -24,8 +18,12 @@ namespace Data
     class Texture
     {
     public:
-        Texture(const std::filesystem::path& p_filePath);
-        ~Texture() = default;
+        Texture(const std::filesystem::path& p_filePath) noexcept;
+        ~Texture()                                     = default;
+        Texture(Texture&& p_other) noexcept            = default;
+        Texture& operator=(Texture&& p_other) noexcept = default;
+        Texture(const Texture& p_other)                = delete;
+        Texture& operator=(const Texture& p_other)     = delete;
 
         Utility::File::ImageRef m_image_ref;
         OpenGL::Texture m_GL_texture;

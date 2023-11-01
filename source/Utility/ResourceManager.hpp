@@ -1,276 +1,344 @@
 #pragma once
 
-#include "EventDispatcher.hpp"
+#include "Logger.hpp"
+#include "FunctionTraits.hpp"
 
-#include <concepts>
-#include <memory>
-#include <optional>
-#include <tuple>
 #include <type_traits>
-#include <utility>
-#include <vector>
+#include <stddef.h>
+#include <memory>
+#include <unordered_set>
+#include <optional>
 
 namespace Utility
 {
-    template <typename... Args>
-    struct ArgTypes
-    {};
-
-    template <typename T, typename... Args>
-    struct ArgTypes<T, Args...>
-    {
-        using Head = T;
-        using Tail = ArgTypes<Args...>;
-    };
-
-    template <typename... Args>
-    using ExtractArgTypes = ArgTypes<Args...>;
-
-    template <typename Func>
-    struct FunctionTraits : public FunctionTraits<decltype(&Func::operator())>
-    {};
-
-    template <typename ClassType, typename ReturnType, typename... Args>
-    struct FunctionTraits<ReturnType (ClassType::*)(Args...) const>
-    {
-        using Return                         = ReturnType;
-        using ArgsTuple                      = std::tuple<Args...>;
-        using ArgTypes                       = ExtractArgTypes<Args...>;
-        static constexpr std::size_t NumArgs = std::tuple_size_v<ArgsTuple>;
-    };
-
-    template <typename ReturnType>
-    struct FunctionTraits<ReturnType()>
-    {
-        using Return                         = ReturnType;
-        using ArgsTuple                      = std::tuple<>;
-        using ArgTypes                       = ExtractArgTypes<>;
-        static constexpr std::size_t NumArgs = 0;
-    };
-
-    template <typename Func>
-    using ReturnType = typename FunctionTraits<Func>::Return;
-
-    template <typename Func>
-    using ArgsTuple = typename FunctionTraits<Func>::ArgsTuple;
-
-    template <typename Func, std::size_t N>
-    using ArgTypeN = typename std::tuple_element_t<N, ArgsTuple<Func>>;
-
     // Forward declare the ResoureRef class so it can be used by ResourceManager
     template <typename Resource>
     class ResourceRef;
 
-    // ResourceManager handles the construction and destruction of Resource types.
-    // This manager acts as a factory and returns shared ownership ResourceRef types that can be safely used with RAII.
-    // The get and getOrCreate functions allow you to lookup or lookup and create (if not found) instances of Resource wrapped by ResourceRef.
-    template <typename Resource>
+    // ResourceManager is a container for a Resource type.
+    // It manages the lifetime of the Resource instances and provides a way to access them via ResourceRef objects.
+    template<typename Resource>
     class ResourceManager
     {
-        static_assert(!std::is_pointer_v<Resource> && !std::is_reference_v<Resource>, "Resource must not be a pointer or reference type. ResourceManager manages the memory via the ReferenceRef counters");
-        friend class ResourceRef<Resource>; // make ResourceRef a friend class - only ResourceRef can call increment and decrement count.
+        static_assert(std::is_object_v<Resource>, "Non-object types are forbidden. ResourceManager stores the data itself.");
 
-        // A collection of Resource objects, which also keeps track of their reference counts via calls to increment and decrement count.
-        std::vector<std::pair<std::unique_ptr<Resource>, size_t>> mResourcesAndCounts;
+        using RefType = ResourceRef<Resource>;
+        friend class RefType;
 
-        // Increment the count for pResource.
-        void incrementCount(Resource* pResource)
+        // The ResourceData struct is used to store the Resource and the number of references to it.
+        // Declaring a struct to contain both avoids the need for manually calculating alignment requirements for the buffer.
+        struct ResourceData
         {
-            for (auto& resourceAndCount : mResourcesAndCounts)
-            {
-                if (resourceAndCount.first.get() == pResource)
-                {
-                    ++resourceAndCount.second;
-                    return;
-                }
-            }
-        }
-        // Decrement the count for pResource, if reached 0 delete the underlying resource using swap and pop idiom.
-        void decrementCount(Resource* pResource)
-        {
-            for (size_t i = 0; i < mResourcesAndCounts.size(); ++i)
-            {
-                if (mResourcesAndCounts[i].first.get() == pResource)
-                {
-                    --mResourcesAndCounts[i].second;
-                    if (mResourcesAndCounts[i].second == 0)
-                    {
-                        mResourcesAndCounts[i] = std::move(mResourcesAndCounts.back());
-                        mResourcesAndCounts.pop_back();
-                    }
-                    return;
-                }
-            }
-        }
+            Resource m_resource;
+            size_t m_counter;
+        };
+
+        // Needs to fit the Resource and ResourceCounter with both aligned to the max alignment.
+        static constexpr size_t instance_size    = sizeof(ResourceData);
+        static constexpr size_t offsetof_counter = offsetof(ResourceData, m_counter);
+        static constexpr size_t initial_capacity = 1u;
+
+
+        std::size_t m_size;     // The index past the last element in the buffer.
+        std::size_t m_capacity; // The number of elements that can be held in currently allocated storage.
+        // Buffer for all the instances of ResourceData.
+        // Using our own buffer we can control the memory allocation and deallocation.
+        // The buffer contains a ResourceData instance at each index unless the index is in m_free_indices.
+        std::byte* m_data;
+        std::unordered_set<size_t> m_free_indices; // Indices of free elements in the buffer. Memory at these addresses is allocated but not initialised.
 
     public:
-        ResourceManager()  = default;
-        ~ResourceManager() = default;
-        // Delete the copy constructor and assignment operators.
-        ResourceManager(const ResourceManager& other)            = delete;
-        ResourceManager& operator=(const ResourceManager& other) = delete;
-
-        // Move constructor
-        ResourceManager(ResourceManager&& other) noexcept
-            : mResourcesAndCounts(std::move(other.mResourcesAndCounts))
+        ResourceManager() noexcept
+            : m_size{0u}
+            , m_capacity{initial_capacity}
+            , m_data{(std::byte*)malloc(m_capacity * instance_size)}
+            , m_free_indices{}
         {}
-        // Move assignment operator
-        ResourceManager& operator=(ResourceManager&& other) noexcept
+        ~ResourceManager() noexcept
+        {// Call the destructor of all the instances then deallocate the memory.
+            if (m_data != nullptr)
+            {
+                clear();
+                free(m_data);
+            }
+        }
+        // Move construct a ResourceManager.
+        ResourceManager(ResourceManager&& p_other) noexcept
+            : m_size{std::move(p_other.m_size)}
+            , m_capacity{std::move(p_other.m_capacity)}
+            , m_data{std::exchange(p_other.m_data, nullptr)}
+            , m_free_indices{std::move(p_other.m_free_indices)}
+        {}
+        // Move assign a ResourceManager.
+        ResourceManager& operator=(ResourceManager&& p_other) noexcept
         {
-            if (this != &other)
-                mResourcesAndCounts = std::move(other.mResourcesAndCounts);
+            if (this != &p_other)
+            {
+                if (m_data != nullptr)
+                {
+                    clear();
+                    free(m_data);
+                }
+
+                m_size         = std::move(p_other.m_size);
+                m_capacity     = std::move(p_other.m_capacity);
+                m_data         = std::exchange(p_other.m_data, nullptr);
+                m_free_indices = std::move(p_other.m_free_indices);
+            }
 
             return *this;
         }
+        // Delete the copy constructor and assignment operators.
+        ResourceManager(const ResourceManager& p_other)            = delete;
+        ResourceManager& operator=(const ResourceManager& p_other) = delete;
 
-        // Try to get a ResourceRef using pFindIfFunction, returns a std::nullopt if a ResourceRef was not found.
-        template <typename Func>
-        std::optional<ResourceRef<Resource>> get(const Func&& pFindIfFunction)
+
+        size_t size()     const { return m_size - m_free_indices.size(); }
+        size_t capacity() const { return m_capacity; }
+        bool empty()      const { return size() == 0; }
+        void clear()
         {
-            static_assert(std::is_same_v<ReturnType<Func>, bool>, "Function must return bool");
-            static_assert(FunctionTraits<Func>::NumArgs == 1, "Function must take 1 argument");
-            static_assert(std::is_same_v<ArgTypeN<Func, 0>, const Resource&>, "Function argument must be a 'const Resource&'");
+            // Call the destructor for all initialised instances of ResourceData.
+            for (auto i = 0; i < m_size; i++)
+                if (!m_free_indices.contains(i))
+                    get_resource(i).~Resource();
 
-            if (mResourcesAndCounts.empty())
-                return std::nullopt;
-
-            for (auto& [resource, count] : mResourcesAndCounts)
+            m_size = 0;
+        }
+        void reserve(std::size_t p_capacity)
+        {
+            if (p_capacity > m_capacity)
             {
-                if (pFindIfFunction(*resource))
+                m_capacity = p_capacity;
+                LOG("[ResourceManager] - Capacity changed", alignof(ResourceData));
+                std::byte* new_data = (std::byte*)malloc(m_capacity * instance_size);
+
+                // Placement-new move-construct the ResourceData from this into the auxillary store.
+                // Then call the destructor on the old instances that were moved.
+                for (auto i = 0; i < m_size; i++)
                 {
-                    return ResourceRef<Resource>(resource.get(), this);
+                    if (!m_free_indices.contains(i))
+                    {
+                        new (&new_data[i * instance_size]) Resource(std::move(get_resource(i)));
+                        new (&new_data[(i * instance_size) + offsetof_counter]) size_t(get_counter(i));
+                        get_resource(i).~Resource();
+                    }
                 }
+
+                free(m_data);
+                m_data = new_data;
             }
-
-            return std::nullopt;
         }
 
-        // Force create a Resource using pConstructionArgs.
-        // This function doesn't check if the Resource already exists therefore can lead to duplicate Resources.
-        // Prefer to use getOrCreate to search the already created Resource objects before adding a new one.
-        template <typename... Args>
-        ResourceRef<Resource> create(Args&&... pConstructionArgs)
+        // Move the Resource into the buffer.
+        //@param p_value The Resource to copy into the buffer. Must be move constructible.
+        //@return a ResourceRef to the Resource in the buffer.
+        [[nodiscard]] RefType insert(Resource&& p_value)
         {
-            static_assert(std::is_constructible_v<Resource, Args...>, "Args given cannot be used to construct a Resource type");
+            if (m_free_indices.empty())
+            {// Constructing into the end of the buffer.
+                if (m_size + 1 > m_capacity)
+                    reserve(next_power_of_2(m_capacity));
 
-            mResourcesAndCounts.emplace_back(std::make_unique<Resource>(std::forward<Args>(pConstructionArgs)...), 0);
-            return ResourceRef<Resource>(mResourcesAndCounts.back().first.get(), this);
-        }
-
-        // Try to get a ResourceRef using pFindIfFunction, if one is not found, uses pConstructionArgs to construct a new Resource and return a ResourceRef to it.
-        template <typename Func, typename... Args>
-        ResourceRef<Resource> getOrCreate(const Func&& pFindIfFunction, Args&&... pConstructionArgs)
-        {
-            static_assert(std::is_constructible_v<Resource, Args...>, "Args given cannot be used to construct a Resource type");
-
-            if (auto resourceRef = get(std::forward<const Func>(pFindIfFunction)))
-            {
-                return *resourceRef;
+                auto resource = new (&m_data[m_size * instance_size]) Resource(std::move(p_value));
+                auto counter  = new (&m_data[(m_size * instance_size) + offsetof_counter]) size_t(std::move(0));
+                auto index    = m_size++;
+                return RefType{*resource, *this, index};
             }
             else
-            {
-                mResourcesAndCounts.emplace_back(std::make_unique<Resource>(std::forward<Args>(pConstructionArgs)...), 0);
-                return ResourceRef<Resource>(mResourcesAndCounts.back().first.get(), this);
+            { // Constructing into a gap inside the buffer where a resource was previously erased.
+                auto index = *m_free_indices.begin();
+                auto resource = new (&m_data[m_size * instance_size]) Resource(std::move(p_value));
+                auto counter  = new (&m_data[(m_size * instance_size) + offsetof_counter]) size_t(std::move(0));
+                m_free_indices.erase(m_free_indices.begin());
+                return RefType{*resource, *this, index};
             }
         }
+        // Copy the Resource into the buffer is removed. Prefer to use move insert if possible.
+        RefType insert(const Resource& p_value) = delete;
 
-        // Iterate over every Resource in the Manager and call pFunction on it
-        template <typename Func>
-        void forEach(const Func&& pFunction) const
+
+        // Find a Resource in the buffer. If the Resource is not found then create one using construction args and return it.
+        // If multiple Resources are found then the first one is returned.
+        //@param find_if_func A function that takes a Resource and returns true if it is the Resource we are looking for.
+        //@param construction_args The arguments to pass to the Resource constructor if the Resource is not found.
+        //@return A valid ResourceRef to the Resource in the buffer.
+        template <typename Func, typename... Args>
+        [[nodiscard]] RefType get_or_create(const Func&& find_if_func, Args&&... construction_args)
         {
-            static_assert(FunctionTraits<Func>::NumArgs == 1, "Function must take 1 argument");
+            static_assert(std::is_constructible_v<Resource, Args...>, "construction_args given cannot be used to construct a Resource type");
+            static_assert(FunctionTraits<Func>::NumArgs == 1, "find_if_func must take 1 argument");
             static_assert(std::is_same_v<ArgTypeN<Func, 0>, const Resource&>, "Function argument must be a 'const Resource&'");
 
-            for (auto& [resource, count] : mResourcesAndCounts)
+            for (auto i = 0; i < m_size; i++)
             {
-                pFunction(*resource);
+                if (!m_free_indices.contains(i))
+                {
+                    if (find_if_func(get_resource(i)))
+                        return RefType(get_resource(i), *this, i);
+                }
+            }
+
+            return insert(Resource(std::forward<Args>(construction_args)...));
+        }
+        template <typename Func>
+        void for_each(const Func&& func) const
+        {
+            static_assert(FunctionTraits<Func>::NumArgs == 1, "func must take 1 argument");
+            static_assert(std::is_same_v<ArgTypeN<Func, 0>, const Resource&>, "Function argument must be a 'const Resource&'");
+
+            for (auto i = 0; i < m_size; i++)
+                if (!m_free_indices.contains(i))
+                    func(get_resource(i));
+        }
+        template <typename Func>
+        void for_each(const Func&& func)
+        {
+            static_assert(FunctionTraits<Func>::NumArgs == 1, "func must take 1 argument");
+            static_assert(std::is_same_v<ArgTypeN<Func, 0>, Resource&>, "Function argument must be a 'Resource&'");
+
+            for (auto i = 0; i < m_size; i++)
+                if (!m_free_indices.contains(i))
+                    func(get_resource(i));
+        }
+
+    private:
+        [[nodiscard]] Resource& get_resource(size_t p_index)
+        {
+           if (p_index >= m_size)
+               throw std::out_of_range("Index out of range");
+           ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+
+           return *((Resource*)&m_data[p_index * instance_size]);
+        }
+        [[nodiscard]] size_t& get_counter(size_t p_index)
+        {
+           if (p_index >= m_size)
+               throw std::out_of_range("Index out of range");
+           ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+
+           return *((size_t*)&m_data[(p_index * instance_size) + offsetof_counter]);
+        }
+
+        // Increment the count for resource at p_index.
+        void increment(size_t p_index)
+        {
+            get_counter(p_index)++;
+        }
+        // Decrement the count for ResourceData at p_index.
+        // If the count reaches 0 then the ResourceData is removed from the manager.
+        void decrement(size_t p_index)
+        {
+            if (p_index >= m_size)                throw std::out_of_range("Index out of range");
+            if (m_free_indices.contains(p_index)) throw std::logic_error("Trying to access a free index!");
+
+            if (--get_counter(p_index) == 0)
+                erase(p_index);
+        }
+        void erase(size_t index)
+        {
+            if (index == m_size - 1)
+            {// Erasing the last element in the buffer.
+                get_resource(index).~Resource();
+                m_size--;
+            }
+            else
+            {// Erasing an element in the middle of the buffer. Leaves gap that can be used constructing new Resource.
+                get_resource(index).~Resource();
+                m_free_indices.insert(index);
             }
         }
 
-        // Iterate over every Resource in the Manager and call p_function on it.
-        //@param p_function Function which will be called on every element in the manager. It must be invocable with a type Resource.
-        template <typename Func>
-        requires std::invocable<Func, Resource>
-        void for_each(const Func&& p_function)
-        {
-            for (auto& [resource, count] : mResourcesAndCounts)
-                p_function(*resource);
-        }
+    	// Returns the next power of 2 larger than p_val
+		static size_t next_power_of_2(const size_t& p_val)
+		{
+			size_t power = 1;
+			while (power <= p_val)
+				power *= 2;
+
+			return power;
+		}
     };
 
-    // A wrapper around a pointer to a Resource. ResourceRef is guaranteed to always point at a valid Resource* and can be directly dereferenced and used as though it was a type Resource*.
-    // The memory and ownership of Resource objects is handled by a corresponding ResourceManager<Resource>.
-    // ResourceRef objects can be safely copied moved but cannot be themselves constructed other than by calling ResourceManager::getOrCreate.
-    template <typename Resource>
+    template<typename Resource>
     class ResourceRef
     {
-        static_assert(!std::is_pointer_v<Resource> && !std::is_reference_v<Resource>, "Resource must not be a pointer or reference type. ResourceManager manages the memory via the ReferenceRef counters");
-        friend class ResourceManager<Resource>;
+        using Manager = ResourceManager<Resource>;
 
-        Resource* mResource;
-        ResourceManager<Resource>* mResourceManager;
+        Resource* m_data;   // A non-owning pointer to the resource in the ResourceManager's storage.
+        Manager* m_manager; // A non-owning pointer to the ResourceManager that owns the resource.
+        std::optional<size_t> m_index;     // The index of the ResourceData in the ResourceManager, allows us to avoid linear searching the Manager buffer.
 
-        // The only constructor of ResourceRef, accessible only to ResourceManager.
-        ResourceRef(Resource* pResource, ResourceManager<Resource>* pResourceManager) noexcept
-            : mResource(pResource)
-            , mResourceManager(pResourceManager)
+        // The ResourceManager is a friend so it can access the only valid constructor (private).
+        friend class Manager;
+        ResourceRef(Resource& p_data, Manager& p_manager, size_t p_index) noexcept : m_data(&p_data), m_manager(&p_manager), m_index(p_index)
         {
-            mResourceManager->incrementCount(mResource);
+            p_manager.increment(*m_index);
         }
-
     public:
-        // On destory decrement the referece count for the manager.
+        // Default construct an invalid ResourceRef. Equivalent to constructing a nullopt optional in std.
+        ResourceRef()  noexcept : m_index(std::nullopt), m_data(nullptr), m_manager{nullptr} {}        // On destory decrement the referece count for the manager.
         ~ResourceRef() noexcept
         {
-            if (mResourceManager)
-                mResourceManager->decrementCount(mResource);
-        }
-        // On copy construct, copy the resource ptr and manager ptr and increment the count.
-        ResourceRef(const ResourceRef& pOther) noexcept
-            : mResource(pOther.mResource)
-            , mResourceManager(pOther.mResourceManager)
-        {
-            mResourceManager->incrementCount(mResource);
+            if (is_valid())
+                m_manager->decrement(*m_index);
         }
 
-        // On copy assigment, decrement the count for the current resource and assign this ResourceRef pOther data.
-        ResourceRef& operator=(const ResourceRef& pOther) noexcept
+         // On copy construct, copy the resource ptr and manager ptr and increment the count.
+        ResourceRef(const ResourceRef& p_other) noexcept
+            : m_data{p_other.m_data}
+            , m_manager{p_other.m_manager}
+            , m_index{p_other.m_index}
+        {
+            if (is_valid())
+                m_manager->increment(*m_index);
+        }
+        // On copy assigment, decrement the count for the current resource and assign this ResourceRef p_other data.
+        ResourceRef& operator=(const ResourceRef& p_other) noexcept
         {
             // If the resource is the same one managed by other, we can safely skip the decrement and increments since the net ResourceRef change will be 0
-            if (this != &pOther && mResource != pOther.mResource)
+            if (this != &p_other)
             {
-                mResourceManager->decrementCount(mResource);
-                mResource        = pOther.mResource;
-                mResourceManager = pOther.mResourceManager;
-                mResourceManager->incrementCount(mResource);
+                if (is_valid())
+                    m_manager->decrement(*m_index);
+
+                m_data    = p_other.m_data;
+                m_manager = p_other.m_manager;
+                m_index   = p_other.m_index;
+
+                if (is_valid())
+                    m_manager->increment(*m_index);
+            }
+            return *this;
+        }
+        // On move construct, move the resource ptr and manager ptr and index. Leave the old ResourceRef in an invalid state.
+        ResourceRef(ResourceRef&& p_other) noexcept
+            : m_data{std::exchange(p_other.m_data, nullptr)}
+            , m_manager{std::exchange(p_other.m_manager, nullptr)}
+            , m_index{std::exchange(p_other.m_index, std::nullopt)}
+        {}
+        // On move assignment, decrement the count for the current resource and steal p_other's data.
+        ResourceRef& operator=(ResourceRef&& p_other) noexcept
+        {
+            if (this != &p_other)
+            {
+                if (is_valid())
+                    m_manager->decrement(*m_index);
+
+                m_data    = std::exchange(p_other.m_data, nullptr);
+                m_manager = std::exchange(p_other.m_manager, nullptr);
+                m_index   = std::exchange(p_other.m_index, std::nullopt);
             }
             return *this;
         }
 
-        ResourceRef(ResourceRef&& pOther) noexcept
-            : mResource(pOther.mResource)
-            , mResourceManager(pOther.mResourceManager)
-        {
-            pOther.mResource        = nullptr;
-            pOther.mResourceManager = nullptr;
-        }
-        ResourceRef& operator=(ResourceRef&& pOther) noexcept
-        {
-            // If the resource is the same one managed by other, we can safely skip the decrement and increments since the net ResourceRef change will be 0
-            if (this != &pOther && mResource != pOther.mResource)
-            {
-                mResourceManager->decrementCount(mResource);
-                mResource               = pOther.mResource;
-                mResourceManager        = pOther.mResourceManager;
-                pOther.mResource        = nullptr;
-                pOther.mResourceManager = nullptr;
-            }
-            return *this;
-        }
-
-        Resource& operator*() { return *mResource; }
-        const Resource& operator*() const { return *mResource; }
-        Resource* const operator->() { return mResource; }
-        const Resource* const operator->() const { return mResource; }
+        constexpr const Resource* operator->() const noexcept   { return m_data;  };
+        constexpr Resource* operator->() noexcept               { return m_data;  };
+        constexpr const Resource& operator*() const& noexcept   { return *m_data; };
+        constexpr Resource& operator*() & noexcept              { return *m_data; };
+        constexpr const Resource&& operator*() const&& noexcept { return *m_data; };
+        constexpr Resource&& operator*() && noexcept            { return *m_data; };
+        constexpr bool is_valid() const noexcept                { return m_data != nullptr; };
+        constexpr explicit operator bool() const noexcept       { return is_valid(); };
     };
 } // namespace Utility
