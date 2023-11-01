@@ -4,9 +4,18 @@
 
 #include <string>
 #include <vector>
+#include <format>
+#include <source_location>
 
 namespace Test
 {
+    // Modifies source_location into a IDE hyperlink friendly format
+    std::string to_string(const std::source_location& p_location);
+
+    #define CHECK_TRUE(p_conditional, p_test_name)        { runUnitTest({p_conditional, p_test_name,         std::format("Expected: '{}' to be true\n{}", #p_conditional,        to_string(std::source_location::current()))}); }
+    #define CHECK_EQUAL(p_value, p_expected_value, p_test_name) { runUnitTest({p_value == p_expected_value, p_test_name, std::format("Expected: '{}' to be '{}' but was '{}'\n{}", #p_value, #p_expected_value, p_value, to_string(std::source_location::current()))}); }
+    //TODO: ADD CHECK_THROW (make sure the conditional or func throws and exception)
+
     using TestDuration = std::chrono::duration<float, std::milli>;
 
     void runUnitTests(const bool& pRunPerformanceTests);
@@ -39,7 +48,9 @@ namespace Test
             mTimeTaken = stopwatch.duration_since_start<float, std::milli>() / RepeatCount; // Divide to find the average time taken.
         }
     };
-    // A collection of tests and API for running them and outputting the results
+    // A pure-virtual API for running unit tests and performance tests.
+    // Override the runUnitTests and runPerformanceTests functions to add your own tests.
+    // When run() is called, the results of all the tests will be outputted.
     class TestManager
     {
         std::string mName;
@@ -60,6 +71,7 @@ namespace Test
 
         virtual void runUnitTests()        = 0;
         virtual void runPerformanceTests() = 0;
+
     public:
         TestManager(const std::string& pName) noexcept;
 

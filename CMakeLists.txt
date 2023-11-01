@@ -269,6 +269,8 @@ source/Test/TestManager.hpp
 source/Test/TestManager.cpp
 source/Test/Tests/ECSTester.hpp
 source/Test/Tests/ECSTester.cpp
+source/Test/Tests/ResourceManagerTester.hpp
+source/Test/Tests/ResourceManagerTester.cpp
 source/Test/Tests/GeometryTester.hpp
 source/Test/Tests/GeometryTester.cpp
 )

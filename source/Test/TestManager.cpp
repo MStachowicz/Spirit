@@ -1,6 +1,7 @@
 #include "TestManager.hpp"
 #include "ECSTester.hpp"
 #include "GeometryTester.hpp"
+#include "ResourceManagerTester.hpp"
 
 #include "Logger.hpp"
 #include "Stopwatch.hpp"
@@ -10,6 +11,11 @@
 namespace Test
 {
     static const std::string seperator = "*****************************************************************\n";
+
+    std::string to_string(const std::source_location& p_location)
+    {
+        return std::format("{}:{}", p_location.file_name(), p_location.line());
+    }
 
     void runUnitTests(const bool& pRunPerformanceTests)
     {
@@ -21,6 +27,9 @@ namespace Test
 
         GeometryTester geometryTester;
         geometryTester.run(pRunPerformanceTests);
+
+        ResourceManagerTester resource_manager_tester;
+        resource_manager_tester.run(pRunPerformanceTests);
 
         LOG("All Unit tests complete - Time taken: {}ms\n{}", stopwatch.duration_since_start<float, std::milli>().count(), seperator);
     }
@@ -73,9 +82,9 @@ namespace Test
             for (const auto& test : mUnitTests)
             {
                 if (test.mPassed)
-                    output += std::format("UNIT TEST '{}' - PASSED\n", test.mName);
+                    output += std::format("PASSED '{}'\n", test.mName);
                 else
-                    output += std::format("UNIT TEST '{}' - FAILED - {}\n", test.mName, test.mFailMessage);
+                    output += std::format("FAILED '{}' -> {}\n", test.mName, test.mFailMessage);
             }
             for (const auto& test : mPerformanceTests)
                 output += std::format("PERF TEST '{}' - TOOK {}ms\n", test.mName, test.mTimeTaken.count());
