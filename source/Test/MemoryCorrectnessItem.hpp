@@ -39,6 +39,7 @@ namespace Test
         std::string getMemoryStatus() const;
         std::string toStringAndMemoryStatus() const;
     public:
+        size_t ID() const { return mID; }
         static void reset();
         static size_t countAlive()
         {

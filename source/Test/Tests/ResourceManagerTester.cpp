@@ -158,6 +158,18 @@ namespace Test
             CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
             CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
         }
+        {// Check Resource data is intact after a second insert
+            MemoryCorrectnessItem::reset();
+            {
+                Manager manager;
+                auto ref_1 = manager.insert(MemoryCorrectnessItem{});
+                auto ID = ref_1->ID();
+                auto ref_2 = manager.insert(MemoryCorrectnessItem{});
+                CHECK_EQUAL(ref_1->ID(), ID, "Check data intact after a second insert");
+            }
+            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
+            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
+        }
 
 
         {// TODO test get_or_create
