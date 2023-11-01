@@ -11,6 +11,8 @@
 
 namespace Utility
 {
+    constexpr bool LOG_REF_EVENTS = false;
+
     // Forward declare the ResoureRef class so it can be used by ResourceManager
     template <typename Resource>
     class ResourceRef;
@@ -30,7 +32,7 @@ namespace Utility
         struct ResourceData
         {
             Resource m_resource;
-            size_t m_counter;
+            std::optional<size_t> m_counter;
         };
 
         // Needs to fit the Resource and ResourceCounter with both aligned to the max alignment.
@@ -41,9 +43,9 @@ namespace Utility
 
         std::size_t m_size;     // The index past the last element in the buffer.
         std::size_t m_capacity; // The number of elements that can be held in currently allocated storage.
-        // Buffer for all the instances of ResourceData.
+        // Buffer for all the instances of a Resource and its counter.
         // Using our own buffer we can control the memory allocation and deallocation.
-        // The buffer contains a ResourceData instance at each index unless the index is in m_free_indices.
+        // The buffer can have gaps in it where Resources have been erased. Queried in m_free_indices.
         std::byte* m_data;
         std::unordered_set<size_t> m_free_indices; // Indices of free elements in the buffer. Memory at these addresses is allocated but not initialised.
 
@@ -53,7 +55,9 @@ namespace Utility
             , m_capacity{initial_capacity}
             , m_data{(std::byte*)malloc(m_capacity * instance_size)}
             , m_free_indices{}
-        {}
+        {
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Constructed at address {}", (void*)(this));
+        }
         ~ResourceManager() noexcept
         {// Call the destructor of all the instances then deallocate the memory.
             if (m_data != nullptr)
@@ -61,6 +65,7 @@ namespace Utility
                 clear();
                 free(m_data);
             }
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Destroyed at address {}", (void*)(this));
         }
         // Move construct a ResourceManager.
         ResourceManager(ResourceManager&& p_other) noexcept
@@ -68,7 +73,9 @@ namespace Utility
             , m_capacity{std::move(p_other.m_capacity)}
             , m_data{std::exchange(p_other.m_data, nullptr)}
             , m_free_indices{std::move(p_other.m_free_indices)}
-        {}
+        {
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Move-constructing {} from {}", (void*)(this), (void*)(&p_other));
+        }
         // Move assign a ResourceManager.
         ResourceManager& operator=(ResourceManager&& p_other) noexcept
         {
@@ -86,12 +93,12 @@ namespace Utility
                 m_free_indices = std::move(p_other.m_free_indices);
             }
 
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Move-assigning {} from {}", (void*)(this), (void*)(&p_other));
             return *this;
         }
         // Delete the copy constructor and assignment operators.
         ResourceManager(const ResourceManager& p_other)            = delete;
         ResourceManager& operator=(const ResourceManager& p_other) = delete;
-
 
         size_t size()     const { return m_size - m_free_indices.size(); }
         size_t capacity() const { return m_capacity; }
@@ -104,13 +111,15 @@ namespace Utility
                     get_resource(i).~Resource();
 
             m_size = 0;
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Cleared all resources");
         }
         void reserve(std::size_t p_capacity)
         {
             if (p_capacity > m_capacity)
             {
+                if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Reserving memory start");
+
                 m_capacity = p_capacity;
-                LOG("[ResourceManager] - Capacity changed", alignof(ResourceData));
                 std::byte* new_data = (std::byte*)malloc(m_capacity * instance_size);
 
                 // Placement-new move-construct the ResourceData from this into the auxillary store.
@@ -120,13 +129,14 @@ namespace Utility
                     if (!m_free_indices.contains(i))
                     {
                         new (&new_data[i * instance_size]) Resource(std::move(get_resource(i)));
-                        new (&new_data[(i * instance_size) + offsetof_counter]) size_t(get_counter(i));
+                        new (&new_data[(i * instance_size) + offsetof_counter]) std::optional<size_t>(get_counter(i));
                         get_resource(i).~Resource();
                     }
                 }
 
                 free(m_data);
                 m_data = new_data;
+                if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Reserving memory end");
             }
         }
 
@@ -141,22 +151,23 @@ namespace Utility
                     reserve(next_power_of_2(m_capacity));
 
                 auto resource = new (&m_data[m_size * instance_size]) Resource(std::move(p_value));
-                auto counter  = new (&m_data[(m_size * instance_size) + offsetof_counter]) size_t(std::move(0));
+                auto counter  = new (&m_data[(m_size * instance_size) + offsetof_counter]) std::optional<size_t>(0);
                 auto index    = m_size++;
-                return RefType{*resource, *this, index};
+                if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Inserting ResourceRef at end index {}", index);
+                return RefType{*this, index};
             }
             else
             { // Constructing into a gap inside the buffer where a resource was previously erased.
                 auto index = *m_free_indices.begin();
                 auto resource = new (&m_data[m_size * instance_size]) Resource(std::move(p_value));
-                auto counter  = new (&m_data[(m_size * instance_size) + offsetof_counter]) size_t(std::move(0));
+                auto counter  = new (&m_data[(m_size * instance_size) + offsetof_counter]) std::optional<size_t>(0);
                 m_free_indices.erase(m_free_indices.begin());
-                return RefType{*resource, *this, index};
+                if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Inserting ResourceRef into gap at index {}", index);
+                return RefType{*this, index};
             }
         }
         // Copy the Resource into the buffer is removed. Prefer to use move insert if possible.
         RefType insert(const Resource& p_value) = delete;
-
 
         // Find a Resource in the buffer. If the Resource is not found then create one using construction args and return it.
         // If multiple Resources are found then the first one is returned.
@@ -175,7 +186,7 @@ namespace Utility
                 if (!m_free_indices.contains(i))
                 {
                     if (find_if_func(get_resource(i)))
-                        return RefType(get_resource(i), *this, i);
+                        return RefType(*this, i);
                 }
             }
 
@@ -211,19 +222,29 @@ namespace Utility
 
            return *((Resource*)&m_data[p_index * instance_size]);
         }
+        [[nodiscard]] Resource& get_resource(size_t p_index) const
+        {
+           if (p_index >= m_size)
+               throw std::out_of_range("Index out of range");
+           ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+
+           return *((Resource*)&m_data[p_index * instance_size]);
+        }
+
         [[nodiscard]] size_t& get_counter(size_t p_index)
         {
            if (p_index >= m_size)
                throw std::out_of_range("Index out of range");
            ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
 
-           return *((size_t*)&m_data[(p_index * instance_size) + offsetof_counter]);
+           return (*((std::optional<size_t>*)&m_data[(p_index * instance_size) + offsetof_counter])).value();
         }
 
         // Increment the count for resource at p_index.
         void increment(size_t p_index)
         {
             get_counter(p_index)++;
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Incremented ResourceRef at index {} with count {}", p_index, get_counter(p_index));
         }
         // Decrement the count for ResourceData at p_index.
         // If the count reaches 0 then the ResourceData is removed from the manager.
@@ -231,6 +252,8 @@ namespace Utility
         {
             if (p_index >= m_size)                throw std::out_of_range("Index out of range");
             if (m_free_indices.contains(p_index)) throw std::logic_error("Trying to access a free index!");
+
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Decremented ResourceRef at index {} with count {}", p_index, get_counter(p_index) - 1);
 
             if (--get_counter(p_index) == 0)
                 erase(p_index);
@@ -247,6 +270,7 @@ namespace Utility
                 get_resource(index).~Resource();
                 m_free_indices.insert(index);
             }
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Erased ResourceRef at index {}", index);
         }
 
     	// Returns the next power of 2 larger than p_val
@@ -259,39 +283,48 @@ namespace Utility
 			return power;
 		}
     };
-
+    // A ResourceRef is a non-owning pointer to a Resource managed by a ResourceManager.
+    // When the last ResourceRef to a Resource is destroyed, the Resource is removed from the ResourceManager.
     template<typename Resource>
     class ResourceRef
     {
         using Manager = ResourceManager<Resource>;
 
-        Resource* m_data;   // A non-owning pointer to the resource in the ResourceManager's storage.
-        Manager* m_manager; // A non-owning pointer to the ResourceManager that owns the resource.
-        std::optional<size_t> m_index;     // The index of the ResourceData in the ResourceManager, allows us to avoid linear searching the Manager buffer.
+        Manager* m_manager;            // A non-owning pointer to the ResourceManager that owns the resource.
+        std::optional<size_t> m_index; // The index of the ResourceData in the ResourceManager, allows us to avoid linear searching the Manager buffer.
 
         // The ResourceManager is a friend so it can access the only valid constructor (private).
         friend class Manager;
-        ResourceRef(Resource& p_data, Manager& p_manager, size_t p_index) noexcept : m_data(&p_data), m_manager(&p_manager), m_index(p_index)
+        ResourceRef(Manager& p_manager, size_t p_index) noexcept : m_manager(&p_manager), m_index(p_index)
         {
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Constructed valid at address {} at index {}", (void*)(this), m_index.value());
             p_manager.increment(*m_index);
         }
+
     public:
         // Default construct an invalid ResourceRef. Equivalent to constructing a nullopt optional in std.
-        ResourceRef()  noexcept : m_index(std::nullopt), m_data(nullptr), m_manager{nullptr} {}        // On destory decrement the referece count for the manager.
+        ResourceRef()  noexcept : m_manager{nullptr}, m_index(std::nullopt)
+        {
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Constructed empty at address {}", (void*)(this));
+        }
+        // On destory decrement the referece count for the manager.
         ~ResourceRef() noexcept
         {
             if (is_valid())
                 m_manager->decrement(*m_index);
+
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Destroyed at address {}", (void*)(this));
         }
 
          // On copy construct, copy the resource ptr and manager ptr and increment the count.
         ResourceRef(const ResourceRef& p_other) noexcept
-            : m_data{p_other.m_data}
-            , m_manager{p_other.m_manager}
+            : m_manager{p_other.m_manager}
             , m_index{p_other.m_index}
         {
             if (is_valid())
                 m_manager->increment(*m_index);
+
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Copy-constructing {} from {}", (void*)(this), (void*)(&p_other));
         }
         // On copy assigment, decrement the count for the current resource and assign this ResourceRef p_other data.
         ResourceRef& operator=(const ResourceRef& p_other) noexcept
@@ -302,21 +335,23 @@ namespace Utility
                 if (is_valid())
                     m_manager->decrement(*m_index);
 
-                m_data    = p_other.m_data;
                 m_manager = p_other.m_manager;
                 m_index   = p_other.m_index;
 
                 if (is_valid())
                     m_manager->increment(*m_index);
             }
+
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Copy-assigning {} from {}", (void*)(this), (void*)(&p_other));
             return *this;
         }
         // On move construct, move the resource ptr and manager ptr and index. Leave the old ResourceRef in an invalid state.
         ResourceRef(ResourceRef&& p_other) noexcept
-            : m_data{std::exchange(p_other.m_data, nullptr)}
-            , m_manager{std::exchange(p_other.m_manager, nullptr)}
+            : m_manager{std::exchange(p_other.m_manager, nullptr)}
             , m_index{std::exchange(p_other.m_index, std::nullopt)}
-        {}
+        {
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Move-constructing {} from {}", (void*)(this), (void*)(&p_other));
+        }
         // On move assignment, decrement the count for the current resource and steal p_other's data.
         ResourceRef& operator=(ResourceRef&& p_other) noexcept
         {
@@ -325,20 +360,20 @@ namespace Utility
                 if (is_valid())
                     m_manager->decrement(*m_index);
 
-                m_data    = std::exchange(p_other.m_data, nullptr);
                 m_manager = std::exchange(p_other.m_manager, nullptr);
                 m_index   = std::exchange(p_other.m_index, std::nullopt);
             }
+            if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Move-assigning {} from {}", (void*)(this), (void*)(&p_other));
             return *this;
         }
 
-        constexpr const Resource* operator->() const noexcept   { return m_data;  };
-        constexpr Resource* operator->() noexcept               { return m_data;  };
-        constexpr const Resource& operator*() const& noexcept   { return *m_data; };
-        constexpr Resource& operator*() & noexcept              { return *m_data; };
-        constexpr const Resource&& operator*() const&& noexcept { return *m_data; };
-        constexpr Resource&& operator*() && noexcept            { return *m_data; };
-        constexpr bool is_valid() const noexcept                { return m_data != nullptr; };
+        constexpr const Resource* operator->() const noexcept   { return &m_manager->get_resource(m_index.value()); };
+        constexpr Resource* operator->() noexcept               { return &m_manager->get_resource(m_index.value()); };
+        constexpr const Resource& operator*() const& noexcept   { return m_manager->get_resource(m_index.value()); };
+        constexpr Resource& operator*() & noexcept              { return m_manager->get_resource(m_index.value()); };
+        constexpr const Resource&& operator*() const&& noexcept { return m_manager->get_resource(m_index.value()); };
+        constexpr Resource&& operator*() && noexcept            { return m_manager->get_resource(m_index.value()); };
+        constexpr bool is_valid() const noexcept                { return m_manager != nullptr; };
         constexpr explicit operator bool() const noexcept       { return is_valid(); };
     };
 } // namespace Utility
