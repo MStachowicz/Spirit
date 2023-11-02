@@ -1,12 +1,13 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 namespace Test
 {
     class MemoryCorrectnessItem
     {
-        constexpr static bool verbose = true;
+        constexpr static bool LOG_MEM_CORRECTNESS_EVENTS = true;
 
         enum class MemoryStatus
         {
@@ -26,7 +27,7 @@ namespace Test
 
         inline static size_t instanceID         = 0; // Unique ID per instance of MemoryCorrectnessItem
 
-        size_t mID;
+        size_t mID; // Unique ID of a constructed MemoryCorrectnessItem instance.
         volatile MemoryStatus mStatus;
         volatile size_t mMemoryInitializationToken;
         // Padding to push the memory_status back a little
@@ -39,6 +40,8 @@ namespace Test
         std::string getMemoryStatus() const;
         std::string toStringAndMemoryStatus() const;
     public:
+		std::optional<int> m_member; // A faux member to emulate a resource storage of the object.
+
         size_t ID() const { return mID; }
         static void reset();
         static size_t countAlive()

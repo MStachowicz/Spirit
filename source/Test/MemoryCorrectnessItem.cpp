@@ -9,8 +9,9 @@ namespace Test
 {
     MemoryCorrectnessItem::MemoryCorrectnessItem()
         : mID(instanceID++)
+		, m_member(std::nullopt)
     {
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("Constructing {}", toString());
 
         if (mMemoryInitializationToken == 0x2c1dd27f0d59cf3e && mStatus != MemoryStatus::Deleted)
@@ -25,7 +26,7 @@ namespace Test
     }
     MemoryCorrectnessItem::~MemoryCorrectnessItem()
     {
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("Deleting {}", toString());
 
         if (mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
@@ -39,14 +40,16 @@ namespace Test
             errorCount += 1;
         }
 
+		m_member.reset();
         mStatus = MemoryStatus::Deleted;
         destroyCount += 1;
     }
 
     MemoryCorrectnessItem::MemoryCorrectnessItem(const MemoryCorrectnessItem& pOther)
         : mID(instanceID++)
+		, m_member(pOther.m_member)
     {
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("Copy constructing {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
@@ -78,8 +81,9 @@ namespace Test
 
     MemoryCorrectnessItem::MemoryCorrectnessItem(MemoryCorrectnessItem&& pOther)
         : mID(instanceID++)
+		, m_member(std::move(pOther.m_member))
     {
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("Move constructing {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
@@ -112,7 +116,7 @@ namespace Test
 
     MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(const MemoryCorrectnessItem& pOther)
     {
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("Copy assigning {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
@@ -137,13 +141,14 @@ namespace Test
             errorCount += 1;
         }
 
+		m_member = pOther.m_member;
         copyAssignCount += 1;
         return *this;
     }
 
     MemoryCorrectnessItem& MemoryCorrectnessItem::operator=(MemoryCorrectnessItem&& pOther)
     {
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("Move assigning {} from {}", toString(), pOther.toString());
 
         if (pOther.mMemoryInitializationToken != 0x2c1dd27f0d59cf3e)
@@ -169,7 +174,7 @@ namespace Test
         }
 
         pOther.mStatus   = MemoryStatus::MovedFrom;
-        mID              = instanceID++;
+		m_member         = std::move(pOther.m_member);
         moveAssignCount += 1;
         return *this;
     }
@@ -202,7 +207,7 @@ namespace Test
         moveAssignCount    = 0;
         errorCount         = 0;
 
-        if constexpr (verbose)
+        if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
             LOG("RESET MemoryCorrectnessItem");
     }
 } // namespace Test
