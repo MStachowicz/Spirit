@@ -125,10 +125,10 @@ namespace Data
                 std::nullopt;
             };
 
-            mMaterial.mDiffuseTexture = std::nullopt; //processTextureType(aiTextureType_DIFFUSE);
-            mMaterial.mSpecularMap    = std::nullopt; //processTextureType(aiTextureType_SPECULAR);
-            mMaterial.mHeightMap      = std::nullopt; //processTextureType(aiTextureType_HEIGHT);
-            mMaterial.mAmbientMap     = std::nullopt; //processTextureType(aiTextureType_AMBIENT);
+            //mMaterial.mDiffuseTexture = processTextureType(aiTextureType_DIFFUSE);
+            //mMaterial.mSpecularMap    = processTextureType(aiTextureType_SPECULAR);
+            //mMaterial.mHeightMap      = processTextureType(aiTextureType_HEIGHT);
+            //mMaterial.mAmbientMap     = processTextureType(aiTextureType_AMBIENT);
         }
 
         // After all the vertex data is initialised, call the OpenGL constructor to push the data to the GPU

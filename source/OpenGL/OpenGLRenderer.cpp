@@ -205,8 +205,8 @@ namespace OpenGL
                 m_phong_renderer.set_draw_data(
                     mViewInformation.mViewPosition,
                     p_transform.mModel,
-                    texComponent.mDiffuse.has_value()  ? texComponent.mDiffuse.value()->m_GL_texture  : m_missing_texture->m_GL_texture,
-                    texComponent.mSpecular.has_value() ? texComponent.mSpecular.value()->m_GL_texture : m_blank_texture->m_GL_texture,
+                    texComponent.mDiffuse.has_value()  ? texComponent.mDiffuse->m_GL_texture  : m_missing_texture->m_GL_texture,
+                    texComponent.mSpecular.has_value() ? texComponent.mSpecular->m_GL_texture : m_blank_texture->m_GL_texture,
                     texComponent.m_shininess);
             }
             else
@@ -225,7 +225,7 @@ namespace OpenGL
                 m_phong_renderer.set_draw_data(
                     mViewInformation.mViewPosition,
                     glm::translate(glm::identity<glm::mat4>(), p_terrain.position),
-                    p_terrain.texture.has_value() ? (*p_terrain.texture)->m_GL_texture : m_missing_texture->m_GL_texture,
+                    p_terrain.texture.has_value() ? p_terrain.texture->m_GL_texture : m_missing_texture->m_GL_texture,
                     m_blank_texture->m_GL_texture,
                     64.f);
 

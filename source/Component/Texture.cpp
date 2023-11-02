@@ -19,13 +19,13 @@ namespace Data
 namespace Component
 {
     Texture::Texture() noexcept
-        : mDiffuse{std::nullopt}
-        , mSpecular{std::nullopt}
+        : mDiffuse{}
+        , mSpecular{}
         , m_shininess{32.f}
     {}
     Texture::Texture(const TextureRef& m_diffuse) noexcept
         : mDiffuse{m_diffuse}
-        , mSpecular{std::nullopt}
+        , mSpecular{}
         , m_shininess{32.f}
     {}
 }

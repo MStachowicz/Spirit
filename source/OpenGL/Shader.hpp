@@ -48,7 +48,7 @@ namespace OpenGL
         // Get the SSBO backing the shader storage block with p_storage_block_identifier.
         //@param p_storage_block_identifier Identifier of the block who's buffer backing is to be returned.
         //@returns The buffer backing for the shader storage block or nullopt if the block isn't found or isn't backed by one.
-        std::optional<Utility::ResourceRef<SSBO>> get_SSBO_backing(const std::string& p_storage_block_identifier);
+        Utility::ResourceRef<SSBO> get_SSBO_backing(const std::string& p_storage_block_identifier);
 
         // Set the data for a loose-uniform in this shader program. Call Shader::use() before set_uniform.
         template<typename T>

@@ -211,6 +211,7 @@ namespace OpenGL
         glGenTextures(1, &m_handle);
         if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", m_handle, (void*)(this));
     }
+    // TODO: Make this ImageRef instead of Image
     Texture::Texture(const Utility::Image& p_image)
         : m_handle{0}
     {
@@ -617,7 +618,7 @@ namespace OpenGL
         , m_index{p_shader_storage_block_index}
         , m_parent_shader_program{p_shader_program}
         , m_variables{}
-        , m_buffer_backing{std::nullopt}
+        , m_buffer_backing{}
     {
         static constexpr size_t Property_Count = 4;
         // GL_BUFFER_BINDING is unused, returns the binding point (layout(binding = X)) for the ShaderStorageBlock
@@ -670,13 +671,13 @@ namespace OpenGL
                 return false;
         }, m_identifier, buffer_data_size, m_variables);
 
-        ASSERT(m_variables.size() == active_variables_count && (*m_buffer_backing)->m_variables == m_variables, "Failed to retrieve all the ShaderStorageBlock of block '{}'", m_identifier);
+        ASSERT(m_variables.size() == active_variables_count && m_buffer_backing->m_variables == m_variables, "Failed to retrieve all the ShaderStorageBlock of block '{}'", m_identifier);
 
         // Bind the ShaderStorageBlock to the binding point the buffer backing SSBO is bound to.
         // SSBO constrcutor called the corresponding bind_buffer_range to the same binding point.
-        shader_storage_block_binding(m_parent_shader_program, m_index, (*m_buffer_backing)->m_binding_point);
+        shader_storage_block_binding(m_parent_shader_program, m_index, m_buffer_backing->m_binding_point);
 
-        if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] ShaderStorageBlock '{}' bound to point index {}", m_identifier, (*m_buffer_backing)->m_binding_point);
+        if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] ShaderStorageBlock '{}' bound to point index {}", m_identifier, m_buffer_backing->m_binding_point);
     }
 
     UniformBlockVariable::UniformBlockVariable(GLHandle p_shader_program, GLuint p_block_variable_index) noexcept
@@ -793,7 +794,7 @@ namespace OpenGL
         , m_block_index{p_uniform_block_index}
         , m_parent_shader_program{p_shader_program}
         , m_variables{}
-        , m_buffer_backing{std::nullopt}
+        , m_buffer_backing{}
     {
         static constexpr size_t Property_Count = 4;
         // GL_BUFFER_BINDING is unused, returns the binding point (layout(binding = X)) for the UniformBlock
@@ -848,12 +849,12 @@ namespace OpenGL
                 return false;
         }, m_name, buffer_data_size, m_variables);
 
-        ASSERT(m_variables.size() == active_variables_count && (*m_buffer_backing)->m_variables == m_variables, "Failed to retrieve all the UniformBlockVariables of block '{}'", m_name);
+        ASSERT(m_variables.size() == active_variables_count && m_buffer_backing->m_variables == m_variables, "Failed to retrieve all the UniformBlockVariables of block '{}'", m_name);
 
         // Bind the UniformBlock to the binding point the buffer backing UBO is bound to. UBO constrcutor called the corresponding bind_buffer_range to the same binding point.
-        uniform_block_binding(m_parent_shader_program, m_block_index, (*m_buffer_backing)->m_uniform_binding_point);
+        uniform_block_binding(m_parent_shader_program, m_block_index, m_buffer_backing->m_uniform_binding_point);
 
-        if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] UniformBlock '{}' bound to point index {}", m_name, (*m_buffer_backing)->m_uniform_binding_point);
+        if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] UniformBlock '{}' bound to point index {}", m_name, m_buffer_backing->m_uniform_binding_point);
     }
 
     Mesh::Mesh(Mesh&& p_other) noexcept

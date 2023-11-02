@@ -12,7 +12,7 @@ namespace OpenGL
 {
     PhongRenderer::PhongRenderer() noexcept
         : m_phong_shader{"phong"}
-        , m_directional_lights_buffer{m_phong_shader.get_SSBO_backing("DirectionalLightsBuffer").value()}
+        , m_directional_lights_buffer{m_phong_shader.get_SSBO_backing("DirectionalLightsBuffer")}
         , m_directional_light_fixed_size{0}
         , m_directional_light_count_offset{0}
         , m_directional_light_array_stride{0}
@@ -21,7 +21,7 @@ namespace OpenGL
         , m_directional_light_ambient_offset{0}
         , m_directional_light_diffuse_offset{0}
         , m_directional_light_specular_offset{0}
-        , m_point_lights_buffer{m_phong_shader.get_SSBO_backing("PointLightsBuffer").value()}
+        , m_point_lights_buffer{m_phong_shader.get_SSBO_backing("PointLightsBuffer")}
         , m_point_light_fixed_size{0}
         , m_point_light_count_offset{0}
         , m_point_light_array_stride{0}
@@ -33,7 +33,7 @@ namespace OpenGL
         , m_point_light_ambient_offset{0}
         , m_point_light_diffuse_offset{0}
         , m_point_light_specular_offset{0}
-        , m_spot_lights_buffer{m_phong_shader.get_SSBO_backing("SpotLightsBuffer").value()}
+        , m_spot_lights_buffer{m_phong_shader.get_SSBO_backing("SpotLightsBuffer")}
         , m_spot_light_fixed_size{0}
         , m_spot_light_count_offset{0}
         , m_spot_light_array_stride{0}
@@ -49,6 +49,10 @@ namespace OpenGL
         , m_spot_light_diffuse_offset{0}
         , m_spot_light_specular_offset{0}
     {
+		ASSERT(m_directional_lights_buffer.has_value(), "[OPENGL][PHONG] DirectionalLightsBuffer not found in phong shader");
+		ASSERT(m_point_lights_buffer.has_value(), "[OPENGL][PHONG] PointLightsBuffer not found in phong shader");
+		ASSERT(m_spot_lights_buffer.has_value(), "[OPENGL][PHONG] SpotLightsBuffer not found in phong shader");
+
         { // Initialise offsets
             { // DirectionalLight
                 for (auto& var : m_directional_lights_buffer->m_variables)

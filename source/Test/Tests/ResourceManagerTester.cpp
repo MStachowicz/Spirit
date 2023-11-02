@@ -2,6 +2,8 @@
 #include "MemoryCorrectnessItem.hpp"
 #include "ResourceManager.hpp"
 
+#include <vector>
+
 namespace Test
 {
     using Ref     = Utility::ResourceRef<MemoryCorrectnessItem>;
@@ -13,7 +15,7 @@ namespace Test
             MemoryCorrectnessItem::reset();
 
             auto ref = Ref();
-            CHECK_EQUAL(ref.is_valid(), false, "ResourceRef isValid() check");
+            CHECK_EQUAL(ref.has_value(), false, "ResourceRef isValid() check");
             CHECK_TRUE(ref ? false : true,     "ResourceRef explicit bool operator check");
 
             Manager manager;
@@ -91,23 +93,27 @@ namespace Test
             CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
             CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
         }
-        //{// Check memory leaks Manager::clear()
-        //    MemoryCorrectnessItem::reset();
-//
-        //    Manager manager;
-        //    {
-        //        std::vector<Ref> refs; // Maintain their lifetime in vector
-        //        refs.reserve(100);
-        //        for (auto i = 0; i < 100; i++)
-        //            refs.push_back(manager.insert(MemoryCorrectnessItem{}));
-//
-        //        CHECK_EQUAL(manager.size(), 100, "Size check after insert 100");
-        //        manager.clear();
-        //        CHECK_EQUAL(manager.size(), 0, "Size check after clear");
-        //    }
-        //    CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-        //    CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory error check");
-        //}
+        { // Check memory leaks Manager::clear()
+            MemoryCorrectnessItem::reset();
+			if (false)
+            {
+				// This Test crashes -
+				// ResourceRefs have no concept of the Manager having cleared them.
+				// When the refs vector is destroyed, it calls destructors on incorrectly valid ResourceRefs.
+				Manager manager;
+                std::vector<Ref> refs; // Maintain their lifetime in vector
+                refs.reserve(4);
+                for (auto i = 0; i < 4; i++)
+                    refs.push_back(manager.insert(MemoryCorrectnessItem{}));
+
+                CHECK_EQUAL(manager.size(), 4, "Size check after insert 4");
+                manager.clear();
+                CHECK_EQUAL(manager.size(), 0, "Size check after clear");
+
+				CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
+				CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory error check");
+            }
+        }
         {// Check capacity change maintains resource validity with many resources
             MemoryCorrectnessItem::reset();
 
@@ -129,7 +135,7 @@ namespace Test
                 CHECK_EQUAL(manager.size(), 0, "Size check after invalid ref");
 
                 ref = manager.insert(MemoryCorrectnessItem{});
-                CHECK_TRUE(ref.is_valid(), "Invalid ResourceRef is valid after assigning");
+                CHECK_TRUE(ref.has_value(), "Invalid ResourceRef is valid after assigning");
                 CHECK_EQUAL(manager.size(), 1, "Size check after assigning to an invalid ref");
 
                 auto ref2 = manager.insert(MemoryCorrectnessItem{});
@@ -137,7 +143,7 @@ namespace Test
 
                 // Copying a ref should give us access to the same resource and not change the size.
                 auto ref_copy = ref;
-                CHECK_TRUE(ref_copy.is_valid(), "ResourceRef copy is valid");
+                CHECK_TRUE(ref_copy.has_value(), "ResourceRef copy is valid");
                 CHECK_EQUAL(manager.size(), 2, "Size check after copying a ResourceRef");
             }
             CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
@@ -151,7 +157,7 @@ namespace Test
 
                 auto ref = manager.insert(MemoryCorrectnessItem{}); // Construct, Move constructing, Delete
                 ref = manager.insert(MemoryCorrectnessItem{});      // Construct (new one), Move-assign, Delete
-                CHECK_TRUE(ref.is_valid(), "Check ref is valid after being assigned while already owning a resource");
+                CHECK_TRUE(ref.has_value(), "Check ref is valid after being assigned while already owning a resource");
                 CHECK_EQUAL(manager.size(), 1, "Size remains the same after assigning to a valid ref");
                 CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 1, "Memory leak after move-assigning a valid ref");
             }
@@ -163,9 +169,10 @@ namespace Test
             {
                 Manager manager;
                 auto ref_1 = manager.insert(MemoryCorrectnessItem{});
-                auto ID = ref_1->ID();
+				ref_1->m_member = 5;
                 auto ref_2 = manager.insert(MemoryCorrectnessItem{});
-                CHECK_EQUAL(ref_1->ID(), ID, "Check data intact after a second insert");
+
+                CHECK_EQUAL(ref_1->m_member.value(), 5, "Check data intact after a second insert");
             }
             CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
             CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");

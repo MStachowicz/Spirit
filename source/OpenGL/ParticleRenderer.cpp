@@ -16,7 +16,7 @@ namespace OpenGL
         , m_quad_VAO{}
         , m_quad_VBO{}
         , m_quad_EBO{}
-        , m_particle_buffer{m_particle_shader.get_SSBO_backing("ParticlesBuffer").value()}
+        , m_particle_buffer{m_particle_shader.get_SSBO_backing("ParticlesBuffer")}
     {// Prepare the quad buffer for rendering.
         m_quad_VAO.bind();
         m_quad_VBO.bind();

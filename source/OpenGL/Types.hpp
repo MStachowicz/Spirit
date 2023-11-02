@@ -179,7 +179,7 @@ namespace OpenGL
         GLHandle m_parent_shader_program;
 
         std::vector<UniformBlockVariable> m_variables; // All the variables this block defines.
-        std::optional<Utility::ResourceRef<UBO>> m_buffer_backing; // The UBO that backs the UniformBlockVariables. In UniformBlocks marked shared, the UBO is reused and can be set once.
+        Utility::ResourceRef<UBO> m_buffer_backing; // The UBO that backs the UniformBlockVariables. In UniformBlocks marked shared, the UBO is reused and can be set once.
 
         // Pool of UBO objects that can be used to back the UniformBlock.
         static inline Utility::ResourceManager<UBO> uniform_block_binding_points = {};
@@ -280,7 +280,7 @@ namespace OpenGL
         GLHandle m_parent_shader_program;
 
         std::vector<ShaderStorageBlockVariable> m_variables;        // All the variables this block defines.
-        std::optional<Utility::ResourceRef<SSBO>> m_buffer_backing; // The SSBO that backs the ShaderStorageBlockVariable. In ShaderStorageBlock marked shared, the SSBO is reused and can be set once.
+        Utility::ResourceRef<SSBO> m_buffer_backing; // The SSBO that backs the ShaderStorageBlockVariable. In ShaderStorageBlock marked shared, the SSBO is reused and can be set once.
 
         // Pool of SSBO objects that can be used to back the StorageBlock.
         static inline Utility::ResourceManager<SSBO> s_shader_storage_block_binding_points = {};

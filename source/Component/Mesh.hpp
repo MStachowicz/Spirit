@@ -19,7 +19,6 @@
 
 // STD
 #include <filesystem>
-#include <optional>
 #include <vector>
 
 struct aiMesh;
@@ -31,10 +30,10 @@ namespace Data
     struct Material
     {
         // If the Mesh has a pre-defined texture associated it is set here.
-        std::optional<TextureRef> mDiffuseTexture;
-        std::optional<TextureRef> mSpecularMap;
-        std::optional<TextureRef> mHeightMap;
-        std::optional<TextureRef> mAmbientMap;
+        TextureRef mDiffuseTexture;
+        TextureRef mSpecularMap;
+        TextureRef mHeightMap;
+        TextureRef mAmbientMap;
     };
 
     // An implicit mesh, a collection of vertices defining a 3D triangulated Mesh.

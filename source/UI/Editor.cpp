@@ -254,8 +254,8 @@ namespace UI
                         if (ImGui::TreeNode("Texture"))
                         {
                             auto& textureComponent = scene.getComponentMutable<Component::Texture&>(pEntity);
-                            const std::string currentDiffuse  = textureComponent.mDiffuse.has_value() ? textureComponent.mDiffuse.value()->m_image_ref->name() : "None";
-                            const std::string currentSpecular = textureComponent.mSpecular.has_value() ? textureComponent.mSpecular.value()->m_image_ref->name() : "None";
+                            const std::string currentDiffuse  = textureComponent.mDiffuse ? textureComponent.mDiffuse->m_image_ref->name() : "None";
+                            const std::string currentSpecular = textureComponent.mSpecular ? textureComponent.mSpecular->m_image_ref->name() : "None";
 
                             static size_t selected;
                             if (ImGui::ComboContainer("Diffuse Texture", currentDiffuse.c_str(), availableTextureNames, selected))

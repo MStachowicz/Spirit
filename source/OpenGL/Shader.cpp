@@ -131,14 +131,14 @@ namespace OpenGL
         use_program(m_handle);
     }
 
-    std::optional<Utility::ResourceRef<SSBO>> Shader::get_SSBO_backing(const std::string& p_storage_block_identifier)
+    Utility::ResourceRef<SSBO> Shader::get_SSBO_backing(const std::string& p_storage_block_identifier)
     {
         for (auto& storage_block : m_shader_storage_blocks)
         {
             if (storage_block.m_identifier == p_storage_block_identifier)
                 return storage_block.m_buffer_backing;
         }
-        return std::nullopt;
+        return {};
     }
 
     void Shader::set_uniform(GLint p_location, bool p_value)

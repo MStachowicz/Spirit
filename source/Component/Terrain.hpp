@@ -2,8 +2,6 @@
 
 #include "Component/Texture.hpp"
 
-#include <optional>
-
 namespace System
 {
     class TextureSystem;
@@ -19,7 +17,7 @@ namespace Component
         int size_x;
         int size_z;
         float scale_factor;
-        std::optional<TextureRef> texture;
+        TextureRef texture;
         Utility::Mesh mesh;
 
         Terrain(int size_x, int size_z) noexcept;

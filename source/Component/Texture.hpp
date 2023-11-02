@@ -9,7 +9,6 @@
 
 // STD
 #include <filesystem>
-#include <optional>
 
 namespace Data
 {
@@ -41,8 +40,8 @@ namespace Component
         Texture() noexcept;
         Texture(const TextureRef& m_diffuse) noexcept;
 
-        std::optional<TextureRef> mDiffuse;
-        std::optional<TextureRef> mSpecular;
+        TextureRef mDiffuse;
+        TextureRef mSpecular;
         float m_shininess;
     };
 }; // namespace Component
