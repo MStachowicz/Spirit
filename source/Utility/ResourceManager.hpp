@@ -40,7 +40,6 @@ namespace Utility
         static constexpr size_t offsetof_counter = offsetof(ResourceData, m_counter);
         static constexpr size_t initial_capacity = 1u;
 
-
         std::size_t m_size;     // The index past the last element in the buffer.
         std::size_t m_capacity; // The number of elements that can be held in currently allocated storage.
         // Buffer for all the instances of a Resource and its counter.
@@ -105,6 +104,7 @@ namespace Utility
         bool empty()      const { return size() == 0; }
         void clear()
         {
+			// TODO: ResourceRefs given out should be invalidated when a buffer is cleared.
             // Call the destructor for all initialised instances of ResourceData.
             for (auto i = 0; i < m_size; i++)
                 if (!m_free_indices.contains(i))
@@ -363,7 +363,7 @@ namespace Utility
         // On destory decrement the referece count for the manager.
         ~ResourceRef() noexcept
         {
-            if (is_valid())
+            if (has_value())
                 m_manager->decrement(*m_index);
 
             if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Destroyed at address {}", (void*)(this));
@@ -374,7 +374,7 @@ namespace Utility
             : m_manager{p_other.m_manager}
             , m_index{p_other.m_index}
         {
-            if (is_valid())
+            if (has_value())
                 m_manager->increment(*m_index);
 
             if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Copy-constructing {} from {}", (void*)(this), (void*)(&p_other));
@@ -385,13 +385,13 @@ namespace Utility
             // If the resource is the same one managed by other, we can safely skip the decrement and increments since the net ResourceRef change will be 0
             if (this != &p_other)
             {
-                if (is_valid())
+                if (has_value())
                     m_manager->decrement(*m_index);
 
                 m_manager = p_other.m_manager;
                 m_index   = p_other.m_index;
 
-                if (is_valid())
+                if (has_value())
                     m_manager->increment(*m_index);
             }
 
@@ -410,7 +410,7 @@ namespace Utility
         {
             if (this != &p_other)
             {
-                if (is_valid())
+                if (has_value())
                     m_manager->decrement(*m_index);
 
                 m_manager = std::exchange(p_other.m_manager, nullptr);
@@ -426,7 +426,9 @@ namespace Utility
         constexpr Resource& operator*() & noexcept              { return m_manager->get_resource(m_index.value()); };
         constexpr const Resource&& operator*() const&& noexcept { return m_manager->get_resource(m_index.value()); };
         constexpr Resource&& operator*() && noexcept            { return m_manager->get_resource(m_index.value()); };
-        constexpr bool is_valid() const noexcept                { return m_manager != nullptr; };
-        constexpr explicit operator bool() const noexcept       { return is_valid(); };
+        constexpr Resource& value() noexcept                    { return m_manager->get_resource(m_index.value()); };
+        constexpr const Resource& value() const noexcept        { return m_manager->get_resource(m_index.value()); };
+        constexpr bool has_value() const noexcept               { return m_manager != nullptr; };
+        constexpr explicit operator bool() const noexcept       { return has_value(); };
     };
 } // namespace Utility
