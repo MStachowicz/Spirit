@@ -177,14 +177,169 @@ namespace Test
             CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
             CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
         }
+		{// Test range-based for - these depend on the ResourceManager leaving gaps inside the buffer when erasing from non-end positions.
+			{ // Test range-based for non-const
+				MemoryCorrectnessItem::reset();
+				{
+					Manager manager;
+					std::vector<Ref> refs;
+					refs.reserve(5);
+					for (auto i = 0; i < 5; i++)
+					{
+						refs.push_back(manager.insert(MemoryCorrectnessItem{}));
+						refs.back()->m_member = i;
+					}
+					// Test full buffer iteration.
+					{
+						std::vector<int> values;
+						for (auto& resource : manager)
+							values.push_back(*resource.m_member);
 
+						CHECK_EQUAL(values.size(), 5, "Range-based for loop iteration full buffer count");
+						CHECK_EQUAL(values[0], 0, "Range-based for loop iteration full buffer data validity 0");
+						CHECK_EQUAL(values[1], 1, "Range-based for loop iteration full buffer data validity 1");
+						CHECK_EQUAL(values[2], 2, "Range-based for loop iteration full buffer data validity 2");
+						CHECK_EQUAL(values[3], 3, "Range-based for loop iteration full buffer data validity 3");
+						CHECK_EQUAL(values[4], 4, "Range-based for loop iteration full buffer data validity 4");
+					}
+					// Test buffer with middle-gap iteration.
+					{
+						refs.erase(refs.begin() + 2);
+
+						std::vector<int> values;
+						for (auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 4, "Range-based for loop iteration middle-gap buffer count");
+						CHECK_EQUAL(values[0], 0, "Range-based for loop iteration middle-gap buffer data validity 0");
+						CHECK_EQUAL(values[1], 1, "Range-based for loop iteration middle-gap buffer data validity 1");
+						CHECK_EQUAL(values[2], 3, "Range-based for loop iteration middle-gap buffer data validity 2");
+					}
+					// Test buffer with start-gap iteration.
+					{
+						refs.erase(refs.begin());
+
+						std::vector<int> values;
+						for (auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 3, "Range-based for loop iteration start-gap buffer count");
+						CHECK_EQUAL(values[0], 1, "Range-based for loop iteration start-gap buffer data validity 0");
+						CHECK_EQUAL(values[1], 3, "Range-based for loop iteration start-gap buffer data validity 1");
+						CHECK_EQUAL(values[2], 4, "Range-based for loop iteration start-gap buffer data validity 2");
+					}
+					// Test buffer with end-gap iteration.
+					{
+						refs.erase(refs.end() - 1);
+
+						std::vector<int> values;
+						for (auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 2, "Range-based for loop iteration end-gap buffer count");
+						CHECK_EQUAL(values[0], 1, "Range-based for loop iteration end-gap buffer data validity 0");
+						CHECK_EQUAL(values[1], 3, "Range-based for loop iteration end-gap buffer data validity 1");
+					}
+					// Test buffer with empty iteration.
+					{
+						refs.clear();
+
+						std::vector<int> values;
+						for (const auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 0, "Range-based for loop iteration clear buffer count");
+					}
+				}
+				CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
+				CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
+			}
+
+			{// Test range-based for const correctness
+				MemoryCorrectnessItem::reset();
+				{
+					const Manager manager;
+					std::vector<Ref> refs;
+					refs.reserve(5);
+					for (auto i = 0; i < 5; i++)
+					{// Hack to get around the const-ness of the manager for this test.
+						Manager& non_const_manager = const_cast<Manager&>(manager);
+						refs.push_back(non_const_manager.insert(MemoryCorrectnessItem{}));
+						refs.back()->m_member = i;
+					}
+					// Test full buffer iteration.
+					{
+						std::vector<int> values;
+						for (const auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 5, "Range-based for loop iteration full buffer count");
+						CHECK_EQUAL(values[0], 0, "Range-based for loop iteration full buffer data validity 0");
+						CHECK_EQUAL(values[1], 1, "Range-based for loop iteration full buffer data validity 1");
+						CHECK_EQUAL(values[2], 2, "Range-based for loop iteration full buffer data validity 2");
+						CHECK_EQUAL(values[3], 3, "Range-based for loop iteration full buffer data validity 3");
+						CHECK_EQUAL(values[4], 4, "Range-based for loop iteration full buffer data validity 4");
+					}
+					// Test buffer with middle-gap iteration.
+					{
+						refs.erase(refs.begin() + 2);
+
+                        std::vector<int> values;
+                        for (auto resource : manager)
+                            values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 4, "Range-based for loop iteration middle-gap buffer count");
+						CHECK_EQUAL(values[0], 0, "Range-based for loop iteration middle-gap buffer data validity 0");
+						CHECK_EQUAL(values[1], 1, "Range-based for loop iteration middle-gap buffer data validity 1");
+						CHECK_EQUAL(values[2], 3, "Range-based for loop iteration middle-gap buffer data validity 2");
+					}
+					// Test buffer with start-gap iteration.
+					{
+						refs.erase(refs.begin());
+
+						std::vector<int> values;
+						for (const auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 3, "Range-based for loop iteration start-gap buffer count");
+						CHECK_EQUAL(values[0], 1, "Range-based for loop iteration start-gap buffer data validity 0");
+						CHECK_EQUAL(values[1], 3, "Range-based for loop iteration start-gap buffer data validity 1");
+						CHECK_EQUAL(values[2], 4, "Range-based for loop iteration start-gap buffer data validity 2");
+					}
+					// Test buffer with end-gap iteration.
+					{
+						refs.erase(refs.end() - 1);
+
+						std::vector<int> values;
+						for (const auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 2, "Range-based for loop iteration end-gap buffer count");
+						CHECK_EQUAL(values[0], 1, "Range-based for loop iteration end-gap buffer data validity 0");
+						CHECK_EQUAL(values[1], 3, "Range-based for loop iteration end-gap buffer data validity 1");
+					}
+					// Test buffer with empty iteration.
+					{
+						refs.clear();
+
+						std::vector<int> values;
+						for (const auto& resource : manager)
+							values.push_back(*resource.m_member);
+
+						CHECK_EQUAL(values.size(), 0, "Range-based for loop iteration clear buffer count");
+					}
+				}
+				CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
+				CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
+			}
+		}
 
         {// TODO test get_or_create
         }
         {// TODO Check move assigning and move constructing a ResourceManager
         }
         {// TODO check Ref is_valid() == false after the manager is cleared?
-        }
+		}
     }
 
     void Test::ResourceManagerTester::runPerformanceTests() {}
