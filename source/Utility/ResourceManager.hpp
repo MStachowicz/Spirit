@@ -213,6 +213,59 @@ namespace Utility
                     func(get_resource(i));
         }
 
+		class ResourceIterator
+		{
+			ResourceManager& m_resource_manager;
+			size_t m_index;
+
+		public:
+			ResourceIterator(ResourceManager& resource_manager, size_t index)
+				: m_resource_manager(resource_manager), m_index(index)
+			{
+				while (m_index < m_resource_manager.m_size && m_resource_manager.m_free_indices.contains(m_index))
+					++m_index;
+			}
+			ResourceIterator& operator++()
+			{
+				do { ++m_index; }
+				while (m_index < m_resource_manager.m_size && m_resource_manager.m_free_indices.contains(m_index));
+				return *this;
+            }
+
+            Resource& operator*() { return m_resource_manager.get_resource(m_index); }
+            bool operator!=(const ResourceIterator& other) const { return m_index != other.m_index; }
+        };
+
+		class ConstResourceIterator
+		{
+			const ResourceManager& m_resource_manager;
+			size_t m_index;
+
+		public:
+			ConstResourceIterator(const ResourceManager& resource_manager, size_t index)
+				: m_resource_manager(resource_manager), m_index(index)
+			{
+				while (m_index < m_resource_manager.m_size && m_resource_manager.m_free_indices.contains(m_index))
+					++m_index;
+			}
+			ConstResourceIterator& operator++()
+			{
+				do { ++m_index; }
+				while (m_index < m_resource_manager.m_size && m_resource_manager.m_free_indices.contains(m_index));
+				return *this;
+            }
+
+            const Resource& operator*() { return m_resource_manager.get_resource(m_index); }
+            bool operator!=(const ConstResourceIterator& other) const { return m_index != other.m_index; }
+        };
+
+        ResourceIterator begin()            { return ResourceIterator(*this, 0); }
+        ResourceIterator end()              { return ResourceIterator(*this, m_size); }
+        ConstResourceIterator begin() const { return ConstResourceIterator(*this, 0); }
+        ConstResourceIterator end()   const { return ConstResourceIterator(*this, m_size); }
+        ConstResourceIterator cbegin() const noexcept { return begin(); }
+        ConstResourceIterator cend()   const noexcept { return end(); }
+
     private:
         [[nodiscard]] Resource& get_resource(size_t p_index)
         {
