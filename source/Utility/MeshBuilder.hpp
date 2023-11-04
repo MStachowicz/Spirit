@@ -124,6 +124,27 @@ namespace Utility
             else
                 ASSERT(false, "add_quad for this primitive mode is not supported.");
         }
+		void add_cone(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
+		{
+			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			{
+				const float angle_step = 2.0f * std::numbers::pi_v<float> / segments;
+
+				for (auto i = 0; i < segments; ++i)
+				{
+					float angle     = i * angle_step;
+					float nextAngle = (i + 1) * angle_step;
+
+					glm::vec3 p1 = base + radius * glm::vec3(glm::cos(nextAngle), 0, glm::sin(nextAngle));
+					glm::vec3 p2 = base + radius * glm::vec3(glm::cos(angle),     0, glm::sin(angle));
+
+					add_triangle(p1, p2, top, glm::vec2(0.f, 0.f), glm::vec2(1.f, 0.f), glm::vec2(0.5f, 1.f));
+				}
+				add_circle(base, radius, segments);
+			}
+			else
+				ASSERT(false, "add_cone for this primitive mode is not supported.");
+		}
         void resereve(size_t size)
         {
             data.reserve(size);
