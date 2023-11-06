@@ -77,17 +77,26 @@ namespace Utility
 			else
 				ASSERT(false, "add_vertex for this primitive mode is not supported.");
 		}
-		void add_triangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec2 uv1 = {0,0}, const glm::vec2 uv2 = {0,0}, const glm::vec2 uv3 = {0,0})
+		void add_triangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec2 uv1 = {0, 0}, const glm::vec2 uv2 = {0, 0}, const glm::vec2 uv3 = {0, 0}, const glm::vec3& normal = {0.f, 0.f, 0.f})
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
-				const auto v1     = p2 - p1;
-				const auto v2     = p3 - p1;
-				const auto normal = glm::cross(v1, v2);
+				if (normal == glm::vec3{0.f})
+				{
+					const auto v1          = p2 - p1;
+					const auto v2          = p3 - p1;
+					const auto calc_normal = glm::cross(v1, v2);
 
+					data.emplace_back(Vertex{p1, calc_normal, uv1, current_colour});
+					data.emplace_back(Vertex{p2, calc_normal, uv2, current_colour});
+					data.emplace_back(Vertex{p3, calc_normal, uv3, current_colour});
+				}
+				else
+				{
 				data.emplace_back(Vertex{p1, normal, uv1, current_colour});
 				data.emplace_back(Vertex{p2, normal, uv2, current_colour});
 				data.emplace_back(Vertex{p3, normal, uv3, current_colour});
+				}
 			}
 			else
 				ASSERT(false, "add_triangle for this primitive mode is not supported.");
