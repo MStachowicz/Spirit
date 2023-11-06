@@ -27,6 +27,55 @@ struct aiScene;
 
 namespace Data
 {
+	class Vertex
+	{
+	public:
+		glm::vec3 position = glm::vec3{0.f};
+		glm::vec3 normal   = glm::vec3{0.f};
+		glm::vec2 uv       = glm::vec2{0.f};
+		glm::vec3 colour   = glm::vec3{1.f};
+	};
+
+	class NewMesh // TODO replace OpenGL::Mesh and Data::Mesh with this
+	{
+		OpenGL::VAO VAO   = {};
+		OpenGL::VBO VBO   = {};
+		GLsizei draw_size = 0;
+		OpenGL::PrimitiveMode primitive_mode;
+
+	public:
+		void draw()
+		{
+			VAO.bind();
+			OpenGL::draw_arrays(primitive_mode, 0, draw_size);
+		}
+
+		NewMesh(const std::vector<Vertex>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
+			: VAO{}
+			, VBO{}
+			, draw_size{(GLsizei)vertex_data.size()}
+			, primitive_mode{primitive_mode}
+		{
+			VAO.bind();
+			VBO.bind();
+
+			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(Vertex), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
+
+			OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
+			OpenGL::vertex_attrib_pointer(1, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+			OpenGL::vertex_attrib_pointer(3, 2, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+			OpenGL::vertex_attrib_pointer(2, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, colour));
+
+			OpenGL::enable_vertex_attrib_array(0);
+			OpenGL::enable_vertex_attrib_array(1);
+			OpenGL::enable_vertex_attrib_array(2);
+			OpenGL::enable_vertex_attrib_array(3);
+		}
+	};
+}
+
+namespace Data
+{
     struct Material
     {
         // If the Mesh has a pre-defined texture associated it is set here.

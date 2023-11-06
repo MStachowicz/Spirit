@@ -2,6 +2,7 @@
 
 #include "System/TextureSystem.hpp"
 
+#include "Utility/MeshBuilder.hpp"
 #include "Utility/PerlinNoise.hpp"
 
 #include <imgui.h>
@@ -20,7 +21,7 @@ float compute_height(float x, float z, float scale_factor, const siv::PerlinNois
     return perlin.noise2D(x * scale_factor, z * scale_factor);
 }
 
-Utility::Mesh Component::Terrain::generate_mesh() noexcept
+Data::NewMesh Component::Terrain::generate_mesh() noexcept
 {
     // Use perlin noise to generate a heightmap in the xz plane.
     auto mb = Utility::MeshBuilder{OpenGL::PrimitiveMode::Triangles};

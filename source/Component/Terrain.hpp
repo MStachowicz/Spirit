@@ -1,6 +1,5 @@
-#include "MeshBuilder.hpp"
-
 #include "Component/Texture.hpp"
+#include "Component/Mesh.hpp"
 
 namespace System
 {
@@ -10,7 +9,7 @@ namespace Component
 {
     class Terrain
     {
-        Utility::Mesh generate_mesh() noexcept;
+        Data::NewMesh generate_mesh() noexcept;
 
     public:
         glm::vec3 position;
@@ -18,7 +17,7 @@ namespace Component
         int size_z;
         float scale_factor;
         TextureRef texture;
-        Utility::Mesh mesh;
+        Data::NewMesh mesh;
 
         Terrain(int size_x, int size_z) noexcept;
         void draw_UI(System::TextureSystem& texture_system);

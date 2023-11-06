@@ -5,6 +5,8 @@
 #include "OpenGL/Types.hpp"
 #include "OpenGL/GLState.hpp"
 
+#include "Component/Mesh.hpp"
+
 #include "Utility/Utility.hpp"
 
 #include "glm/glm.hpp"
@@ -17,52 +19,6 @@
 
 namespace Utility
 {
-	class Vertex
-	{
-	public:
-		glm::vec3 position = glm::vec3{0.f};
-		glm::vec3 normal   = glm::vec3{0.f};
-		glm::vec2 uv       = glm::vec2{0.f};
-		glm::vec3 colour   = glm::vec3{1.f};
-	};
-
-	class Mesh
-	{
-		OpenGL::VAO VAO   = {};
-		OpenGL::VBO VBO   = {};
-		GLsizei draw_size = 0;
-		OpenGL::PrimitiveMode primitive_mode;
-
-	public:
-		void draw()
-		{
-			VAO.bind();
-			OpenGL::draw_arrays(primitive_mode, 0, draw_size);
-		}
-
-		Mesh(const std::vector<Vertex>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
-			: VAO{}
-			, VBO{}
-			, draw_size{(GLsizei)vertex_data.size()}
-			, primitive_mode{primitive_mode}
-		{
-			VAO.bind();
-			VBO.bind();
-
-			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(Vertex), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
-
-			OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
-			OpenGL::vertex_attrib_pointer(1, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-			OpenGL::vertex_attrib_pointer(3, 2, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, uv));
-			OpenGL::vertex_attrib_pointer(2, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, colour));
-
-			OpenGL::enable_vertex_attrib_array(0);
-			OpenGL::enable_vertex_attrib_array(1);
-			OpenGL::enable_vertex_attrib_array(2);
-			OpenGL::enable_vertex_attrib_array(3);
-		}
-	};
-
 	class MeshBuilder
 	{
 	public:
@@ -75,7 +31,7 @@ namespace Utility
 		void add_vertex(const glm::vec3& position, const glm::vec3& normal, const glm::vec2 uv = {0,0})
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Points)
-				data.emplace_back(Vertex{position, normal, uv, current_colour});
+				data.emplace_back(Data::Vertex{position, normal, uv, current_colour});
 			else
 				ASSERT(false, "add_vertex for this primitive mode is not supported.");
 		}
@@ -89,15 +45,15 @@ namespace Utility
 					const auto v2          = p3 - p1;
 					const auto calc_normal = glm::cross(v1, v2);
 
-					data.emplace_back(Vertex{p1, calc_normal, uv1, current_colour});
-					data.emplace_back(Vertex{p2, calc_normal, uv2, current_colour});
-					data.emplace_back(Vertex{p3, calc_normal, uv3, current_colour});
+					data.emplace_back(Data::Vertex{p1, calc_normal, uv1, current_colour});
+					data.emplace_back(Data::Vertex{p2, calc_normal, uv2, current_colour});
+					data.emplace_back(Data::Vertex{p3, calc_normal, uv3, current_colour});
 				}
 				else
 				{
-					data.emplace_back(Vertex{p1, normal, uv1, current_colour});
-					data.emplace_back(Vertex{p2, normal, uv2, current_colour});
-					data.emplace_back(Vertex{p3, normal, uv3, current_colour});
+					data.emplace_back(Data::Vertex{p1, normal, uv1, current_colour});
+					data.emplace_back(Data::Vertex{p2, normal, uv2, current_colour});
+					data.emplace_back(Data::Vertex{p3, normal, uv3, current_colour});
 				}
 			}
 			else
@@ -226,13 +182,13 @@ namespace Utility
 		{
 			current_colour = colour;
 		}
-		[[NODISCARD]] Mesh get_mesh()
+		[[NODISCARD]] Data::NewMesh get_mesh()
 		{
-			return Mesh{data, primitive_mode};
+			return Data::NewMesh{data, primitive_mode};
 		}
 
 	private:
-		std::vector<Vertex> data;
+		std::vector<Data::Vertex> data;
 		glm::vec3 current_colour;
 		const OpenGL::PrimitiveMode primitive_mode;
 
