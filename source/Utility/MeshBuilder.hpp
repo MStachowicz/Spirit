@@ -205,6 +205,19 @@ namespace Utility
 			else
 				ASSERT(false, "add_cylinder for this primitive mode is not supported.");
 		}
+		void add_arrow(const glm::vec3& base, const glm::vec3& top, size_t segments = 16)
+		{
+			const auto base_to_top        = top - base;
+			const auto direction          = glm::normalize(base_to_top);
+			const auto length             = glm::length(base_to_top);
+			const auto base_radius        = length * 0.05f;
+			const auto cone_radius        = length * 0.2f;
+			const auto body_to_head_ratio = 0.75f;
+			const auto body_top           = base + direction * length * body_to_head_ratio;
+
+			add_cylinder(base, body_top, base_radius, segments);
+			add_cone(body_top, top, cone_radius, segments);
+		}
 		void resereve(size_t size)
 		{
 			data.reserve(size);
