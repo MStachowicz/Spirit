@@ -197,5 +197,29 @@ namespace Utility
 		std::vector<Vertex> data;
 		glm::vec3 current_colour;
 		const OpenGL::PrimitiveMode primitive_mode;
+
+		// Get the points and UVs for a circle.
+		//@param center Center of the circle.
+		//@param radius Radius of the circle.
+		//@param segments Number of segments to use to make the circle.
+		//@param normal Direction the circle is facing. Decides the winding order.
+		//@return A vector of pairs of points and UVs.
+		[[nodiscard]] static std::vector<std::pair<glm::vec3, glm::vec2>> get_circle_points(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
+		{
+			std::vector<std::pair<glm::vec3, glm::vec2>> points_and_UVs;
+			points_and_UVs.reserve(segments);
+			const auto rotation = Utility::getRotation(glm::vec3{0.f, 1.f, 0.f}, normal); // Get the rotation quaternion to rotate the circle to the correct orientation.
+			const float angle_step = 2.0f * std::numbers::pi_v<float> / segments;
+
+			for (auto i = 0; i < segments; ++i)
+			{
+				const auto angle = (float)i * angle_step;
+				const auto point = center + (rotation * glm::vec3(radius * glm::sin(angle), 0.f, radius * glm::cos(angle)));
+				const auto uv    = glm::vec2{glm::sin(angle), glm::cos(angle)};
+				points_and_UVs.emplace_back(std::make_pair(point, uv));
+			}
+
+			return points_and_UVs;
+		}
 	};
 }
