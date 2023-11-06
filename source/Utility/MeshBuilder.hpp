@@ -2,16 +2,18 @@
 
 #include "Logger.hpp"
 
-#include "glm/vec3.hpp"
-#include "glm/vec2.hpp"
-
 #include "OpenGL/Types.hpp"
 #include "OpenGL/GLState.hpp"
 
+#include "Utility/Utility.hpp"
+
 #include "glm/glm.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec2.hpp"
 
 #include <vector>
 #include <numbers>
+#include <utility>
 
 namespace Utility
 {
@@ -93,9 +95,9 @@ namespace Utility
 				}
 				else
 				{
-				data.emplace_back(Vertex{p1, normal, uv1, current_colour});
-				data.emplace_back(Vertex{p2, normal, uv2, current_colour});
-				data.emplace_back(Vertex{p3, normal, uv3, current_colour});
+					data.emplace_back(Vertex{p1, normal, uv1, current_colour});
+					data.emplace_back(Vertex{p2, normal, uv2, current_colour});
+					data.emplace_back(Vertex{p3, normal, uv3, current_colour});
 				}
 			}
 			else
@@ -135,19 +137,19 @@ namespace Utility
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
-				const float angle_step = 2.0f * std::numbers::pi_v<float> / segments;
+				const auto top_to_base    = glm::normalize(base - top);
+				const auto points_and_UVs = get_circle_points(base, radius, segments, top_to_base);
 
 				for (auto i = 0; i < segments; ++i)
-				{
-					float angle     = i * angle_step;
-					float nextAngle = (i + 1) * angle_step;
+					add_triangle(
+						points_and_UVs[i].first,
+						top,
+						points_and_UVs[(i + 1) % segments].first,
+						glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f))),
+						glm::vec2{0.5f, 0.5f},
+						glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
 
-					glm::vec3 p1 = base + radius * glm::vec3(glm::cos(nextAngle), 0, glm::sin(nextAngle));
-					glm::vec3 p2 = base + radius * glm::vec3(glm::cos(angle),     0, glm::sin(angle));
-
-					add_triangle(p1, p2, top, glm::vec2(0.f, 0.f), glm::vec2(1.f, 0.f), glm::vec2(0.5f, 1.f));
-				}
-				add_circle(base, radius, segments);
+				add_circle(base, radius, segments, top_to_base);
 			}
 			else
 				ASSERT(false, "add_cone for this primitive mode is not supported.");
@@ -156,24 +158,49 @@ namespace Utility
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
-				const float angle_step = 2.0f * std::numbers::pi_v<float> / segments;
+				const auto base_to_top                = top - base;
+				const auto base_to_top_dir            = glm::normalize(base_to_top);
+				const auto top_to_base_dir            = glm::normalize(base - top);
+				const auto base_circle_points_and_UVs = get_circle_points(base, radius, segments, top_to_base_dir);
 
 				for (auto i = 0; i < segments; ++i)
 				{
-					float angle     = i * angle_step;
-					float nextAngle = (i + 1) * angle_step;
-
-					glm::vec3 p1 = base + radius * glm::vec3(glm::cos(angle), 0, glm::sin(angle));
-					glm::vec3 p2 = base + radius * glm::vec3(glm::cos(nextAngle), 0, glm::sin(nextAngle));
-					glm::vec3 p3 = top + radius * glm::vec3(glm::cos(angle), 0, glm::sin(angle));
-					glm::vec3 p4 = top + radius * glm::vec3(glm::cos(nextAngle), 0, glm::sin(nextAngle));
-
-					add_triangle(p1, p2, p3, glm::vec2(0.f, 0.f), glm::vec2(1.f, 0.f), glm::vec2(0.5f, 1.f));
-					add_triangle(p2, p4, p3, glm::vec2(1.f, 0.f), glm::vec2(1.f, 1.f), glm::vec2(0.5f, 1.f));
+					{// Add the triangles for the side of the cylinder. Go in triangle pairs forming quads along the side.
+						add_triangle(
+							base_circle_points_and_UVs[i].first,
+							base_circle_points_and_UVs[i].first + base_to_top,
+							base_circle_points_and_UVs[(i + 1) % segments].first,
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f))),
+							glm::vec2{0.5f, 0.5f},
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+						add_triangle(
+							base_circle_points_and_UVs[(i + 1) % segments].first,
+							base_circle_points_and_UVs[i].first + base_to_top,
+							base_circle_points_and_UVs[(i + 1) % segments].first + base_to_top,
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f))),
+							glm::vec2{0.5f, 0.5f},
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+					}
+					{// Add the triangles for the circles at the base and top of the cylinder.
+						// Though identical to MeshBuilder::add_circle, we dont want to call get_circle_points more than once so we reuse the base_circle_points.
+						add_triangle(// Base triangle
+							base_circle_points_and_UVs[(i + 1) % segments].first,
+							base,
+							base_circle_points_and_UVs[i].first,
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f)),
+							glm::vec2{0.5f, 0.5f},
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f)),
+							top_to_base_dir);
+						add_triangle( // Top triangle. Flip order of vertices to reverse winding order.
+							base_circle_points_and_UVs[i].first + base_to_top,
+							base + base_to_top,
+							base_circle_points_and_UVs[(i + 1) % segments].first + base_to_top,
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f)),
+							glm::vec2{0.5f, 0.5f},
+							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f)),
+							-top_to_base_dir);
+					}
 				}
-
-				add_circle(base, radius, segments);
-				add_circle(top, radius, segments);
 			}
 			else
 				ASSERT(false, "add_cylinder for this primitive mode is not supported.");
