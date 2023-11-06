@@ -61,33 +61,26 @@ namespace Utility
         return q;
     }
 
-    glm::quat getRotation(const glm::vec3& pStart, const glm::vec3& pDestination)
+    glm::quat getRotation(const glm::vec3& p_start, const glm::vec3& p_destination)
     {
-        // Reference: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+		ASSERT(glm::length2(p_start) == 1.f,       "[UTILITY] p_start is not normalized");
+		ASSERT(glm::length2(p_destination) == 1.f, "[UTILITY] p_destination is not normalized");
 
-        const glm::vec3 start       = glm::normalize(pStart);
-        const glm::vec3 destination = glm::normalize(pDestination);
+        auto norm_u_norm_v = std::sqrt(glm::dot(p_start, p_start) * glm::dot(p_destination, p_destination));
+        auto real_part     = norm_u_norm_v + glm::dot(p_start, p_destination);
+        glm::vec3 w;
 
-        const float cosTheta = glm::dot(start, destination);
-        glm::vec3 rotationAxis;
-
-        if (cosTheta < -1.f + 0.001f)
-        { // Special case when vectors in opposite directions, there is no "ideal" rotation axis - guess one; any will do as long as it's perpendicular to start
-            rotationAxis = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), start);
-
-            if (glm::length2(rotationAxis) < 0.01) // bad luck, they were parallel, try again!
-                rotationAxis = glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), start);
-
-            rotationAxis = glm::normalize(rotationAxis);
-            return glm::angleAxis(glm::radians(180.0f), rotationAxis);
-        }
-        else
+        if (real_part < 1.e-6f * norm_u_norm_v)
         {
-            rotationAxis     = glm::cross(start, destination);
-            const float s    = sqrt((1.f + cosTheta) * 2.f);
-            const float invs = 1.f / s;
-            return glm::quat(s * 0.5f, rotationAxis.x * invs, rotationAxis.y * invs, rotationAxis.z * invs);
+            // If p_start and p_destination are exactly opposite, rotate 180 degrees round an arbitrary orthogonal axis.
+			// Axis normalisation can happen later, when we normalise the quaternion.
+            real_part = 0.0f;
+            w         = std::abs(p_start.x) > std::abs(p_start.z) ? glm::vec3(-p_start.y, p_start.x, 0.f) : glm::vec3(0.f, -p_start.z, p_start.y);
         }
+        else// Otherwise, build quaternion the standard way.
+            w = glm::cross(p_start, p_destination);
+
+        return glm::normalize(glm::quat(real_part, w.x, w.y, w.z));
     }
 
     glm::vec3 get_direction_from_cursor(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::mat4& p_projection, const glm::mat4& p_view)

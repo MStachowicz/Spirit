@@ -82,8 +82,10 @@ namespace Utility
     glm::quat toQuaternion(const float& pRoll, const float& pPitch, const float& pYaw);
     // Converts XYZ (Roll-Pitch-Yaw) into a quaternion rotation. Roll, pitch and yaw are expected in radians.
     inline glm::quat toQuaternion(const glm::vec3& pRollPitchYaw) { return toQuaternion(pRollPitchYaw.x, pRollPitchYaw.y, pRollPitchYaw.z); }
-    // Returns the quaternon rotation to get from pStart to pDestination direction vectors.
-    glm::quat getRotation(const glm::vec3& pStart, const glm::vec3& pDestination);
+	//@Param p_start: The normalised starting direction vector.
+	//@Param p_destination: The normalised destination direction vector.
+	//@Return: The quaternion rotation to get from p_start to p_destination.
+    glm::quat getRotation(const glm::vec3& p_start, const glm::vec3& p_destination);
 
     // Returns the world space direction the cursor is pointing by reversing the projection and view matrices.
     glm::vec3 get_cursor_direction(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::mat4& p_projection, const glm::mat4& p_view);
