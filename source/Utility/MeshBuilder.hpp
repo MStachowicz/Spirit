@@ -102,27 +102,25 @@ namespace Utility
 				ASSERT(false, "add_triangle for this primitive mode is not supported.");
 
 		}
-		void add_circle(const glm::vec3& center, float radius, size_t segments)
+		void add_circle(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
-				const float angle_step = 2.0f * std::numbers::pi_v<float> / segments;
+				const auto points_and_UVs = get_circle_points(center, radius, segments, normal);
 
 				for (auto i = 0; i < segments; ++i)
-				{
-					float angle     = i * angle_step;
-					float nextAngle = (i + 1) * angle_step;
-
-					glm::vec3 p1 = center + radius * glm::vec3(glm::cos(angle), 0, glm::sin(angle));
-					glm::vec3 p2 = center + radius * glm::vec3(glm::cos(nextAngle), 0, glm::sin(nextAngle));
-
-					add_triangle(p1, p2, center, glm::vec2(0.f, 0.f), glm::vec2(1.f, 0.f), glm::vec2(0.5f, 1.f));
-				}
+					add_triangle(
+						points_and_UVs[(i + 1) % segments].first,
+						center,
+						points_and_UVs[i].first,
+						glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f)),
+						glm::vec2{0.5f, 0.5f},
+						glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f)),
+						normal);
 			}
 			else
 				ASSERT(false, "add_circle for this primitive mode is not supported.");
 		}
-
 		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
