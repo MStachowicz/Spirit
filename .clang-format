@@ -11,7 +11,7 @@ PointerAlignment: Left
 ColumnLimit: '0'
 
 # Dont use tabs, use 4 spaces instead. Tabs vary across OS.
-UseTab: Never
+UseTab: ForIndentation
 TabWidth: '4'
 IndentWidth: '4'
 SpacesBeforeTrailingComments: '1'
