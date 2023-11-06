@@ -132,6 +132,7 @@ namespace OpenGL
         System::MeshSystem& mMeshSystem;
 
         Shader mUniformColourShader;
+        Shader m_colour_shader;
         Shader mTextureShader;
         Shader mScreenTextureShader;
         Shader mSkyBoxShader;
@@ -149,9 +150,6 @@ namespace OpenGL
         PostProcessingOptions mPostProcessingOptions;
 
         DebugOptions mDebugOptions;
-        void showGraphicsOptions();
-        void showPhysicsOptions();
-
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
         OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem) noexcept;
 
@@ -172,7 +170,5 @@ namespace OpenGL
         void drawCylinder(const Geometry::Cylinder& pCylinder, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
         void drawSphere(const glm::vec3& pCenter, const float& pRadius, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
         void drawSphere(const Geometry::Sphere& pSphere, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
-
-        void onWindowResize(const int pWidth, const int pHeight);
     };
 } // namespace OpenGL

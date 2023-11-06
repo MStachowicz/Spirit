@@ -26,6 +26,7 @@
 #include "Logger.hpp"
 #include "Utility.hpp"
 #include "Config.hpp"
+#include "Utility/MeshBuilder.hpp"
 
 // PLATFORM
 #include "Core.hpp"
@@ -84,6 +85,7 @@ namespace OpenGL
         , mMeshSystem{pMeshSystem}
         , mPostProcessingOptions{}
         , mUniformColourShader{"uniformColour"}
+        , m_colour_shader{"colour"}
         , mTextureShader{"texture1"}
         , mScreenTextureShader{"screenTexture"}
         , mSkyBoxShader{"skybox"}
@@ -398,9 +400,21 @@ namespace OpenGL
         if (mDebugOptions.mShowLightPositions)
             m_light_position_renderer.draw(scene, m_cube->mCompositeMesh.mChildMeshes[0].mMeshes[0].mGLData);
 
-        drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 1.f, glm::vec3(1.f, 0.f, 0.f));
-        drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, glm::vec3(0.f, 1.f, 0.f));
-        drawArrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 1.f, glm::vec3(0.f, 0.f, 1.f));
+		// Draw the origin point arrows
+		{
+			m_colour_shader.use();
+			m_colour_shader.set_uniform("model", glm::identity<glm::mat4>());
+
+			auto mb = Utility::MeshBuilder{PrimitiveMode::Triangles};
+			mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
+			mb.add_arrow(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f));
+			mb.set_colour(glm::vec3(0.f, 1.f, 0.f));
+			mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+			mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
+			mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f));
+			auto arrow_mesh = mb.get_mesh();
+			arrow_mesh.draw();
+		}
 
         {// Draw debug shapes
             for (const auto& cylinder : mDebugOptions.mCylinders)
