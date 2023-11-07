@@ -193,6 +193,8 @@ PRIVATE ImGui
 
 # OpenGL --------------------------------------------------------------------------------------
 add_library(OpenGL
+source/OpenGL/DrawCall.hpp
+source/OpenGL/DrawCall.cpp
 source/OpenGL/OpenGLRenderer.hpp
 source/OpenGL/OpenGLRenderer.cpp
 source/OpenGL/GridRenderer.hpp

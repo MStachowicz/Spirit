@@ -1,6 +1,6 @@
 #include "OpenGLRenderer.hpp"
 #include "OpenGL/DebugRenderer.hpp"
-
+#include "OpenGL/DrawCall.hpp"
 // ECS
 #include "Storage.hpp"
 
@@ -402,9 +402,6 @@ namespace OpenGL
 
 		// Draw the origin point arrows
 		{
-			m_colour_shader.use();
-			m_colour_shader.set_uniform("model", glm::identity<glm::mat4>());
-
 			auto mb = Utility::MeshBuilder{PrimitiveMode::Triangles};
 			mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
 			mb.add_arrow(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f));
@@ -413,7 +410,10 @@ namespace OpenGL
 			mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
 			mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f));
 			auto arrow_mesh = mb.get_mesh();
-			arrow_mesh.draw();
+
+			DrawCall draw_call;
+			draw_call.set_uniform("model", glm::identity<glm::mat4>());
+			draw_call.submit(m_colour_shader, arrow_mesh);
 		}
 
         {// Draw debug shapes
