@@ -45,6 +45,18 @@
 
 namespace OpenGL
 {
+	Data::NewMesh OpenGLRenderer::get_origin_arrows_mesh()
+	{
+		auto mb = Utility::MeshBuilder{PrimitiveMode::Triangles};
+		mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
+		mb.add_arrow(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f));
+		mb.set_colour(glm::vec3(0.f, 1.f, 0.f));
+		mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
+		mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f));
+		return mb.get_mesh();
+	}
+
     OpenGLRenderer::DebugOptions::DebugOptions()
         : mShowLightPositions{true}
         , mVisualiseNormals{false}
@@ -78,33 +90,34 @@ namespace OpenGL
         , mProjection{glm::identity<glm::mat4>()}
     {}
 
-    OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem)noexcept
-        : m_window{p_window}
-        , mScreenFramebuffer{}
-        , mSceneSystem{pSceneSystem}
-        , mMeshSystem{pMeshSystem}
-        , mPostProcessingOptions{}
-        , mUniformColourShader{"uniformColour"}
-        , m_colour_shader{"colour"}
-        , mTextureShader{"texture1"}
-        , mScreenTextureShader{"screenTexture"}
-        , mSkyBoxShader{"skybox"}
-        , m_phong_renderer{}
-        , m_particle_renderer{}
-        , m_light_position_renderer{}
-        , m_shadow_mapper{p_window}
-        , m_missing_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
-        , m_blank_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
-        , m_cube{pMeshSystem.mCubePrimitive}
-        , mViewInformation{}
-        , mDebugOptions{}
-    {
-        const auto windowSize = m_window.size();
-        mScreenFramebuffer.attachColourBuffer(windowSize.x, windowSize.y);
-        mScreenFramebuffer.attachDepthBuffer(windowSize.x, windowSize.y);
-        set_viewport(0, 0, windowSize.x, windowSize.y);
+	OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem) noexcept
+		: m_window{p_window}
+		, mScreenFramebuffer{}
+		, mSceneSystem{pSceneSystem}
+		, mMeshSystem{pMeshSystem}
+		, mPostProcessingOptions{}
+		, mUniformColourShader{"uniformColour"}
+		, m_colour_shader{"colour"}
+		, mTextureShader{"texture1"}
+		, mScreenTextureShader{"screenTexture"}
+		, mSkyBoxShader{"skybox"}
+		, m_phong_renderer{}
+		, m_particle_renderer{}
+		, m_light_position_renderer{}
+		, m_shadow_mapper{p_window}
+		, m_missing_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
+		, m_blank_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
+		, m_cube{pMeshSystem.mCubePrimitive}
+		, m_origin_arrows{get_origin_arrows_mesh()}
+		, mViewInformation{}
+		, mDebugOptions{}
+	{
+		const auto windowSize = m_window.size();
+		mScreenFramebuffer.attachColourBuffer(windowSize.x, windowSize.y);
+		mScreenFramebuffer.attachDepthBuffer(windowSize.x, windowSize.y);
+		set_viewport(0, 0, windowSize.x, windowSize.y);
 
-        LOG("Constructed new OpenGLRenderer instance");
+		LOG("Constructed new OpenGLRenderer instance");
     }
 
     void OpenGLRenderer::draw(const Data::Model& pModel)
@@ -402,18 +415,9 @@ namespace OpenGL
 
 		// Draw the origin point arrows
 		{
-			auto mb = Utility::MeshBuilder{PrimitiveMode::Triangles};
-			mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
-			mb.add_arrow(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f));
-			mb.set_colour(glm::vec3(0.f, 1.f, 0.f));
-			mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
-			mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
-			mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f));
-			auto arrow_mesh = mb.get_mesh();
-
 			DrawCall draw_call;
 			draw_call.set_uniform("model", glm::identity<glm::mat4>());
-			draw_call.submit(m_colour_shader, arrow_mesh);
+			draw_call.submit(m_colour_shader, m_origin_arrows);
 		}
 
         {// Draw debug shapes

@@ -18,9 +18,10 @@
 #include "glm/mat4x4.hpp"
 #include "glm/vec3.hpp"
 
-#include "Utility/ResourceManager.hpp"
 #include "Component/Texture.hpp"
 #include "Component/Mesh.hpp"
+
+#include "Utility/ResourceManager.hpp"
 
 // STD
 #include <filesystem>
@@ -66,6 +67,8 @@ namespace OpenGL
     // OpenGLRenderer renders the state of the ECS::Storage when draw is called.
     class OpenGLRenderer
     {
+		static Data::NewMesh get_origin_arrows_mesh();
+
         struct DebugOptions
         {
             DebugOptions();
@@ -93,7 +96,7 @@ namespace OpenGL
             // Physics
             bool mShowOrientations;
             bool mShowBoundingBoxes;
-                bool mFillBoundingBoxes;
+            bool mFillBoundingBoxes;
             bool mShowCollisionGeometry; // Display all Meshes according to their collision geometry
 
             std::vector<Geometry::Cylinder> mCylinders;
@@ -144,12 +147,13 @@ namespace OpenGL
         TextureRef m_missing_texture;
         TextureRef m_blank_texture;
         ModelRef m_cube;
+		Data::NewMesh m_origin_arrows;
 
     public:
         ViewInformation mViewInformation;
         PostProcessingOptions mPostProcessingOptions;
-
         DebugOptions mDebugOptions;
+
         // OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
         OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem) noexcept;
 
