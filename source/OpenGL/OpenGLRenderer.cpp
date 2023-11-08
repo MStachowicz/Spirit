@@ -47,7 +47,7 @@ namespace OpenGL
 {
 	Data::NewMesh OpenGLRenderer::get_origin_arrows_mesh()
 	{
-		auto mb = Utility::MeshBuilder{PrimitiveMode::Triangles};
+		auto mb = Utility::MeshBuilder{};
 		mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
 		mb.add_arrow(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f));
 		mb.set_colour(glm::vec3(0.f, 1.f, 0.f));

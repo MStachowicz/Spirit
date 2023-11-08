@@ -1,123 +1,175 @@
 #pragma once
 
-#include "Logger.hpp"
-
-#include "OpenGL/Types.hpp"
-#include "OpenGL/GLState.hpp"
-
 #include "Component/Mesh.hpp"
-
+#include "OpenGL/GLState.hpp"
 #include "Utility/Utility.hpp"
-
-#include "glm/glm.hpp"
-#include "glm/vec3.hpp"
-#include "glm/vec2.hpp"
+#include "Utility/Logger.hpp"
 
 #include <vector>
 #include <numbers>
 #include <utility>
+#include <type_traits>
 
 namespace Utility
 {
+	template <typename VertexType = Data::Vertex, OpenGL::PrimitiveMode primitive_mode = OpenGL::PrimitiveMode::Triangles>
 	class MeshBuilder
 	{
-		std::vector<Data::Vertex> data;
+		std::vector<VertexType> data;
 		glm::vec4 current_colour;
-		const OpenGL::PrimitiveMode primitive_mode;
 
 	public:
-		MeshBuilder(OpenGL::PrimitiveMode mode) noexcept
+		MeshBuilder() noexcept
 			: data{}
 			, current_colour{glm::vec4{1.f}}
-			, primitive_mode{mode}
 		{}
 
-		void add_vertex(const glm::vec3& position, const glm::vec3& normal, const glm::vec2 uv = {0,0})
+		template <typename Vertex>
+		void add_vertex(Vertex&& v)
 		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Points)
-				data.emplace_back(Data::Vertex{position, normal, uv, current_colour});
+			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
+			static_assert(primitive_mode == OpenGL::PrimitiveMode::Points, "add_vertex requires MeshBuilder PrimitiveMode to be Points.");
+
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Points)
+			{
+				v.colour = current_colour;
+				data.emplace_back(std::forward<Vertex>(v));
+			}
 			else
 				ASSERT(false, "add_vertex for this primitive mode is not supported.");
 		}
-		void add_line(glm::vec3 p1, glm::vec3 p2)
+		template <typename Vertex>
+		void add_line(Vertex&& v1, Vertex&& v2)
 		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Lines)
+			static_assert(primitive_mode == OpenGL::PrimitiveMode::Lines, "add_line requires MeshBuilder PrimitiveMode to be Lines.");
+
+			if constexpr (std::is_same_v<std::decay_t<Vertex>, glm::vec3>)
 			{
-				data.emplace_back(Data::Vertex{p1, glm::vec3{0.f}, glm::vec2{0.f}, current_colour});
-				data.emplace_back(Data::Vertex{p2, glm::vec3{0.f}, glm::vec2{0.f}, current_colour});
+				VertexType v1_t;
+				v1_t.position = v1;
+				VertexType v2_t;
+				v2_t.position = v2;
+
+				add_line(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t));
 			}
 			else
-				ASSERT(false, "add_line for this primitive mode is not supported.");
-		}
-		void add_triangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec2 uv1 = {0, 0}, const glm::vec2 uv2 = {0, 0}, const glm::vec2 uv3 = {0, 0}, const glm::vec3& normal = {0.f, 0.f, 0.f})
-		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
-				if (normal == glm::vec3{0.f})
-				{
-					const auto v1          = p2 - p1;
-					const auto v2          = p3 - p1;
-					const auto calc_normal = glm::cross(v1, v2);
+				static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
+				v1.colour = current_colour;
+				v2.colour = current_colour;
+				data.emplace_back(std::forward<Vertex>(v1));
+				data.emplace_back(std::forward<Vertex>(v2));
+			}
+		}
+		template <typename Vertex>
+		void add_triangle(Vertex&& v1, Vertex&& v2, Vertex&& v3)
+		{
+			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
+			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
 
-					data.emplace_back(Data::Vertex{p1, calc_normal, uv1, current_colour});
-					data.emplace_back(Data::Vertex{p2, calc_normal, uv2, current_colour});
-					data.emplace_back(Data::Vertex{p3, calc_normal, uv3, current_colour});
-				}
-				else
-				{
-					data.emplace_back(Data::Vertex{p1, normal, uv1, current_colour});
-					data.emplace_back(Data::Vertex{p2, normal, uv2, current_colour});
-					data.emplace_back(Data::Vertex{p3, normal, uv3, current_colour});
-				}
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			{
+				const auto edge1       = v2.position - v1.position;
+				const auto edge2       = v3.position - v1.position;
+				const auto calc_normal = glm::cross(edge1, edge2);
+				add_triangle(std::forward<Vertex>(v1), std::forward<Vertex>(v2), std::forward<Vertex>(v3), calc_normal);
 			}
 			else
 				ASSERT(false, "add_triangle for this primitive mode is not supported.");
-
 		}
+		template <typename Vertex>
+		void add_triangle(Vertex&& v1, Vertex&& v2, Vertex&& v3, const glm::vec3& normal)
+		{
+			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
+			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
+
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			{
+				v1.normal = normal;
+				v1.colour = current_colour;
+				v2.normal = normal;
+				v2.colour = current_colour;
+				v3.normal = normal;
+				v3.colour = current_colour;
+				data.emplace_back(std::forward<Vertex>(v1));
+				data.emplace_back(std::forward<Vertex>(v2));
+				data.emplace_back(std::forward<Vertex>(v3));
+			}
+			else
+				ASSERT(false, "add_triangle for this primitive mode is not supported.");
+		}
+
 		void add_circle(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
 		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
 				const auto points_and_UVs = get_circle_points(center, radius, segments, normal);
 
 				for (auto i = 0; i < segments; ++i)
-					add_triangle(
-						points_and_UVs[(i + 1) % segments].first,
-						center,
-						points_and_UVs[i].first,
-						glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f)),
-						glm::vec2{0.5f, 0.5f},
-						glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f)),
-						normal);
+				{
+					VertexType v1;
+					v1.position = points_and_UVs[(i + 1) % segments].first;
+					v1.uv       = glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+					VertexType v2;
+					v2.position = center;
+					v2.uv       = glm::vec2{0.5f, 0.5f};
+					VertexType v3;
+					v3.position = points_and_UVs[i].first;
+					v3.uv       = glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f));
+
+					add_triangle(v1, v2, v3, normal);
+				}
 			}
 			else
 				ASSERT(false, "add_circle for this primitive mode is not supported.");
 		}
 		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{// Reverse winding order to ensure the normal is facing the correct way.
-				add_triangle(top_left, bottom_left, bottom_right,     glm::vec2(0.f, 1.f), glm::vec2(0.f, 0.f), glm::vec2(1.f , 0.f));
-				add_triangle(top_left, bottom_right, top_right,       glm::vec2(0.f, 1.f), glm::vec2(1.f, 0.f), glm::vec2(1.f , 1.f));
+
+				const auto normal = glm::normalize(glm::cross(bottom_left - top_left, top_right - top_left));
+
+				VertexType top_left_v;
+				top_left_v.position = top_left;
+				top_left_v.uv       = glm::vec2(0.f, 1.f);
+				VertexType bottom_left_v;
+				bottom_left_v.position = bottom_left;
+				bottom_left_v.uv       = glm::vec2(0.f, 0.f);
+				VertexType bottom_right_v;
+				bottom_right_v.position = bottom_right;
+				bottom_right_v.uv       = glm::vec2(1.f, 0.f);
+				VertexType top_right_v;
+				top_right_v.position = top_right;
+				top_right_v.uv       = glm::vec2(1.f, 1.f);
+
+				add_triangle(top_left_v, bottom_left_v, bottom_right_v, normal);
+				add_triangle(top_left_v, bottom_right_v, top_right_v, normal);
 			}
 			else
 				ASSERT(false, "add_quad for this primitive mode is not supported.");
 		}
 		void add_cone(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
 		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
 				const auto top_to_base    = glm::normalize(base - top);
 				const auto points_and_UVs = get_circle_points(base, radius, segments, top_to_base);
 
 				for (auto i = 0; i < segments; ++i)
-					add_triangle(
-						points_and_UVs[i].first,
-						top,
-						points_and_UVs[(i + 1) % segments].first,
-						glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f))),
-						glm::vec2{0.5f, 0.5f},
-						glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+				{
+					VertexType v1;
+					v1.position = points_and_UVs[i].first;
+					v1.uv       = glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f));
+					VertexType v2;
+					v2.position = top;
+					v2.uv       = glm::vec2{0.5f, 0.5f};
+					VertexType v3;
+					v3.position = points_and_UVs[(i + 1) % segments].first;
+					v3.uv       = glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+
+					add_triangle(v1, v2, v3);
+				}
 
 				add_circle(base, radius, segments, top_to_base);
 			}
@@ -126,49 +178,46 @@ namespace Utility
 		}
 		void add_cylinder(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
 		{
-			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
 				const auto base_to_top                = top - base;
 				const auto base_to_top_dir            = glm::normalize(base_to_top);
-				const auto top_to_base_dir            = glm::normalize(base - top);
+				const auto top_to_base_dir            = -base_to_top_dir;
 				const auto base_circle_points_and_UVs = get_circle_points(base, radius, segments, top_to_base_dir);
+
+				VertexType base_vertex_center;
+				base_vertex_center.position = base;
+				base_vertex_center.uv       = glm::vec2{0.5f, 0.5f};
+				base_vertex_center.normal   = top_to_base_dir;
+
+				VertexType top_vertex_center;
+				top_vertex_center.position = top;
+				top_vertex_center.uv       = glm::vec2{0.5f, 0.5f};
+				top_vertex_center.normal   = base_to_top_dir;
 
 				for (auto i = 0; i < segments; ++i)
 				{
+					VertexType base_vertex_1;
+					base_vertex_1.position = base_circle_points_and_UVs[i].first;
+					base_vertex_1.uv       = glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f));
+					VertexType base_vertex_2;
+					base_vertex_2.position = base_circle_points_and_UVs[(i + 1) % segments].first;
+					base_vertex_2.uv       = glm::vec2{0.5f, 0.5f};
+					VertexType top_vertex_1;
+					top_vertex_1.position = base_circle_points_and_UVs[i].first + base_to_top;
+					top_vertex_1.uv       = glm::vec2{0.5f, 0.5f};
+					VertexType top_vertex_2;
+					top_vertex_2.position = base_circle_points_and_UVs[(i + 1) % segments].first + base_to_top;
+					top_vertex_2.uv       = glm::vec2{0.5f, 0.5f};
+
 					{// Add the triangles for the side of the cylinder. Go in triangle pairs forming quads along the side.
-						add_triangle(
-							base_circle_points_and_UVs[i].first,
-							base_circle_points_and_UVs[i].first + base_to_top,
-							base_circle_points_and_UVs[(i + 1) % segments].first,
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f))),
-							glm::vec2{0.5f, 0.5f},
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
-						add_triangle(
-							base_circle_points_and_UVs[(i + 1) % segments].first,
-							base_circle_points_and_UVs[i].first + base_to_top,
-							base_circle_points_and_UVs[(i + 1) % segments].first + base_to_top,
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f))),
-							glm::vec2{0.5f, 0.5f},
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+						add_triangle(base_vertex_1, top_vertex_1, base_vertex_2);
+						add_triangle(base_vertex_2, top_vertex_1, top_vertex_2);
 					}
 					{// Add the triangles for the circles at the base and top of the cylinder.
-						// Though identical to MeshBuilder::add_circle, we dont want to call get_circle_points more than once so we reuse the base_circle_points.
-						add_triangle(// Base triangle
-							base_circle_points_and_UVs[(i + 1) % segments].first,
-							base,
-							base_circle_points_and_UVs[i].first,
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f)),
-							glm::vec2{0.5f, 0.5f},
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f)),
-							top_to_base_dir);
-						add_triangle( // Top triangle. Flip order of vertices to reverse winding order.
-							base_circle_points_and_UVs[i].first + base_to_top,
-							base + base_to_top,
-							base_circle_points_and_UVs[(i + 1) % segments].first + base_to_top,
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f)),
-							glm::vec2{0.5f, 0.5f},
-							glm::vec2(0.5f) - (base_circle_points_and_UVs[i].second * glm::vec2(0.5f, -0.5f)),
-							-top_to_base_dir);
+					 // Though identical to MeshBuilder::add_circle, we dont want to call get_circle_points more than once so we reuse the base_circle_points.
+						add_triangle(base_vertex_2, base_vertex_center, base_vertex_1, top_to_base_dir);
+						add_triangle(top_vertex_1, top_vertex_center, top_vertex_2, base_to_top_dir);
 					}
 				}
 			}

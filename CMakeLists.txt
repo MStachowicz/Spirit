@@ -252,6 +252,7 @@ source/Utility/Utility.cpp
 source/Utility/Utility.hpp
 )
 target_include_directories(Utility
+PUBLIC source
 PUBLIC source/Utility
 PRIVATE source/External/stb
 )
