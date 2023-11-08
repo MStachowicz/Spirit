@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <string_view>
 #include <optional>
 
 namespace OpenGL
@@ -52,7 +53,7 @@ namespace OpenGL
 
         // Set the data for a loose-uniform in this shader program. Call Shader::use() before set_uniform.
         template<typename T>
-        inline void set_uniform(const char* p_name, const T& p_data)
+        inline void set_uniform(const std::string_view& p_name, const T& p_data)
         {
             ASSERT(get_current_shader_program() == m_handle, "Calling set uniform without calling Shader::use() first", p_name, m_name);
 
