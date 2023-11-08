@@ -39,6 +39,16 @@ namespace Utility
 			else
 				ASSERT(false, "add_vertex for this primitive mode is not supported.");
 		}
+		void add_line(glm::vec3 p1, glm::vec3 p2)
+		{
+			if (primitive_mode == OpenGL::PrimitiveMode::Lines)
+			{
+				data.emplace_back(Data::Vertex{p1, glm::vec3{0.f}, glm::vec2{0.f}, current_colour});
+				data.emplace_back(Data::Vertex{p2, glm::vec3{0.f}, glm::vec2{0.f}, current_colour});
+			}
+			else
+				ASSERT(false, "add_line for this primitive mode is not supported.");
+		}
 		void add_triangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec2 uv1 = {0, 0}, const glm::vec2 uv2 = {0, 0}, const glm::vec2 uv3 = {0, 0}, const glm::vec3& normal = {0.f, 0.f, 0.f})
 		{
 			if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
@@ -178,7 +188,7 @@ namespace Utility
 			add_cylinder(base, body_top, base_radius, segments);
 			add_cone(body_top, top, cone_radius, segments);
 		}
-		void resereve(size_t size)
+		void reserve(size_t size)
 		{
 			data.reserve(size);
 		}
