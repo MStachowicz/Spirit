@@ -21,10 +21,14 @@ namespace Utility
 {
 	class MeshBuilder
 	{
+		std::vector<Data::Vertex> data;
+		glm::vec4 current_colour;
+		const OpenGL::PrimitiveMode primitive_mode;
+
 	public:
 		MeshBuilder(OpenGL::PrimitiveMode mode) noexcept
 			: data{}
-			, current_colour{glm::vec3{1.f}}
+			, current_colour{glm::vec4{1.f}}
 			, primitive_mode{mode}
 		{}
 
@@ -178,9 +182,13 @@ namespace Utility
 		{
 			data.reserve(size);
 		}
-		void set_colour(const glm::vec3& colour)
+		void set_colour(const glm::vec4& colour)
 		{
 			current_colour = colour;
+		}
+		void set_colour(const glm::vec3& colour)
+		{
+			current_colour = glm::vec4(colour, 1.f);
 		}
 		[[NODISCARD]] Data::NewMesh get_mesh()
 		{
@@ -188,9 +196,6 @@ namespace Utility
 		}
 
 	private:
-		std::vector<Data::Vertex> data;
-		glm::vec3 current_colour;
-		const OpenGL::PrimitiveMode primitive_mode;
 
 		// Get the points and UVs for a circle.
 		//@param center Center of the circle.

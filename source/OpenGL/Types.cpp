@@ -940,11 +940,10 @@ namespace OpenGL
         {
             switch (p_attribute)
             {// Each index has to be unique. If changing any pre-existing attributes. Change all the occurrences in the GLSL shaders.
-                case VertexAttribute::Position3D:          return 0; // X, Y and Z position components
-                case VertexAttribute::Normal3D:            return 1; // X, Y and Z direction components
-                case VertexAttribute::ColourRGB:           return 2; // Red, Green and Blue components
-                case VertexAttribute::ColourRGBA:          return 4; // Red, Green and Blue components
-                case VertexAttribute::TextureCoordinate2D: return 3; // X and Y components
+                case VertexAttribute::Position3D:          return 0; // Location = 0 in the shaders.
+                case VertexAttribute::Normal3D:            return 1; // Location = 1 in the shaders.
+                case VertexAttribute::ColourRGBA:          return 2; // Location = 2 in the shaders.
+                case VertexAttribute::TextureCoordinate2D: return 3; // Location = 3 in the shaders.
                 default: ASSERT(false, "Could not determine the index of the attribute p_attribute. If adding a new attribute, be sure to specify \"(location = 'NewIndex')\" in the GLSL shader source."); return 0; // Always
             }
         }
@@ -954,7 +953,6 @@ namespace OpenGL
             {
                 case VertexAttribute::Position3D:          return sizeof(float) * 3; // X, Y and Z position components
                 case VertexAttribute::Normal3D:            return sizeof(float) * 3; // X, Y and Z direction components
-                case VertexAttribute::ColourRGB:           return sizeof(float) * 3; // Red, Green and Blue components
                 case VertexAttribute::ColourRGBA:          return sizeof(float) * 4; // Red, Green, Blue and Alpha components
                 case VertexAttribute::TextureCoordinate2D: return sizeof(float) * 2; // X and Y components
                 default: ASSERT(false, "Could not determine the size of the attribute p_attribute."); return 0; // Always
@@ -966,7 +964,6 @@ namespace OpenGL
             {
                 case VertexAttribute::Position3D:          return 3; // X, Y and Z position components
                 case VertexAttribute::Normal3D:            return 3; // X, Y and Z direction components
-                case VertexAttribute::ColourRGB:           return 3; // Red, Green and Blue components
                 case VertexAttribute::ColourRGBA:          return 4; // Red, Green, Blue and Alpha components
                 case VertexAttribute::TextureCoordinate2D: return 2; // X and Y components
                 default: ASSERT(false, "Could not determine the component count of the p_attribute."); return 0; // Always
@@ -978,7 +975,6 @@ namespace OpenGL
             {
                 case VertexAttribute::Position3D:          return "VertexPosition";
                 case VertexAttribute::Normal3D:            return "VertexNormal";
-                case VertexAttribute::ColourRGB:           return "VertexColour";
                 case VertexAttribute::ColourRGBA:          return "VertexColour";
                 case VertexAttribute::TextureCoordinate2D: return "VertexTexCoord";
                 default: ASSERT(false, "Could not convert VertexAttribute to an identifier. If adding a new attribute, be sure to use the identifier added here for it."); return ""; // Always
@@ -990,7 +986,6 @@ namespace OpenGL
             {
                 case VertexAttribute::Position3D:          return ShaderDataType::Float;
                 case VertexAttribute::Normal3D:            return ShaderDataType::Float;
-                case VertexAttribute::ColourRGB:           return ShaderDataType::Float;
                 case VertexAttribute::ColourRGBA:          return ShaderDataType::Float;
                 case VertexAttribute::TextureCoordinate2D: return ShaderDataType::Float;
                 default: ASSERT(false, "Could not convert VertexAttribute to a datatype. If adding a new attribute, be sure to use the corresponding data type added here for it."); return ShaderDataType::Unknown; // Always

@@ -32,7 +32,6 @@ namespace OpenGL
     {
         Position3D,
         Normal3D,
-        ColourRGB,
         ColourRGBA,
         TextureCoordinate2D
     };

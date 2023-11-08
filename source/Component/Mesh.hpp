@@ -11,6 +11,7 @@
 #include "Types.hpp"
 
 // GLM
+#include "glm/vec4.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec2.hpp"
 
@@ -33,7 +34,7 @@ namespace Data
 		glm::vec3 position = glm::vec3{0.f};
 		glm::vec3 normal   = glm::vec3{0.f};
 		glm::vec2 uv       = glm::vec2{0.f};
-		glm::vec3 colour   = glm::vec3{1.f};
+		glm::vec4 colour   = glm::vec4{1.f};
 	};
 
 	class NewMesh // TODO replace OpenGL::Mesh and Data::Mesh with this
@@ -63,8 +64,8 @@ namespace Data
 
 			OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
 			OpenGL::vertex_attrib_pointer(1, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+			OpenGL::vertex_attrib_pointer(2, 4, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, colour));
 			OpenGL::vertex_attrib_pointer(3, 2, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, uv));
-			OpenGL::vertex_attrib_pointer(2, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, colour));
 
 			OpenGL::enable_vertex_attrib_array(0);
 			OpenGL::enable_vertex_attrib_array(1);

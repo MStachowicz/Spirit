@@ -115,9 +115,9 @@ namespace OpenGL
             if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::Normal3D)) != std::string::npos)
                 m_vertex_attributes.push_back(VertexAttribute::Normal3D);
 
-        if (std::ranges::find(m_vertex_attributes, VertexAttribute::ColourRGB) == m_vertex_attributes.end())
-            if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::ColourRGB)) != std::string::npos)
-                m_vertex_attributes.push_back(VertexAttribute::ColourRGB);
+        if (std::ranges::find(m_vertex_attributes, VertexAttribute::ColourRGBA) == m_vertex_attributes.end())
+            if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::ColourRGBA)) != std::string::npos)
+                m_vertex_attributes.push_back(VertexAttribute::ColourRGBA);
 
         if (std::ranges::find(m_vertex_attributes, VertexAttribute::TextureCoordinate2D) == m_vertex_attributes.end())
             if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::TextureCoordinate2D)) != std::string::npos)
