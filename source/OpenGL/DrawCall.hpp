@@ -23,9 +23,9 @@ namespace OpenGL
 	class DrawCall
 	{
 		static constexpr size_t max_uniforms         = 8;
-		static constexpr size_t max_uniform_name_len = 8;
+		static constexpr size_t max_uniform_name_len = 16;
 		static constexpr size_t max_textures         = 8;
-		static constexpr size_t max_texture_name_len = 8;
+		static constexpr size_t max_texture_name_len = 16;
 
 		struct UniformSetData // The data requires to set a uniform variable of a shader.
 		{
@@ -61,7 +61,7 @@ namespace OpenGL
 		{
 			if (m_uniform_count == max_uniforms)
 				throw std::logic_error{"Too many uniforms set for this drawcall. Up the max_uniforms variable!"};
-			if (p_name.size() > max_uniform_name_len)
+			if (p_name.size() >= max_uniform_name_len)
 				throw std::logic_error("Uniform name is too long! Up the max_uniform_name_len variable!");
 			if (std::find_if(m_uniforms.begin(), m_uniforms.end(), [&p_name](const auto& p_uniform) { return p_uniform.m_name == p_name; }) != m_uniforms.end())
 				throw std::logic_error{"Uniform already set for this drawcall!"};

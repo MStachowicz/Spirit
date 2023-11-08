@@ -22,7 +22,7 @@ namespace OpenGL
 	{
 		if (m_texture_count == max_textures)
 			throw std::logic_error{"Too many textures set for this drawcall. Up the max_textures variable!"};
-		if (p_name.size() > max_texture_name_len)
+		if (p_name.size() >= max_texture_name_len)
 			throw std::logic_error("Texture name is too long! Up the max_texture_name_len variable!");
 		if (!p_texture)
 			throw std::logic_error("Texture is null!");
