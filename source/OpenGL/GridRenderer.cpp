@@ -15,7 +15,12 @@ namespace OpenGL
 		constexpr glm::vec4 green                 = glm::vec4{0.f, 1.f, 0.f, transparency};
 		constexpr glm::vec4 blue                  = glm::vec4{0.f, 0.f, 1.f, transparency};
 
-		auto mb = Utility::MeshBuilder<Data::Vertex, PrimitiveMode::Lines>{};
+		struct GridVertex
+		{
+			glm::vec3 position;
+			glm::vec4 colour;
+		};
+		auto mb = Utility::MeshBuilder<GridVertex, PrimitiveMode::Lines>{};
 		mb.reserve((Size * 2 * 8) + 6);
 
 		{ // Cardinal axis lines

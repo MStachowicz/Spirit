@@ -21,6 +21,7 @@
 // STD
 #include <filesystem>
 #include <vector>
+#include <type_traits>
 
 struct aiMesh;
 struct aiNode;
@@ -28,6 +29,18 @@ struct aiScene;
 
 namespace Data
 {
+	template <typename T>
+	concept has_position_member = requires(T v) {{v.position} -> std::convertible_to<glm::vec3>;};
+	template <typename T>
+	concept has_normal_member   = requires(T v) {{v.normal} -> std::convertible_to<glm::vec3>;};
+	template <typename T>
+	concept has_UV_member       = requires(T v) {{v.uv} -> std::convertible_to<glm::vec2>;};
+	template <typename T>
+	concept has_colour_member   = requires(T v) {{v.colour} -> std::convertible_to<glm::vec4>;};
+	// Ensure the vertex has a position and either a colour or UV allowing it to be rendered.
+	template <typename T>
+	concept is_valid_mesh_vert  = has_position_member<T> && (has_colour_member<T> || has_UV_member<T>);
+
 	class Vertex
 	{
 	public:
@@ -51,26 +64,38 @@ namespace Data
 			OpenGL::draw_arrays(primitive_mode, 0, draw_size);
 		}
 
-		NewMesh(const std::vector<Vertex>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
+		template <typename VertexType>
+		requires is_valid_mesh_vert<VertexType>
+		NewMesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
 			: VAO{}
 			, VBO{}
 			, draw_size{(GLsizei)vertex_data.size()}
 			, primitive_mode{primitive_mode}
 		{
+			static_assert(has_position_member<VertexType>, "VertexType must have a position member");
+
 			VAO.bind();
 			VBO.bind();
+			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(VertexType), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
 
-			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(Vertex), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
-
-			OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
-			OpenGL::vertex_attrib_pointer(1, 3, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-			OpenGL::vertex_attrib_pointer(2, 4, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, colour));
-			OpenGL::vertex_attrib_pointer(3, 2, OpenGL::ShaderDataType::Float, false, sizeof(Vertex), (void*)offsetof(Vertex, uv));
-
+			OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, position));
 			OpenGL::enable_vertex_attrib_array(0);
-			OpenGL::enable_vertex_attrib_array(1);
-			OpenGL::enable_vertex_attrib_array(2);
-			OpenGL::enable_vertex_attrib_array(3);
+
+			if constexpr (has_normal_member<VertexType>)
+			{
+				OpenGL::vertex_attrib_pointer(1, 3, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, normal));
+				OpenGL::enable_vertex_attrib_array(1);
+			}
+			if constexpr (has_colour_member<VertexType>)
+			{
+				OpenGL::vertex_attrib_pointer(2, 4, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, colour));
+				OpenGL::enable_vertex_attrib_array(2);
+			}
+			if constexpr (has_UV_member<VertexType>)
+			{
+				OpenGL::vertex_attrib_pointer(3, 2, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, uv));
+				OpenGL::enable_vertex_attrib_array(3);
+			}
 		}
 	};
 }

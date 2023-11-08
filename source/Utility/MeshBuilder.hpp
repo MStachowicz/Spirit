@@ -13,6 +13,7 @@
 namespace Utility
 {
 	template <typename VertexType = Data::Vertex, OpenGL::PrimitiveMode primitive_mode = OpenGL::PrimitiveMode::Triangles>
+	requires Data::is_valid_mesh_vert<VertexType>
 	class MeshBuilder
 	{
 		std::vector<VertexType> data;
