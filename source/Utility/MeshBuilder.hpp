@@ -3,7 +3,6 @@
 #include "Component/Mesh.hpp"
 #include "OpenGL/GLState.hpp"
 #include "Utility/Utility.hpp"
-#include "Utility/Logger.hpp"
 
 #include <vector>
 #include <numbers>
@@ -29,9 +28,9 @@ namespace Utility
 		void add_vertex(Vertex&& v)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Points, "add_vertex requires MeshBuilder PrimitiveMode to be Points.");
+			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 			static_assert(!Data::has_normal_member<Vertex>, "add_vertex doesnt support normal data. Remove normal from Vertex.");
 			static_assert(!Data::has_UV_member<Vertex>, "add_vertex doesnt support UV data. Remove UV from VertexType.");
-			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 
 			if constexpr (Data::has_colour_member<Vertex>)
 				v.colour = current_colour;
@@ -53,9 +52,10 @@ namespace Utility
 			}
 			else
 			{
+				static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 				static_assert(!Data::has_normal_member<Vertex>, "add_line doesnt support normal data. Remove the normal from VertexType.");
 				static_assert(!Data::has_UV_member<Vertex>, "add_line doesnt support UV data. Remove UV from VertexType.");
-				static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
+
 				if constexpr (Data::has_colour_member<Vertex>)
 				{
 					v1.colour = current_colour;
@@ -73,7 +73,7 @@ namespace Utility
 			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
 
-			if constexpr (Data::has_normal_member<VertexType>)
+			if constexpr (Data::has_normal_member<Vertex>)
 			{
 				const auto edge1       = v2.position - v1.position;
 				const auto edge2       = v3.position - v1.position;
@@ -82,7 +82,7 @@ namespace Utility
 			}
 			else
 			{
-				if constexpr (Data::has_colour_member<VertexType>)
+				if constexpr (Data::has_colour_member<Vertex>)
 				{
 					v1.colour = current_colour;
 					v2.colour = current_colour;
@@ -101,9 +101,9 @@ namespace Utility
 		{
 			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
-			static_assert(Data::has_normal_member<VertexType>, "VertexType must have a normal member. Call non-normal overload of add_triangle or remove normal data from VertexType.");
+			static_assert(Data::has_normal_member<Vertex>, "VertexType must have a normal member. Call non-normal overload of add_triangle or remove normal data from VertexType.");
 
-			if constexpr (Data::has_colour_member<VertexType>)
+			if constexpr (Data::has_colour_member<Vertex>)
 			{
 				v1.colour = current_colour;
 				v2.colour = current_colour;
