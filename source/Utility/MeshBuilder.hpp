@@ -66,32 +66,46 @@ namespace Utility
 			}
 		}
 		// Add a triangle to the mesh.
-		// Calculates the normal from the vertices. If the vertices already have a normal, use the other overload.
+		// If VertexType has one, calculates the normal from the positions. If the normal is pre-computed use the other overload.
 		template <typename Vertex>
 		void add_triangle(Vertex&& v1, Vertex&& v2, Vertex&& v3)
 		{
-			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
 
-			if constexpr (Data::has_normal_member<Vertex>)
-			{
-				const auto edge1       = v2.position - v1.position;
-				const auto edge2       = v3.position - v1.position;
-				const auto calc_normal = glm::cross(edge1, edge2);
-				add_triangle(std::forward<Vertex>(v1), std::forward<Vertex>(v2), std::forward<Vertex>(v3), calc_normal);
+			if constexpr (std::is_same_v<std::decay_t<Vertex>, glm::vec3>)
+			{// vec3 overload, apply the position to the VertexType and call add_triangle recursively with them.
+				VertexType v1_t;
+				VertexType v2_t;
+				VertexType v3_t;
+				v1_t.position = v1;
+				v2_t.position = v2;
+				v3_t.position = v3;
+				add_triangle(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t), std::forward<VertexType>(v3_t));
 			}
 			else
 			{
-				if constexpr (Data::has_colour_member<Vertex>)
-				{
-					v1.colour = current_colour;
-					v2.colour = current_colour;
-					v3.colour = current_colour;
-				}
+				static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 
-				data.emplace_back(std::forward<Vertex>(v1));
-				data.emplace_back(std::forward<Vertex>(v2));
-				data.emplace_back(std::forward<Vertex>(v3));
+				if constexpr (Data::has_normal_member<Vertex>)
+				{
+					const auto edge1       = v2.position - v1.position;
+					const auto edge2       = v3.position - v1.position;
+					const auto calc_normal = glm::cross(edge1, edge2);
+					add_triangle(std::forward<Vertex>(v1), std::forward<Vertex>(v2), std::forward<Vertex>(v3), calc_normal);
+				}
+				else
+				{
+					if constexpr (Data::has_colour_member<Vertex>)
+					{
+						v1.colour = current_colour;
+						v2.colour = current_colour;
+						v3.colour = current_colour;
+					}
+
+					data.emplace_back(std::forward<Vertex>(v1));
+					data.emplace_back(std::forward<Vertex>(v2));
+					data.emplace_back(std::forward<Vertex>(v3));
+				}
 			}
 		}
 		// Add a triangle to the mesh.
@@ -303,6 +317,57 @@ namespace Utility
 			add_cylinder(base, body_top, base_radius, segments);
 			add_cone(body_top, top, cone_radius, segments);
 		}
+		void add_icosphere(const glm::vec3& center, float radius, size_t subdivisions)
+		{
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			{
+				constexpr auto standard_points = get_icosahedron_points();
+				auto points = std::vector<glm::vec3>(standard_points.begin(), standard_points.end());
+
+				for (auto i = 0; i < subdivisions; i++)
+				{
+					std::vector<glm::vec3> new_points;
+					new_points.reserve(points.size() * 4);
+
+					// Going through each triangle, subdivide it into 4 triangles.
+					for (auto i = 0; i < points.size(); i += 3)
+					{
+						const auto a = (points[i]     + points[i + 1]) / 2.f;
+						const auto b = (points[i + 1] + points[i + 2]) / 2.f;
+						const auto c = (points[i + 2] + points[i])     / 2.f;
+
+						// T1
+						new_points.emplace_back(points[i]);
+						new_points.emplace_back(a);
+						new_points.emplace_back(c);
+						// T2
+						new_points.emplace_back(points[i + 1]);
+						new_points.emplace_back(b);
+						new_points.emplace_back(a);
+						// T3
+						new_points.emplace_back(points[i + 2]);
+						new_points.emplace_back(c);
+						new_points.emplace_back(b);
+						// T4
+						new_points.emplace_back(a);
+						new_points.emplace_back(b);
+						new_points.emplace_back(c);
+					}
+					points = std::move(new_points);
+				}
+
+				for (auto i = 0; i < points.size(); i += 3)
+				{
+					points[i]     = ((points[i]     / glm::length(points[i]    )) * radius) + center;
+					points[i + 1] = ((points[i + 1] / glm::length(points[i + 1])) * radius) + center;
+					points[i + 2] = ((points[i + 2] / glm::length(points[i + 2])) * radius) + center;
+
+					add_triangle(points[i], points[i + 1], points[i + 2]);
+				}
+			}
+			else
+				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_icosphere for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+		}
 		void reserve(size_t size)
 		{
 			data.reserve(size);
@@ -322,7 +387,7 @@ namespace Utility
 			return Data::NewMesh{data, primitive_mode};
 		}
 
-	private:
+	private: // Helpers for MeshBuilder::add_ functions
 
 		// Get the points and UVs for a circle.
 		//@param center Center of the circle.
@@ -346,6 +411,67 @@ namespace Utility
 			}
 
 			return points_and_UVs;
+		}
+		// Get a pair of arrays defining a standard icosahedron. A platonic solid with 20 faces, 30 edges and 12 vertices.
+		// Use get_icosahedron_points to return a flat list of points.
+		//@return A pair of arrays, =points, second=indices.
+		[[nodiscard]] static consteval std::pair<std::array<glm::vec3, 12>, std::array<unsigned int, 60>> get_icosahedron_points_and_indices()
+		{
+			// create 12 vertices of a icosahedron
+			constexpr auto t = std::numbers::phi_v<float>; // golden ratio
+			return {
+				{glm::vec3(-1.f, t, 0.f),
+				 glm::vec3(1.f, t, 0.f),
+				 glm::vec3(-1.f, -t, 0.f),
+				 glm::vec3(1.f, -t, 0.f),
+
+				 glm::vec3(0.f, -1.f, t),
+				 glm::vec3(0.f, 1.f, t),
+				 glm::vec3(0.f, -1.f, -t),
+				 glm::vec3(0.f, 1.f, -t),
+
+				 glm::vec3(t, 0.f, -1.f),
+				 glm::vec3(t, 0.f, 1.f),
+				 glm::vec3(-t, 0.f, -1.f),
+				 glm::vec3(-t, 0.f, 1.f)},
+
+				{0, 11, 5,
+				 0, 5, 1,
+				 0, 1, 7,
+				 0, 7, 10,
+				 0, 10, 11,
+
+				 1, 5, 9,
+				 5, 11, 4,
+				 11, 10, 2,
+				 10, 7, 6,
+				 7, 1, 8,
+
+				 3, 9, 4,
+				 3, 4, 2,
+				 3, 2, 6,
+				 3, 6, 8,
+				 3, 8, 9,
+
+				 4, 9, 5,
+				 2, 4, 11,
+				 6, 2, 10,
+				 8, 6, 7,
+				 9, 8, 1}};
+		}
+		// Get an array defining a standard icosahedron. A platonic solid with 20 faces, 30 edges and 12 vertices.
+		// Uses get_icosahedron_points_and_indices to return a list of unique points and indices.
+		//@return An array defining the vertex positions of the icosahedron
+		[[nodiscard]] static consteval std::array<glm::vec3, 60> get_icosahedron_points()
+		{
+			constexpr auto points  = get_icosahedron_points_and_indices().first;
+			constexpr auto indices = get_icosahedron_points_and_indices().second;
+
+			std::array<glm::vec3, 60> points_flat = {};
+			for (auto i = 0; i < indices.size(); i++)
+				points_flat[i] = points[indices[i]];
+
+			return points_flat;
 		}
 	};
 }
