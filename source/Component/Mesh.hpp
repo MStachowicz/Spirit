@@ -41,12 +41,20 @@ namespace Data
 	template <typename T>
 	concept is_valid_mesh_vert  = has_position_member<T> && (has_colour_member<T> || has_UV_member<T>);
 
+	// Vertex with position, normal, UV and colour.
 	class Vertex
 	{
 	public:
 		glm::vec3 position = glm::vec3{0.f};
 		glm::vec3 normal   = glm::vec3{0.f};
 		glm::vec2 uv       = glm::vec2{0.f};
+		glm::vec4 colour   = glm::vec4{1.f};
+	};
+	// Basic Vertex with only a position and colour.
+	class ColourVertex
+	{
+	public:
+		glm::vec3 position = glm::vec3{0.f};
 		glm::vec4 colour   = glm::vec4{1.f};
 	};
 
