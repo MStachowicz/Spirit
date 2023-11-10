@@ -29,50 +29,51 @@ namespace Utility
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Points, "add_vertex requires MeshBuilder PrimitiveMode to be Points.");
 			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
-			static_assert(!Data::has_normal_member<Vertex>, "add_vertex doesnt support normal data. Remove normal from Vertex.");
-			static_assert(!Data::has_UV_member<Vertex>, "add_vertex doesnt support UV data. Remove UV from VertexType.");
+			static_assert(!Data::has_normal_member<VertexType>, "add_vertex doesnt support normal data. Remove normal from Vertex.");
+			static_assert(!Data::has_UV_member<VertexType>, "add_vertex doesnt support UV data. Remove UV from VertexType.");
 
-			if constexpr (Data::has_colour_member<Vertex>)
+			if constexpr (Data::has_colour_member<VertexType>)
 				v.colour = current_colour;
 
 			data.emplace_back(std::forward<Vertex>(v));
 		}
-		template <typename Vertex>
-		void add_line(Vertex&& v1, Vertex&& v2)
+		template <typename Vertex, typename Vertex2>
+		void add_line(Vertex&& v1, Vertex2&& v2)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Lines, "add_line requires MeshBuilder PrimitiveMode to be Lines.");
+			static_assert(!Data::has_normal_member<VertexType>, "add_line doesnt support normal data. Remove the normal from VertexType.");
+			static_assert(!Data::has_UV_member<VertexType>, "add_line doesnt support UV data. Remove UV from VertexType.");
 
-			if constexpr (std::is_same_v<std::decay_t<Vertex>, glm::vec3>)
+			if constexpr (std::is_same_v<std::decay_t<Vertex>, glm::vec3> && std::is_same_v<std::decay_t<Vertex2>, glm::vec3>)
 			{// vec3 overload, apply the position to the vertices and call recursively with them.
 				VertexType v1_t;
-				v1_t.position = v1;
 				VertexType v2_t;
+				v1_t.position = v1;
 				v2_t.position = v2;
 				add_line(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t));
 			}
-			else
+			else if constexpr (std::is_same_v<std::decay_t<Vertex>, VertexType> && std::is_same_v<std::decay_t<Vertex2>, VertexType>)
 			{
-				static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
-				static_assert(!Data::has_normal_member<Vertex>, "add_line doesnt support normal data. Remove the normal from VertexType.");
-				static_assert(!Data::has_UV_member<Vertex>, "add_line doesnt support UV data. Remove UV from VertexType.");
-
-				if constexpr (Data::has_colour_member<Vertex>)
+				if constexpr (Data::has_colour_member<VertexType>)
 				{
 					v1.colour = current_colour;
 					v2.colour = current_colour;
 				}
 				data.emplace_back(std::forward<Vertex>(v1));
-				data.emplace_back(std::forward<Vertex>(v2));
+				data.emplace_back(std::forward<Vertex2>(v2));
 			}
+			else
+				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_line for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+
 		}
 		// Add a triangle to the mesh.
 		// If VertexType has one, calculates the normal from the positions. If the normal is pre-computed use the other overload.
-		template <typename Vertex>
-		void add_triangle(Vertex&& v1, Vertex&& v2, Vertex&& v3)
+		template <typename Vertex, typename Vertex2, typename Vertex3>
+		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
 
-			if constexpr (std::is_same_v<std::decay_t<Vertex>, glm::vec3>)
+			if constexpr (std::is_same_v<std::decay_t<Vertex>, glm::vec3> && std::is_same_v<std::decay_t<Vertex2>, glm::vec3> && std::is_same_v<std::decay_t<Vertex3>, glm::vec3>)
 			{// vec3 overload, apply the position to the VertexType and call add_triangle recursively with them.
 				VertexType v1_t;
 				VertexType v2_t;
@@ -82,20 +83,18 @@ namespace Utility
 				v3_t.position = v3;
 				add_triangle(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t), std::forward<VertexType>(v3_t));
 			}
-			else
+			else if constexpr (std::is_same_v<std::decay_t<Vertex>, VertexType> && std::is_same_v<std::decay_t<Vertex2>, VertexType> && std::is_same_v<std::decay_t<Vertex3>, VertexType>)
 			{
-				static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
-
-				if constexpr (Data::has_normal_member<Vertex>)
+				if constexpr (Data::has_normal_member<VertexType>)
 				{
 					const auto edge1       = v2.position - v1.position;
 					const auto edge2       = v3.position - v1.position;
 					const auto calc_normal = glm::cross(edge1, edge2);
-					add_triangle(std::forward<Vertex>(v1), std::forward<Vertex>(v2), std::forward<Vertex>(v3), calc_normal);
+					add_triangle(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3), calc_normal);
 				}
 				else
 				{
-					if constexpr (Data::has_colour_member<Vertex>)
+					if constexpr (Data::has_colour_member<VertexType>)
 					{
 						v1.colour = current_colour;
 						v2.colour = current_colour;
@@ -103,34 +102,40 @@ namespace Utility
 					}
 
 					data.emplace_back(std::forward<Vertex>(v1));
-					data.emplace_back(std::forward<Vertex>(v2));
-					data.emplace_back(std::forward<Vertex>(v3));
+					data.emplace_back(std::forward<Vertex2>(v2));
+					data.emplace_back(std::forward<Vertex3>(v3));
 				}
 			}
+			else
+				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_triangle for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
 		// Add a triangle to the mesh.
 		// Uses the provided normal. If the vertices dont have a normal, use the other overload.
-		template <typename Vertex>
-		void add_triangle(Vertex&& v1, Vertex&& v2, Vertex&& v3, const glm::vec3& normal)
+		template <typename Vertex, typename Vertex2, typename Vertex3>
+		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3, const glm::vec3& normal)
 		{
-			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
-			static_assert(Data::has_normal_member<Vertex>, "VertexType must have a normal member. Call non-normal overload of add_triangle or remove normal data from VertexType.");
+			static_assert(Data::has_normal_member<VertexType>, "VertexType must have a normal member. Call non-normal overload of add_triangle or remove normal data from VertexType.");
 
-			if constexpr (Data::has_colour_member<Vertex>)
+			if constexpr (std::is_same_v<std::decay_t<Vertex>, VertexType> && std::is_same_v<std::decay_t<Vertex2>, VertexType> && std::is_same_v<std::decay_t<Vertex3>, VertexType>)
 			{
-				v1.colour = current_colour;
-				v2.colour = current_colour;
-				v3.colour = current_colour;
+				if constexpr (Data::has_colour_member<VertexType>)
+				{
+					v1.colour = current_colour;
+					v2.colour = current_colour;
+					v3.colour = current_colour;
+				}
+
+				v1.normal = normal;
+				v2.normal = normal;
+				v3.normal = normal;
+
+				data.emplace_back(std::forward<Vertex>(v1));
+				data.emplace_back(std::forward<Vertex2>(v2));
+				data.emplace_back(std::forward<Vertex3>(v3));
 			}
-
-			v1.normal = normal;
-			v2.normal = normal;
-			v3.normal = normal;
-
-			data.emplace_back(std::forward<Vertex>(v1));
-			data.emplace_back(std::forward<Vertex>(v2));
-			data.emplace_back(std::forward<Vertex>(v3));
+			else
+				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_triangle for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
 
 
@@ -371,6 +376,10 @@ namespace Utility
 		void reserve(size_t size)
 		{
 			data.reserve(size);
+		}
+		void clear()
+		{
+			data.clear();
 		}
 		void set_colour(const glm::vec4& colour)
 		{
