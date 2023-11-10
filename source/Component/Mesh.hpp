@@ -74,7 +74,7 @@ namespace Data
 
 		template <typename VertexType>
 		requires is_valid_mesh_vert<VertexType>
-		NewMesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
+		NewMesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode) noexcept
 			: VAO{}
 			, VBO{}
 			, draw_size{(GLsizei)vertex_data.size()}
@@ -105,6 +105,9 @@ namespace Data
 				OpenGL::enable_vertex_attrib_array(3);
 			}
 		}
+
+		GLsizei size() const noexcept { return draw_size; }
+		bool empty() const noexcept { return draw_size == 0; }
 	};
 }
 
