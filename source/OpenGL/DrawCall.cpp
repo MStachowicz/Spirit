@@ -39,9 +39,11 @@ namespace OpenGL
 		OpenGL::set_depth_test(m_depth_test_enabled);
 		OpenGL::set_depth_test_type(m_depth_test_type);
 		OpenGL::set_blending(m_blending_enabled);
-		OpenGL::set_blend_func(m_source_factor, m_destination_factor);
+		if (m_blending_enabled)
+			OpenGL::set_blend_func(m_source_factor, m_destination_factor);
 		OpenGL::set_cull_face(m_cull_face_enabled);
-		OpenGL::set_cull_face_type(m_cull_face_type);
+		if (m_cull_face_enabled)
+			OpenGL::set_cull_face_type(m_cull_face_type);
 		OpenGL::set_front_face_orientation(m_front_face_orientation);
 		OpenGL::set_polygon_mode(m_polygon_mode);
 
