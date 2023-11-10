@@ -25,6 +25,7 @@ Data::NewMesh Component::Terrain::generate_mesh() noexcept
 {
     // Use perlin noise to generate a heightmap in the xz plane.
     auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+	mb.reserve((size_x * size_z) * 6);
     const siv::PerlinNoise::seed_type seed = 123456u;
     const siv::PerlinNoise perlin{seed};
 
