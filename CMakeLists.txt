@@ -116,6 +116,8 @@ add_library(Geometry
 source/Geometry/AABB.cpp
 source/Geometry/AABB.hpp
 source/Geometry/Cylinder.hpp
+source/Geometry/Cone.hpp
+source/Geometry/Cuboid.hpp
 source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
 source/Geometry/Frustrum.hpp
