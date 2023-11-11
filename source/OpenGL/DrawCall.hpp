@@ -71,6 +71,7 @@ namespace OpenGL
 			++m_uniform_count;
 		}
 		void set_texture(const std::string_view& p_name, const TextureRef& p_texture);
-		void submit(Shader& p_shader, Data::NewMesh& p_mesh) const;
+		void submit(Shader& p_shader, Data::Mesh& p_mesh) const;
+		void submit(Shader& p_shader, Data::Mesh& p_mesh, GLsizei p_instanced_count) const;
 	};
 } // namespace OpenGL

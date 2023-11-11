@@ -71,6 +71,11 @@ namespace Data
 			VAO.bind();
 			OpenGL::draw_arrays(primitive_mode, 0, draw_size);
 		}
+		void draw_instanced(GLsizei p_instance_count)
+		{
+			VAO.bind();
+			OpenGL::draw_arrays_instanced(primitive_mode, 0, draw_size, p_instance_count);
+		}
 
 		template <typename VertexType>
 		requires is_valid_mesh_vert<VertexType>

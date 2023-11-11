@@ -61,4 +61,32 @@ namespace OpenGL
 
 		p_mesh.draw();
 	}
+
+	void DrawCall::submit(Shader& p_shader, Data::Mesh& p_mesh, GLsizei p_instanced_count) const
+	{
+		OpenGL::set_depth_test(m_depth_test_enabled);
+		OpenGL::set_depth_test_type(m_depth_test_type);
+		OpenGL::set_blending(m_blending_enabled);
+		if (m_blending_enabled)
+			OpenGL::set_blend_func(m_source_factor, m_destination_factor);
+		OpenGL::set_cull_face(m_cull_face_enabled);
+		if (m_cull_face_enabled)
+			OpenGL::set_cull_face_type(m_cull_face_type);
+		OpenGL::set_front_face_orientation(m_front_face_orientation);
+		OpenGL::set_polygon_mode(m_polygon_mode);
+
+		p_shader.use();
+
+		for (auto i = 0; i < m_uniform_count; ++i)
+			std::visit([&](auto&& arg) { p_shader.set_uniform(m_uniforms[i].m_name, arg); }, m_uniforms[i].m_data);
+
+		for (auto i = 0; i < m_texture_count; ++i)
+		{
+			p_shader.set_uniform(m_textures[i].m_name, i); // TODO only needs to happen once per shader
+			OpenGL::active_texture(i);
+			m_textures[i].m_texture->m_GL_texture.bind();
+		}
+
+		p_mesh.draw_instanced(p_instanced_count);
+	}
 } // namespace OpenGL
