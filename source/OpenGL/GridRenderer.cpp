@@ -46,16 +46,37 @@ namespace OpenGL
 
 		return mb.get_mesh();
 	}
+	Data::NewMesh GridRenderer::make_origin_arrows_mesh()
+	{
+		auto mb = Utility::MeshBuilder<Data::ColourVertex, PrimitiveMode::Triangles>{};
+		mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
+		mb.add_arrow(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f));
+		mb.set_colour(glm::vec3(0.f, 1.f, 0.f));
+		mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
+		mb.add_arrow(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f));
+		mb.set_colour(glm::vec4(1.f));
+		mb.add_icosphere(glm::vec3(0.f), 0.1f, 1);
+		return mb.get_mesh();
+	}
 
 	GridRenderer::GridRenderer() noexcept
 		: m_grid_shader{"grid"}
-		, m_grid_mesh{make_grid_mesh()}
+		, m_grid{make_grid_mesh()}
+		, m_origin_arrows{make_origin_arrows_mesh()}
 	{}
 
 	void GridRenderer::draw()
 	{
-		DrawCall dc;
-		dc.m_cull_face_enabled = false;
-		dc.submit(m_grid_shader, m_grid_mesh);
+		{
+			DrawCall dc;
+			dc.m_cull_face_enabled = false;
+			dc.submit(m_grid_shader, m_grid);
+		}
+		{
+			DrawCall dc;
+			dc.m_cull_face_enabled = false;
+			dc.submit(m_grid_shader, m_origin_arrows);
+		}
 	}
 }
