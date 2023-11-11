@@ -246,15 +246,15 @@ namespace OpenGL
     {
         glDrawArrays(convert(p_primitive_mode), p_first, p_count);
     }
-    void draw_arrays_instanced(PrimitiveMode p_primitive_mode, int p_array_size, int p_instance_count)
+    void draw_arrays_instanced(PrimitiveMode p_primitive_mode, GLint p_first, GLsizei p_array_size, GLsizei p_instance_count)
     {
-        glDrawArraysInstanced(convert(p_primitive_mode), 0, p_array_size, p_instance_count);
+        glDrawArraysInstanced(convert(p_primitive_mode), p_first, p_array_size, p_instance_count);
     }
-    void draw_elements(PrimitiveMode p_primitive_mode, int pElementsSize)
+    void draw_elements(PrimitiveMode p_primitive_mode, GLsizei pElementsSize)
     {
         glDrawElements(convert(p_primitive_mode), pElementsSize, GL_UNSIGNED_INT, 0);
     }
-    void draw_elements_instanced(PrimitiveMode p_primitive_mode, int pElementsSize, int p_instance_count)
+    void draw_elements_instanced(PrimitiveMode p_primitive_mode, GLsizei pElementsSize, GLsizei p_instance_count)
     {
         glDrawElementsInstanced(convert(p_primitive_mode), pElementsSize, GL_UNSIGNED_INT, 0, p_instance_count);
     }

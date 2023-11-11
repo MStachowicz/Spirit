@@ -497,16 +497,16 @@ namespace OpenGL
     // Draw multiple instances of a range of elements
     // draw_arrays_instanced behaves identically to draw_arrays except that p_instance_count instances of the range of elements are executed and the value of the internal counter instanceID advances for each iteration.
     // instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
-    void draw_arrays_instanced(PrimitiveMode p_primitive_mode, int p_array_size, int p_instance_count);
+    void draw_arrays_instanced(PrimitiveMode p_primitive_mode, GLint p_first, GLsizei p_array_size, GLsizei p_instance_count);
     // Render primitives from array data.
     // draw_elements specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL function to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and so on, and use them to construct a sequence of primitives with a single call to glDrawElements.
     // When draw_elements is called, it uses pElementSize sequential elements from an enabled array, starting at indices to construct a sequence of geometric primitives. p_primitive_mode specifies what kind of primitives are constructed and how the array elements construct these primitives. If more than one array is enabled, each is used.
     // Vertex attributes that are modified by draw_elements have an unspecified value after draw_elements returns. Attributes that aren't modified maintain their previous values.
-    void draw_elements(PrimitiveMode p_primitive_mode, int pElementsSize);
+    void draw_elements(PrimitiveMode p_primitive_mode, GLsizei pElementsSize);
     // Draw multiple instances of a set of elements.
     // draw_elements_instanced behaves identically to draw_elements except that p_instance_count of the set of elements are executed and the value of the internal counter instanceID advances for each iteration.
     // instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
-    void draw_elements_instanced(PrimitiveMode p_primitive_mode, int pElementsSize, int p_instance_count);
+    void draw_elements_instanced(PrimitiveMode p_primitive_mode, GLsizei pElementsSize, GLsizei p_instance_count);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// SHADER FUNCTIONS
