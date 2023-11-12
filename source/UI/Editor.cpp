@@ -150,7 +150,7 @@ namespace UI
 		}
 		if (mWindowsToDisplay.Entity)        draw_entity_tree_window();
 		if (mWindowsToDisplay.Console)       draw_console_window();
-		if (mWindowsToDisplay.Debug)         draw_debug_window();
+		draw_debug_window();
 		if (mWindowsToDisplay.ImGuiDemo)     ImGui::ShowDemoWindow(&mWindowsToDisplay.ImGuiDemo);
 		if (mWindowsToDisplay.ImGuiMetrics)  ImGui::ShowMetricsWindow(&mWindowsToDisplay.ImGuiMetrics);
 		if (mWindowsToDisplay.ImGuiStack)    ImGui::ShowStackToolWindow(&mWindowsToDisplay.ImGuiStack);
@@ -251,48 +251,58 @@ namespace UI
 	}
 	void Editor::draw_debug_window()
 	{
-		if (ImGui::Begin("Debug options", &mWindowsToDisplay.Debug))
+		if (mWindowsToDisplay.Debug)
 		{
-			{ ImGui::SeparatorText("Graphics");
-				ImGui::Text("Window size", m_window.size());
-				ImGui::Text("Aspect ratio", m_window.aspect_ratio());
-				bool VSync = m_window.get_VSync();
-				if (ImGui::Checkbox("VSync", &VSync))
-					m_window.set_VSync(VSync);
-				ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
-				ImGui::Checkbox("Show light positions", &m_debug_options.m_show_light_positions);
-				ImGui::Checkbox("Visualise normals", &m_debug_options.m_show_mesh_normals);
+			if (ImGui::Begin("Debug options", &mWindowsToDisplay.Debug))
+			{
+				{ ImGui::SeparatorText("Graphics");
+					ImGui::Text("Window size", m_window.size());
+					ImGui::Text("Aspect ratio", m_window.aspect_ratio());
+					bool VSync = m_window.get_VSync();
+					ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
+					ImGui::Separator();
+					ImGui::Checkbox("Show light positions", &OpenGL::DebugRenderer::m_debug_options.m_show_light_positions);
+					ImGui::Checkbox("Visualise normals", &OpenGL::DebugRenderer::m_debug_options.m_show_mesh_normals);
+					if (ImGui::Checkbox("VSync", &VSync))
+						m_window.set_VSync(VSync);
+				}
+
+				{ ImGui::SeparatorText("Post Processing");
+					ImGui::Checkbox("Invert", &mOpenGLRenderer.mPostProcessingOptions.mInvertColours);
+					ImGui::Checkbox("Grayscale", &mOpenGLRenderer.mPostProcessingOptions.mGrayScale);
+					ImGui::Checkbox("Sharpen", &mOpenGLRenderer.mPostProcessingOptions.mSharpen);
+					ImGui::Checkbox("Blur", &mOpenGLRenderer.mPostProcessingOptions.mBlur);
+					ImGui::Checkbox("Edge detection", &mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection);
+
+					const bool isPostProcessingOn = mOpenGLRenderer.mPostProcessingOptions.mInvertColours
+						|| mOpenGLRenderer.mPostProcessingOptions.mGrayScale || mOpenGLRenderer.mPostProcessingOptions.mSharpen
+						|| mOpenGLRenderer.mPostProcessingOptions.mBlur      || mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection;
+
+					if (!isPostProcessingOn) ImGui::BeginDisabled();
+						ImGui::SliderFloat("Kernel offset", &mOpenGLRenderer.mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
+					if (!isPostProcessingOn) ImGui::EndDisabled();
+				}
+
+				{ImGui::SeparatorText("Physics");
+					ImGui::Checkbox("Show orientations", &OpenGL::DebugRenderer::m_debug_options.m_show_orientations);
+					ImGui::Checkbox("Show bounding box", &OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box);
+					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::BeginDisabled();
+					ImGui::ColorEdit4("Bounding box outline colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_outline_colour[0]);
+					ImGui::Checkbox("Fill bounding box", &OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box);
+					if (!OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box) ImGui::BeginDisabled();
+					ImGui::ColorEdit4("Bounding box fill colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_fill_colour[0]);
+					if (!OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box) ImGui::EndDisabled();
+					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::EndDisabled();
+					ImGui::Checkbox("Show collision shape", &OpenGL::DebugRenderer::m_debug_options.m_show_collision_shape);
+					ImGui::Slider("Position offset factor", OpenGL::DebugRenderer::m_debug_options.m_position_offset_factor, -10.f, 10.f);
+					ImGui::Slider("Position offset units", OpenGL::DebugRenderer::m_debug_options.m_position_offset_units, -10.f, 10.f);
+				}
+
+				if (ImGui::Button("Reset"))
+					OpenGL::DebugRenderer::m_debug_options = OpenGL::DebugRenderer::DebugOptions();
 			}
-
-			{ ImGui::SeparatorText("Post Processing");
-				ImGui::Checkbox("Invert", &mOpenGLRenderer.mPostProcessingOptions.mInvertColours);
-				ImGui::Checkbox("Grayscale", &mOpenGLRenderer.mPostProcessingOptions.mGrayScale);
-				ImGui::Checkbox("Sharpen", &mOpenGLRenderer.mPostProcessingOptions.mSharpen);
-				ImGui::Checkbox("Blur", &mOpenGLRenderer.mPostProcessingOptions.mBlur);
-				ImGui::Checkbox("Edge detection", &mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection);
-
-				const bool isPostProcessingOn = mOpenGLRenderer.mPostProcessingOptions.mInvertColours
-					|| mOpenGLRenderer.mPostProcessingOptions.mGrayScale || mOpenGLRenderer.mPostProcessingOptions.mSharpen
-					|| mOpenGLRenderer.mPostProcessingOptions.mBlur      || mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection;
-
-				if (!isPostProcessingOn) ImGui::BeginDisabled();
-					ImGui::SliderFloat("Kernel offset", &mOpenGLRenderer.mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
-				if (!isPostProcessingOn) ImGui::EndDisabled();
-			}
-
-			{ImGui::SeparatorText("Physics");
-				ImGui::Checkbox("Show orientations", &m_debug_options.m_show_orientations);
-				ImGui::Checkbox("Show bounding box", &m_debug_options.m_show_bounding_box);
-				if (!m_debug_options.m_show_bounding_box) ImGui::BeginDisabled();
-				ImGui::Checkbox("Fill bounding box", &m_debug_options.m_fill_bounding_box);
-				if (!m_debug_options.m_show_bounding_box) ImGui::EndDisabled();
-				ImGui::Checkbox("Show collision shape", &m_debug_options.m_show_collision_shape);
-			}
-
-			if (ImGui::Button("Reset"))
-				m_debug_options = DebugOptions();
+			ImGui::End();
 		}
-		ImGui::End();
 	}
 
 	void Editor::log(const std::string& p_message)

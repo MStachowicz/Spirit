@@ -143,7 +143,7 @@ private:
                 m_grid_renderer.draw();
                 mOpenGLRenderer.draw(durationSinceLastRenderTick);
                 mEditor.draw(durationSinceLastRenderTick);
-                OpenGL::DebugRenderer::render(mSceneSystem);
+                OpenGL::DebugRenderer::render(mSceneSystem, mOpenGLRenderer.mViewInformation.mViewPosition);
 
                 mOpenGLRenderer.end_frame();
                 m_window.end_ImGui_frame();

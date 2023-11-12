@@ -45,7 +45,6 @@ namespace OpenGL
 		, mSkyBoxShader{"skybox"}
 		, m_phong_renderer{}
 		, m_particle_renderer{}
-		, m_light_position_renderer{}
 		, m_shadow_mapper{p_window}
 		, m_missing_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
 		, m_blank_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
@@ -131,7 +130,6 @@ namespace OpenGL
 			});
 		}
 
-		m_light_position_renderer.draw(scene);
 		m_particle_renderer.update(delta_time, mSceneSystem.m_scene, mViewInformation.mViewPosition);
 	}
 

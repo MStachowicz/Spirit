@@ -55,17 +55,6 @@ namespace UI
 			bool ImGuiStyleEditor        = false;
 			bool Console                 = true;
 		};
-		struct DebugOptions // Options belonging to the Debug Window
-		{
-			// Rendering
-			bool m_show_light_positions = false;
-			bool m_show_mesh_normals    = false;
-			// Physics
-			bool m_show_orientations    = false; // Draw an arrow in the direction the meshes are facing.
-			bool m_show_bounding_box    = false; // Draw the bounding boxes of the meshes. Used for broad phase collision detection.
-			bool m_fill_bounding_box    = false; // Fill the bounding boxes of the meshes. Only valid if m_show_bounding_box is true.
-			bool m_show_collision_shape = false; // Draw the collision shape of the meshes.
-		};
 
 		Platform::Input&         m_input;
 		Platform::Window&        m_window;
@@ -77,7 +66,6 @@ namespace UI
 
 		std::vector<Geometry::Ray> m_click_rays; // On mouse click save the Ray to render.
 		std::vector<ECS::Entity> mSelectedEntities;
-		DebugOptions m_debug_options;
 		Console m_console;
 		Windows mWindowsToDisplay; // All the windows currently being displayed
 

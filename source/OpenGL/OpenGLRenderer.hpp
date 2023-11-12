@@ -1,6 +1,5 @@
 #pragma once
 
-#include "OpenGL/LightPositionRenderer.hpp"
 #include "OpenGL/ParticleRenderer.hpp"
 #include "OpenGL/PhongRenderer.hpp"
 #include "OpenGL/Shader.hpp"
@@ -58,7 +57,6 @@ namespace OpenGL
 
 		PhongRenderer m_phong_renderer;
 		ParticleRenderer m_particle_renderer;
-		LightPositionRenderer m_light_position_renderer;
 		ShadowMapper m_shadow_mapper;
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;

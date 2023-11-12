@@ -201,8 +201,6 @@ source/OpenGL/OpenGLRenderer.hpp
 source/OpenGL/OpenGLRenderer.cpp
 source/OpenGL/GridRenderer.hpp
 source/OpenGL/GridRenderer.cpp
-source/OpenGL/LightPositionRenderer.hpp
-source/OpenGL/LightPositionRenderer.cpp
 source/OpenGL/DebugRenderer.hpp
 source/OpenGL/DebugRenderer.cpp
 source/OpenGL/ParticleRenderer.cpp
