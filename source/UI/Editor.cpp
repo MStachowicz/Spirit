@@ -22,8 +22,8 @@
 #include "Platform/Window.hpp"
 #include "Utility/Logger.hpp"
 #include "Utility/Utility.hpp"
-#include "imgui.h"
 
+#include "imgui.h"
 #include "glm/glm.hpp"
 
 #include <format>
@@ -168,11 +168,6 @@ namespace UI
 	{
 		if (ImGui::Begin("Entities", &mWindowsToDisplay.Entity))
 		{
-			auto& availableTextures = mTextureSystem.mAvailableTextures;
-			std::vector<std::string> availableTextureNames;
-			for (const auto& path : availableTextures)
-				availableTextureNames.push_back(path.stem().string());
-
 			auto& scene = mSceneSystem.getCurrentScene();
 			scene.foreachEntity([&](ECS::Entity& pEntity)
 			{
@@ -186,17 +181,17 @@ namespace UI
 				if (ImGui::TreeNode(title.c_str()))
 				{
 					if (scene.hasComponents<Component::Transform>(pEntity))
-						scene.getComponentMutable<Component::Transform&>(pEntity).DrawImGui();
+						scene.getComponentMutable<Component::Transform&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::Collider>(pEntity))
 						scene.getComponentMutable<Component::Collider&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::RigidBody>(pEntity))
-						scene.getComponentMutable<Component::RigidBody&>(pEntity).DrawImGui();
+						scene.getComponentMutable<Component::RigidBody&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::DirectionalLight>(pEntity))
-						scene.getComponentMutable<Component::DirectionalLight&>(pEntity).DrawImGui();
+						scene.getComponentMutable<Component::DirectionalLight&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::SpotLight>(pEntity))
-						scene.getComponentMutable<Component::SpotLight&>(pEntity).DrawImGui();
+						scene.getComponentMutable<Component::SpotLight&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::PointLight>(pEntity))
-						scene.getComponentMutable<Component::PointLight&>(pEntity).DrawImGui();
+						scene.getComponentMutable<Component::PointLight&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::Camera>(pEntity))
 						scene.getComponentMutable<Component::Camera>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::ParticleEmitter>(pEntity))
@@ -204,35 +199,9 @@ namespace UI
 					if (scene.hasComponents<Component::Terrain>(pEntity))
 						scene.getComponentMutable<Component::Terrain>(pEntity).draw_UI(mTextureSystem);
 					if (scene.hasComponents<Component::Mesh>(pEntity))
-					{
-						auto& mesh = scene.getComponentMutable<Component::Mesh>(pEntity);
-						if (ImGui::TreeNode("Mesh"))
-						{
-							//auto current = mesh.mModel->mFilePath.stem().string();
-							//static size_t selected;
-							//if (ImGui::ComboContainer("Mesh", current.c_str(), availableModelNames, selected))
-							//	mesh.mModel = mMeshSystem.getModel(availableModels[selected]);
-							ImGui::TreePop();
-						}
-					}
+						scene.getComponentMutable<Component::Mesh>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::Texture>(pEntity))
-					{
-						if (ImGui::TreeNode("Texture"))
-						{
-							auto& textureComponent = scene.getComponentMutable<Component::Texture&>(pEntity);
-							const std::string currentDiffuse  = textureComponent.mDiffuse ? textureComponent.mDiffuse->m_image_ref->name() : "None";
-							const std::string currentSpecular = textureComponent.mSpecular ? textureComponent.mSpecular->m_image_ref->name() : "None";
-
-							static size_t selected;
-							if (ImGui::ComboContainer("Diffuse Texture", currentDiffuse.c_str(), availableTextureNames, selected))
-								textureComponent.mDiffuse = mTextureSystem.getTexture(availableTextures[selected]);
-							if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
-								textureComponent.mSpecular = mTextureSystem.getTexture(availableTextures[selected]);
-							ImGui::Slider("Shininess", textureComponent.m_shininess, 1.f, 512.f, "%.1f");
-
-							ImGui::TreePop();
-						}
-					}
+						scene.getComponentMutable<Component::Texture>(pEntity).draw_UI(mTextureSystem);
 
 					ImGui::SeparatorText("Quick options");
 					if (ImGui::Button("Delete entity"))

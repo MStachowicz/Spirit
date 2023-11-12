@@ -136,6 +136,8 @@ namespace Component
 	class Mesh
 	{
 	public:
+		MeshRef m_mesh;
+
 		Mesh(MeshRef& p_mesh);
 		Mesh()                       = default;
 		Mesh(const Mesh&)            = default;
@@ -143,6 +145,6 @@ namespace Component
 		Mesh(Mesh&&)                 = default;
 		Mesh& operator=(Mesh&&)      = default;
 
-		MeshRef m_mesh;
+		void draw_UI();
 	};
 }
