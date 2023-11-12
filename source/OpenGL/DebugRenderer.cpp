@@ -2,10 +2,11 @@
 #include "OpenGL/GLState.hpp"
 #include "OpenGL/DrawCall.hpp"
 
+#include "Component/Collider.hpp"
+#include "Component/Lights.hpp"
+#include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
 #include "System/SceneSystem.hpp"
-#include "Component/Transform.hpp"
-#include "Component/Lights.hpp"
 
 #include "Geometry/Cylinder.hpp"
 #include "Geometry/Frustrum.hpp"
@@ -76,11 +77,10 @@ namespace OpenGL
 
 		if (m_debug_options.m_show_bounding_box)
 		{
-			scene.foreach([&](Component::Transform& p_transform, Component::Mesh& p_mesh)
+			scene.foreach([&](Component::Transform& p_transform, Component::Mesh& p_mesh, Component::Collider& p_collider)
 			{
-				const auto AABB_size = p_mesh.m_mesh->AABB.getSize() * p_transform.mScale;
-				glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), p_transform.mPosition);
-				model = glm::scale(model, AABB_size);
+				auto model = glm::translate(glm::identity<glm::mat4>(), p_collider.m_world_AABB.get_center());
+				model = glm::scale(model, p_collider.m_world_AABB.get_size());
 
 				{
 					DrawCall dc;
