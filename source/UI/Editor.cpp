@@ -188,7 +188,7 @@ namespace UI
 					if (scene.hasComponents<Component::Transform>(pEntity))
 						scene.getComponentMutable<Component::Transform&>(pEntity).DrawImGui();
 					if (scene.hasComponents<Component::Collider>(pEntity))
-						scene.getComponentMutable<Component::Collider&>(pEntity).DrawImGui();
+						scene.getComponentMutable<Component::Collider&>(pEntity).draw_UI();
 					if (scene.hasComponents<Component::RigidBody>(pEntity))
 						scene.getComponentMutable<Component::RigidBody&>(pEntity).DrawImGui();
 					if (scene.hasComponents<Component::DirectionalLight>(pEntity))

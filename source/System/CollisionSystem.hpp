@@ -1,14 +1,14 @@
 #pragma once
 
+#include "ECS/Storage.hpp"
+#include "Geometry/Intersect.hpp"
+
 #include "glm/fwd.hpp"
 #include "glm/vec3.hpp"
 
-#include "Storage.hpp"
-
-#include "Intersect.hpp"
-
 #include <optional>
 #include <vector>
+#include <utility>
 
 namespace Geometry
 {
@@ -17,7 +17,7 @@ namespace Geometry
 namespace Component
 {
     struct Transform;
-    struct Collider;
+    class Collider;
 }
 
 namespace System
