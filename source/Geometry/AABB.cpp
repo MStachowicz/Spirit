@@ -20,11 +20,11 @@ namespace Geometry
         : mMin{pLowPoint}
         , mMax{pHighPoint}
     {}
-    glm::vec3 AABB::getSize() const
+    glm::vec3 AABB::get_size() const
     {
         return mMax - mMin;
     }
-    glm::vec3 AABB::getCenter() const
+    glm::vec3 AABB::get_center() const
     {
         return (mMin + mMax) / 2.f;
     }
@@ -34,8 +34,8 @@ namespace Geometry
         // Additionally we can leverage the sign of the component in the local space to determine if the normal needs to be reversed.
 
         // Move the Point to AABB space
-        const auto AABBPosition = pPointOnAABBInWorldSpace - getCenter();
-        const auto size = getSize();
+        const auto AABBPosition = pPointOnAABBInWorldSpace - get_center();
+        const auto size = get_size();
 
         // Set min and distance to difference between local point and x size
         float distance = std::abs(size.x - std::abs(AABBPosition.x));

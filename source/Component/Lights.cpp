@@ -53,8 +53,8 @@ namespace Component
     glm::mat4 DirectionalLight::get_view_proj(const Geometry::AABB& p_scene_AABB)
     {
         // DirectionalLight has no position, instead consider at the extents of the scene in the opposite direction its casting.
-        glm::vec3 size             = p_scene_AABB.getSize();
-        glm::vec3 center           = p_scene_AABB.getCenter();
+        glm::vec3 size             = p_scene_AABB.get_size();
+        glm::vec3 center           = p_scene_AABB.get_center();
         glm::vec3 start_position   = center - mDirection * (size / 2.f);
         glm::vec3 end_position     = center + mDirection * (size / 2.f);
         glm::mat4 view             = glm::lookAt(start_position, center, glm::vec3(0.0f, 0.0f, 1.0f)); // Up

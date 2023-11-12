@@ -16,8 +16,8 @@ namespace Geometry
         AABB(const float& pLowX, const float& pHighX, const float& pLowY, const float& pHighY, const float& pLowZ, const float& pHighZ);
         AABB(const glm::vec3& pLowPoint, const glm::vec3& pHighPoint);
 
-        glm::vec3 getSize() const;
-        glm::vec3 getCenter() const;
+        glm::vec3 get_size() const;
+        glm::vec3 get_center() const;
         // Returns the surface normal of the AABB at pPointOnAABBInWorldSpace.
         // This function does not handle edge points on the AABB and returns only the normal of one of the 6 faces of the cuboid.
         glm::vec3 getNormal(const glm::vec3& pPointOnAABBInWorldSpace) const;
