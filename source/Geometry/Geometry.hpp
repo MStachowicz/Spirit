@@ -3,10 +3,6 @@
 #include "glm/vec3.hpp"
 #include "glm/mat3x3.hpp"
 
-#include <array>
-#include <numbers>
-#include <utility>
-
 // Variable          Symbol     SI Unit
 // -------------------------------------
 // Force                F     (N  = kg m/s²)
@@ -39,4 +35,14 @@ namespace Geometry
     glm::vec3 angularImpulse(const glm::vec3& pCollisionPointWorldSpace, const glm::vec3& pCollisionNormal, const float& pRestitution
                                 , const glm::vec3& pBody1CenterOfMassPositionWorld, const glm::vec3& pBody1LinearVelocity, const glm::vec3& pBody1AngularVelocity, const float& pBody1Mass, const glm::mat3& pBody1InertiaTensor
                                 , const glm::vec3& pBody2CenterOfMassPositionWorld, const glm::vec3& pBody2LinearVelocity, const glm::vec3& pBody2AngularVelocity, const float& pBody2Mass, const glm::mat3& pBody2InertiaTensor);
+
+	enum class ShapeType : uint8_t
+	{
+		Cone,
+		Cuboid,
+		Cylinder,
+		Plane,
+		Sphere,
+		Quad
+	};
 }

@@ -58,7 +58,7 @@ namespace OpenGL
 	void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cylinder(p_cylinder.mBase, p_cylinder.mTop, p_cylinder.mDiameter / 2.f, m_quality);
+		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, m_quality);
 	}
 	void DebugRenderer::add(const Geometry::Quad& p_quad, const glm::vec4& p_colour)
 	{
@@ -79,7 +79,7 @@ namespace OpenGL
 	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_icosphere(p_sphere.mCenter, p_sphere.mRadius, m_quality);
+		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, m_quality);
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
 	{
