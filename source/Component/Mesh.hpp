@@ -2,6 +2,7 @@
 
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
+#include "Geometry/AABB.hpp"
 
 #include "glm/vec4.hpp"
 #include "glm/vec3.hpp"
@@ -56,12 +57,14 @@ namespace Data
 
 	class Mesh
 	{
-		OpenGL::VAO VAO   = {};
-		OpenGL::VBO VBO   = {};
-		GLsizei draw_size = 0;
+		OpenGL::VAO VAO;
+		OpenGL::VBO VBO;
+		GLsizei draw_size;
 		OpenGL::PrimitiveMode primitive_mode;
 
 	public:
+		Geometry::AABB AABB;
+
 		void draw()
 		{
 			VAO.bind();
@@ -87,8 +90,13 @@ namespace Data
 			VBO.bind();
 			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(VertexType), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
 
-			OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, position));
-			OpenGL::enable_vertex_attrib_array(0);
+			{
+				OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, position));
+				OpenGL::enable_vertex_attrib_array(0);
+
+				for (auto i = 0; i < vertex_data.size(); ++i)
+					AABB.unite(vertex_data[i].position);
+			}
 
 			if constexpr (has_normal_member<VertexType>)
 			{
