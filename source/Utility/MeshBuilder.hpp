@@ -65,7 +65,6 @@ namespace Utility
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_line for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
-
 		}
 		// Add a triangle to the mesh.
 		// If VertexType has one, calculates the normal from the positions. If the normal is pre-computed use the other overload.
@@ -176,7 +175,7 @@ namespace Utility
 		}
 		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
-			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
 			{
 				VertexType top_left_v;
 				VertexType bottom_left_v;
@@ -188,24 +187,34 @@ namespace Utility
 				bottom_right_v.position = bottom_right;
 				top_right_v.position    = top_right;
 
-				if constexpr (Data::has_UV_member<VertexType>)
+				if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 				{
-					top_left_v.uv     = glm::vec2(0.f, 1.f);
-					bottom_left_v.uv  = glm::vec2(0.f, 0.f);
-					bottom_right_v.uv = glm::vec2(1.f, 0.f);
-					top_right_v.uv    = glm::vec2(1.f, 1.f);
-				}
+					if constexpr (Data::has_UV_member<VertexType>)
+					{
+						top_left_v.uv     = glm::vec2(0.f, 1.f);
+						bottom_left_v.uv  = glm::vec2(0.f, 0.f);
+						bottom_right_v.uv = glm::vec2(1.f, 0.f);
+						top_right_v.uv    = glm::vec2(1.f, 1.f);
+					}
 
-				if constexpr (Data::has_normal_member<VertexType>)
-				{
-					const auto normal = glm::normalize(glm::cross(bottom_left - top_left, top_right - top_left));
-					add_triangle(top_left_v, bottom_left_v, bottom_right_v, normal);
-					add_triangle(top_left_v, bottom_right_v, top_right_v, normal);
+					if constexpr (Data::has_normal_member<VertexType>)
+					{
+						const auto normal = glm::normalize(glm::cross(bottom_left - top_left, top_right - top_left));
+						add_triangle(top_left_v, bottom_left_v, bottom_right_v, normal);
+						add_triangle(top_left_v, bottom_right_v, top_right_v, normal);
+					}
+					else
+					{
+						add_triangle(top_left_v, bottom_left_v, bottom_right_v);
+						add_triangle(top_left_v, bottom_right_v, top_right_v);
+					}
 				}
-				else
+				else if constexpr (primitive_mode == OpenGL::PrimitiveMode::Lines)
 				{
-					add_triangle(top_left_v, bottom_left_v, bottom_right_v);
-					add_triangle(top_left_v, bottom_right_v, top_right_v);
+					add_line(top_left_v, bottom_left_v);
+					add_line(bottom_left_v, bottom_right_v);
+					add_line(bottom_right_v, top_right_v);
+					add_line(top_right_v, top_left_v);
 				}
 			}
 			else
@@ -376,7 +385,7 @@ namespace Utility
 		}
 		void add_cuboid(const glm::vec3& center, const glm::vec3& size, const glm::quat& rotation = glm::identity<glm::quat>())
 		{
-			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
 			{
 				const auto half_size = size / 2.f;
 
