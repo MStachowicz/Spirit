@@ -4,6 +4,7 @@
 #include "OpenGL/GLState.hpp"
 #include "Utility/Utility.hpp"
 
+#include <array>
 #include <vector>
 #include <numbers>
 #include <utility>
@@ -373,6 +374,33 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_icosphere for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
+		void add_cuboid(const glm::vec3& center, const glm::vec3& size, const glm::quat& rotation = glm::identity<glm::quat>())
+		{
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			{
+				const auto half_size = size / 2.f;
+
+				// Bottom face
+				const auto p1 = center + glm::vec3(-half_size.x, -half_size.y, -half_size.z);
+				const auto p2 = center + glm::vec3(-half_size.x, -half_size.y,  half_size.z);
+				const auto p3 = center + glm::vec3( half_size.x, -half_size.y,  half_size.z);
+				const auto p4 = center + glm::vec3( half_size.x, -half_size.y, -half_size.z);
+				// Top face
+				const auto p5 = center + glm::vec3(-half_size.x,  half_size.y, -half_size.z);
+				const auto p6 = center + glm::vec3(-half_size.x,  half_size.y,  half_size.z);
+				const auto p7 = center + glm::vec3( half_size.x,  half_size.y,  half_size.z);
+				const auto p8 = center + glm::vec3( half_size.x,  half_size.y, -half_size.z);
+
+				add_quad(p7, p8, p3, p4); // Left
+				add_quad(p5, p6, p1, p2); // Right
+				add_quad(p2, p3, p1, p4); // Bottom
+				add_quad(p5, p8, p6, p7); // Top
+				add_quad(p6, p7, p2, p3); // Front
+				add_quad(p8, p5, p4, p1); // Back
+			}
+			else
+				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cuboid for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+		}
 		void reserve(size_t size)
 		{
 			data.reserve(size);
@@ -391,9 +419,9 @@ namespace Utility
 			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");
 			current_colour = glm::vec4(colour, 1.f);
 		}
-		[[NODISCARD]] Data::NewMesh get_mesh()
+		[[NODISCARD]] Data::Mesh get_mesh()
 		{
-			return Data::NewMesh{data, primitive_mode};
+			return Data::Mesh{data, primitive_mode};
 		}
 
 	private: // Helpers for MeshBuilder::add_ functions
@@ -423,7 +451,7 @@ namespace Utility
 		}
 		// Get a pair of arrays defining a standard icosahedron. A platonic solid with 20 faces, 30 edges and 12 vertices.
 		// Use get_icosahedron_points to return a flat list of points.
-		//@return A pair of arrays, =points, second=indices.
+		//@return A pair of arrays, first=points, second=indices.
 		[[nodiscard]] static consteval std::pair<std::array<glm::vec3, 12>, std::array<unsigned int, 60>> get_icosahedron_points_and_indices()
 		{
 			// create 12 vertices of a icosahedron
