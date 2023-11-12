@@ -94,19 +94,6 @@ namespace OpenGL
 	{
 		m_phong_renderer.update_light_data(mSceneSystem.m_scene, m_shadow_mapper.get_depth_map());
 		auto& scene = mSceneSystem.getCurrentScene();
-		//{
-		//	DrawCall dc;
-		//	auto mesh = mMeshSystem.get_mesh(Geometry::ShapeType::Cuboid);
-		//	dc.set_uniform("model", glm::identity<glm::mat4>());
-		//	dc.submit(m_colour_shader, mesh);
-		//}
-		//{
-		//	DrawCall dc;
-		//	auto mesh = mMeshSystem.get_mesh(Geometry::ShapeType::Quad);
-		//	dc.set_uniform("model", glm::translate(glm::identity<glm::mat4>(), glm::vec3(4.f,0.f,0.f)));
-		//	dc.set_uniform("colour", glm::vec3(0.f, 1.f, 1.f));
-		//	dc.submit(mUniformColourShader, mesh);
-		//}
 
 		scene.foreach([&](ECS::Entity& pEntity, Component::Transform& p_transform, Component::Mesh& mesh_comp)
 		{
@@ -126,7 +113,7 @@ namespace OpenGL
 			{
 				DrawCall dc;
 				dc.set_uniform("model", p_transform.mModel);
-				dc.set_uniform("colour", glm::vec3(0.06f, 0.44f, 0.81f));
+				dc.set_uniform("colour", glm::vec4(0.06f, 0.44f, 0.81f, 1.f));
 				dc.submit(mUniformColourShader, mesh_comp.m_mesh);
 			}
 		});
