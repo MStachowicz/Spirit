@@ -27,6 +27,8 @@ namespace OpenGL
 {
 	class OpenGLRenderer
 	{
+		static Data::Mesh make_screen_quad_mesh();
+
 		struct PostProcessingOptions
 		{
 			bool mInvertColours = false;
@@ -60,6 +62,7 @@ namespace OpenGL
 		ShadowMapper m_shadow_mapper;
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;
+		Data::Mesh m_screen_quad;
 
 	public:
 		ViewInformation mViewInformation;
@@ -72,10 +75,5 @@ namespace OpenGL
 		void end_frame();
 		// Draw the current state of the ECS.
 		void draw(const DeltaTime& delta_time);
-
-	private:
-		void draw(const Data::Model& pModel);
-		void draw(const Data::CompositeMesh& pComposite);
-		void draw(const Data::Mesh& pMesh);
 	};
 } // namespace OpenGL

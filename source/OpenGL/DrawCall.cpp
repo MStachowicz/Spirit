@@ -34,7 +34,7 @@ namespace OpenGL
 		++m_texture_count;
 	}
 
-	void DrawCall::submit(Shader& p_shader, Data::NewMesh& p_mesh) const
+	void DrawCall::submit(Shader& p_shader, Data::Mesh& p_mesh) const
 	{
 		OpenGL::set_depth_test(m_depth_test_enabled);
 		OpenGL::set_depth_test_type(m_depth_test_type);

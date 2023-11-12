@@ -1,38 +1,79 @@
 #include "MeshSystem.hpp"
+#include "System/TextureSystem.hpp"
+#include "Geometry/Cone.hpp"
+#include "Geometry/Cuboid.hpp"
+#include "Geometry/Cylinder.hpp"
+#include "Geometry/Plane.hpp"
+#include "Geometry/Sphere.hpp"
+#include "Geometry/Quad.hpp"
 
-// System
-#include "TextureSystem.hpp"
-
-// Utility
-#include "File.hpp"
-#include "Logger.hpp"
-#include "Config.hpp"
+#include "Utility/MeshBuilder.hpp"
+#include "Utility/File.hpp"
+#include "Utility/Logger.hpp"
+#include "Utility/Config.hpp"
 
 namespace System
 {
-    MeshSystem::MeshSystem(TextureSystem& pTextureSystem) noexcept
-        : mTextureSystem{pTextureSystem}
-        , mAvailableModels{}
-        , mModelManager{}
-        , mConePrimitive{mModelManager.insert(Data::Model{Config::Model_Directory / "cone" / "cone_32.obj", mTextureSystem.mTextureManager})}
-        , mCubePrimitive{mModelManager.insert(Data::Model{Config::Model_Directory / "cube" / "cube.obj", mTextureSystem.mTextureManager})}
-        , mCylinderPrimitive{mModelManager.insert(Data::Model{Config::Model_Directory / "cylinder" / "cylinder_32.obj", mTextureSystem.mTextureManager})}
-        , mPlanePrimitive{mModelManager.insert(Data::Model{Config::Model_Directory / "plane" / "plane.obj", mTextureSystem.mTextureManager})}
-        , mSpherePrimitive{mModelManager.insert(Data::Model{Config::Model_Directory / "Sphere" / "Icosphere_2.obj", mTextureSystem.mTextureManager})}
-    {
-        Utility::File::forEachFileRecursive(Config::Model_Directory,
-            [&](const std::filesystem::directory_entry& entry)
-            {
-                if (entry.is_regular_file() && entry.path().has_extension() && entry.path().extension() == ".obj")
-                    mAvailableModels.push_back(entry.path());
-            });
-    }
+	MeshSystem::MeshSystem(TextureSystem& p_texture_system) noexcept
+		: m_texture_system{p_texture_system}
+		, m_mesh_manager{}
+		, m_available_model_paths{}
+		, m_cone{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Cone))}
+		, m_cube{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Cuboid))}
+		, m_cylinder{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Cylinder))}
+		, m_plane{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Plane))}
+		, m_sphere{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Sphere))}
+		, m_quad{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Quad))}
+	{
+		Utility::File::forEachFileRecursive(Config::Model_Directory,[&](const std::filesystem::directory_entry& entry)
+		{
+			if (entry.is_regular_file() && entry.path().has_extension() && entry.path().extension() == ".obj")
+				m_available_model_paths.push_back(entry.path());
+		});
+	}
 
-    ModelRef MeshSystem::getModel(const std::filesystem::path& pFilePath)
-    {
-        return mModelManager.get_or_create([&pFilePath](const Data::Model& pModel)
-        {
-            return pModel.mFilePath == pFilePath;
-        }, pFilePath, mTextureSystem.mTextureManager);
-    }
+	Data::Mesh MeshSystem::make_mesh(Geometry::ShapeType p_shape_type)
+	{
+		switch (p_shape_type)
+		{
+			case Geometry::ShapeType::Cone:
+			{
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				mb.add_cone(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, 16);
+				return mb.get_mesh();
+			}
+			case Geometry::ShapeType::Cuboid:
+			{
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				mb.add_cuboid(glm::vec3(0.f), glm::vec3(2.f, 2.f, 2.f));
+				return mb.get_mesh();
+			}
+			case Geometry::ShapeType::Cylinder:
+			{
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				mb.add_cylinder(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, 16);
+				return mb.get_mesh();
+			}
+			case Geometry::ShapeType::Plane:
+			{
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				mb.add_quad(glm::vec3(-1000.f, 0.f, -1000.f), glm::vec3(1000.f, 0.f, -1000.f), glm::vec3(-1000.f, 0.f, 1000.f), glm::vec3(1000.f, 0.f, 1000.f));
+				return mb.get_mesh();
+			}
+			case Geometry::ShapeType::Sphere:
+			{
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				mb.add_icosphere(glm::vec3(0.f, 0.f, 0.f), 1.f, 4);
+				return mb.get_mesh();
+			}
+			case Geometry::ShapeType::Quad:
+			{
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				mb.add_quad(glm::vec3(-1.f, 0.f, -1.f), glm::vec3(1.f, 0.f, -1.f), glm::vec3(-1.f, 0.f, 1.f), glm::vec3(1.f, 0.f, 1.f));
+				return mb.get_mesh();
+			}
+			default:
+				throw std::runtime_error("Invalid shape type");
+		}
+	}
 } // namespace System

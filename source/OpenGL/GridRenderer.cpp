@@ -5,7 +5,7 @@
 
 namespace OpenGL
 {
-	Data::NewMesh GridRenderer::make_grid_mesh()
+	Data::Mesh GridRenderer::make_grid_mesh()
 	{
 		constexpr int Size                        = 1000; // Used for the size and number of lines to draw.
 		constexpr float transparency              = 0.7f;
@@ -46,7 +46,7 @@ namespace OpenGL
 
 		return mb.get_mesh();
 	}
-	Data::NewMesh GridRenderer::make_origin_arrows_mesh()
+	Data::Mesh GridRenderer::make_origin_arrows_mesh()
 	{
 		auto mb = Utility::MeshBuilder<Data::ColourVertex, PrimitiveMode::Triangles>{};
 		mb.set_colour(glm::vec3(1.f, 0.f, 0.f));

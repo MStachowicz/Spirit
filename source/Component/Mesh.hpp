@@ -1,31 +1,14 @@
 #pragma once
 
-// Component
-#include "Texture.hpp"
+#include "OpenGL/Types.hpp"
+#include "Utility/ResourceManager.hpp"
 
-// Geometry
-#include "AABB.hpp"
-#include "Triangle.hpp"
-
-// OpenGL
-#include "Types.hpp"
-
-// GLM
 #include "glm/vec4.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec2.hpp"
 
-// Utility
-#include "ResourceManager.hpp"
-
-// STD
-#include <filesystem>
 #include <vector>
 #include <type_traits>
-
-struct aiMesh;
-struct aiNode;
-struct aiScene;
 
 namespace Data
 {
@@ -39,7 +22,7 @@ namespace Data
 	concept has_colour_member   = requires(T v) {{v.colour} -> std::convertible_to<glm::vec4>;};
 	// Ensure the vertex has a position and either a colour or UV allowing it to be rendered.
 	template <typename T>
-	concept is_valid_mesh_vert  = has_position_member<T> && (has_colour_member<T> || has_UV_member<T>);
+	concept is_valid_mesh_vert  = has_position_member<T>;
 
 	// Vertex with position, normal, UV and colour.
 	class Vertex
@@ -57,8 +40,21 @@ namespace Data
 		glm::vec3 position = glm::vec3{0.f};
 		glm::vec4 colour   = glm::vec4{1.f};
 	};
+	// Basic Vertex with only a position and UV.
+	class TextureVertex
+	{
+	public:
+		glm::vec3 position = glm::vec3{0.f};
+		glm::vec2 uv       = glm::vec2{0.f};
+	};
+	// Vertex with only a position. Useful when rendering with colours decided by the shader.
+	class PositionVertex
+	{
+	public:
+		glm::vec3 position = glm::vec3{0.f};
+	};
 
-	class NewMesh // TODO replace OpenGL::Mesh and Data::Mesh with this
+	class Mesh
 	{
 		OpenGL::VAO VAO   = {};
 		OpenGL::VBO VBO   = {};
@@ -79,7 +75,7 @@ namespace Data
 
 		template <typename VertexType>
 		requires is_valid_mesh_vert<VertexType>
-		NewMesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode) noexcept
+		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode) noexcept
 			: VAO{}
 			, VBO{}
 			, draw_size{(GLsizei)vertex_data.size()}
@@ -111,120 +107,34 @@ namespace Data
 			}
 		}
 
+		Mesh(const Mesh&)            = delete;
+		Mesh& operator=(const Mesh&) = delete;
+		Mesh(Mesh&&)                 = default;
+		Mesh& operator=(Mesh&&)      = default;
+
 		GLsizei size() const noexcept { return draw_size; }
-		bool empty() const noexcept { return draw_size == 0; }
+		bool empty()   const noexcept { return draw_size == 0; }
 	};
 }
 
-namespace Data
-{
-    struct Material
-    {
-        // If the Mesh has a pre-defined texture associated it is set here.
-        TextureRef mDiffuseTexture;
-        TextureRef mSpecularMap;
-        TextureRef mHeightMap;
-        TextureRef mAmbientMap;
-    };
-
-    // An implicit mesh, a collection of vertices defining a 3D triangulated Mesh.
-    // The mesh stores additional data such as the rendering backend, AABB in its object space and the Material data if any.
-    class Mesh
-    {
-    public:
-        std::vector<glm::vec3> mPositions;
-        std::vector<glm::vec3> mNormals;
-        std::vector<glm::vec2> mTextureCoordinates;
-        std::vector<int> mIndices;
-
-        Geometry::AABB mAABB; // Object space AABB encompassing all the mPositions of the mesh.
-        std::vector<Geometry::Triangle> mTriangles; // Object space triangles of the mesh.
-
-        Material mMaterial;
-        OpenGL::Mesh mGLData; // The GPU representation of the data.
-
-        Mesh() noexcept = default;
-        Mesh(aiMesh& pAssimpMesh) noexcept;
-        Mesh(aiMesh& pAssimpMesh, const aiScene& pAssimpScene, TextureManager& pTextureManager) noexcept;
-    };
-
-
-
-
-
-    // A node of a Mesh tree, the CompositeMesh can own multiple Meshes and any number of child CompositeMeshes
-    class CompositeMesh
-    {
-    public:
-        std::vector<Mesh> mMeshes;
-        std::vector<CompositeMesh> mChildMeshes;
-        Geometry::AABB mAABB;
-
-        CompositeMesh() noexcept
-            : mMeshes{}
-            , mChildMeshes{}
-            , mAABB{}
-        {}
-        // Recursively construct many CompositeMeshes by navigating the assimp nodes.
-        CompositeMesh(aiNode& pAssimpNode, const aiScene& pAssimpScene, TextureManager& pTextureManager) noexcept;
-
-        // Recursively call pFunction on every Mesh in the mesh tree.
-        // pFunction will only be applied on meshes on this level and deeper.
-        template<typename Func>
-        void forEachMesh(const Func&& pFunction)
-        {
-            for (auto& mesh : mMeshes)
-                pFunction(mesh);
-            for (auto& mesh : mChildMeshes)
-                mesh.forEachMesh(std::forward<const Func>(pFunction));
-        }
-        // Recursively call pFunction on every Mesh in the mesh tree.
-        // pFunction will only be applied on meshes on this level and deeper.
-        template<typename Func>
-        void forEachMesh(const Func&& pFunction) const
-        {
-            for (const auto& mesh : mMeshes)
-                pFunction(mesh);
-            for (const auto& mesh : mChildMeshes)
-                mesh.forEachMesh(std::forward<const Func>(pFunction));
-        }
-    };
-    // A Model is a tree structure of Mesh objects.
-    // The Model acts as the root node owning the first CompositeMesh.
-    class Model
-    {
-    public:
-        Model(const std::filesystem::path& pFilePath, TextureManager& pTextureManager) noexcept;
-
-
-        // Recursively call pFunction on every Mesh in the mesh tree.
-        // pFunction will only be applied on meshes on this level and deeper.
-        template<typename Func>
-        void forEachMesh(const Func&& pFunction) const
-        {
-            mCompositeMesh.forEachMesh(std::forward<const Func>(pFunction));
-        }
-
-        std::filesystem::path mFilePath;
-        CompositeMesh mCompositeMesh; // The root node of a mesh tree.
-    };
-
-
-} // namespace Data
-
-// Manages the lifetime of reference counted Data::Model objects.
-using ModelManager = Utility::ResourceManager<Data::Model>;
-// A resource counted wrapper for a pointer to a Data::Model object.
-using ModelRef     = Utility::ResourceRef<Data::Model>;
+using MeshManager = Utility::ResourceManager<Data::Mesh>;
+using MeshRef     = Utility::ResourceRef<Data::Mesh>;
 
 namespace Component
 {
-    class Mesh
-    {
-    public:
-        Mesh(const ModelRef& pModel);
-        ~Mesh() = default;
+	// Component Mesh is an indirection to a Data::Mesh.
+	// By not owning the Data::Mesh, we can have multiple entities share the same mesh data and save loading models.
+	// Meshes are loaded by the MeshSystem via a MeshManager.
+	class Mesh
+	{
+	public:
+		Mesh(MeshRef& p_mesh);
+		Mesh()                       = default;
+		Mesh(const Mesh&)            = default;
+		Mesh& operator=(const Mesh&) = default;
+		Mesh(Mesh&&)                 = default;
+		Mesh& operator=(Mesh&&)      = default;
 
-        ModelRef mModel;
-    };
+		MeshRef m_mesh;
+	};
 }

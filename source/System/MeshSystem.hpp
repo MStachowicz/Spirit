@@ -1,34 +1,32 @@
 #pragma once
 
-// Component
-#include "Mesh.hpp"
+#include "Component/Mesh.hpp"
+#include "Utility/ResourceManager.hpp"
+#include "Geometry/Geometry.hpp"
 
-// Utility
-#include "ResourceManager.hpp"
-
-// STD
 #include <filesystem>
+#include <vector>
 
 namespace System
 {
-    class TextureSystem;
+	class TextureSystem;
 
-    class MeshSystem
-    {
-        System::TextureSystem& mTextureSystem;
+	class MeshSystem
+	{
+		[[nodiscard]] static Data::Mesh make_mesh(Geometry::ShapeType p_shape_type);
 
-    public:
-        MeshSystem(TextureSystem& pTextureSystem) noexcept;
+		System::TextureSystem& m_texture_system;
+		MeshManager m_mesh_manager;
 
-        std::vector<std::filesystem::path> mAvailableModels;
-        ModelManager mModelManager;
+	public:
+		MeshSystem(TextureSystem& p_texture_system) noexcept;
+		std::vector<std::filesystem::path> m_available_model_paths;
 
-        ModelRef getModel(const std::filesystem::path& pFilePath);
-
-        ModelRef mConePrimitive;
-        ModelRef mCubePrimitive;
-        ModelRef mCylinderPrimitive;
-        ModelRef mPlanePrimitive;
-        ModelRef mSpherePrimitive;
-    };
+		MeshRef m_cone;
+		MeshRef m_cube;
+		MeshRef m_cylinder;
+		MeshRef m_plane;
+		MeshRef m_sphere;
+		MeshRef m_quad;
+	};
 } // namespace System

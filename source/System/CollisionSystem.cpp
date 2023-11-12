@@ -36,50 +36,10 @@ namespace System
             {
                 if (Geometry::intersect(pCollider.mWorldAABB, pColliderOther.mWorldAABB)) // Quick cull AABB check
                 {
-                    // If the AABBs of the geometries are found to collide but also have Mesh components, then they can be tested with a higher accuracy
-                    // using mesh-aware collision testing.
-
-                    // Go through both mesh trees of both models and check every combination triangle for triangle.
-                    // The points are in object space so additionally transform the triangles before checking them.
-                    if (currentScene.hasComponents<Component::Mesh>(pEntity) && currentScene.hasComponents<Component::Mesh>(pEntityOther))
-                    {
-                        auto& composite      = currentScene.getComponent<Component::Mesh>(pEntity).mModel->mCompositeMesh;
-                        const auto& model    = pTransform.mModel;
-
-                        auto& compositeOther = currentScene.getComponent<Component::Mesh>(pEntityOther).mModel->mCompositeMesh;
-                        const auto& modelOther    = pTransform.mModel;
-
-                        composite.forEachMesh([this, &compositeOther, &collision, &model, &modelOther, &pEntityOther](const Data::Mesh& pMesh)
-                        {
-                            compositeOther.forEachMesh([this, &pMesh, &collision, &model, &modelOther, &pEntityOther](const Data::Mesh& pMeshOther)
-                            {
-                                for (auto triangle : pMesh.mTriangles) // #Perf Copying mesh triangle here to be able to transform it.
-                                {
-                                    triangle.transform(model);
-
-                                    for (auto triangleOther : pMeshOther.mTriangles) // #Perf Copying mesh triangle here to be able to transform it.
-                                    {
-                                        triangleOther.transform(modelOther);
-
-                                        if (Geometry::intersect_triangle_triangle_static(triangle, triangleOther))
-                                        {
-                                            collision = std::make_optional<Collision>({glm::vec3(0.f),glm::vec3(0.f), pEntityOther });
-                                            // #TODO Set the Collision info before returning.
-                                            return;
-                                        }
-                                    }
-                                }
-                            });
-
-                            if (collision.has_value())
-                                return;
-                        });
-
-                        if (collision.has_value())
-                            return;
-                    }
+                    collision = std::make_optional<Collision>({glm::vec3(0.f),glm::vec3(0.f), pEntityOther });
+                    return;
                 }
-            }
+			}
         });
 
         return collision;

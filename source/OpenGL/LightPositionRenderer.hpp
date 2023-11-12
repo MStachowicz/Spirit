@@ -1,20 +1,24 @@
 #include "Types.hpp"
-#include "Shader.hpp"
+#include "OpenGL/Shader.hpp"
+#include "Component/Mesh.hpp"
 
 namespace ECS
 {
-    class Storage;
+	class Storage;
 }
 namespace OpenGL
 {
-    class LightPositionRenderer
-    {
-        Shader m_light_position_shader;
-        float m_light_position_scale;
+	class LightPositionRenderer
+	{
+		static Data::Mesh make_point_light_mesh();
 
-    public:
-        LightPositionRenderer() noexcept;
+		Shader m_light_position_shader;
+		float m_light_position_scale;
+		Data::Mesh m_point_light_mesh;
 
-        void draw(ECS::Storage& p_storage, const Mesh& p_light_mesh);
-    };
+	public:
+		LightPositionRenderer() noexcept;
+
+		void draw(ECS::Storage& p_storage);
+	};
 }

@@ -17,7 +17,7 @@ namespace Component
 {
     Collider::Collider(const Component::Transform& pTransform, const Component::Mesh& pMesh)
         : mCollided(false)
-        , mObjectAABB{pMesh.mModel->mCompositeMesh.mAABB}
+        , mObjectAABB{}
         , mWorldAABB{Geometry::AABB::transform(mObjectAABB, pTransform.mPosition, glm::mat4_cast(pTransform.mOrientation), pTransform.mScale)}
     {}
 

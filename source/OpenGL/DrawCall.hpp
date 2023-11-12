@@ -3,6 +3,7 @@
 #include "GLState.hpp"
 
 #include "Component/Texture.hpp"
+#include "Component/Mesh.hpp"
 
 #include "glm/glm.hpp"
 
@@ -12,7 +13,7 @@
 
 namespace Data
 {
-	class NewMesh;
+	class Mesh;
 }
 namespace OpenGL
 {

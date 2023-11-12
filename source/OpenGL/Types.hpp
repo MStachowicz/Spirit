@@ -434,27 +434,4 @@ namespace OpenGL
     private:
         GLHandle m_handle;
     };
-
-    class Mesh
-    {
-    public:
-        Mesh()  noexcept = default;
-        ~Mesh() noexcept = default;
-
-        Mesh(const Mesh& pOther)            = delete;
-        Mesh& operator=(const Mesh& pOther) = delete;
-        Mesh(Mesh&& pOther)                 noexcept;
-        Mesh& operator=(Mesh&& pOther)      noexcept;
-
-        // Construct an OpenGL mesh from mesh data.
-        Mesh(const Data::Mesh& pMeshData) noexcept;
-        void draw() const;
-
-        VAO mVAO;
-        std::optional<VBO> mVertexPositions;
-        std::optional<VBO> mVertexNormals;
-        std::optional<VBO> mVertexTextureCoordinates;
-        std::optional<EBO> mEBO;
-        GLsizei mDrawSize; // Depending on if the mesh is indexed or array based, this is the element size or array size parameter to glDraw.
-    };
 }

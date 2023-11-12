@@ -410,21 +410,4 @@ namespace OpenGL
             }
         }
     }
-
-    void PhongRenderer::set_draw_data(const glm::vec3& p_view_position, const glm::mat4& p_model, const Texture& p_diffuse_texture, const Texture& p_specular_texture, float p_shininess)
-    {
-        m_phong_shader.use();
-        m_phong_shader.set_uniform("view_position", p_view_position); // #TODO set only once per frame not every draw
-        m_phong_shader.set_uniform("model", p_model);
-        m_phong_shader.set_uniform("shininess", p_shininess);
-
-        // For both textures, set the texture unit the samplers belong to.
-        m_phong_shader.set_uniform("diffuse", 0);
-        active_texture(0);
-        p_diffuse_texture.bind();
-
-        m_phong_shader.set_uniform("specular", 1);
-        active_texture(1);
-        p_specular_texture.bind();
-    }
 } // namespace OpenGL

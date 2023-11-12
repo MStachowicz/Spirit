@@ -21,7 +21,7 @@ float compute_height(float x, float z, float scale_factor, const siv::PerlinNois
     return perlin.noise2D(x * scale_factor, z * scale_factor);
 }
 
-Data::NewMesh Component::Terrain::generate_mesh() noexcept
+Data::Mesh Component::Terrain::generate_mesh() noexcept
 {
     // Use perlin noise to generate a heightmap in the xz plane.
     auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};

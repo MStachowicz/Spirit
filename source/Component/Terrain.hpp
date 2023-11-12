@@ -9,7 +9,7 @@ namespace Component
 {
     class Terrain
     {
-        Data::NewMesh generate_mesh() noexcept;
+        Data::Mesh generate_mesh() noexcept;
 
     public:
         glm::vec3 position;
@@ -17,7 +17,7 @@ namespace Component
         int size_z;
         float scale_factor;
         TextureRef texture;
-        Data::NewMesh mesh;
+        Data::Mesh mesh;
 
         Terrain(int size_x, int size_z) noexcept;
         void draw_UI(System::TextureSystem& texture_system);

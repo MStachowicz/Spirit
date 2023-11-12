@@ -173,11 +173,6 @@ namespace UI
 			for (const auto& path : availableTextures)
 				availableTextureNames.push_back(path.stem().string());
 
-			auto& availableModels = mMeshSystem.mAvailableModels;
-			std::vector<std::string> availableModelNames;
-			for (const auto& path : availableModels)
-				availableModelNames.push_back(path.stem().string());
-
 			auto& scene = mSceneSystem.getCurrentScene();
 			scene.foreachEntity([&](ECS::Entity& pEntity)
 			{
@@ -213,11 +208,10 @@ namespace UI
 						auto& mesh = scene.getComponentMutable<Component::Mesh>(pEntity);
 						if (ImGui::TreeNode("Mesh"))
 						{
-							auto current = mesh.mModel->mFilePath.stem().string();
-							static size_t selected;
-							if (ImGui::ComboContainer("Mesh", current.c_str(), availableModelNames, selected))
-								mesh.mModel = mMeshSystem.getModel(availableModels[selected]);
-
+							//auto current = mesh.mModel->mFilePath.stem().string();
+							//static size_t selected;
+							//if (ImGui::ComboContainer("Mesh", current.c_str(), availableModelNames, selected))
+							//	mesh.mModel = mMeshSystem.getModel(availableModels[selected]);
 							ImGui::TreePop();
 						}
 					}

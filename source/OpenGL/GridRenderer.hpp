@@ -6,12 +6,12 @@ namespace OpenGL
 {
 	class GridRenderer
 	{
-		static Data::NewMesh make_grid_mesh();
-		static Data::NewMesh make_origin_arrows_mesh();
+		static Data::Mesh make_grid_mesh();
+		static Data::Mesh make_origin_arrows_mesh();
 
 		Shader m_grid_shader;
-		Data::NewMesh m_grid;
-		Data::NewMesh m_origin_arrows;
+		Data::Mesh m_grid;
+		Data::Mesh m_origin_arrows;
 
 	public:
 		GridRenderer() noexcept;

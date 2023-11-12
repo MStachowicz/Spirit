@@ -1,10 +1,8 @@
 #include "OpenGLRenderer.hpp"
 #include "OpenGL/DebugRenderer.hpp"
 #include "OpenGL/DrawCall.hpp"
-// ECS
-#include "Storage.hpp"
 
-// COMPONENTS
+#include "ECS/Storage.hpp"
 #include "Component/Lights.hpp"
 #include "Component/Texture.hpp"
 #include "Component/Collider.hpp"
@@ -12,35 +10,28 @@
 #include "Component/Mesh.hpp"
 #include "Component/Transform.hpp"
 #include "Component/Terrain.hpp"
-
-// SYSTEMS
 #include "System/MeshSystem.hpp"
 #include "System/TextureSystem.hpp"
 #include "System/SceneSystem.hpp"
 
-
-// UTILITY
 #include "Utility/Logger.hpp"
 #include "Utility/Utility.hpp"
 #include "Utility/Config.hpp"
-
-// PLATFORM
-#include "Core.hpp"
-#include "Window.hpp"
-
-//GLM
-#include "glm/ext/matrix_transform.hpp" // perspective, translate, rotate
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/quaternion.hpp"
-#include "glm/gtx/string_cast.hpp"
-
-// STD
-#include <algorithm>
+#include "Utility/MeshBuilder.hpp"
+#include "Platform/Core.hpp"
+#include "Platform/Window.hpp"
 
 #include "glad/gl.h"
 
 namespace OpenGL
 {
+	Data::Mesh OpenGLRenderer::make_screen_quad_mesh()
+	{
+		auto mb = Utility::MeshBuilder<Data::TextureVertex, OpenGL::PrimitiveMode::Triangles>{};
+		mb.add_quad(glm::vec3(-1.f, 1.f, 0.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f), glm::vec3(1.f, -1.f, 0.f));
+		return mb.get_mesh();
+	}
+
 	OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem) noexcept
 		: m_window{p_window}
 		, mScreenFramebuffer{}
@@ -58,38 +49,14 @@ namespace OpenGL
 		, m_shadow_mapper{p_window}
 		, m_missing_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
 		, m_blank_texture{pTextureSystem.mTextureManager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
+		, m_screen_quad{make_screen_quad_mesh()}
 		, mViewInformation{}
 	{
 		const auto windowSize = m_window.size();
 		mScreenFramebuffer.attachColourBuffer(windowSize.x, windowSize.y);
 		mScreenFramebuffer.attachDepthBuffer(windowSize.x, windowSize.y);
 		set_viewport(0, 0, windowSize.x, windowSize.y);
-
-		LOG("Constructed new OpenGLRenderer instance");
-	}
-
-	void OpenGLRenderer::draw(const Data::Model& pModel)
-	{
-		draw(pModel.mCompositeMesh);
-	}
-	void OpenGLRenderer::draw(const Data::CompositeMesh& pComposite)
-	{
-		for (const auto& mesh : pComposite.mMeshes)
-			draw(mesh);
-
-		// Recursively draw all the child composites.
-		for (const auto& childComposite : pComposite.mChildMeshes)
-			draw(childComposite);
-	}
-	void OpenGLRenderer::draw(const Data::Mesh& pMesh)
-	{
-		const auto& GLMeshData = pMesh.mGLData;
-		GLMeshData.mVAO.bind();
-
-		if (GLMeshData.mEBO.has_value()) // EBO available means drawing with indices.
-			draw_elements(PrimitiveMode::Triangles, GLMeshData.mDrawSize);
-		else
-			draw_arrays(PrimitiveMode::Triangles, 0, GLMeshData.mDrawSize);
+		LOG("[OPENGL] Constructed new OpenGLRenderer instance");
 	}
 
 	void OpenGLRenderer::start_frame()
@@ -126,44 +93,58 @@ namespace OpenGL
 	void OpenGLRenderer::draw(const DeltaTime& delta_time)
 	{
 		m_phong_renderer.update_light_data(mSceneSystem.m_scene, m_shadow_mapper.get_depth_map());
-
 		auto& scene = mSceneSystem.getCurrentScene();
-		scene.foreach([&](ECS::Entity& pEntity, Component::Transform& p_transform, Component::Mesh& p_mesh)
+		//{
+		//	DrawCall dc;
+		//	auto mesh = mMeshSystem.get_mesh(Geometry::ShapeType::Cuboid);
+		//	dc.set_uniform("model", glm::identity<glm::mat4>());
+		//	dc.submit(m_colour_shader, mesh);
+		//}
+		//{
+		//	DrawCall dc;
+		//	auto mesh = mMeshSystem.get_mesh(Geometry::ShapeType::Quad);
+		//	dc.set_uniform("model", glm::translate(glm::identity<glm::mat4>(), glm::vec3(4.f,0.f,0.f)));
+		//	dc.set_uniform("colour", glm::vec3(0.f, 1.f, 1.f));
+		//	dc.submit(mUniformColourShader, mesh);
+		//}
+
+		scene.foreach([&](ECS::Entity& pEntity, Component::Transform& p_transform, Component::Mesh& mesh_comp)
 		{
 			if (scene.hasComponents<Component::Texture>(pEntity))
 			{
 				auto& texComponent = scene.getComponent<Component::Texture>(pEntity);
-				m_phong_renderer.set_draw_data(
-					mViewInformation.mViewPosition,
-					p_transform.mModel,
-					texComponent.mDiffuse.has_value()  ? texComponent.mDiffuse->m_GL_texture  : m_missing_texture->m_GL_texture,
-					texComponent.mSpecular.has_value() ? texComponent.mSpecular->m_GL_texture : m_blank_texture->m_GL_texture,
-					texComponent.m_shininess);
+
+				DrawCall dc;
+				dc.set_uniform("view_position", mViewInformation.mViewPosition);
+				dc.set_uniform("model", p_transform.mModel);
+				dc.set_uniform("shininess", texComponent.m_shininess);
+				dc.set_texture("diffuse",  texComponent.mDiffuse.has_value()  ? texComponent.mDiffuse  : m_missing_texture);
+				dc.set_texture("specular", texComponent.mSpecular.has_value() ? texComponent.mSpecular : m_blank_texture);
+				dc.submit(m_phong_renderer.get_shader(), mesh_comp.m_mesh);
 			}
 			else
 			{
-				mUniformColourShader.use();
-				mUniformColourShader.set_uniform("model", p_transform.mModel);
-				mUniformColourShader.set_uniform("colour", glm::vec3(0.06f, 0.44f, 0.81f));
+				DrawCall dc;
+				dc.set_uniform("model", p_transform.mModel);
+				dc.set_uniform("colour", glm::vec3(0.06f, 0.44f, 0.81f));
+				dc.submit(mUniformColourShader, mesh_comp.m_mesh);
 			}
-
-			draw(*p_mesh.mModel);
 		});
 
 		{// Draw terrain
 			scene.foreach([&](Component::Terrain& p_terrain)
 			{
-				m_phong_renderer.set_draw_data(
-					mViewInformation.mViewPosition,
-					glm::translate(glm::identity<glm::mat4>(), p_terrain.position),
-					p_terrain.texture.has_value() ? p_terrain.texture->m_GL_texture : m_missing_texture->m_GL_texture,
-					m_blank_texture->m_GL_texture,
-					64.f);
-
-				p_terrain.mesh.draw();
+				DrawCall dc;
+				dc.set_uniform("view_position", mViewInformation.mViewPosition);
+				dc.set_uniform("model", glm::translate(glm::identity<glm::mat4>(), p_terrain.position));
+				dc.set_uniform("shininess", 64.f);
+				dc.set_texture("diffuse",  p_terrain.texture.has_value() ? p_terrain.texture : m_missing_texture);
+				dc.set_texture("specular",  m_blank_texture);
+				dc.submit(m_phong_renderer.get_shader(), p_terrain.mesh);
 			});
 		}
 
+		m_light_position_renderer.draw(scene);
 		m_particle_renderer.update(delta_time, mSceneSystem.m_scene, mViewInformation.mViewPosition);
 	}
 
@@ -190,8 +171,7 @@ namespace OpenGL
 
 			active_texture(0);
 			mScreenFramebuffer.bindColourTexture();
-
-			draw(*mMeshSystem.mPlanePrimitive);
+			m_screen_quad.draw();
 		}
 	}
 } // namespace OpenGL
