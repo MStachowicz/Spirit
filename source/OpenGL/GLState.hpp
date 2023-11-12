@@ -8,6 +8,7 @@ using GLuint     = unsigned int;
 using GLboolean  = unsigned char;
 using GLenum     = unsigned int; // Usually replaced by the enums in OpenGL namespace.
 using GLsizei    = int;
+using GLfloat    = float;
 
 #if defined(_WIN64)
 using GLsizeiptr = signed long long int;
@@ -19,7 +20,6 @@ using GLintptr   = signed long int;
 
 using GLHandle   = unsigned int; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
 //using GLdouble = double; // Unused
-//using GLfloat  = float;  // Unused
 
 // Define wrappers to strongly type GLenum types.
 namespace OpenGL
@@ -401,6 +401,12 @@ namespace OpenGL
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void set_depth_test(bool p_depth_test);
 	void set_depth_test_type(DepthTestType p_type);
+	void set_polygon_offset(bool p_polygon_offset);
+	// Set the scale and units used to calculate depth values.
+	// polygon_offset is useful for rendering hidden-line images, for applying decals to surfaces, and for rendering solids with highlighted edges.
+	//@param p_polygon_offset_factor Specifies a scale factor that is used to create a variable depth offset for each polygon.
+	//@param p_polygon_offset_units Is multiplied by an implementation-specific value to create a constant depth offset.
+	void set_polygon_offset_factor(GLfloat p_polygon_offset_factor, GLfloat p_polygon_offset_units);
 	// Specifies if objects with alpha values <1 should be blended using function set with set_blend_func().
     void set_blending(bool p_blend);
     // Specifies how the RGBA factors of source and destination are blended to give the final pixel colour when encountering transparent objects.

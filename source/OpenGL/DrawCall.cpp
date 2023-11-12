@@ -38,6 +38,9 @@ namespace OpenGL
 	{
 		OpenGL::set_depth_test(m_depth_test_enabled);
 		OpenGL::set_depth_test_type(m_depth_test_type);
+		OpenGL::set_polygon_offset(m_polygon_offset_enabled);
+		if (m_polygon_offset_enabled)
+			OpenGL::set_polygon_offset_factor(m_polygon_offset_factor, m_polygon_offset_units);
 		OpenGL::set_blending(m_blending_enabled);
 		if (m_blending_enabled)
 			OpenGL::set_blend_func(m_source_factor, m_destination_factor);
@@ -66,6 +69,9 @@ namespace OpenGL
 	{
 		OpenGL::set_depth_test(m_depth_test_enabled);
 		OpenGL::set_depth_test_type(m_depth_test_type);
+		OpenGL::set_polygon_offset(m_polygon_offset_enabled);
+		if (m_polygon_offset_enabled)
+			OpenGL::set_polygon_offset_factor(m_polygon_offset_factor, m_polygon_offset_units);
 		OpenGL::set_blending(m_blending_enabled);
 		if (m_blending_enabled)
 			OpenGL::set_blend_func(m_source_factor, m_destination_factor);

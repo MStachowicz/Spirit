@@ -47,6 +47,9 @@ namespace OpenGL
 	public:
 		bool m_depth_test_enabled;
 		DepthTestType m_depth_test_type;
+		bool m_polygon_offset_enabled;
+		float m_polygon_offset_factor;
+		float m_polygon_offset_units;
 		bool m_blending_enabled;
 		BlendFactorType m_source_factor;
 		BlendFactorType m_destination_factor;

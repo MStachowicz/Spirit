@@ -18,6 +18,9 @@ namespace OpenGL
         State()
             : depth_test_enabled(true)
             , depth_test_type(DepthTestType::Less)
+			, polygon_offset_enabled(false)
+			, polygon_offset_factor(0.0f)
+			, polygon_offset_units(0.0f)
             , blending_enabled(false)
             , source_factor(BlendFactorType::SourceAlpha)
             , destination_factor(BlendFactorType::OneMinusSourceAlpha)
@@ -29,14 +32,17 @@ namespace OpenGL
             , viewport_position(0, 0)
             , viewport_size(0, 0)
         {
-            if (depth_test_enabled) glEnable(GL_DEPTH_TEST);
-            else                    glDisable(GL_DEPTH_TEST);
-            if (blending_enabled)   glEnable(GL_BLEND);
-            else                    glDisable(GL_BLEND);
-            if (cull_face_enabled)  glEnable(GL_CULL_FACE);
-            else                    glDisable(GL_CULL_FACE);
+            if (depth_test_enabled)     glEnable(GL_DEPTH_TEST);
+            else                        glDisable(GL_DEPTH_TEST);
+			if (polygon_offset_enabled) glEnable(GL_POLYGON_OFFSET_FILL);
+			else                        glDisable(GL_POLYGON_OFFSET_FILL);
+            if (blending_enabled)       glEnable(GL_BLEND);
+            else                        glDisable(GL_BLEND);
+            if (cull_face_enabled)      glEnable(GL_CULL_FACE);
+            else                        glDisable(GL_CULL_FACE);
 
             glDepthFunc(convert(depth_test_type));
+			glPolygonOffset(polygon_offset_factor, polygon_offset_units);
             glBlendFunc(convert(source_factor), convert(destination_factor));
             glCullFace(convert(cull_face_type));
             glFrontFace(convert(front_face_orientation));
@@ -47,6 +53,10 @@ namespace OpenGL
 
         bool depth_test_enabled;
         DepthTestType depth_test_type;
+
+		bool polygon_offset_enabled;
+		GLfloat polygon_offset_factor;
+		GLfloat polygon_offset_units;
 
         bool blending_enabled;
         BlendFactorType source_factor;
@@ -93,7 +103,26 @@ namespace OpenGL
             state().depth_test_type = p_type;
         }
     }
-
+	void set_polygon_offset(bool p_polygon_offset)
+	{
+		if (p_polygon_offset != state().polygon_offset_enabled)
+		{
+			if (p_polygon_offset)
+				glEnable(GL_POLYGON_OFFSET_FILL);
+			else
+				glDisable(GL_POLYGON_OFFSET_FILL);
+			state().polygon_offset_enabled = p_polygon_offset;
+		}
+	}
+	void set_polygon_offset_factor(GLfloat p_polygon_offset_factor, GLfloat p_polygon_offset_units)
+	{
+		if (p_polygon_offset_factor != state().polygon_offset_factor || p_polygon_offset_units != state().polygon_offset_units)
+		{
+			glPolygonOffset(p_polygon_offset_factor, p_polygon_offset_units);
+			state().polygon_offset_factor = p_polygon_offset_factor;
+			state().polygon_offset_units  = p_polygon_offset_units;
+		}
+	}
     void set_blending(bool p_blend)
     {
         if (p_blend != state().blending_enabled)
