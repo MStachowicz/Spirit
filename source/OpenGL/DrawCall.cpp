@@ -9,6 +9,9 @@ namespace OpenGL
 	DrawCall::DrawCall() noexcept
 		: m_depth_test_enabled{true}
 		, m_depth_test_type{DepthTestType::Less}
+		, m_polygon_offset_enabled{false}
+		, m_polygon_offset_factor{0.f}
+		, m_polygon_offset_units{0.f}
 		, m_blending_enabled{true}
 		, m_source_factor{BlendFactorType::SourceAlpha}
 		, m_destination_factor{BlendFactorType::OneMinusSourceAlpha}
