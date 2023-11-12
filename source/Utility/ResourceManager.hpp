@@ -430,5 +430,7 @@ namespace Utility
         constexpr const Resource& value() const noexcept        { return m_manager->get_resource(m_index.value()); };
         constexpr bool has_value() const noexcept               { return m_manager != nullptr; };
         constexpr explicit operator bool() const noexcept       { return has_value(); };
+		constexpr operator Resource&() noexcept                 { return m_manager->get_resource(m_index.value()); }
+		constexpr operator const Resource&() const noexcept     { return m_manager->get_resource(m_index.value()); }
     };
 } // namespace Utility
