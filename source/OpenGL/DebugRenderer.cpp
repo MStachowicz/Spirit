@@ -74,38 +74,38 @@ namespace OpenGL
 		}
 
 		auto& scene = p_scene.getCurrentScene();
+		auto& opt = m_debug_options;
 
-		if (m_debug_options.m_show_bounding_box)
+		if (opt.m_show_bounding_box)
 		{
 			scene.foreach([&](Component::Transform& p_transform, Component::Mesh& p_mesh, Component::Collider& p_collider)
 			{
 				auto model = glm::translate(glm::identity<glm::mat4>(), p_collider.m_world_AABB.get_center());
 				model = glm::scale(model, p_collider.m_world_AABB.get_size());
-
 				{
 					DrawCall dc;
 					dc.m_cull_face_enabled      = false;
 					dc.m_polygon_offset_enabled = true;
-					dc.m_polygon_offset_factor  = m_debug_options.m_position_offset_factor;
-					dc.m_polygon_offset_units   = m_debug_options.m_position_offset_units;
+					dc.m_polygon_offset_factor  = opt.m_position_offset_factor;
+					dc.m_polygon_offset_units   = opt.m_position_offset_units;
 					dc.set_uniform("model", model);
-					dc.set_uniform("colour", m_debug_options.m_bounding_box_outline_colour);
+					dc.set_uniform("colour", p_collider.m_collided ? glm::vec4(opt.m_bounding_box_collided_colour, 1.f) : glm::vec4(opt.m_bounding_box_colour, 1.f));
 					dc.submit(*m_bound_shader, *m_AABB_outline_mesh);
 				}
-				if (m_debug_options.m_fill_bounding_box)
+				if (opt.m_fill_bounding_box)
 				{
 					DrawCall dc;
 					dc.m_cull_face_enabled      = false;
 					dc.m_polygon_offset_enabled = true;
-					dc.m_polygon_offset_factor  = m_debug_options.m_position_offset_factor;
-					dc.m_polygon_offset_units   = m_debug_options.m_position_offset_units;
+					dc.m_polygon_offset_factor  = opt.m_position_offset_factor;
+					dc.m_polygon_offset_units   = opt.m_position_offset_units;
 					dc.set_uniform("model", model);
-					dc.set_uniform("colour", m_debug_options.m_bounding_box_fill_colour);
+					dc.set_uniform("colour", p_collider.m_collided ? glm::vec4(opt.m_bounding_box_collided_colour, 0.2f) : glm::vec4(opt.m_bounding_box_colour, 0.2f));
 					dc.submit(*m_bound_shader, *m_AABB_filled_mesh);
 				}
 			});
 		}
-		if (m_debug_options.m_show_light_positions)
+		if (opt.m_show_light_positions)
 		{
 			int point_light_count = 0;
 			scene.foreach([&point_light_count](Component::PointLight& point_light) { point_light_count++; });
@@ -113,7 +113,7 @@ namespace OpenGL
 			if (point_light_count > 0)
 			{
 				DrawCall dc;
-				dc.set_uniform("scale", m_debug_options.m_light_position_scale);
+				dc.set_uniform("scale", opt.m_light_position_scale);
 				dc.submit(*m_light_position_shader, *m_point_light_mesh, point_light_count);
 			}
 		}

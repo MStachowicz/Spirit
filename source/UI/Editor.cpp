@@ -256,11 +256,9 @@ namespace UI
 					ImGui::Checkbox("Show orientations", &OpenGL::DebugRenderer::m_debug_options.m_show_orientations);
 					ImGui::Checkbox("Show bounding box", &OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box);
 					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::BeginDisabled();
-					ImGui::ColorEdit4("Bounding box outline colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_outline_colour[0]);
 					ImGui::Checkbox("Fill bounding box", &OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box);
-					if (!OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box) ImGui::BeginDisabled();
-					ImGui::ColorEdit4("Bounding box fill colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_fill_colour[0]);
-					if (!OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box) ImGui::EndDisabled();
+					ImGui::ColorEdit3("Bounding box colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_colour[0]);
+					ImGui::ColorEdit3("Bounding box collided colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_collided_colour[0]);
 					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::EndDisabled();
 					ImGui::Checkbox("Show collision shape", &OpenGL::DebugRenderer::m_debug_options.m_show_collision_shape);
 					ImGui::Slider("Position offset factor", OpenGL::DebugRenderer::m_debug_options.m_position_offset_factor, -10.f, 10.f);
