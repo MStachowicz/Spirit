@@ -13,8 +13,8 @@ namespace Geometry
 			: m_point_1{p_point_1}
 			, m_point_2{p_point_2}
 		{}
-
-		constexpr Line(const glm::vec3& p_point, const glm::vec3& p_direction, bool p_normalize_direction = false) noexcept
+		// Construct a line from a point on the line and a direction.
+		constexpr Line(const glm::vec3& p_point, const glm::vec3& p_direction, bool p_normalize_direction) noexcept
 			: m_point_1{p_point}
 			, m_point_2{p_point + (p_normalize_direction ? glm::normalize(p_direction) : p_direction)}
 		{}
