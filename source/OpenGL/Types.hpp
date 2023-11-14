@@ -36,28 +36,6 @@ namespace OpenGL
         TextureCoordinate2D
     };
 
-    // Namespace to hide implementation details and not pollute OpenGL namespace.
-    namespace impl
-    {
-        // Defines a requirement for a Type T to have a list of VertexAttributes. Used by VBO to hint OpenGL how to read the data being buffered.
-        template <typename T>
-        concept Has_Shader_Attributes_Layout = requires(T x) {{ T::Attributes[0] } -> std::convertible_to<VertexAttribute>; };
-
-        // Returns the number of components the specified attribute consists of.
-        // E.g. "vec3" in GLSL shaders would return 3 as it's composed of 3 components (X, Y and Z)
-        int get_attribute_component_count(VertexAttribute p_attribute);
-        // Returns the location of a specified attribute type. All shaders repeat the same attribute layout positions.
-        // Specified as "layout (location = X)" in GLSL shaders.
-        int get_attribute_index(VertexAttribute p_attribute);
-        // Returns the stride of the attribute i.e. the sizeof.
-        int get_attribute_stride(VertexAttribute p_attribute);
-        // The data type of each component in the attribute. e.g. vec3=GL_FLOAT, int=GL_INT
-        ShaderDataType get_attribute_type(VertexAttribute p_attribute);
-        // Returns the attribute as a string matching the naming used within GLSL shaders.
-        // e.g. All vertex position attributes will use the identifier "VertexPosition"
-        const char* get_attribute_identifier(VertexAttribute p_attribute);
-    }
-
     // Vertex Array Object (VAO)
     // Stores all of the state needed to supply vertex data. VAO::bind() needs to be called before setting the state using VBO's and EBO's.
     // It stores the format of the vertex data as well as the Buffer Objects (see below) providing the vertex data arrays.
@@ -310,39 +288,6 @@ namespace OpenGL
         VBO& operator=(VBO&& pOther) noexcept;
 
         void bind() const;
-
-        // Push a vector of Data type to the GPU.
-        // The Data type being pushed is required to have a member array "Attributes".
-        // Attributes is a list of Shader::Attributes in the same order they appear in the Data class.
-        template <typename Data>
-        requires impl::Has_Shader_Attributes_Layout<Data>
-        void set_data(const std::vector<Data>& p_data)
-        {
-            { // Setup the stride and size for the buffer itself.
-                m_stride = 0;
-                m_size   = 0;
-                for (const VertexAttribute& attrib : Data::Attributes)
-                {
-                    m_stride += impl::get_attribute_stride(attrib);
-                }
-                m_size = m_stride * p_data.size();
-            }
-
-            size_t running_offset = 0;
-            for (const VertexAttribute& attrib : Data::Attributes)
-            {
-                const auto index           = impl::get_attribute_index(attrib);
-                const auto component_count = impl::get_attribute_component_count(attrib);
-                const auto type            = impl::get_attribute_type(attrib);
-
-                enable_vertex_attrib_array(index);
-                vertex_attrib_pointer(index, component_count, type, false, m_stride, (void*)running_offset);
-                running_offset += impl::get_attribute_stride(attrib);
-            }
-            buffer_data(BufferType::ArrayBuffer, m_size, p_data.data(), BufferUsage::StaticDraw);
-        }
-        void setData(const std::vector<glm::vec3>& pVec3Data, const VertexAttribute& pAttributeType);
-        void setData(const std::vector<glm::vec2>& pVec2Data, const VertexAttribute& pAttributeType);
         void clear();
 
         // Copy the contents of pSource into pDestination. Any data pDestination owned before is deleted.

@@ -3,6 +3,7 @@
 #include "Utility.hpp"
 #include "File.hpp"
 #include "Config.hpp"
+#include "Component/Vertex.hpp"
 
 #include "glad/gl.h" // OpenGL functions
 
@@ -108,19 +109,19 @@ namespace OpenGL
     void Shader::scanForAttributes(const std::string& p_source_code)
     {
         if (std::ranges::find(m_vertex_attributes, VertexAttribute::Position3D) == m_vertex_attributes.end())
-            if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::Position3D)) != std::string::npos)
+            if (p_source_code.find(Data::get_identifier(Data::VertexAttribute::Position3D)) != std::string::npos)
                 m_vertex_attributes.push_back(VertexAttribute::Position3D);
 
         if (std::ranges::find(m_vertex_attributes, VertexAttribute::Normal3D) == m_vertex_attributes.end())
-            if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::Normal3D)) != std::string::npos)
+            if (p_source_code.find(Data::get_identifier(Data::VertexAttribute::Normal3D)) != std::string::npos)
                 m_vertex_attributes.push_back(VertexAttribute::Normal3D);
 
         if (std::ranges::find(m_vertex_attributes, VertexAttribute::ColourRGBA) == m_vertex_attributes.end())
-            if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::ColourRGBA)) != std::string::npos)
+            if (p_source_code.find(Data::get_identifier(Data::VertexAttribute::ColourRGBA)) != std::string::npos)
                 m_vertex_attributes.push_back(VertexAttribute::ColourRGBA);
 
         if (std::ranges::find(m_vertex_attributes, VertexAttribute::TextureCoordinate2D) == m_vertex_attributes.end())
-            if (p_source_code.find(impl::get_attribute_identifier(VertexAttribute::TextureCoordinate2D)) != std::string::npos)
+            if (p_source_code.find(Data::get_identifier(Data::VertexAttribute::TextureCoordinate2D)) != std::string::npos)
                 m_vertex_attributes.push_back(VertexAttribute::TextureCoordinate2D);
 
         ASSERT(!m_vertex_attributes.empty(), "[OPENGL][SHADER] No Vertex attributes found in the shader.");

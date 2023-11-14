@@ -158,27 +158,6 @@ namespace OpenGL
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_handle);
     }
-
-    void VBO::setData(const std::vector<glm::vec3>& pVec3Data, const VertexAttribute& pAttributeType)
-    {
-        m_size = pVec3Data.size() * sizeof(glm::vec3);
-        glBufferData(GL_ARRAY_BUFFER, m_size, &pVec3Data.front(), GL_STATIC_DRAW);
-
-        auto index = impl::get_attribute_index(pAttributeType);
-        auto count = impl::get_attribute_component_count(pAttributeType);
-        glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-        glEnableVertexAttribArray(index);
-    }
-    void VBO::setData(const std::vector<glm::vec2>& pVec2Data, const VertexAttribute& pAttributeType)
-    {
-        m_size = pVec2Data.size() * sizeof(glm::vec2);
-        glBufferData(GL_ARRAY_BUFFER, m_size, &pVec2Data.front(), GL_STATIC_DRAW);
-
-        auto index = impl::get_attribute_index(pAttributeType);
-        auto count = impl::get_attribute_component_count(pAttributeType);
-        glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
-        glEnableVertexAttribArray(index);
-    }
     void VBO::clear()
     {
         bind();
@@ -855,64 +834,5 @@ namespace OpenGL
         uniform_block_binding(m_parent_shader_program, m_block_index, m_buffer_backing->m_uniform_binding_point);
 
         if constexpr (LogGLTypeEvents) LOG("[OPENGL][SHADER] UniformBlock '{}' bound to point index {}", m_name, m_buffer_backing->m_uniform_binding_point);
-    }
-
-    namespace impl
-    {
-        int get_attribute_index(VertexAttribute p_attribute)
-        {
-            switch (p_attribute)
-            {// Each index has to be unique. If changing any pre-existing attributes. Change all the occurrences in the GLSL shaders.
-                case VertexAttribute::Position3D:          return 0; // Location = 0 in the shaders.
-                case VertexAttribute::Normal3D:            return 1; // Location = 1 in the shaders.
-                case VertexAttribute::ColourRGBA:          return 2; // Location = 2 in the shaders.
-                case VertexAttribute::TextureCoordinate2D: return 3; // Location = 3 in the shaders.
-                default: ASSERT(false, "Could not determine the index of the attribute p_attribute. If adding a new attribute, be sure to specify \"(location = 'NewIndex')\" in the GLSL shader source."); return 0; // Always
-            }
-        }
-        int get_attribute_stride(VertexAttribute p_attribute)
-        {
-            switch (p_attribute)
-            {
-                case VertexAttribute::Position3D:          return sizeof(float) * 3; // X, Y and Z position components
-                case VertexAttribute::Normal3D:            return sizeof(float) * 3; // X, Y and Z direction components
-                case VertexAttribute::ColourRGBA:          return sizeof(float) * 4; // Red, Green, Blue and Alpha components
-                case VertexAttribute::TextureCoordinate2D: return sizeof(float) * 2; // X and Y components
-                default: ASSERT(false, "Could not determine the size of the attribute p_attribute."); return 0; // Always
-            }
-        }
-        int get_attribute_component_count(VertexAttribute p_attribute)
-        {
-            switch (p_attribute)
-            {
-                case VertexAttribute::Position3D:          return 3; // X, Y and Z position components
-                case VertexAttribute::Normal3D:            return 3; // X, Y and Z direction components
-                case VertexAttribute::ColourRGBA:          return 4; // Red, Green, Blue and Alpha components
-                case VertexAttribute::TextureCoordinate2D: return 2; // X and Y components
-                default: ASSERT(false, "Could not determine the component count of the p_attribute."); return 0; // Always
-            }
-        }
-        const char* get_attribute_identifier(VertexAttribute p_attribute)
-        {
-            switch (p_attribute)
-            {
-                case VertexAttribute::Position3D:          return "VertexPosition";
-                case VertexAttribute::Normal3D:            return "VertexNormal";
-                case VertexAttribute::ColourRGBA:          return "VertexColour";
-                case VertexAttribute::TextureCoordinate2D: return "VertexTexCoord";
-                default: ASSERT(false, "Could not convert VertexAttribute to an identifier. If adding a new attribute, be sure to use the identifier added here for it."); return ""; // Always
-            }
-        }
-        ShaderDataType get_attribute_type(VertexAttribute p_attribute)
-        {
-            switch (p_attribute)
-            {
-                case VertexAttribute::Position3D:          return ShaderDataType::Float;
-                case VertexAttribute::Normal3D:            return ShaderDataType::Float;
-                case VertexAttribute::ColourRGBA:          return ShaderDataType::Float;
-                case VertexAttribute::TextureCoordinate2D: return ShaderDataType::Float;
-                default: ASSERT(false, "Could not convert VertexAttribute to a datatype. If adding a new attribute, be sure to use the corresponding data type added here for it."); return ShaderDataType::Unknown; // Always
-            }
-        }
     }
 }

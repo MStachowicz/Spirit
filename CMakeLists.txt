@@ -65,6 +65,7 @@ source/Component/Texture.cpp
 source/Component/Texture.hpp
 source/Component/Transform.cpp
 source/Component/Transform.hpp
+source/Component/Vertex.hpp
 )
 target_include_directories(Component
 PUBLIC source/Component

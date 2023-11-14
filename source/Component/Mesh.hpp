@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Component/Vertex.hpp"
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
 #include "Geometry/AABB.hpp"
@@ -9,52 +10,9 @@
 #include "glm/vec2.hpp"
 
 #include <vector>
-#include <type_traits>
 
 namespace Data
 {
-	template <typename T>
-	concept has_position_member = requires(T v) {{v.position} -> std::convertible_to<glm::vec3>;};
-	template <typename T>
-	concept has_normal_member   = requires(T v) {{v.normal} -> std::convertible_to<glm::vec3>;};
-	template <typename T>
-	concept has_UV_member       = requires(T v) {{v.uv} -> std::convertible_to<glm::vec2>;};
-	template <typename T>
-	concept has_colour_member   = requires(T v) {{v.colour} -> std::convertible_to<glm::vec4>;};
-	// Ensure the vertex has a position and either a colour or UV allowing it to be rendered.
-	template <typename T>
-	concept is_valid_mesh_vert  = has_position_member<T>;
-
-	// Vertex with position, normal, UV and colour.
-	class Vertex
-	{
-	public:
-		glm::vec3 position = glm::vec3{0.f};
-		glm::vec3 normal   = glm::vec3{0.f};
-		glm::vec2 uv       = glm::vec2{0.f};
-		glm::vec4 colour   = glm::vec4{1.f};
-	};
-	// Basic Vertex with only a position and colour.
-	class ColourVertex
-	{
-	public:
-		glm::vec3 position = glm::vec3{0.f};
-		glm::vec4 colour   = glm::vec4{1.f};
-	};
-	// Basic Vertex with only a position and UV.
-	class TextureVertex
-	{
-	public:
-		glm::vec3 position = glm::vec3{0.f};
-		glm::vec2 uv       = glm::vec2{0.f};
-	};
-	// Vertex with only a position. Useful when rendering with colours decided by the shader.
-	class PositionVertex
-	{
-	public:
-		glm::vec3 position = glm::vec3{0.f};
-	};
-
 	class Mesh
 	{
 		OpenGL::VAO VAO;
@@ -90,9 +48,16 @@ namespace Data
 			VBO.bind();
 			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(VertexType), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
 
-			{
-				OpenGL::vertex_attrib_pointer(0, 3, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, position));
-				OpenGL::enable_vertex_attrib_array(0);
+			{// Position data
+				OpenGL::vertex_attrib_pointer(
+					get_index(VertexAttribute::Position3D),
+					get_component_count(VertexAttribute::Position3D),
+					OpenGL::ShaderDataType::Float,
+					false,
+					sizeof(VertexType),
+					(void*)offsetof(VertexType,
+					position));
+				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Position3D));
 
 				for (auto i = 0; i < vertex_data.size(); ++i)
 					AABB.unite(vertex_data[i].position);
@@ -100,18 +65,36 @@ namespace Data
 
 			if constexpr (has_normal_member<VertexType>)
 			{
-				OpenGL::vertex_attrib_pointer(1, 3, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, normal));
-				OpenGL::enable_vertex_attrib_array(1);
+				OpenGL::vertex_attrib_pointer(
+					get_index(VertexAttribute::Normal3D),
+					get_component_count(VertexAttribute::Normal3D),
+					OpenGL::ShaderDataType::Float,
+					false,
+					sizeof(VertexType),
+					(void*)offsetof(VertexType, normal));
+				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Normal3D));
 			}
 			if constexpr (has_colour_member<VertexType>)
 			{
-				OpenGL::vertex_attrib_pointer(2, 4, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, colour));
-				OpenGL::enable_vertex_attrib_array(2);
+				OpenGL::vertex_attrib_pointer(
+					get_index(VertexAttribute::ColourRGBA),
+					get_component_count(VertexAttribute::ColourRGBA),
+					OpenGL::ShaderDataType::Float,
+					false,
+					sizeof(VertexType),
+					(void*)offsetof(VertexType, colour));
+				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::ColourRGBA));
 			}
 			if constexpr (has_UV_member<VertexType>)
 			{
-				OpenGL::vertex_attrib_pointer(3, 2, OpenGL::ShaderDataType::Float, false, sizeof(VertexType), (void*)offsetof(VertexType, uv));
-				OpenGL::enable_vertex_attrib_array(3);
+				OpenGL::vertex_attrib_pointer(
+					get_index(VertexAttribute::TextureCoordinate2D),
+					get_component_count(VertexAttribute::TextureCoordinate2D),
+					OpenGL::ShaderDataType::Float,
+					false,
+					sizeof(VertexType),
+					(void*)offsetof(VertexType, uv));
+				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::TextureCoordinate2D));
 			}
 		}
 
@@ -124,6 +107,9 @@ namespace Data
 		bool empty()   const noexcept { return draw_size == 0; }
 	};
 }
+
+
+
 
 using MeshManager = Utility::ResourceManager<Data::Mesh>;
 using MeshRef     = Utility::ResourceRef<Data::Mesh>;
