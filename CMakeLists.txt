@@ -135,6 +135,7 @@ source/Geometry/Quad.cpp
 source/Geometry/Quad.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
+source/Geometry/Shape.hpp
 source/Geometry/Triangle.hpp
 source/Geometry/Triangle.cpp
 )
