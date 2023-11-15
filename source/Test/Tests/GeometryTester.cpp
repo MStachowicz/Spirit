@@ -45,7 +45,7 @@ namespace Test
                 throw std::logic_error("Not enough triangles to perform pNumberOfTests. Bump up the triangleCount variable to at least double the size of the largest performance test.");
 
             for (size_t i = 0; i < pNumberOfTests * 2; i += 2)
-                Geometry::intersect_triangle_triangle_static(triangles[i], triangles[i + 1]);
+                Geometry::intersecting(triangles[i], triangles[i + 1]);
         };
 
         auto triangleTest1 = [&triangleTest]() { triangleTest(1); };
@@ -189,12 +189,12 @@ namespace Test
             auto t5 = Geometry::Triangle(glm::vec3(0.f, 1.f, 1.f), glm::vec3(1.f, -1.f, 1.f), glm::vec3(-1.f, -1.f, 1.f));
             auto t6 = Geometry::Triangle(glm::vec3(0.f, 1.f, -1.f), glm::vec3(1.f, -1.f, -1.f), glm::vec3(-1.f, -1.f, -1.f));
 
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Coplanar - no collision 1", "Expected no collision"});
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - Coplanar - no collision 2", "Expected no collision"});
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - Coplanar - no collision 3", "Expected no collision"});
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t4), "Triangle v Triangle - Coplanar - no collision 4", "Expected no collision"});
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t5), "Triangle v Triangle - Coplanar - no collision 5", "Expected no collision"});
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t6), "Triangle v Triangle - Coplanar - no collision 6", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t1), "Triangle v Triangle - Coplanar - no collision 1", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t2), "Triangle v Triangle - Coplanar - no collision 2", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t3), "Triangle v Triangle - Coplanar - no collision 3", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t4), "Triangle v Triangle - Coplanar - no collision 4", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t5), "Triangle v Triangle - Coplanar - no collision 5", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t6), "Triangle v Triangle - Coplanar - no collision 6", "Expected no collision"});
         }
         {// Collision = true / Coplanar / edge-edge
             auto t1 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(-2.f, 1.f, 0.f));
@@ -204,12 +204,12 @@ namespace Test
             auto t5 = Geometry::Triangle(glm::vec3(-1.f, -1.f, 0.f), glm::vec3(0.f, -3.f, 0.f), glm::vec3(-2.f, -3.f, 0.f));
             auto t6 = Geometry::Triangle(glm::vec3(1.f, -1.f, 0.f), glm::vec3(2.f, -3.f, 0.f), glm::vec3(0.f, -3.f, 0.f));
 
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Coplanar - edge-edge 1", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - Coplanar - edge-edge 2", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - Coplanar - edge-edge 3", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t4), "Triangle v Triangle - Coplanar - edge-edge 4", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t5), "Triangle v Triangle - Coplanar - edge-edge 5", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t6), "Triangle v Triangle - Coplanar - edge-edge 6", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Coplanar - edge-edge 1", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - Coplanar - edge-edge 2", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t3), "Triangle v Triangle - Coplanar - edge-edge 3", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t4), "Triangle v Triangle - Coplanar - edge-edge 4", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t5), "Triangle v Triangle - Coplanar - edge-edge 5", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t6), "Triangle v Triangle - Coplanar - edge-edge 6", "Expected collision to be true"});
         }
         {// Collision = true / non-coplanar / edge-edge
             auto t1 = Geometry::Triangle(glm::vec3(0.f, 3.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 2.f));
@@ -219,12 +219,12 @@ namespace Test
             auto t5 = Geometry::Triangle(glm::vec3(-1.f, 1.f, 1.f), glm::vec3(-1.f, -1.f, 0.f), glm::vec3(-1.f, -1.f, 2.f));
             auto t6 = Geometry::Triangle(glm::vec3(-1.f, 1.f, -1.f), glm::vec3(-1.f, -1.f, -2.f), glm::vec3(-1.f, -1.f, 0.f));
 
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Non-coplanar - edge-edge 1", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - Non-coplanar - edge-edge 2", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - Non-coplanar - edge-edge 3", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t4), "Triangle v Triangle - Non-coplanar - edge-edge 4", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t5), "Triangle v Triangle - Non-coplanar - edge-edge 5", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t6), "Triangle v Triangle - Non-coplanar - edge-edge 6", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Non-coplanar - edge-edge 1", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - Non-coplanar - edge-edge 2", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t3), "Triangle v Triangle - Non-coplanar - edge-edge 3", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t4), "Triangle v Triangle - Non-coplanar - edge-edge 4", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t5), "Triangle v Triangle - Non-coplanar - edge-edge 5", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t6), "Triangle v Triangle - Non-coplanar - edge-edge 6", "Expected collision to be true"});
         }
         {// Collision = true / coplanar / edge-side
             auto t1 = Geometry::Triangle(glm::vec3(0.f, 3.f, 0.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(-1.f, 1.f, 0.f));
@@ -234,12 +234,12 @@ namespace Test
             auto t5 = Geometry::Triangle(glm::vec3(-1.5f, 0.f, 0.f), glm::vec3(-0.5f, -2.f, 0.f), glm::vec3(-2.5f, -2.f, 0.f));
             auto t6 = Geometry::Triangle(glm::vec3(-1.5f, 2.f, 0.f), glm::vec3(-0.5f, 0.f, 0.f), glm::vec3(-2.5f, 0.f, 0.f));
 
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Coplanar - edge-side 1", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - Coplanar - edge-side 2", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - Coplanar - edge-side 3", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t4), "Triangle v Triangle - Coplanar - edge-side 4", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t5), "Triangle v Triangle - Coplanar - edge-side 5", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t6), "Triangle v Triangle - Coplanar - edge-side 6", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Coplanar - edge-side 1", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - Coplanar - edge-side 2", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t3), "Triangle v Triangle - Coplanar - edge-side 3", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t4), "Triangle v Triangle - Coplanar - edge-side 4", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t5), "Triangle v Triangle - Coplanar - edge-side 5", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t6), "Triangle v Triangle - Coplanar - edge-side 6", "Expected collision to be true"});
         }
         {// Collision = true / Non-coplanar / edge-side
             auto t1 = Geometry::Triangle(glm::vec3(0.5f, 2.f, 1.f), glm::vec3(0.5f, 0.f, 0.f), glm::vec3(0.5f, 0.f, 2.f));
@@ -249,12 +249,12 @@ namespace Test
             auto t5 = Geometry::Triangle(glm::vec3(-0.5f, 2.f, 1.f), glm::vec3(-0.5f, 0.f, 0.f), glm::vec3(-0.5f, 0.f, 2.f));
             auto t6 = Geometry::Triangle(glm::vec3(-0.5f, 2.f, -1.f), glm::vec3(-0.5f, 0.f, -2.f), glm::vec3(-0.5f, 0.f, 0.f));
 
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Non-coplanar - edge-side 1", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - Non-coplanar - edge-side 2", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - Non-coplanar - edge-side 3", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t4), "Triangle v Triangle - Non-coplanar - edge-side 4", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t5), "Triangle v Triangle - Non-coplanar - edge-side 5", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t6), "Triangle v Triangle - Non-coplanar - edge-side 6", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Non-coplanar - edge-side 1", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - Non-coplanar - edge-side 2", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t3), "Triangle v Triangle - Non-coplanar - edge-side 3", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t4), "Triangle v Triangle - Non-coplanar - edge-side 4", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t5), "Triangle v Triangle - Non-coplanar - edge-side 5", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t6), "Triangle v Triangle - Non-coplanar - edge-side 6", "Expected collision to be true"});
         }
         {// Collision = true / coplanar / overlap
             auto t1 = Geometry::Triangle(glm::vec3(0.f, 2.5f, 0.f), glm::vec3(1.f, 0.5f, 0.f), glm::vec3(-1.f, 0.5f, 0.f));
@@ -264,58 +264,58 @@ namespace Test
             auto t5 = Geometry::Triangle(glm::vec3(-1.f, 0.f, 0.f), glm::vec3(0.f, -2.f, 0.f), glm::vec3(-2.f, -2.f, 0.f));
             auto t6 = Geometry::Triangle(glm::vec3(-1.f, 2.f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(-2.f, 0.f, 0.f));
 
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - coplanar - overlap 1", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - coplanar - overlap 2", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - coplanar - overlap 3", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t4), "Triangle v Triangle - coplanar - overlap 4", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t5), "Triangle v Triangle - coplanar - overlap 5", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t6), "Triangle v Triangle - coplanar - overlap 6", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - coplanar - overlap 1", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - coplanar - overlap 2", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t3), "Triangle v Triangle - coplanar - overlap 3", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t4), "Triangle v Triangle - coplanar - overlap 4", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t5), "Triangle v Triangle - coplanar - overlap 5", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t6), "Triangle v Triangle - coplanar - overlap 6", "Expected collision to be true"});
         }
         {// Collision = true / non-coplanar / overlap
             auto t1 = Geometry::Triangle(glm::vec3(0.f, 2.f, 0.f), glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, 0.f, 1.f));
             auto t2 = Geometry::Triangle(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, -2.f, -1.f), glm::vec3(0.f, -2.f, 1.f));
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - non-coplanar - overlap 1", "Expected collision to be true"});
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - non-coplanar - overlap 2", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - non-coplanar - overlap 1", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - non-coplanar - overlap 2", "Expected collision to be true"});
         }
         {// Collision - off-axis collisions
             auto t1 = Geometry::Triangle(glm::vec3(2.f, 1.f, -1.f), glm::vec3(1.f, -2.f, 1.f), glm::vec3(-1.f, -2.f, 1.f));
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - off-axis - one side collision", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - off-axis - one side collision", "Expected collision to be true"});
 
             // Like t1 but two sides of triangle cut through control
             auto t2 = Geometry::Triangle(glm::vec3(0.f, 2.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, t2), "Triangle v Triangle - off-axis - two side collision", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, t2), "Triangle v Triangle - off-axis - two side collision", "Expected collision to be true"});
 
             // Triangle passes under control without collision
             auto t3 = Geometry::Triangle(glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
-            runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t3), "Triangle v Triangle - off-axis - pass under no collision", "Expected no collision"});
+            runUnitTest({!Geometry::intersecting(control, t3), "Triangle v Triangle - off-axis - pass under no collision", "Expected no collision"});
         }
         { // Epsilon tests
             // Place test triangles touching control then move them away by epsilon and check no collision.
             { // Coplanar to control touching edge to edge
                 // t1 bottom-right edge touches the control top edge
                 auto t1 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(-2.f, 1.f, 0.f));
-                runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Epsilon co-planar edge-edge", "Expected collision to be true"});
+                runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Epsilon co-planar edge-edge", "Expected collision to be true"});
                 t1.translate({-std::numeric_limits<float>::epsilon() * 2.f, 0.f, 0.f});
-                runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Epsilon co-planar edge-edge", "Expected no collision after moving left"});
+                runUnitTest({!Geometry::intersecting(control, t1), "Triangle v Triangle - Epsilon co-planar edge-edge", "Expected no collision after moving left"});
             }
             {
                 // Perpendicular to control (non-coplanar), touching the bottom.
                 auto t1 = Geometry::Triangle(glm::vec3(0.f, -1.f, -1.f), glm::vec3(1.f, -1.f, 1.f), glm::vec3(-1.f, -1.f, 1.f));
-                runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Epsilon perpendicular", "Expected collision to be true"});
+                runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Epsilon perpendicular", "Expected collision to be true"});
                 t1.translate({0.f, -std::numeric_limits<float>::epsilon(), 0.f});
-                runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Epsilon perpendicular", "Expected no collision after moving down"});
+                runUnitTest({!Geometry::intersecting(control, t1), "Triangle v Triangle - Epsilon perpendicular", "Expected no collision after moving down"});
             }
             {
                 // Triangle passes under control touching the bottom side at an angle
                 auto t1 = Geometry::Triangle(glm::vec3(0.f, 1.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
-                runUnitTest({Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Epsilon off-axis - pass under touch", "Expected collision to be true"});
+                runUnitTest({Geometry::intersecting(control, t1), "Triangle v Triangle - Epsilon off-axis - pass under touch", "Expected collision to be true"});
                 // Triangle moved below control by epsilon to no longer collide
                 t1.translate({0.f, -std::numeric_limits<float>::epsilon(), 0.f});
-                runUnitTest({!Geometry::intersect_triangle_triangle_static(control, t1), "Triangle v Triangle - Epsilon off-axis - pass under epsilon distance", "Expected no collision after moving down"});
+                runUnitTest({!Geometry::intersecting(control, t1), "Triangle v Triangle - Epsilon off-axis - pass under epsilon distance", "Expected no collision after moving down"});
             }
         }
         {// Edge cases
-            runUnitTest({Geometry::intersect_triangle_triangle_static(control, control), "Triangle v Triangle - equal triangles", "Expected collision to be true"});
+            runUnitTest({Geometry::intersecting(control, control), "Triangle v Triangle - equal triangles", "Expected collision to be true"});
         }
     }
 

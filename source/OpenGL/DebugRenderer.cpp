@@ -152,41 +152,42 @@ namespace OpenGL
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
 	{
-		glm::vec3 near_top_left, near_top_right, near_bottom_left, near_bottom_right, far_top_left, far_top_right, far_bottom_left, far_bottom_right;
+		auto near_top_left     = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_left);
+		auto near_top_right    = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right);
+		auto near_bottom_left  = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left);
+		auto near_bottom_right = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right);
+		auto far_top_left      = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left);
+		auto far_top_right     = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right);
+		auto far_bottom_left   = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left);
+		auto far_bottom_right  = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right);
 
-		if (Geometry::intersect_plane_plane_plane(p_frustrum.m_near,    p_frustrum.m_top,    p_frustrum.m_left,  near_top_left)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right, near_top_right)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left,  near_bottom_left)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right, near_bottom_right)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left,  far_top_left)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right, far_top_right)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left,  far_bottom_left)
-			&& Geometry::intersect_plane_plane_plane(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right, far_bottom_right))
-		{ // If possible, collide all the planes to find the quad positions representing the frustrum.
-			add(Geometry::Sphere(near_top_left, 0.1f));
-			add(Geometry::Sphere(near_top_right, 0.1f));
-			add(Geometry::Sphere(near_bottom_left, 0.1f));
-			add(Geometry::Sphere(near_bottom_right, 0.1f));
-			add(Geometry::Sphere(far_top_left, 0.1f));
-			add(Geometry::Sphere(far_top_right, 0.1f));
-			add(Geometry::Sphere(far_bottom_left, 0.1f));
-			add(Geometry::Sphere(far_bottom_right, 0.1f));
+		if (near_top_left != std::nullopt && near_top_right != std::nullopt && near_bottom_left != std::nullopt && near_bottom_right != std::nullopt &&
+		     far_top_left != std::nullopt && far_top_right  != std::nullopt && far_bottom_left  != std::nullopt && far_bottom_right  != std::nullopt)
+		{
+			add(Geometry::Sphere(*near_top_left, 0.1f));
+			add(Geometry::Sphere(*near_top_right, 0.1f));
+			add(Geometry::Sphere(*near_bottom_left, 0.1f));
+			add(Geometry::Sphere(*near_bottom_right, 0.1f));
+			add(Geometry::Sphere(*far_top_left, 0.1f));
+			add(Geometry::Sphere(*far_top_right, 0.1f));
+			add(Geometry::Sphere(*far_bottom_left, 0.1f));
+			add(Geometry::Sphere(*far_bottom_right, 0.1f));
 
-			add(Geometry::Quad(near_top_left, far_top_left, far_bottom_left, near_bottom_left),         glm::vec4(1.f, 0.f, 0.f, p_colour.w));
-			add(Geometry::Quad(near_top_right, far_top_right, far_bottom_right, near_bottom_right),     glm::vec4(1.f, 0.f, 0.f, p_colour.w));
-			add(Geometry::Quad(near_top_left, near_top_right, far_top_right, far_top_left),             glm::vec4(0.f, 1.f, 0.f, p_colour.w));
-			add(Geometry::Quad(near_bottom_left, near_bottom_right, far_bottom_right, far_bottom_left), glm::vec4(0.f, 1.f, 0.f, p_colour.w));
-			add(Geometry::Quad(near_top_left, near_top_right, near_bottom_right, near_bottom_left),     glm::vec4(0.f, 0.f, 1.f, p_colour.w));
-			add(Geometry::Quad(far_top_left, far_top_right, far_bottom_right, far_bottom_left),         glm::vec4(0.f, 0.f, 1.f, p_colour.w));
+			add(Geometry::Quad(*near_top_left,    *far_top_left,      *far_bottom_left,   *near_bottom_left),  glm::vec4(1.f, 0.f, 0.f, p_colour.w));
+			add(Geometry::Quad(*near_top_right,   *far_top_right,     *far_bottom_right,  *near_bottom_right), glm::vec4(1.f, 0.f, 0.f, p_colour.w));
+			add(Geometry::Quad(*near_top_left,    *near_top_right,    *far_top_right,     *far_top_left),      glm::vec4(0.f, 1.f, 0.f, p_colour.w));
+			add(Geometry::Quad(*near_bottom_left, *near_bottom_right, *far_bottom_right,  *far_bottom_left),   glm::vec4(0.f, 1.f, 0.f, p_colour.w));
+			add(Geometry::Quad(*near_top_left,    *near_top_right,    *near_bottom_right, *near_bottom_left),  glm::vec4(0.f, 0.f, 1.f, p_colour.w));
+			add(Geometry::Quad(*far_top_left,     *far_top_right,     *far_bottom_right,  *far_bottom_left),   glm::vec4(0.f, 0.f, 1.f, p_colour.w));
 		}
 		else
 		{
-			add(p_frustrum.m_left, p_colour);
-			add(p_frustrum.m_right, p_colour);
+			add(p_frustrum.m_left,   p_colour);
+			add(p_frustrum.m_right,  p_colour);
 			add(p_frustrum.m_bottom, p_colour);
-			add(p_frustrum.m_top, p_colour);
-			add(p_frustrum.m_near, p_colour);
-			add(p_frustrum.m_far, p_colour);
+			add(p_frustrum.m_top,    p_colour);
+			add(p_frustrum.m_near,   p_colour);
+			add(p_frustrum.m_far,    p_colour);
 		}
 	}
 	void DebugRenderer::add(const Geometry::Plane& p_plane, const glm::vec4& p_colour)

@@ -24,7 +24,7 @@ namespace System
 		{
 			if (&pCollider != &pColliderOther)
 			{
-				if (Geometry::intersect(pCollider.m_world_AABB, pColliderOther.m_world_AABB)) // Quick cull AABB check
+				if (Geometry::intersecting(pCollider.m_world_AABB, pColliderOther.m_world_AABB)) // Quick cull AABB check
 				{
 					collision = std::make_optional<Collision>({glm::vec3(0.f),glm::vec3(0.f), pEntityOther });
 					return;
@@ -41,16 +41,14 @@ namespace System
 
 		mSceneSystem.getCurrentScene().foreach([&](Component::Collider& pCollider)
 		{
-			glm::vec3 collisionPoint;
-			float lengthAlongRay;
-			if (Geometry::intersect(pCollider.m_world_AABB, pRay, &collisionPoint, &lengthAlongRay))
+			if (auto line_intersection = Geometry::get_intersection(pCollider.m_world_AABB, pRay))
 			{
 				pCollider.m_collided = true;
 
-				if (!nearestIntersectionAlongRay.has_value() || lengthAlongRay < nearestIntersectionAlongRay)
+				if (!nearestIntersectionAlongRay.has_value() || line_intersection->length_along_ray < nearestIntersectionAlongRay)
 				{
-					nearestIntersectionAlongRay = lengthAlongRay;
-					outFirstIntersection = collisionPoint;
+					nearestIntersectionAlongRay = line_intersection->length_along_ray;
+					outFirstIntersection        = line_intersection->intersection_point;
 				}
 			}
 		});
@@ -64,10 +62,8 @@ namespace System
 
 		mSceneSystem.getCurrentScene().foreach([&](ECS::Entity& pEntity, Component::Collider& pCollider)
 		{
-			glm::vec3 collisionPoint;
-			float lengthAlongRay;
-			if (Geometry::intersect(pCollider.m_world_AABB, pRay, &collisionPoint, &lengthAlongRay))
-				entitiesAndDistance.push_back({pEntity, lengthAlongRay});
+			if (auto intersection = Geometry::get_intersection(pCollider.m_world_AABB, pRay))
+				entitiesAndDistance.push_back({pEntity, intersection->length_along_ray});
 		});
 
 		return entitiesAndDistance;
