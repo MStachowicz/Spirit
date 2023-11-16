@@ -56,59 +56,59 @@ namespace Geometry
 
 	// AABB functions
 	//==============================================================================================================================
-	inline std::optional<bool>      get_intersection(const AABB& AABB_1, const AABB& AABB_2)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v AABB") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Cone& cone)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Cone") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Cuboid& cuboid)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Cuboid") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Cylinder& cylinder)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Cylinder") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Line& line)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Line") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const LineSegment& lineSegment) { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v LineSegment") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Plane& plane)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Plane") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Quad& quad)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Quad") } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB_1, const AABB& AABB_2)             { LOG_WARN("[INTERSECT] Not implemented AABB v AABB"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Cone& cone)               { LOG_WARN("[INTERSECT] Not implemented AABB v Cone"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Cuboid& cuboid)           { LOG_WARN("[INTERSECT] Not implemented AABB v Cuboid"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Cylinder& cylinder)       { LOG_WARN("[INTERSECT] Not implemented AABB v Cylinder"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Line& line)               { LOG_WARN("[INTERSECT] Not implemented AABB v Line"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented AABB v LineSegment"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented AABB v Plane"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented AABB v Quad"); return std::nullopt; } // #TODO
 	std::optional<LineIntersection> get_intersection(const AABB& AABB,   const Ray& ray);                // IMPLEMENTED
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Sphere") } // #TODO
-	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented AABB v Triangle") } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented AABB v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool>      get_intersection(const AABB& AABB,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented AABB v Triangle"); return std::nullopt; } // #TODO
 
 	// Cone functions
 	//==============================================================================================================================
 	inline std::optional<bool> get_intersection(const Cone& cone,   const AABB& AABB)               { return get_intersection(AABB, cone); }
-	inline std::optional<bool> get_intersection(const Cone& cone_1, const Cone& cone_2)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Cone") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Cuboid& cuboid)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Cuboid") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Cylinder& cylinder)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Cylinder") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Line& line)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Line") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const LineSegment& lineSegment) { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v LineSegment") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Plane& plane)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Plane") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Quad& quad)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Quad") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Ray& ray)                 { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Ray") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Sphere") } // #TODO
-	inline std::optional<bool> get_intersection(const Cone& cone,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cone v Triangle") } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone_1, const Cone& cone_2)             { LOG_WARN("[INTERSECT] Not implemented Cone v Cone"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Cuboid& cuboid)           { LOG_WARN("[INTERSECT] Not implemented Cone v Cuboid"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Cylinder& cylinder)       { LOG_WARN("[INTERSECT] Not implemented Cone v Cylinder"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Line& line)               { LOG_WARN("[INTERSECT] Not implemented Cone v Line"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented Cone v LineSegment"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented Cone v Plane"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Cone v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Cone v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Cone v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cone& cone,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Cone v Triangle"); return std::nullopt; } // #TODO
 
 	// Cuboid functions
 	//==============================================================================================================================
 	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const AABB& AABB)               { return get_intersection(AABB, cuboid); }
 	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Cone& cone)               { return get_intersection(cone, cuboid); }
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid_1, const Cuboid& cuboid_2)         { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Cuboid") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Cylinder& cylinder)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Cylinder") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Line& line)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Line") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const LineSegment& lineSegment) { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v LineSegment") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Plane& plane)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Plane") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Quad& quad)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Quad") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Ray& ray)                 { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Ray") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Sphere") } // #TODO
-	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cuboid v Triangle") } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid_1, const Cuboid& cuboid_2)         { LOG_WARN("[INTERSECT] Not implemented Cuboid v Cuboid"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Cylinder& cylinder)       { LOG_WARN("[INTERSECT] Not implemented Cuboid v Cylinder"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Line& line)               { LOG_WARN("[INTERSECT] Not implemented Cuboid v Line"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented Cuboid v LineSegment"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented Cuboid v Plane"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Cuboid v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Cuboid v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Cuboid v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cuboid& cuboid,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Cuboid v Triangle"); return std::nullopt; } // #TODO
 
 	// Cylinder functions
 	//==============================================================================================================================
 	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const AABB& AABB)               { return get_intersection(AABB, cylinder); }
 	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Cone& cone)               { return get_intersection(cone, cylinder); }
 	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Cuboid& cuboid)           { return get_intersection(cuboid, cylinder); }
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder_1, const Cylinder& cylinder_2)     { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Cylinder") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Line& line)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Line") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const LineSegment& lineSegment) { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v LineSegment") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Plane& plane)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Plane") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Quad& quad)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Quad") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Ray& ray)                 { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Ray") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Sphere") } // #TODO
-	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Cylinder v Triangle") } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder_1, const Cylinder& cylinder_2)     { LOG_WARN("[INTERSECT] Not implemented Cylinder v Cylinder"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Line& line)               { LOG_WARN("[INTERSECT] Not implemented Cylinder v Line"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented Cylinder v LineSegment"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented Cylinder v Plane"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Cylinder v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Cylinder v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Cylinder v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Cylinder& cylinder,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Cylinder v Triangle"); return std::nullopt; } // #TODO
 
 	// Line functions
 	//==============================================================================================================================
@@ -116,12 +116,12 @@ namespace Geometry
 	inline std::optional<bool>       get_intersection(const Line& line,   const Cone& cone)               { return get_intersection(cone, line); }
 	inline std::optional<bool>       get_intersection(const Line& line,   const Cuboid& cuboid)           { return get_intersection(cuboid, line); }
 	inline std::optional<bool>       get_intersection(const Line& line,   const Cylinder& cylinder)       { return get_intersection(cylinder, line); }
-	inline std::optional<bool>       get_intersection(const Line& line_1, const Line& line_2)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Line v Line") } // #TODO
-	inline std::optional<bool>       get_intersection(const Line& line,   const LineSegment& lineSegment) { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Line v LineSegment") } // #TODO
-	inline std::optional<bool>       get_intersection(const Line& line,   const Plane& plane)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Line v Plane") } // #TODO
-	inline std::optional<bool>       get_intersection(const Line& line,   const Quad& quad)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Line v Quad") } // #TODO
-	inline std::optional<bool>       get_intersection(const Line& line,   const Ray& ray)                 { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Line v Ray") } // #TODO
-	inline std::optional<bool>       get_intersection(const Line& line,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Line v Sphere") } // #TODO
+	inline std::optional<bool>       get_intersection(const Line& line_1, const Line& line_2)             { LOG_WARN("[INTERSECT] Not implemented Line v Line"); return std::nullopt; } // #TODO
+	inline std::optional<bool>       get_intersection(const Line& line,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented Line v LineSegment"); return std::nullopt; } // #TODO
+	inline std::optional<bool>       get_intersection(const Line& line,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented Line v Plane"); return std::nullopt; } // #TODO
+	inline std::optional<bool>       get_intersection(const Line& line,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Line v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool>       get_intersection(const Line& line,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Line v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool>       get_intersection(const Line& line,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Line v Sphere"); return std::nullopt; } // #TODO
 	std::optional<PointIntersection> get_intersection(const Line& line,   const Triangle& triangle);       // IMPLEMENTED
 
 	// LineSegment functions
@@ -131,12 +131,12 @@ namespace Geometry
 	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Cuboid& cuboid)             { return get_intersection(cuboid, lineSegment); }
 	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Cylinder& cylinder)         { return get_intersection(cylinder, lineSegment); }
 	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Line& line)                 { return get_intersection(line, lineSegment); }
-	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment_1, const LineSegment& lineSegment_2) { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented LineSegment v LineSegment") } // #TODO
-	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Plane& plane)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented LineSegment v Plane") } // #TODO
-	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Quad& quad)                 { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented LineSegment v Quad") } // #TODO
-	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Ray& ray)                   { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented LineSegment v Ray") } // #TODO
-	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Sphere& sphere)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented LineSegment v Sphere") } // #TODO
-	inline std::optional<PointIntersection> get_intersection(const LineSegment& lineSegment,   const Triangle& triangle)         { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented LineSegment v Triangle") } // #TODO
+	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment_1, const LineSegment& lineSegment_2) { LOG_WARN("[INTERSECT] Not implemented LineSegment v LineSegment"); return std::nullopt; } // #TODO
+	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Plane& plane)               { LOG_WARN("[INTERSECT] Not implemented LineSegment v Plane"); return std::nullopt; } // #TODO
+	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Quad& quad)                 { LOG_WARN("[INTERSECT] Not implemented LineSegment v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Ray& ray)                   { LOG_WARN("[INTERSECT] Not implemented LineSegment v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool>              get_intersection(const LineSegment& lineSegment,   const Sphere& sphere)             { LOG_WARN("[INTERSECT] Not implemented LineSegment v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<PointIntersection> get_intersection(const LineSegment& lineSegment,   const Triangle& triangle)         { LOG_WARN("[INTERSECT] Not implemented LineSegment v Triangle"); return std::nullopt; } // #TODO
 
 	// Plane functions
 	//==============================================================================================================================
@@ -147,10 +147,10 @@ namespace Geometry
 	inline std::optional<bool>            get_intersection(const Plane& plane,   const Line& line)                            { return get_intersection(line, plane); }
 	inline std::optional<bool>            get_intersection(const Plane& plane,   const LineSegment& lineSegment)              { return get_intersection(lineSegment, plane); }
 	std::optional<PlanePlaneIntersection> get_intersection(const Plane& plane_1, const Plane& plane_2);                       // IMPLEMENTED
-	inline std::optional<bool>            get_intersection(const Plane& plane,   const Quad& quad)                            { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Plane v Quad") } // #TODO
-	inline std::optional<bool>            get_intersection(const Plane& plane,   const Ray& ray)                              { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Plane v Ray") } // #TODO
-	inline std::optional<bool>            get_intersection(const Plane& plane,   const Sphere& sphere)                        { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Plane v Sphere") } // #TODO
-	inline std::optional<bool>            get_intersection(const Plane& plane,   const Triangle& triangle)                    { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Plane v Triangle") } // #TODO
+	inline std::optional<bool>            get_intersection(const Plane& plane,   const Quad& quad)                            { LOG_WARN("[INTERSECT] Not implemented Plane v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool>            get_intersection(const Plane& plane,   const Ray& ray)                              { LOG_WARN("[INTERSECT] Not implemented Plane v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool>            get_intersection(const Plane& plane,   const Sphere& sphere)                        { LOG_WARN("[INTERSECT] Not implemented Plane v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool>            get_intersection(const Plane& plane,   const Triangle& triangle)                    { LOG_WARN("[INTERSECT] Not implemented Plane v Triangle"); return std::nullopt; } // #TODO
 	std::optional<PointIntersection>      get_intersection(const Plane& plane_1, const Plane& plane_2, const Plane& plane_3); // IMPLEMENTED
 
 	// Quad functions
@@ -162,10 +162,10 @@ namespace Geometry
 	inline std::optional<bool> get_intersection(const Quad& quad,   const Line& line)               { return get_intersection(line, quad); }
 	inline std::optional<bool> get_intersection(const Quad& quad,   const LineSegment& lineSegment) { return get_intersection(lineSegment, quad); }
 	inline std::optional<bool> get_intersection(const Quad& quad,   const Plane& plane)             { return get_intersection(plane, quad); }
-	inline std::optional<bool> get_intersection(const Quad& quad_1, const Quad& quad_2)             { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Quad v Quad") } // #TODO
-	inline std::optional<bool> get_intersection(const Quad& quad,   const Ray& ray)                 { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Quad v Ray") } // #TODO
-	inline std::optional<bool> get_intersection(const Quad& quad,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Quad v Sphere") } // #TODO
-	inline std::optional<bool> get_intersection(const Quad& quad,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Quad v Triangle") } // #TODO
+	inline std::optional<bool> get_intersection(const Quad& quad_1, const Quad& quad_2)             { LOG_WARN("[INTERSECT] Not implemented Quad v Quad"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Quad& quad,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Quad v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Quad& quad,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Quad v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Quad& quad,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Quad v Triangle"); return std::nullopt; } // #TODO
 
 	// Ray functions
 	//==============================================================================================================================
@@ -177,9 +177,9 @@ namespace Geometry
 	inline std::optional<bool>              get_intersection(const Ray& ray,   const LineSegment& lineSegment) { return get_intersection(lineSegment, ray); }
 	inline std::optional<bool>              get_intersection(const Ray& ray,   const Plane& plane)             { return get_intersection(plane, ray); }
 	inline std::optional<bool>              get_intersection(const Ray& ray,   const Quad& quad)               { return get_intersection(quad, ray); }
-	inline std::optional<bool>              get_intersection(const Ray& ray_1, const Ray& ray_2)               { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Ray v Ray") } // #TODO
-	inline std::optional<bool>              get_intersection(const Ray& ray,   const Sphere& sphere)           { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Ray v Sphere") } // #TODO
-	inline std::optional<PointIntersection> get_intersection(const Ray& ray,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Ray v Triangle") } // #TODO
+	inline std::optional<bool>              get_intersection(const Ray& ray_1, const Ray& ray_2)               { LOG_WARN("[INTERSECT] Not implemented Ray v Ray"); return std::nullopt; } // #TODO
+	inline std::optional<bool>              get_intersection(const Ray& ray,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Ray v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<PointIntersection> get_intersection(const Ray& ray,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Ray v Triangle"); return std::nullopt; } // #TODO
 
 	// Sphere functions
 	//==============================================================================================================================
@@ -192,8 +192,8 @@ namespace Geometry
 	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Plane& plane)             { return get_intersection(plane, sphere); }
 	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Quad& quad)               { return get_intersection(quad, sphere); }
 	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Ray& ray)                 { return get_intersection(ray, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)         { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Sphere v Sphere") } // #TODO
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Triangle& triangle)       { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Sphere v Triangle") } // #TODO
+	inline std::optional<bool> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)         { LOG_WARN("[INTERSECT] Not implemented Sphere v Sphere"); return std::nullopt; } // #TODO
+	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Sphere v Triangle"); return std::nullopt; } // #TODO
 
 	// Triangle functions
 	//==============================================================================================================================
@@ -207,7 +207,7 @@ namespace Geometry
 	inline std::optional<bool>              get_intersection(const Triangle& triangle,   const Quad& quad)                                        { return get_intersection(quad, triangle); }
 	inline std::optional<PointIntersection> get_intersection(const Triangle& triangle,   const Ray& ray)                                          { return get_intersection(ray, triangle); }
 	inline std::optional<bool>              get_intersection(const Triangle& triangle,   const Sphere& sphere)                                    { return get_intersection(sphere, triangle); }
-	inline std::optional<bool>              get_intersection(const Triangle& triangle_1, const Triangle& triangle_2, bool test_co_planar = true)  { return std::nullopt; LOG_WARN("[INTERSECT] Not implemented Triangle v Triangle") } // #TODO
+	inline std::optional<bool>              get_intersection(const Triangle& triangle_1, const Triangle& triangle_2, bool test_co_planar = true)  { LOG_WARN("[INTERSECT] Not implemented Triangle v Triangle"); return std::nullopt; } // #TODO
 //==============================================================================================================================
 // end get_intersection functions
 //==============================================================================================================================
