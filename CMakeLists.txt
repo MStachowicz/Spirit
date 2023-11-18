@@ -131,6 +131,7 @@ source/Geometry/LineSegment.cpp
 source/Geometry/LineSegment.hpp
 source/Geometry/Plane.cpp
 source/Geometry/Plane.hpp
+source/Geometry/Point.hpp
 source/Geometry/Quad.cpp
 source/Geometry/Quad.hpp
 source/Geometry/Ray.hpp
