@@ -152,17 +152,14 @@ namespace OpenGL
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
 	{
-		auto near_top_left     = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_left);
-		auto near_top_right    = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right);
-		auto near_bottom_left  = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left);
-		auto near_bottom_right = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right);
-		auto far_top_left      = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left);
-		auto far_top_right     = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right);
-		auto far_bottom_left   = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left);
-		auto far_bottom_right  = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right);
-
-		if (near_top_left != std::nullopt && near_top_right != std::nullopt && near_bottom_left != std::nullopt && near_bottom_right != std::nullopt &&
-		     far_top_left != std::nullopt && far_top_right  != std::nullopt && far_bottom_left  != std::nullopt && far_bottom_right  != std::nullopt)
+		if (auto near_top_left     = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_left))
+        if (auto near_top_right    = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right))
+        if (auto near_bottom_left  = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left))
+        if (auto near_bottom_right = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right))
+        if (auto far_top_left      = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left))
+        if (auto far_top_right     = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right))
+        if (auto far_bottom_left   = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left))
+        if (auto far_bottom_right  = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right))
 		{
 			add(Geometry::Sphere(*near_top_left, 0.1f));
 			add(Geometry::Sphere(*near_top_right, 0.1f));
@@ -179,8 +176,9 @@ namespace OpenGL
 			add(Geometry::Quad(*near_bottom_left, *near_bottom_right, *far_bottom_right,  *far_bottom_left),   glm::vec4(0.f, 1.f, 0.f, p_colour.w));
 			add(Geometry::Quad(*near_top_left,    *near_top_right,    *near_bottom_right, *near_bottom_left),  glm::vec4(0.f, 0.f, 1.f, p_colour.w));
 			add(Geometry::Quad(*far_top_left,     *far_top_right,     *far_bottom_right,  *far_bottom_left),   glm::vec4(0.f, 0.f, 1.f, p_colour.w));
+			return;
 		}
-		else
+
 		{
 			add(p_frustrum.m_left,   p_colour);
 			add(p_frustrum.m_right,  p_colour);
