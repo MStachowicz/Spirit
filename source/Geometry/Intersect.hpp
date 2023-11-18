@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry/Line.hpp"
+#include "Geometry/LineSegment.hpp"
 #include "glm/vec3.hpp"
 #include "Utility/Logger.hpp"
 #include <optional>
@@ -183,17 +184,17 @@ namespace Geometry
 
 	// Sphere functions
 	//==============================================================================================================================
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const AABB& AABB)               { return get_intersection(AABB, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Cone& cone)               { return get_intersection(cone, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Cuboid& cuboid)           { return get_intersection(cuboid, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Cylinder& cylinder)       { return get_intersection(cylinder, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Line& line)               { return get_intersection(line, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const LineSegment& lineSegment) { return get_intersection(lineSegment, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Plane& plane)             { return get_intersection(plane, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Quad& quad)               { return get_intersection(quad, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Ray& ray)                 { return get_intersection(ray, sphere); }
-	inline std::optional<bool> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)         { LOG_WARN("[INTERSECT] Not implemented Sphere v Sphere"); return std::nullopt; } // #TODO
-	inline std::optional<bool> get_intersection(const Sphere& sphere,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Sphere v Triangle"); return std::nullopt; } // #TODO
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const AABB& AABB)               { return get_intersection(AABB, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Cone& cone)               { return get_intersection(cone, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Cuboid& cuboid)           { return get_intersection(cuboid, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Cylinder& cylinder)       { return get_intersection(cylinder, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Line& line)               { return get_intersection(line, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const LineSegment& lineSegment) { return get_intersection(lineSegment, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Plane& plane)             { return get_intersection(plane, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Quad& quad)               { return get_intersection(quad, sphere); }
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Ray& ray)                 { return get_intersection(ray, sphere); }
+	std::optional<Geometry::LineSegment> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2);        // IMPLEMENTED
+	inline std::optional<bool>           get_intersection(const Sphere& sphere,   const Triangle& triangle)       { LOG_WARN("[INTERSECT] Not implemented Sphere v Triangle"); return std::nullopt; } // #TODO
 
 	// Triangle functions
 	//==============================================================================================================================
@@ -356,7 +357,7 @@ namespace Geometry
 	inline bool intersecting(const Sphere& sphere,   const Plane& plane)             { return intersecting(plane, sphere); }
 	inline bool intersecting(const Sphere& sphere,   const Quad& quad)               { return intersecting(quad, sphere); }
 	inline bool intersecting(const Sphere& sphere,   const Ray& ray)                 { return intersecting(ray, sphere); }
-	inline bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2)         { return get_intersection(sphere_1, sphere_2).has_value(); } // Expensive get_intersection call for lack of bespoke intersection function #TODO
+	       bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2);        // IMPLEMENTED
 	inline bool intersecting(const Sphere& sphere,   const Triangle& triangle)       { return get_intersection(sphere, triangle).has_value(); }   // Expensive get_intersection call for lack of bespoke intersection function #TODO
 
 	// Triangle functions

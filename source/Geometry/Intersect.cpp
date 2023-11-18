@@ -276,7 +276,25 @@ namespace Geometry
 		else
 			return PointIntersection{plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom};
 	}
+	std::optional<Geometry::LineSegment> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
+	{
+		// Returns the line segment that is the intersection of two spheres.
+		auto distance_between_centers = glm::distance(sphere_1.m_center, sphere_2.m_center);
+		auto radius_sum               = sphere_1.m_radius + sphere_2.m_radius;
+		auto overlap_distance         = radius_sum - distance_between_centers;
 
+		if (overlap_distance > 0.0f)
+		{
+			auto mid_point    = (sphere_1.m_center + sphere_2.m_center) / 2.0f;
+			auto direction    = glm::normalize(sphere_2.m_center - sphere_1.m_center);
+			auto half_overlap = (overlap_distance / 2.0f) * direction;
+			auto start_point  = mid_point - half_overlap;
+			auto end_point    = mid_point + half_overlap;
+			return LineSegment{start_point, end_point};
+		}
+		else
+			return std::nullopt; // No intersection, the spheres are separate.
+	}
 	bool intersecting(const AABB& AABB_1, const AABB& AABB_2)
 	{
 		// Reference: Real-Time Collision Detection (Christer Ericson)
@@ -372,6 +390,13 @@ namespace Geometry
 			return false;
 		else
 			return true;
+	}
+	bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2)
+	{
+		// Returns true if the spheres are intersecting.
+		auto distance_between_centers = glm::distance(sphere_1.m_center, sphere_2.m_center);
+		auto radius_sum               = sphere_1.m_radius + sphere_2.m_radius;
+		return distance_between_centers <= radius_sum;
 	}
 	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2, bool test_co_planar)
 	{
