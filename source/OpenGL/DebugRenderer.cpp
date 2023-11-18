@@ -14,6 +14,7 @@
 #include "Geometry/Intersect.hpp"
 #include "Geometry/LineSegment.hpp"
 #include "Geometry/Plane.hpp"
+#include "Geometry/Point.hpp"
 #include "Geometry/Quad.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Sphere.hpp"

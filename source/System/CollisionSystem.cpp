@@ -5,6 +5,7 @@
 #include "System/MeshSystem.hpp"
 #include "System/SceneSystem.hpp"
 
+#include "Geometry/Point.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Triangle.hpp"
 
@@ -41,14 +42,15 @@ namespace System
 
 		mSceneSystem.getCurrentScene().foreach([&](Component::Collider& pCollider)
 		{
-			if (auto line_intersection = Geometry::get_intersection(pCollider.m_world_AABB, pRay))
+			float length_along_ray = 0.f;
+			if (auto intersection = Geometry::get_intersection(pCollider.m_world_AABB, pRay, &length_along_ray))
 			{
 				pCollider.m_collided = true;
 
-				if (!nearestIntersectionAlongRay.has_value() || line_intersection->length_along_ray < nearestIntersectionAlongRay)
+				if (!nearestIntersectionAlongRay.has_value() || length_along_ray < nearestIntersectionAlongRay)
 				{
-					nearestIntersectionAlongRay = line_intersection->length_along_ray;
-					outFirstIntersection        = line_intersection->intersection_point;
+					nearestIntersectionAlongRay = length_along_ray;
+					outFirstIntersection        = intersection->m_position;
 				}
 			}
 		});
@@ -62,8 +64,9 @@ namespace System
 
 		mSceneSystem.getCurrentScene().foreach([&](ECS::Entity& pEntity, Component::Collider& pCollider)
 		{
-			if (auto intersection = Geometry::get_intersection(pCollider.m_world_AABB, pRay))
-				entitiesAndDistance.push_back({pEntity, intersection->length_along_ray});
+			float length_along_ray = 0.f;
+			if (auto intersection = Geometry::get_intersection(pCollider.m_world_AABB, pRay, &length_along_ray))
+				entitiesAndDistance.push_back({pEntity, length_along_ray});
 		});
 
 		return entitiesAndDistance;

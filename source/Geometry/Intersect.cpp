@@ -1,10 +1,10 @@
 #include "Intersect.hpp"
 
-#include "AABB.hpp"
-#include "Line.hpp"
-#include "Plane.hpp"
-#include "Ray.hpp"
-#include "Triangle.hpp"
+#include "Geometry/AABB.hpp"
+#include "Geometry/Plane.hpp"
+#include "Geometry/Ray.hpp"
+#include "Geometry/Sphere.hpp"
+#include "Geometry/Triangle.hpp"
 
 #include "Logger.hpp"
 
@@ -165,7 +165,7 @@ namespace Geometry
 // END UTILITIY FUNCTIONS
 // ==============================================================================================================================
 
-	std::optional<LineIntersection> get_intersection(const AABB& AABB, const Ray& ray)
+	std::optional<Geometry::Point> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
 	{
 		// Adapted from: Real-Time Collision Detection (Christer Ericson) - 5.3.3 Intersecting Ray or Segment Against Box pg 180
 
@@ -182,7 +182,7 @@ namespace Geometry
 		static constexpr auto MAX     = std::numeric_limits<float>::max();
 
 		float farthestEntry = -MAX;
-		float nearestExist = MAX;
+		float nearestExist  = MAX;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -218,10 +218,13 @@ namespace Geometry
 		if (farthestEntry == -MAX || nearestExist == MAX)
 			return std::nullopt;
 
+		if (distance_along_ray)
+			*distance_along_ray = farthestEntry;
+
 		// Ray intersects all 3 slabs. Return point intersection_point and length_along_ray
-		return LineIntersection(ray.m_start + (ray.m_direction * farthestEntry), farthestEntry);
+		return Geometry::Point(ray.m_start + (ray.m_direction * farthestEntry));
 	}
-	std::optional<PointIntersection> get_intersection(const Line& line, const Triangle& triangle)
+	std::optional<Geometry::Point> get_intersection(const Line& line, const Triangle& triangle)
 	{
 		// Identical to the above function but uses u, v, w to determine the intersection point to return.
 
@@ -246,12 +249,12 @@ namespace Geometry
 			u *= denom;
 			v *= denom;
 			w *= denom; // w = 1.0f - u - v;
-			return PointIntersection{(u * triangle.m_point_1) + (v * triangle.m_point_2) + (w * triangle.m_point_3)};
+			return Geometry::Point{(u * triangle.m_point_1) + (v * triangle.m_point_2) + (w * triangle.m_point_3)};
 		}
 		else
 			return std::nullopt;
 	}
-	std::optional<PlanePlaneIntersection> get_intersection(const Plane& plane_1, const Plane& plane_2)
+	std::optional<Geometry::Line> get_intersection(const Plane& plane_1, const Plane& plane_2)
 	{
 		// Compute direction of intersection line
 		glm::vec3 direction = glm::cross(plane_1.m_normal, plane_2.m_normal);
@@ -264,9 +267,9 @@ namespace Geometry
 
 		// Compute point on intersection line
 		glm::vec3 point_on_intersection_line = glm::cross(plane_1.m_distance * plane_2.m_normal - plane_2.m_distance * plane_1.m_normal, direction) / denom;
-		return PlanePlaneIntersection{Line{point_on_intersection_line, direction, false}};
+		return Geometry::Line{point_on_intersection_line, direction, false};
 	}
-	std::optional<PointIntersection> get_intersection(const Plane& plane_1, const Plane& plane_2, const Plane& plane_3)
+	std::optional<Geometry::Point> get_intersection(const Plane& plane_1, const Plane& plane_2, const Plane& plane_3)
 	{
 		const glm::vec3 u = glm::cross(plane_2.m_normal, plane_3.m_normal);
 		const float denom = glm::dot(plane_1.m_normal, u);
@@ -274,7 +277,7 @@ namespace Geometry
 		if (std::abs(denom) < Epsilon)
 			return std::nullopt;
 		else
-			return PointIntersection{plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom};
+			return Geometry::Point{plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom};
 	}
 	std::optional<Geometry::LineSegment> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
 	{
@@ -283,7 +286,7 @@ namespace Geometry
 		auto radius_sum               = sphere_1.m_radius + sphere_2.m_radius;
 		auto overlap_distance         = radius_sum - distance_between_centers;
 
-		if (overlap_distance > 0.0f)
+		if (overlap_distance >= 0.0f) // Allow for spheres touching
 		{
 			auto mid_point    = (sphere_1.m_center + sphere_2.m_center) / 2.0f;
 			auto direction    = glm::normalize(sphere_2.m_center - sphere_1.m_center);
