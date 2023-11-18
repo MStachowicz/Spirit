@@ -17,5 +17,6 @@ namespace Test
         void runAABBTests();
         void runTriangleTests();
         void run_frustrum_tests();
+		void run_sphere_tests();
     };
 } // namespace Test
