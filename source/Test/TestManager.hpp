@@ -2,10 +2,28 @@
 
 #include "Stopwatch.hpp"
 
+#include "glm/glm.hpp"
+
 #include <string>
 #include <vector>
 #include <format>
 #include <source_location>
+
+namespace std
+{
+    template<>
+    struct formatter<glm::vec3> {
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx) {
+            return ctx.begin();
+        }
+
+        template<typename FormatContext>
+        auto format(const glm::vec3& v, FormatContext& ctx) {
+            return format_to(ctx.out(), "({}, {}, {})", v.x, v.y, v.z);
+        }
+    };
+}
 
 namespace Test
 {
