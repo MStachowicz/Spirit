@@ -12,18 +12,10 @@ namespace Geometry
 			: m_start{p_start}
 			, m_end{p_end}
 		{}
-		constexpr float length() const noexcept
-		{
-			return glm::length(m_end - m_start);
-		}
-		constexpr glm::vec3 direction() const noexcept
-		{
-			return glm::normalize(m_end - m_start);
-		}
-		constexpr glm::vec3 pointAt(const float& p_distance_along_ray) const noexcept
-		{
-			return m_start + (direction() * p_distance_along_ray);
-		}
+
+		float length() const noexcept;
+		glm::vec3 direction() const noexcept;
+		glm::vec3 point_along_ray(const float& p_distance_along_ray) const noexcept;
 
 		glm::vec3 m_start;
 		glm::vec3 m_end;
