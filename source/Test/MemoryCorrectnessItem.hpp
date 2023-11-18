@@ -7,7 +7,7 @@ namespace Test
 {
     class MemoryCorrectnessItem
     {
-        constexpr static bool LOG_MEM_CORRECTNESS_EVENTS = true;
+        constexpr static bool LOG_MEM_CORRECTNESS_EVENTS = false;
 
         enum class MemoryStatus
         {
