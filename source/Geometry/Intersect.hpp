@@ -134,7 +134,7 @@ namespace Geometry
 	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const Line& line)               { LOG_WARN("[INTERSECT] Not implemented Cylinder v Line"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented Cylinder v LineSegment"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented Cylinder v Plane"); return std::nullopt; } // #TODO
-	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const Point& point)             { LOG_WARN("[INTERSECT] Not implemented Cylinder v Point"); return std::nullopt; } // #TODO
+	       std::optional<Point> get_intersection(const Cylinder& cylinder,   const Point& point);            // IMPLEMENTED
 	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Cylinder v Quad"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Cylinder v Ray"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cylinder& cylinder,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Cylinder v Sphere"); return std::nullopt; } // #TODO
@@ -324,7 +324,7 @@ namespace Geometry
 	inline bool intersecting(const Cylinder& cylinder,   const Line& line)                { return get_intersection(cylinder, line).has_value(); }         // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cylinder& cylinder,   const LineSegment& lineSegment)  { return get_intersection(cylinder, lineSegment).has_value(); }  // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cylinder& cylinder,   const Plane& plane)              { return get_intersection(cylinder, plane).has_value(); }        // Expensive get_intersection call for lack of bespoke intersection function #TODO
-	inline bool intersecting(const Cylinder& cylinder,   const Point& point)              { return get_intersection(cylinder, point).has_value(); }        // Expensive get_intersection call for lack of bespoke intersection function #TODO
+	       bool intersecting(const Cylinder& cylinder,   const Point& point);             // IMPLEMENTED
 	inline bool intersecting(const Cylinder& cylinder,   const Quad& quad)                { return get_intersection(cylinder, quad).has_value(); }         // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cylinder& cylinder,   const Ray& ray)                  { return get_intersection(cylinder, ray).has_value(); }          // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cylinder& cylinder,   const Sphere& sphere)            { return get_intersection(cylinder, sphere).has_value(); }       // Expensive get_intersection call for lack of bespoke intersection function #TODO

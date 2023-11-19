@@ -5,6 +5,7 @@
 #include "Geometry/Triangle.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Cone.hpp"
+#include "Geometry/Cylinder.hpp"
 
 #include "Utility/Stopwatch.hpp"
 #include "Utility/Utility.hpp"
@@ -578,6 +579,77 @@ namespace Test
 
 				if (intersection.has_value())
 					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cone (side) intersection position");
+			}
+		}
+		{ // Point v Cylinder
+			const auto cylinder = Geometry::Cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
+
+			{// Test point inside the cylinder
+				auto point_inside = Geometry::Point(glm::vec3(0.5f, 0.5f, 0.5f));
+
+				auto inside = Geometry::intersecting(point_inside, cylinder);
+				CHECK_TRUE(inside, "Point inside cylinder");
+				CHECK_EQUAL(Geometry::intersecting(point_inside, cylinder), Geometry::intersecting(cylinder, point_inside), "Point inside cylinder overload");
+
+				auto intersection = Geometry::get_intersection(point_inside, cylinder);
+				CHECK_TRUE(intersection.has_value(), "Point inside cylinder intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_inside, cylinder), Geometry::get_intersection(cylinder, point_inside), "Point inside cylinder intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_inside.m_position, "Point inside cylinder intersection position");
+			}
+			{// Test point outside the cylinder
+				auto point_outside = Geometry::Point(glm::vec3(0.5f, 1.5f, 0.5f));
+
+				auto outside = Geometry::intersecting(point_outside, cylinder);
+				CHECK_TRUE(!outside, "Point outside cylinder");
+				CHECK_EQUAL(Geometry::intersecting(point_outside, cylinder), Geometry::intersecting(cylinder, point_outside), "Point outside cylinder overload");
+
+				auto intersection = Geometry::get_intersection(point_outside, cylinder);
+				CHECK_TRUE(!intersection.has_value(), "Point outside cylinder intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_outside, cylinder), Geometry::get_intersection(cylinder, point_outside), "Point outside cylinder intersection overload");
+			}
+			{// Test point on the cylinder surface (top)
+				auto point_on_surface = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, cylinder);
+				CHECK_TRUE(on_surface, "Point on surface of cylinder (top)");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, cylinder), Geometry::intersecting(cylinder, point_on_surface), "Point on surface of cylinder (top) overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, cylinder);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of cylinder (top) intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, cylinder), Geometry::get_intersection(cylinder, point_on_surface), "Point on surface of cylinder (top) intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cylinder (top) intersection position");
+			}
+			{// Test point on the cylinder surface (base)
+				auto point_on_surface = Geometry::Point(glm::vec3(0.f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, cylinder);
+				CHECK_TRUE(on_surface, "Point on surface of cylinder (base)");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, cylinder), Geometry::intersecting(cylinder, point_on_surface), "Point on surface of cylinder (base) overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, cylinder);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of cylinder (base) intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, cylinder), Geometry::get_intersection(cylinder, point_on_surface), "Point on surface of cylinder (base) intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cylinder (base) intersection position");
+			}
+			{// Test point on the cylinder surface (side)
+				auto point_on_surface = Geometry::Point(glm::vec3(0.f, 0.5f, 0.5f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, cylinder);
+				CHECK_TRUE(on_surface, "Point on surface of cylinder (side)");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, cylinder), Geometry::intersecting(cylinder, point_on_surface), "Point on surface of cylinder (side) overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, cylinder);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of cylinder (side) intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, cylinder), Geometry::get_intersection(cylinder, point_on_surface), "Point on surface of cylinder (side) intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cylinder (side) intersection position");
 			}
 		}
 	}

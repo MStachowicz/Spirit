@@ -269,6 +269,11 @@ namespace Geometry
 		else
 			return std::nullopt;
 	}
+	std::optional<Point> get_intersection(const Cylinder& cylinder, const Point& point)
+	{
+		if (intersecting(cylinder, point)) return point;
+		else                               return std::nullopt;
+	}
 	std::optional<Geometry::Point> get_intersection(const Line& line, const Triangle& triangle)
 	{
 		// Identical to the above function but uses u, v, w to determine the intersection point to return.
@@ -439,6 +444,28 @@ namespace Geometry
 		}
 		else
 			return false; // Outside the cone
+	}
+	bool intersecting(const Cylinder& cylinder, const Point& point)
+	{
+		auto cylinder_height = glm::distance(cylinder.m_base, cylinder.m_top);
+
+		if (cylinder_height == 0.0f) // 0 height cylinder has no volume, so point cannot be inside it.
+			return false;
+
+		auto cylinder_direction = glm::normalize(cylinder.m_top - cylinder.m_base);
+		// Project tip_to_p onto the cylinder axis to get the point's distance along the axis
+		auto point_distance_along_axis = glm::dot(point.m_position - cylinder.m_base, cylinder_direction);
+
+		// Is the point orthogonally within the bounds of the cylinder's axis.
+		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cylinder_height)
+		{
+			// The distance from the point to the cylinder's axis.
+			auto orthogonal_distance = glm::distance(point.m_position, cylinder.m_base + (cylinder_direction * point_distance_along_axis));
+			// The point is inside the cylinder if the orthogonal distance is less than the cylinder's radius.
+			return orthogonal_distance <= cylinder.m_radius;
+		}
+		else
+			return false; // Outside the cylinder
 	}
 	bool intersecting(const Line& line, const Triangle& triangle)
 	{
