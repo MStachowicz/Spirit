@@ -196,6 +196,13 @@ namespace Geometry
 	}
 
 
+
+
+	std::optional<Point> get_intersection(const AABB& AABB, const Point& point)
+	{
+		if (intersecting(AABB, point)) return point;
+		else                           return std::nullopt;
+	}
 	std::optional<Geometry::Point> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
 	{
 		// Adapted from: Real-Time Collision Detection (Christer Ericson) - 5.3.3 Intersecting Ray or Segment Against Box pg 180
@@ -339,6 +346,12 @@ namespace Geometry
 			return false;
 		else
 			return true;
+	}
+	bool intersecting(const AABB& AABB, const Point& point)
+	{// Is point inside or on the surface of AABB?
+		return (point.m_position.x >= AABB.mMin.x && point.m_position.x <= AABB.mMax.x
+		     && point.m_position.y >= AABB.mMin.y && point.m_position.y <= AABB.mMax.y
+		     && point.m_position.z >= AABB.mMin.z && point.m_position.z <= AABB.mMax.z);
 	}
 	bool intersecting(const AABB& AABB, const Ray& ray)
 	{
