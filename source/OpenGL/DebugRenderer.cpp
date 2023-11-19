@@ -125,10 +125,15 @@ namespace OpenGL
 		m_tri_mb.set_colour(p_colour);
 		m_tri_mb.add_triangle(p_triangle.m_point_1, p_triangle.m_point_2, p_triangle.m_point_3);
 	}
+	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour)
+	{
+		m_tri_mb.set_colour(p_colour);
+		m_tri_mb.add_cone(p_cone.m_base, p_cone.m_top, p_cone.m_base_radius, m_debug_options.m_segments);
+	}
 	void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, m_debug_options.m_quality);
+		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, m_debug_options.m_segments);
 	}
 	void DebugRenderer::add(const Geometry::Quad& p_quad, const glm::vec4& p_colour)
 	{
@@ -149,18 +154,18 @@ namespace OpenGL
 	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, m_debug_options.m_quality);
+		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, m_debug_options.m_subdivisions);
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
 	{
 		if (auto near_top_left     = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_left))
-        if (auto near_top_right    = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right))
-        if (auto near_bottom_left  = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left))
-        if (auto near_bottom_right = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right))
-        if (auto far_top_left      = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left))
-        if (auto far_top_right     = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right))
-        if (auto far_bottom_left   = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left))
-        if (auto far_bottom_right  = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right))
+		if (auto near_top_right    = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right))
+		if (auto near_bottom_left  = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left))
+		if (auto near_bottom_right = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right))
+		if (auto far_top_left      = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left))
+		if (auto far_top_right     = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right))
+		if (auto far_bottom_left   = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left))
+		if (auto far_bottom_right  = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right))
 		{
 			add(Geometry::Sphere(*near_top_left, 0.1f));
 			add(Geometry::Sphere(*near_top_right, 0.1f));
@@ -195,5 +200,9 @@ namespace OpenGL
 		auto quad = Geometry::Quad(p_plane);
 		quad.scale(Z_Far_Scaler);
 		add(quad, p_colour);
+	}
+	void DebugRenderer::add(const Geometry::Point& p_point, const glm::vec4& p_colour)
+	{
+		add(Geometry::Sphere(p_point.m_position, 0.05f), p_colour);
 	}
 }

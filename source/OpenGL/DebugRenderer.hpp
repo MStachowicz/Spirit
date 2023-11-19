@@ -9,9 +9,11 @@
 
 namespace Geometry
 {
+	class Cone;
 	class Cylinder;
 	class Frustrum;
 	class Plane;
+	class Point;
 	class Quad;
 	class Ray;
 	class Sphere;
@@ -56,7 +58,9 @@ namespace OpenGL
 			glm::vec3 m_bounding_box_collided_colour = glm::vec3(1.f, 1.f, 0.f);
 			bool m_show_collision_shape              = false; // Draw the collision shape of the meshes.
 
-			size_t m_quality = 4;
+			size_t m_segments     = 16;
+			size_t m_subdivisions = 4;
+
 			float m_position_offset_factor = -1.f; // Used to fix z-fighting. Keep this as small as possible.
 			float m_position_offset_units  = -1.f; // Used to fix z-fighting. Keep this as small as possible.
 		};
@@ -67,10 +71,12 @@ namespace OpenGL
 		static void clear();
 		static void render(System::SceneSystem& p_scene, const glm::vec3& view_position);
 
+		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::LineSegment& p_line,  const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Plane& p_plane,       const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::Point& p_point,       const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Quad& p_quad,         const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Ray& p_ray,           const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Sphere& p_sphere,     const glm::vec4& p_colour = glm::vec4(1.f));
