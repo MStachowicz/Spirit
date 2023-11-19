@@ -165,6 +165,37 @@ namespace Geometry
 // END UTILITIY FUNCTIONS
 // ==============================================================================================================================
 
+	glm::vec3 closest_point(const Line& line, const glm::vec3& point)
+	{
+		const glm::vec3 ab = line.m_point_2 - line.m_point_1;
+		// Project point onto line computing the parameterized position d(t) = P + t * AB
+		const float t = glm::dot(point - line.m_point_1, ab) / glm::dot(ab, ab);
+		return line.m_point_1 + (ab * t);
+	}
+	glm::vec3 closest_point(const LineSegment& line, const glm::vec3& point)
+	{
+		const glm::vec3 ab = line.m_end - line.m_start;
+		// Project point onto line computing the parameterized position d(t) = P + t * AB
+		const float t = glm::dot(point - line.m_start, ab) / glm::dot(ab, ab);
+
+		// If outside segment, clamp t (and therefore d) to the closest endpoint
+		     if (t < 0.f) return line.m_start;
+		else if (t > 1.f) return line.m_end;
+		else              return line.m_start + (ab * t);
+	}
+	glm::vec3 closest_point(const Ray& ray, const glm::vec3& point)
+	{
+		const glm::vec3& ab = ray.m_direction;
+		// Project point onto line computing the parameterized position d(t) = P + t * AB
+		const float t = glm::dot(point - ray.m_start, ab) / glm::dot(ab, ab);
+
+		// If outside segment, clamp t (and therefore d) to the closest endpoint
+		if (t < 0.f) return ray.m_start;
+		else         return ray.m_start + (ab * t);
+
+	}
+
+
 	std::optional<Geometry::Point> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
 	{
 		// Adapted from: Real-Time Collision Detection (Christer Ericson) - 5.3.3 Intersecting Ray or Segment Against Box pg 180

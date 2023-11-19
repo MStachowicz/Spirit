@@ -55,6 +55,26 @@ namespace Geometry
 	}
 
 
+//==============================================================================================================================
+// closest_point and distance functions
+//==============================================================================================================================
+
+	// Get the closest point along line to the point
+	//@param line The line to find the closest point on
+	//@param point The point to find the closest point to
+	//@return The closest point on line to point
+	glm::vec3 closest_point(const Line& line, const glm::vec3& point);
+	// Get the closest point along line segment to the point
+	//@param line The line segment to find the closest point on
+	//@param point The point to find the closest point to
+	//@return The closest point on line segment to point
+	glm::vec3 closest_point(const LineSegment& line, const glm::vec3& point);
+	// Get the closest point along ray to the point
+	//@param ray The ray to find the closest point on
+	//@param point The point to find the closest point to
+	//@return The closest point on ray to point
+	glm::vec3 closest_point(const Ray& ray, const glm::vec3& point);
+
 
 //==============================================================================================================================
 // get_intersection functions = Where and how are we intersecting
