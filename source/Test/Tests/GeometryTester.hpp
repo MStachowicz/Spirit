@@ -18,5 +18,6 @@ namespace Test
         void runTriangleTests();
         void run_frustrum_tests();
 		void run_sphere_tests();
+		void run_point_tests();
     };
 } // namespace Test

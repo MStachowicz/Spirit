@@ -3,26 +3,43 @@
 #include "Stopwatch.hpp"
 
 #include "glm/glm.hpp"
+#include "Geometry/Point.hpp"
 
 #include <string>
 #include <vector>
 #include <format>
 #include <source_location>
+#include <optional>
 
 namespace std
 {
     template<>
-    struct formatter<glm::vec3> {
+    struct formatter<glm::vec3>
+	{
         template<typename ParseContext>
-        constexpr auto parse(ParseContext& ctx) {
-            return ctx.begin();
-        }
-
+        constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
         template<typename FormatContext>
-        auto format(const glm::vec3& v, FormatContext& ctx) {
-            return format_to(ctx.out(), "({}, {}, {})", v.x, v.y, v.z);
-        }
+        auto format(const glm::vec3& v, FormatContext& ctx) { return format_to(ctx.out(), "({}, {}, {})", v.x, v.y, v.z); }
     };
+    template<>
+    struct formatter<Geometry::Point>
+	{
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+        template<typename FormatContext>
+        auto format(const Geometry::Point& v, FormatContext& ctx) { return format_to(ctx.out(), "({}, {}, {})", v.m_position.x, v.m_position.y, v.m_position.z); }
+    };
+    template<>
+    struct formatter<std::optional<Geometry::Point>>
+	{
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+        template<typename FormatContext>
+        auto format(const std::optional<Geometry::Point>& v, FormatContext& ctx)
+		{
+			return v.has_value() ? format_to(ctx.out(), "({}, {}, {})", v->m_position.x, v->m_position.y, v->m_position.z) : format_to(ctx.out(), "nullopt");
+		}
+	};
 }
 
 namespace Test

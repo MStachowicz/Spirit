@@ -26,6 +26,7 @@ namespace Test
 		runTriangleTests();
 		run_frustrum_tests();
 		run_sphere_tests();
+		run_point_tests();
 	}
 	void GeometryTester::runPerformanceTests()
 	{
@@ -429,6 +430,84 @@ namespace Test
 
 			auto intersection = Geometry::get_intersection(sphere, sphere_2);
 			CHECK_TRUE(!intersection.has_value(), "Spheres not intersecting epsilon - intersection test");
+		}
+	}
+
+	void GeometryTester::run_point_tests()
+	{
+		{// Point v AABB
+			const auto AABB = Geometry::AABB(glm::vec3(-1.f, -1.f, -1.f), glm::vec3(1.f, 1.f, 1.f));
+
+			// Test a point inside the AABB
+			{
+				const auto point_inside = Geometry::Point(glm::vec3(0.f, 0.f, 0.f));
+
+				auto inside = Geometry::intersecting(point_inside, AABB);
+				CHECK_TRUE(inside, "Point inside AABB");
+				CHECK_EQUAL(Geometry::intersecting(point_inside, AABB), Geometry::intersecting(AABB, point_inside), "Point inside AABB overload");
+
+				auto intersection = Geometry::get_intersection(point_inside, AABB);
+				CHECK_TRUE(intersection.has_value(), "Point inside AABB intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_inside, AABB), Geometry::get_intersection(AABB, point_inside), "Point inside AABB intersection overload");
+
+				if (intersection.has_value())
+				{
+					CHECK_EQUAL(intersection->m_position, point_inside.m_position, "Point inside AABB intersection position");
+				}
+			}
+			{// Test a point on the surface of AABB
+				const auto point_on_surface = Geometry::Point(glm::vec3(1.f, 1.f, 1.f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, AABB);
+				CHECK_TRUE(on_surface, "Point on surface of AABB");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, AABB), Geometry::intersecting(AABB, point_on_surface), "Point on surface of AABB overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, AABB);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of AABB intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, AABB), Geometry::get_intersection(AABB, point_on_surface), "Point on surface of AABB intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of AABB intersection position");
+			}
+			{// Test a point outside the AABB
+				const auto point_outside = Geometry::Point(glm::vec3(2.f, 0.f, 2.f));
+
+				auto outside = Geometry::intersecting(point_outside, AABB);
+				CHECK_TRUE(!outside, "Point outside AABB");
+				CHECK_EQUAL(Geometry::intersecting(point_outside, AABB), Geometry::intersecting(AABB, point_outside), "Point outside AABB overload");
+
+				auto intersection = Geometry::get_intersection(point_outside, AABB);
+				CHECK_TRUE(!intersection.has_value(), "Point outside AABB intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_outside, AABB), Geometry::get_intersection(AABB, point_outside), "Point outside AABB intersection overload");
+			}
+			{// Test a point on the max edge of the AABB
+				const auto point_on_max_edge = Geometry::Point(glm::vec3(1.f, 1.f, 1.f));
+
+				auto on_max_edge = Geometry::intersecting(point_on_max_edge, AABB);
+				CHECK_TRUE(on_max_edge, "Point on max edge of AABB");
+				CHECK_EQUAL(Geometry::intersecting(point_on_max_edge, AABB), Geometry::intersecting(AABB, point_on_max_edge), "Point on max edge of AABB overload");
+
+				auto intersection = Geometry::get_intersection(point_on_max_edge, AABB);
+				CHECK_TRUE(intersection.has_value(), "Point on max edge of AABB intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_max_edge, AABB), Geometry::get_intersection(AABB, point_on_max_edge), "Point on max edge of AABB intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_max_edge.m_position, "Point on max edge of AABB intersection position");
+			}
+			{// Test a point on the min edge of the AABB
+				const auto point_on_min_edge = Geometry::Point(glm::vec3(-1.f, -1.f, -1.f));
+
+				auto on_min_edge = Geometry::intersecting(point_on_min_edge, AABB);
+				CHECK_TRUE(on_min_edge, "Point on min edge of AABB");
+				CHECK_EQUAL(Geometry::intersecting(point_on_min_edge, AABB), Geometry::intersecting(AABB, point_on_min_edge), "Point on min edge of AABB overload");
+
+				auto intersection = Geometry::get_intersection(point_on_min_edge, AABB);
+				CHECK_TRUE(intersection.has_value(), "Point on min edge of AABB intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_min_edge, AABB), Geometry::get_intersection(AABB, point_on_min_edge), "Point on min edge of AABB intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_min_edge.m_position, "Point on min edge of AABB intersection position");
+			}
 		}
 	}
 
