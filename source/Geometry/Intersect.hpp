@@ -104,7 +104,7 @@ namespace Geometry
 	inline std::optional<Point> get_intersection(const Cone& cone,   const Line& line)               { LOG_WARN("[INTERSECT] Not implemented Cone v Line"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cone& cone,   const LineSegment& lineSegment) { LOG_WARN("[INTERSECT] Not implemented Cone v LineSegment"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cone& cone,   const Plane& plane)             { LOG_WARN("[INTERSECT] Not implemented Cone v Plane"); return std::nullopt; } // #TODO
-	inline std::optional<Point> get_intersection(const Cone& cone,   const Point& point)             { LOG_WARN("[INTERSECT] Not implemented Cone v Point"); return std::nullopt; } // #TODO
+	       std::optional<Point> get_intersection(const Cone& cone,   const Point& point);            // IMPLEMENTED
 	inline std::optional<Point> get_intersection(const Cone& cone,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Cone v Quad"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cone& cone,   const Ray& ray)                 { LOG_WARN("[INTERSECT] Not implemented Cone v Ray"); return std::nullopt; } // #TODO
 	inline std::optional<Point> get_intersection(const Cone& cone,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Cone v Sphere"); return std::nullopt; } // #TODO
@@ -294,7 +294,7 @@ namespace Geometry
 	inline bool intersecting(const Cone& cone,   const Line& line)               { return get_intersection(cone, line).has_value(); }        // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cone& cone,   const LineSegment& lineSegment) { return get_intersection(cone, lineSegment).has_value(); } // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cone& cone,   const Plane& plane)             { return get_intersection(cone, plane).has_value(); }       // Expensive get_intersection call for lack of bespoke intersection function #TODO
-	inline bool intersecting(const Cone& cone,   const Point& point)             { return get_intersection(cone, point).has_value(); }       // Expensive get_intersection call for lack of bespoke intersection function #TODO
+           bool intersecting(const Cone& cone,   const Point& point);            // IMPLEMENTED
 	inline bool intersecting(const Cone& cone,   const Quad& quad)               { return get_intersection(cone, quad).has_value(); }        // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cone& cone,   const Ray& ray)                 { return get_intersection(cone, ray).has_value(); }         // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	inline bool intersecting(const Cone& cone,   const Sphere& sphere)           { return get_intersection(cone, sphere).has_value(); }      // Expensive get_intersection call for lack of bespoke intersection function #TODO

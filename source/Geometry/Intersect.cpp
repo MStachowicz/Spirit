@@ -262,6 +262,13 @@ namespace Geometry
 		// Ray intersects all 3 slabs. Return point intersection_point and length_along_ray
 		return Geometry::Point(ray.m_start + (ray.m_direction * farthestEntry));
 	}
+	std::optional<Point> get_intersection(const Cone& cone, const Point& point)
+	{
+		if (intersecting(cone, point))
+			return point;
+		else
+			return std::nullopt;
+	}
 	std::optional<Geometry::Point> get_intersection(const Line& line, const Triangle& triangle)
 	{
 		// Identical to the above function but uses u, v, w to determine the intersection point to return.
@@ -408,6 +415,30 @@ namespace Geometry
 
 		// Ray intersects all 3 slabs.
 		return true;
+	}
+	bool intersecting(const Cone& cone, const Point& point)
+	{
+		auto cone_height = glm::distance(cone.m_base, cone.m_top);
+
+		if (cone_height == 0.0f) // 0 height cone has no volume, so point cannot be inside it.
+			return false;
+
+		auto cone_direction = glm::normalize(cone.m_top - cone.m_base);
+		// Project tip_to_p onto the cone axis to get the point's distance along the axis
+		auto point_distance_along_axis = glm::dot(point.m_position - cone.m_base, cone_direction);
+
+		// Is the point orthogonally within the bounds of the cone's axis.
+		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cone_height)
+		{
+			// The distance from the point to the cone's axis.
+			auto orthogonal_distance = glm::distance(point.m_position, cone.m_base + (cone_direction * point_distance_along_axis));
+			// The radius of the cone at the point's distance along the axis.
+			auto cone_radius = cone.m_base_radius * ((cone_height - point_distance_along_axis) / cone_height);
+			// The point is inside the cone if the orthogonal distance is less than the cone's radius at that point along it's axis.
+			return orthogonal_distance <= cone_radius;
+		}
+		else
+			return false; // Outside the cone
 	}
 	bool intersecting(const Line& line, const Triangle& triangle)
 	{

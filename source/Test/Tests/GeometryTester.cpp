@@ -1,13 +1,13 @@
 #include "GeometryTester.hpp"
 
-// GEOMETRY
-#include "Intersect.hpp"
-#include "AABB.hpp"
-#include "Triangle.hpp"
+#include "Geometry/Intersect.hpp"
+#include "Geometry/AABB.hpp"
+#include "Geometry/Triangle.hpp"
 #include "Geometry/Frustrum.hpp"
+#include "Geometry/Cone.hpp"
 
-#include "Stopwatch.hpp"
-#include "Utility.hpp"
+#include "Utility/Stopwatch.hpp"
+#include "Utility/Utility.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/mat4x4.hpp"
@@ -507,6 +507,77 @@ namespace Test
 
 				if (intersection.has_value())
 					CHECK_EQUAL(intersection->m_position, point_on_min_edge.m_position, "Point on min edge of AABB intersection position");
+			}
+		}
+		{// Point v Cone
+			const auto cone = Geometry::Cone(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
+
+			{// Test point inside the cone
+				auto point_inside = Geometry::Point(glm::vec3(0.f, 0.5f, 0.f));
+
+				auto inside = Geometry::intersecting(point_inside, cone);
+				CHECK_TRUE(inside, "Point inside cone");
+				CHECK_EQUAL(Geometry::intersecting(point_inside, cone), Geometry::intersecting(cone, point_inside), "Point inside cone overload");
+
+				auto intersection = Geometry::get_intersection(point_inside, cone);
+				CHECK_TRUE(intersection.has_value(), "Point inside cone intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_inside, cone), Geometry::get_intersection(cone, point_inside), "Point inside cone intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_inside.m_position, "Point inside cone intersection position");
+			}
+			{// Test point outside the cone
+				auto point_outside = Geometry::Point(glm::vec3(0.f, 1.5f, 0.f));
+
+				auto outside = Geometry::intersecting(point_outside, cone);
+				CHECK_TRUE(!outside, "Point outside cone");
+				CHECK_EQUAL(Geometry::intersecting(point_outside, cone), Geometry::intersecting(cone, point_outside), "Point outside cone overload");
+
+				auto intersection = Geometry::get_intersection(point_outside, cone);
+				CHECK_TRUE(!intersection.has_value(), "Point outside cone intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_outside, cone), Geometry::get_intersection(cone, point_outside), "Point outside cone intersection overload");
+			}
+			{// Test point on the cone surface (top)
+				auto point_on_surface = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, cone);
+				CHECK_TRUE(on_surface, "Point on surface of cone (top)");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, cone), Geometry::intersecting(cone, point_on_surface), "Point on surface of cone (top) overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, cone);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of cone (top) intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, cone), Geometry::get_intersection(cone, point_on_surface), "Point on surface of cone (top) intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cone (top) intersection position");
+			}
+			{// Test point on the cone surface (base)
+				auto point_on_surface = Geometry::Point(glm::vec3(0.f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, cone);
+				CHECK_TRUE(on_surface, "Point on surface of cone (base)");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, cone), Geometry::intersecting(cone, point_on_surface), "Point on surface of cone (base) overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, cone);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of cone (base) intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, cone), Geometry::get_intersection(cone, point_on_surface), "Point on surface of cone (base) intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cone (base) intersection position");
+			}
+			{// Test point on the cone surface (side)
+				auto point_on_surface = Geometry::Point(glm::vec3(0.f, 0.5f, 0.5f));
+
+				auto on_surface = Geometry::intersecting(point_on_surface, cone);
+				CHECK_TRUE(on_surface, "Point on surface of cone (side)");
+				CHECK_EQUAL(Geometry::intersecting(point_on_surface, cone), Geometry::intersecting(cone, point_on_surface), "Point on surface of cone (side) overload");
+
+				auto intersection = Geometry::get_intersection(point_on_surface, cone);
+				CHECK_TRUE(intersection.has_value(), "Point on surface of cone (side) intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_surface, cone), Geometry::get_intersection(cone, point_on_surface), "Point on surface of cone (side) intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cone (side) intersection position");
 			}
 		}
 	}
