@@ -380,6 +380,7 @@ namespace Test
 
 	void GeometryTester::run_sphere_tests()
 	{
+		{// Sphere v Sphere
 			{ // Touching (point collision)
 				auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f);
 				auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
@@ -435,6 +436,16 @@ namespace Test
 				auto intersection = Geometry::get_intersection(sphere, sphere_2);
 				CHECK_TRUE(!intersection.has_value(), "Spheres not intersecting epsilon - intersection test");
 			}
+			{ // Same sphere - overlapping spheres
+				auto sphere = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f);
+
+				auto intersecting = Geometry::intersecting(sphere, sphere);
+				CHECK_TRUE(intersecting, "Spheres overlapping - intersecting test");
+
+				auto intersection = Geometry::get_intersection(sphere, sphere);
+				CHECK_TRUE(intersection.has_value(), "Spheres overlapping - intersection test");
+			}
+		}// Sphere v Sphere
 	}
 
 	void GeometryTester::run_point_tests()

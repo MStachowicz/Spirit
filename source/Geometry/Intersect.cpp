@@ -194,8 +194,30 @@ namespace Geometry
 		else         return ray.m_start + (ab * t);
 
 	}
+	float distance_squared(const LineSegment& line, const glm::vec3& point)
+	{
+		auto AB = line.m_end - line.m_start;
+		auto AP = point      - line.m_start;
+		float dot_AP_AB = glm::dot(AP, AB);
 
+		// Handle cases where c projects outside AB
+		if (dot_AP_AB <= 0.0f)
+			return glm::dot(AP, AP);
 
+		float f = glm::dot(AB, AB);
+		if (dot_AP_AB >= f)
+		{
+			auto bc = point - line.m_end;
+			return glm::dot(bc, bc);
+		}
+
+		// Handle cases where c projects onto AB
+		return glm::dot(AP, AP) - dot_AP_AB * dot_AP_AB / f;
+	}
+	float distance(const LineSegment& line, const glm::vec3& point)
+	{
+		return std::sqrt(distance_squared(line, point));
+	}
 
 
 	std::optional<Point> get_intersection(const AABB& AABB, const Point& point)
@@ -280,6 +302,11 @@ namespace Geometry
 	std::optional<Point> get_intersection(const LineSegment& lineSegment, const Point& point)
 	{
 		if (intersecting(lineSegment, point)) return point;
+		else                                  return std::nullopt;
+	}
+	std::optional<Point> get_intersection(const Point& point_1, const Point& point_2)
+	{
+		if (intersecting(point_1, point_2))   return point_1;
 		else                                  return std::nullopt;
 	}
 	std::optional<Point> get_intersection(const Point& point, const Ray& ray)
@@ -508,6 +535,10 @@ namespace Geometry
 		// Check if the point is within the line segment
 		float dot_AB_AP = glm::dot(AB, AP);
 		return dot_AB_AP >= 0.0f && dot_AB_AP <= glm::dot(AB, AB);
+	}
+	bool intersecting(const Point& point_1, const Point& point_2)
+	{
+		return point_1.m_position == point_2.m_position;
 	}
 	bool intersecting(const Point& point, const Ray& ray)
 	{

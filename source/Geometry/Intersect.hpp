@@ -75,6 +75,17 @@ namespace Geometry
 	//@return The closest point on ray to point
 	glm::vec3 closest_point(const Ray& ray, const glm::vec3& point);
 
+	// Get the distance from the point to the line squared
+	//@param line The line to find the distance to
+	//@param point The point to find the distance from
+	//@return The distance from point to line squared
+	float distance_squared(const LineSegment& line, const glm::vec3& point);
+	// Get the distance from the point to the line
+	//@param line The line to find the distance to
+	//@param point The point to find the distance from
+	//@return The distance from point to line
+	float distance(const LineSegment& line, const glm::vec3& point);
+
 
 //==============================================================================================================================
 // get_intersection functions = Where and how are we intersecting
@@ -195,7 +206,7 @@ namespace Geometry
 	inline std::optional<Point> get_intersection(const Point& point,   const Line& line)               { return get_intersection(line, point); }
 	inline std::optional<Point> get_intersection(const Point& point,   const LineSegment& lineSegment) { return get_intersection(lineSegment, point); }
 	inline std::optional<Point> get_intersection(const Point& point,   const Plane& plane)             { return get_intersection(plane, point); }
-	inline std::optional<Point> get_intersection(const Point& point_1, const Point& point_2)           { LOG_WARN("[INTERSECT] Not implemented Point v Point"); return std::nullopt; } // #TODO
+	       std::optional<Point> get_intersection(const Point& point_1, const Point& point_2);          // IMPLEMENTED
 	inline std::optional<Point> get_intersection(const Point& point,   const Quad& quad)               { LOG_WARN("[INTERSECT] Not implemented Point v Quad"); return std::nullopt; } // #TODO
 	       std::optional<Point> get_intersection(const Point& point,   const Ray& ray);                // IMPLEMENTED
 	inline std::optional<Point> get_intersection(const Point& point,   const Sphere& sphere)           { LOG_WARN("[INTERSECT] Not implemented Point v Sphere"); return std::nullopt; } // #TODO
@@ -385,7 +396,7 @@ namespace Geometry
 	inline bool intersecting(const Point& point,   const Line& line)               { return intersecting(line, point); }
 	inline bool intersecting(const Point& point,   const LineSegment& lineSegment) { return intersecting(lineSegment, point); }
 	inline bool intersecting(const Point& point,   const Plane& plane)             { return intersecting(plane, point); }
-	inline bool intersecting(const Point& point_1, const Point& point_2)           { return get_intersection(point_1, point_2).has_value(); }
+	       bool intersecting(const Point& point_1, const Point& point_2);          // IMPLEMENTED
 	inline bool intersecting(const Point& point,   const Quad& quad)               { return get_intersection(point, quad).has_value(); }      // Expensive get_intersection call for lack of bespoke intersection function #TODO
 	       bool intersecting(const Point& point,   const Ray& ray);                // IMPLEMENTED
 	inline bool intersecting(const Point& point,   const Sphere& sphere)           { return get_intersection(point, sphere).has_value(); }    // Expensive get_intersection call for lack of bespoke intersection function #TODO
