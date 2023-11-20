@@ -264,15 +264,28 @@ namespace Geometry
 	}
 	std::optional<Point> get_intersection(const Cone& cone, const Point& point)
 	{
-		if (intersecting(cone, point))
-			return point;
-		else
-			return std::nullopt;
+		if (intersecting(cone, point))        return point;
+		else                                  return std::nullopt;
 	}
 	std::optional<Point> get_intersection(const Cylinder& cylinder, const Point& point)
 	{
-		if (intersecting(cylinder, point)) return point;
-		else                               return std::nullopt;
+		if (intersecting(cylinder, point))    return point;
+		else                                  return std::nullopt;
+	}
+	std::optional<Point> get_intersection(const Line& line, const Point& point)
+	{
+		if (intersecting(line, point))        return point;
+		else                                  return std::nullopt;
+	}
+	std::optional<Point> get_intersection(const LineSegment& lineSegment, const Point& point)
+	{
+		if (intersecting(lineSegment, point)) return point;
+		else                                  return std::nullopt;
+	}
+	std::optional<Point> get_intersection(const Point& point, const Ray& ray)
+	{
+		if (intersecting(point, ray))         return point;
+		else                                  return std::nullopt;
 	}
 	std::optional<Geometry::Point> get_intersection(const Line& line, const Triangle& triangle)
 	{
@@ -466,6 +479,52 @@ namespace Geometry
 		}
 		else
 			return false; // Outside the cylinder
+	}
+	bool intersecting(const Line& line, const Point& point)
+	{
+		// Calculate vectors along the line and to the point
+		glm::vec3 AB = line.m_point_2    - line.m_point_1;
+		glm::vec3 AP = point.m_position  - line.m_point_1;
+
+		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
+		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
+
+		// If the cross product is (0, 0, 0), the point is on the line
+		return cross_AB_AP == glm::vec3(0.f);
+	}
+	bool intersecting(const LineSegment& lineSegment, const Point& point)
+	{
+		// Calculate vectors along the lineSegment and to the point
+		glm::vec3 AB = lineSegment.m_end - lineSegment.m_start;
+		glm::vec3 AP = point.m_position  - lineSegment.m_start;
+
+		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
+		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
+
+		// If the cross product is (0, 0, 0), the point is on the line
+		if (cross_AB_AP != glm::vec3(0.0f))
+			return false;
+
+		// Check if the point is within the line segment
+		float dot_AB_AP = glm::dot(AB, AP);
+		return dot_AB_AP >= 0.0f && dot_AB_AP <= glm::dot(AB, AB);
+	}
+	bool intersecting(const Point& point, const Ray& ray)
+	{
+		// Calculate vectors along the ray and to the point
+		glm::vec3 AB = ray.m_direction;
+		glm::vec3 AP = point.m_position - ray.m_start;
+
+		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
+		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
+
+		// If the cross product is (0, 0, 0), the point is along the ray direction
+		if (cross_AB_AP != glm::vec3(0.0f))
+			return false;
+
+		// Check if the point is ahead of or on the ray start
+		float dot_AB_AP = glm::dot(AB, AP);
+		return dot_AB_AP >= 0.0f;
 	}
 	bool intersecting(const Line& line, const Triangle& triangle)
 	{

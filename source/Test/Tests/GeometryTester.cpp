@@ -1,11 +1,14 @@
 #include "GeometryTester.hpp"
 
-#include "Geometry/Intersect.hpp"
 #include "Geometry/AABB.hpp"
-#include "Geometry/Triangle.hpp"
-#include "Geometry/Frustrum.hpp"
 #include "Geometry/Cone.hpp"
 #include "Geometry/Cylinder.hpp"
+#include "Geometry/Frustrum.hpp"
+#include "Geometry/Intersect.hpp"
+#include "Geometry/Line.hpp"
+#include "Geometry/LineSegment.hpp"
+#include "Geometry/Ray.hpp"
+#include "Geometry/Triangle.hpp"
 
 #include "Utility/Stopwatch.hpp"
 #include "Utility/Utility.hpp"
@@ -377,61 +380,61 @@ namespace Test
 
 	void GeometryTester::run_sphere_tests()
 	{
-		{ // Touching (point collision)
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f);
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
+			{ // Touching (point collision)
+				auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f);
+				auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
 
-			auto intersecting = Geometry::intersecting(sphere, sphere_2);
-			CHECK_TRUE(intersecting, "Spheres touching intersecting test");
+				auto intersecting = Geometry::intersecting(sphere, sphere_2);
+				CHECK_TRUE(intersecting, "Spheres touching intersecting test");
 
-			auto intersection = Geometry::get_intersection(sphere, sphere_2);
-			CHECK_TRUE(intersection.has_value(), "Spheres touching intersection test");
+				auto intersection = Geometry::get_intersection(sphere, sphere_2);
+				CHECK_TRUE(intersection.has_value(), "Spheres touching intersection test");
 
-			if (intersection.has_value())
-			{// Touching returns a LineSegment with the same start and end point.
-				CHECK_EQUAL(intersection->m_start, glm::vec3(1.f, 0.f, 0.f), "Intersection start  - Spheres touching");
-				CHECK_EQUAL(intersection->m_end,   glm::vec3(1.f, 0.f, 0.f), "Intersection end    - Spheres touching");
-				CHECK_EQUAL(intersection->length(), 0.f,                     "Intersection length - Spheres touching");
+				if (intersection.has_value())
+				{// Touching returns a LineSegment with the same start and end point.
+					CHECK_EQUAL(intersection->m_start, glm::vec3(1.f, 0.f, 0.f), "Intersection start  - Spheres touching");
+					CHECK_EQUAL(intersection->m_end,   glm::vec3(1.f, 0.f, 0.f), "Intersection end    - Spheres touching");
+					CHECK_EQUAL(intersection->length(), 0.f,                     "Intersection length - Spheres touching");
+				}
 			}
-		}
-		{ // Overlapping (line collision)
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.25f);
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.25f);
+			{ // Overlapping (line collision)
+				auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.25f);
+				auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.25f);
 
-			auto intersecting = Geometry::intersecting(sphere, sphere_2);
-			CHECK_TRUE(intersecting, "Spheres overlapping intersecting test");
+				auto intersecting = Geometry::intersecting(sphere, sphere_2);
+				CHECK_TRUE(intersecting, "Spheres overlapping intersecting test");
 
-			auto intersection = Geometry::get_intersection(sphere, sphere_2);
-			CHECK_TRUE(intersection.has_value(), "Spheres overlapping intersection test");
+				auto intersection = Geometry::get_intersection(sphere, sphere_2);
+				CHECK_TRUE(intersection.has_value(), "Spheres overlapping intersection test");
 
-			if (intersection.has_value())
-			{// Touching returns a LineSegment with the same start and end point.
-				CHECK_EQUAL(intersection->m_start, glm::vec3(0.75f, 0.f, 0.f),   "Intersection start     - Spheres overlapping");
-				CHECK_EQUAL(intersection->m_end,   glm::vec3(1.25f, 0.f, 0.f),   "Intersection end       - Spheres overlapping");
-				CHECK_EQUAL(intersection->length(), 0.5f,                        "Intersection length    - Spheres overlapping");
-				CHECK_EQUAL(intersection->direction(), glm::vec3(1.f, 0.f, 0.f), "Intersection direction - Spheres overlapping");
+				if (intersection.has_value())
+				{// Touching returns a LineSegment with the same start and end point.
+					CHECK_EQUAL(intersection->m_start, glm::vec3(0.75f, 0.f, 0.f),   "Intersection start     - Spheres overlapping");
+					CHECK_EQUAL(intersection->m_end,   glm::vec3(1.25f, 0.f, 0.f),   "Intersection end       - Spheres overlapping");
+					CHECK_EQUAL(intersection->length(), 0.5f,                        "Intersection length    - Spheres overlapping");
+					CHECK_EQUAL(intersection->direction(), glm::vec3(1.f, 0.f, 0.f), "Intersection direction - Spheres overlapping");
+				}
 			}
-		}
-		{ // Not intersecting
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 0.5f);
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 0.5f);
+			{ // Not intersecting
+				auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 0.5f);
+				auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 0.5f);
 
-			auto intersecting = Geometry::intersecting(sphere, sphere_2);
-			CHECK_TRUE(!intersecting, "Spheres not intersecting - intersecting test");
+				auto intersecting = Geometry::intersecting(sphere, sphere_2);
+				CHECK_TRUE(!intersecting, "Spheres not intersecting - intersecting test");
 
-			auto intersection = Geometry::get_intersection(sphere, sphere_2);
-			CHECK_TRUE(!intersection.has_value(), "Spheres not intersecting - intersection test");
-		}
-		{ // Not intersecting epsilon - reduce the size of one of the spheres touching by epsilon, should not intersect anymore
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f - std::numeric_limits<float>::epsilon());
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
+				auto intersection = Geometry::get_intersection(sphere, sphere_2);
+				CHECK_TRUE(!intersection.has_value(), "Spheres not intersecting - intersection test");
+			}
+			{ // Not intersecting epsilon - reduce the size of one of the spheres touching by epsilon, should not intersect anymore
+				auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f - std::numeric_limits<float>::epsilon());
+				auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
 
-			auto intersecting = Geometry::intersecting(sphere, sphere_2);
-			CHECK_TRUE(!intersecting, "Spheres not intersecting epsilon - intersecting test");
+				auto intersecting = Geometry::intersecting(sphere, sphere_2);
+				CHECK_TRUE(!intersecting, "Spheres not intersecting epsilon - intersecting test");
 
-			auto intersection = Geometry::get_intersection(sphere, sphere_2);
-			CHECK_TRUE(!intersection.has_value(), "Spheres not intersecting epsilon - intersection test");
-		}
+				auto intersection = Geometry::get_intersection(sphere, sphere_2);
+				CHECK_TRUE(!intersection.has_value(), "Spheres not intersecting epsilon - intersection test");
+			}
 	}
 
 	void GeometryTester::run_point_tests()
@@ -581,7 +584,7 @@ namespace Test
 					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cone (side) intersection position");
 			}
 		}
-		{ // Point v Cylinder
+		{// Point v Cylinder
 			const auto cylinder = Geometry::Cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
 
 			{// Test point inside the cylinder
@@ -651,7 +654,230 @@ namespace Test
 				if (intersection.has_value())
 					CHECK_EQUAL(intersection->m_position, point_on_surface.m_position, "Point on surface of cylinder (side) intersection position");
 			}
+		}// Point v Cylinder
+		{// Point v Line
+			const auto line = Geometry::Line(glm::vec3(-1.f), glm::vec3(1.f));
+
+			{// Point in middle of line
+				auto point_on_line_middle = Geometry::Point(glm::vec3(0.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_middle, line);
+				CHECK_TRUE(on_line, "Point on line");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_middle, line), Geometry::intersecting(line, point_on_line_middle), "Point on line overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_middle, line);
+				CHECK_TRUE(intersection.has_value(), "Point on line intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_middle, line), Geometry::get_intersection(line, point_on_line_middle), "Point on line intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_middle.m_position, "Point on line intersection position");
+			}
+			{// Point on start of line
+				auto point_on_line_start = Geometry::Point(glm::vec3(-1.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_start, line);
+				CHECK_TRUE(on_line, "Point at start of line");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_start, line), Geometry::intersecting(line, point_on_line_start), "Point at start of line overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_start, line);
+				CHECK_TRUE(intersection.has_value(), "Point at start of line intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_start, line), Geometry::get_intersection(line, point_on_line_start), "Point at start of line intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_start.m_position, "Point at start of line intersection position");
+			}
+			{// Point on end of line
+				auto point_on_line_end = Geometry::Point(glm::vec3(1.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_end, line);
+				CHECK_TRUE(on_line, "Point at end of line");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_end, line), Geometry::intersecting(line, point_on_line_end), "Point at end of line overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_end, line);
+				CHECK_TRUE(intersection.has_value(), "Point at end of line intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_end, line), Geometry::get_intersection(line, point_on_line_end), "Point at end of line intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_end.m_position, "Point at end of line intersection position");
+			}
+			{// Point off line
+				auto point_off_line_above = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+
+				auto on_line = Geometry::intersecting(point_off_line_above, line);
+				CHECK_TRUE(!on_line, "Point off line");
+				CHECK_EQUAL(Geometry::intersecting(point_off_line_above, line), Geometry::intersecting(line, point_off_line_above), "Point off line overload");
+
+				auto intersection = Geometry::get_intersection(point_off_line_above, line);
+				CHECK_TRUE(!intersection.has_value(), "Point off line intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_off_line_above, line), Geometry::get_intersection(line, point_off_line_above), "Point off line intersection overload");
+			}
+			{// Point on line ahead points used to construct line
+				auto point_on_line_ahead = Geometry::Point(glm::vec3(2.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_ahead, line);
+				CHECK_TRUE(on_line, "Point on line ahead");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_ahead, line), Geometry::intersecting(line, point_on_line_ahead), "Point on line ahead overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_ahead, line);
+				CHECK_TRUE(intersection.has_value(), "Point on line ahead intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_ahead, line), Geometry::get_intersection(line, point_on_line_ahead), "Point on line ahead intersection overload");
+			}
+			{// Point on line behind points used to construct line
+				auto point_on_line_behind = Geometry::Point(glm::vec3(-2.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_behind, line);
+				CHECK_TRUE(on_line, "Point on line ahead");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_behind, line), Geometry::intersecting(line, point_on_line_behind), "Point on line ahead overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_behind, line);
+				CHECK_TRUE(intersection.has_value(), "Point on line ahead intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_behind, line), Geometry::get_intersection(line, point_on_line_behind), "Point on line ahead intersection overload");
+			}
 		}
+		{// Point v LineSegment
+			const auto line_segment = Geometry::LineSegment(glm::vec3(-1.f), glm::vec3(1.f));
+
+			{// Point in middle of line_segment
+				auto point_on_line_middle = Geometry::Point(glm::vec3(0.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_middle, line_segment);
+				CHECK_TRUE(on_line, "Point on line_segment");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_middle, line_segment), Geometry::intersecting(line_segment, point_on_line_middle), "Point on line_segment overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_middle, line_segment);
+				CHECK_TRUE(intersection.has_value(), "Point on line_segment intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_middle, line_segment), Geometry::get_intersection(line_segment, point_on_line_middle), "Point on line_segment intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_middle.m_position, "Point on line_segment intersection position");
+			}
+			{// Point on start of line_segment
+				auto point_on_line_start = Geometry::Point(glm::vec3(-1.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_start, line_segment);
+				CHECK_TRUE(on_line, "Point at start of line_segment");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_start, line_segment), Geometry::intersecting(line_segment, point_on_line_start), "Point at start of line_segment overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_start, line_segment);
+				CHECK_TRUE(intersection.has_value(), "Point at start of line_segment intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_start, line_segment), Geometry::get_intersection(line_segment, point_on_line_start), "Point at start of line_segment intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_start.m_position, "Point at start of line_segment intersection position");
+			}
+			{// Point on end of line_segment
+				auto point_on_line_end = Geometry::Point(glm::vec3(1.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_end, line_segment);
+				CHECK_TRUE(on_line, "Point at end of line_segment");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_end, line_segment), Geometry::intersecting(line_segment, point_on_line_end), "Point at end of line_segment overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_end, line_segment);
+				CHECK_TRUE(intersection.has_value(), "Point at end of line_segment intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_end, line_segment), Geometry::get_intersection(line_segment, point_on_line_end), "Point at end of line_segment intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_end.m_position, "Point at end of line_segment intersection position");
+			}
+			{// Point off line_segment above
+				auto point_off_line_above = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+
+				auto on_line = Geometry::intersecting(point_off_line_above, line_segment);
+				CHECK_TRUE(!on_line, "Point off line_segment");
+				CHECK_EQUAL(Geometry::intersecting(point_off_line_above, line_segment), Geometry::intersecting(line_segment, point_off_line_above), "Point off line_segment overload");
+
+				auto intersection = Geometry::get_intersection(point_off_line_above, line_segment);
+				CHECK_TRUE(!intersection.has_value(), "Point off line_segment intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_off_line_above, line_segment), Geometry::get_intersection(line_segment, point_off_line_above), "Point off line_segment intersection overload");
+			}
+			{// Point off line_segment ahead points used to construct line_segment
+				auto point_on_line_ahead = Geometry::Point(glm::vec3(2.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_ahead, line_segment);
+				CHECK_TRUE(!on_line, "Point off line_segment ahead");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_ahead, line_segment), Geometry::intersecting(line_segment, point_on_line_ahead), "Point off line_segment ahead overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_ahead, line_segment);
+				CHECK_TRUE(!intersection.has_value(), "Point off line_segment ahead intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_ahead, line_segment), Geometry::get_intersection(line_segment, point_on_line_ahead), "Point off line_segment ahead intersection overload");
+			}
+			{// Point off line_segment behind points used to construct line_segment
+				auto point_on_line_behind = Geometry::Point(glm::vec3(-2.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_behind, line_segment);
+				CHECK_TRUE(!on_line, "Point off line_segment ahead");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_behind, line_segment), Geometry::intersecting(line_segment, point_on_line_behind), "Point off line_segment ahead overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_behind, line_segment);
+				CHECK_TRUE(!intersection.has_value(), "Point off line_segment ahead intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_behind, line_segment), Geometry::get_intersection(line_segment, point_on_line_behind), "Point off line_segment ahead intersection overload");
+			}
+		}// Point v LineSegment
+		{// Point v Ray
+			const auto ray = Geometry::Ray(glm::vec3(-1.f), glm::vec3(1.f));
+
+			{// Point in middle of ray
+				auto point_on_line_middle = Geometry::Point(glm::vec3(0.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_middle, ray);
+				CHECK_TRUE(on_line, "Point on ray");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_middle, ray), Geometry::intersecting(ray, point_on_line_middle), "Point on ray overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_middle, ray);
+				CHECK_TRUE(intersection.has_value(), "Point on ray intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_middle, ray), Geometry::get_intersection(ray, point_on_line_middle), "Point on ray intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_middle.m_position, "Point on ray intersection position");
+			}
+			{// Point on start of ray
+				auto point_on_line_start = Geometry::Point(glm::vec3(-1.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_start, ray);
+				CHECK_TRUE(on_line, "Point at start of ray");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_start, ray), Geometry::intersecting(ray, point_on_line_start), "Point at start of ray overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_start, ray);
+				CHECK_TRUE(intersection.has_value(), "Point at start of ray intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_start, ray), Geometry::get_intersection(ray, point_on_line_start), "Point at start of ray intersection overload");
+
+				if (intersection.has_value())
+					CHECK_EQUAL(intersection->m_position, point_on_line_start.m_position, "Point at start of ray intersection position");
+			}
+			{// Point off ray above
+				auto point_off_line_above = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+
+				auto on_line = Geometry::intersecting(point_off_line_above, ray);
+				CHECK_TRUE(!on_line, "Point off ray");
+				CHECK_EQUAL(Geometry::intersecting(point_off_line_above, ray), Geometry::intersecting(ray, point_off_line_above), "Point off ray overload");
+
+				auto intersection = Geometry::get_intersection(point_off_line_above, ray);
+				CHECK_TRUE(!intersection.has_value(), "Point off ray intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_off_line_above, ray), Geometry::get_intersection(ray, point_off_line_above), "Point off ray intersection overload");
+			}
+			{// Point off ray ahead points used to construct ray
+				auto point_on_line_ahead = Geometry::Point(glm::vec3(2.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_ahead, ray);
+				CHECK_TRUE(on_line, "Point off ray ahead");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_ahead, ray), Geometry::intersecting(ray, point_on_line_ahead), "Point off ray ahead overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_ahead, ray);
+				CHECK_TRUE(intersection.has_value(), "Point off ray ahead intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_ahead, ray), Geometry::get_intersection(ray, point_on_line_ahead), "Point off ray ahead intersection overload");
+			}
+			{// Point off ray behind points used to construct ray
+				auto point_on_line_behind = Geometry::Point(glm::vec3(-2.f));
+
+				auto on_line = Geometry::intersecting(point_on_line_behind, ray);
+				CHECK_TRUE(!on_line, "Point off ray ahead");
+				CHECK_EQUAL(Geometry::intersecting(point_on_line_behind, ray), Geometry::intersecting(ray, point_on_line_behind), "Point off ray ahead overload");
+
+				auto intersection = Geometry::get_intersection(point_on_line_behind, ray);
+				CHECK_TRUE(!intersection.has_value(), "Point off ray ahead intersection");
+				CHECK_EQUAL(Geometry::get_intersection(point_on_line_behind, ray), Geometry::get_intersection(ray, point_on_line_behind), "Point off ray ahead intersection overload");
+			}
+		}// Point v Ray
 	}
 
 	void GeometryTester::draw_frustrum_debugger_UI(float aspect_ratio)
@@ -768,4 +994,4 @@ namespace Test
 		}
 		ImGui::End();
 	}
-} // namespace Test
+}// namespace Test
