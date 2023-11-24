@@ -18,6 +18,7 @@ add_executable(Zephyr
 source/Application.hpp
 source/Application.cpp
 )
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Zephyr) #makes zephyr the "startup project" in VS sln
 target_link_libraries(Zephyr
 PUBLIC System
 PUBLIC OpenGL
