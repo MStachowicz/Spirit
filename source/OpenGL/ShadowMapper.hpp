@@ -1,9 +1,9 @@
 #pragma once
 
-#include "OpenGL\Types.hpp"
-#include "OpenGL\Shader.hpp"
+#include "OpenGL/Types.hpp"
+#include "OpenGL/Shader.hpp"
 
-#include "glm\vec2.hpp"
+#include "glm/vec2.hpp"
 
 namespace System
 {

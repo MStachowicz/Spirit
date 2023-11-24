@@ -428,7 +428,7 @@ namespace Utility
 			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");
 			current_colour = glm::vec4(colour, 1.f);
 		}
-		[[NODISCARD]] Data::Mesh get_mesh()
+		[[nodiscard]] Data::Mesh get_mesh()
 		{
 			return Data::Mesh{data, primitive_mode};
 		}
