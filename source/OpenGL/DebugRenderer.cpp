@@ -24,6 +24,8 @@ namespace OpenGL
 {
 	static constexpr float Z_Far_Scaler = 1000.f; // Scale the geometry that extends infinitely by this to give it an infinite appearance.
 
+	DebugRenderer::DebugOptions DebugRenderer::m_debug_options{};
+
 	void DebugRenderer::init()
 	{
 		m_debug_shader          = {"DebugRender"};

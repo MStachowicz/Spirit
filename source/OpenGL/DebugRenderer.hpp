@@ -64,7 +64,7 @@ namespace OpenGL
 			float m_position_offset_factor = -1.f; // Used to fix z-fighting. Keep this as small as possible.
 			float m_position_offset_units  = -1.f; // Used to fix z-fighting. Keep this as small as possible.
 		};
-		static inline DebugOptions m_debug_options = {};
+		static DebugOptions m_debug_options;
 
 		static void init();
 		static void deinit();

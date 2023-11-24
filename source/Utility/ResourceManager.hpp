@@ -8,6 +8,7 @@
 #include <memory>
 #include <unordered_set>
 #include <optional>
+#include <utility>
 
 namespace Utility
 {
@@ -25,7 +26,7 @@ namespace Utility
         static_assert(std::is_object_v<Resource>, "Non-object types are forbidden. ResourceManager stores the data itself.");
 
         using RefType = ResourceRef<Resource>;
-        friend class RefType;
+        friend RefType;
 
         // The ResourceData struct is used to store the Resource and the number of references to it.
         // Declaring a struct to contain both avoids the need for manually calculating alignment requirements for the buffer.
@@ -347,7 +348,7 @@ namespace Utility
         std::optional<size_t> m_index; // The index of the ResourceData in the ResourceManager, allows us to avoid linear searching the Manager buffer.
 
         // The ResourceManager is a friend so it can access the only valid constructor (private).
-        friend class Manager;
+        friend Manager;
         ResourceRef(Manager& p_manager, size_t p_index) noexcept : m_manager(&p_manager), m_index(p_index)
         {
             if constexpr (LOG_REF_EVENTS) LOG("[ResourceRef] Constructed valid at address {} at index {}", (void*)(this), m_index.value());

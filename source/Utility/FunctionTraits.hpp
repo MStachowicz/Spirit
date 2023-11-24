@@ -4,19 +4,22 @@
 
 namespace Utility
 {
-    template <typename... Args>
-    struct ArgTypes
-    {};
-
-    template <typename T, typename... Args>
-    struct ArgTypes<T, Args...>
+    namespace Impl
     {
-        using Head = T;
-        using Tail = ArgTypes<Args...>;
-    };
+        template <typename... Args>
+        struct ArgTypes
+        {};
 
-    template <typename... Args>
-    using ExtractArgTypes = ArgTypes<Args...>;
+        template <typename T, typename... Args>
+        struct ArgTypes<T, Args...>
+        {
+            using Head = T;
+            using Tail = ArgTypes<Args...>;
+        };
+
+        template <typename... Args>
+        using ExtractArgTypes = ArgTypes<Args...>;
+    }
 
     template <typename Func>
     struct FunctionTraits : public FunctionTraits<decltype(&Func::operator())>
@@ -27,7 +30,7 @@ namespace Utility
     {
         using Return                         = ReturnType;
         using ArgsTuple                      = std::tuple<Args...>;
-        using ArgTypes                       = ExtractArgTypes<Args...>;
+        using ArgTypes                       = Impl::ExtractArgTypes<Args...>;
         static constexpr std::size_t NumArgs = std::tuple_size_v<ArgsTuple>;
     };
 
@@ -36,7 +39,7 @@ namespace Utility
     {
         using Return                         = ReturnType;
         using ArgsTuple                      = std::tuple<>;
-        using ArgTypes                       = ExtractArgTypes<>;
+        using ArgTypes                       = Impl::ExtractArgTypes<>;
         static constexpr std::size_t NumArgs = 0;
     };
 

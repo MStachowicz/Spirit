@@ -9,6 +9,7 @@
 #include <vector>
 #include <string_view>
 #include <optional>
+#include <algorithm>
 
 namespace OpenGL
 {
