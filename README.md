@@ -15,7 +15,7 @@ C++ 20 [compliant compiler](https://en.cppreference.com/w/cpp/compiler_support)
 ```pip install jinja2``` (Python required)
 3. Generate
 In terminal use:\
-```cmake -S Source -B Build```
+```cmake -B Build ..```
 OR
 Open in an editor supporting [CMakePresets.json](https://github.com/MStachowicz/Zephyr/blob/master/CMakePresets.json)
 4. Open ```Zephyr.exe``` inside the build directory
