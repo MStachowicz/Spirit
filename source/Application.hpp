@@ -155,12 +155,12 @@ private:
 
         const auto totalTimeSeconds = std::chrono::duration_cast<std::chrono::seconds>(durationApplicationRunning);
         const float renderFPS  = static_cast<float>(mEditor.mDrawCount)          / totalTimeSeconds.count();
-        const float physicsFPS = static_cast<float>(mPhysicsSystem.mUpdateCount) / totalTimeSeconds.count();
+        const float physicsFPS = static_cast<float>(mPhysicsSystem.m_update_count) / totalTimeSeconds.count();
         const float input_FPS  = static_cast<float>(mInputSystem.m_update_count) / totalTimeSeconds.count();
 
         LOG("------------------------------------------------------------------------");
         LOG("Total simulation time: {}", totalTimeSeconds);
-        LOG("Total physics updates: {}", mPhysicsSystem.mUpdateCount);
+        LOG("Total physics updates: {}", mPhysicsSystem.m_update_count);
         LOG("Averaged physics updates per second: {}/s (target: {}/s)", physicsFPS, pPhysicsTicksPerSecond);
         LOG("Total rendered frames: {}", mEditor.mDrawCount);
         LOG("Averaged render frames per second: {}/s (target: {}/s)", renderFPS, pRenderTicksPerSecond);

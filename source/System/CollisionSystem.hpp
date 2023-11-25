@@ -4,7 +4,6 @@
 #include "Geometry/Intersect.hpp"
 
 #include "glm/fwd.hpp"
-#include "glm/vec3.hpp"
 
 #include <optional>
 #include <vector>
@@ -12,44 +11,31 @@
 
 namespace Geometry
 {
-    class Ray;
+	class Ray;
 }
 namespace Component
 {
-    struct Transform;
-    class Collider;
+	struct Transform;
 }
-
 namespace System
 {
-    class MeshSystem;
-    class SceneSystem;
+	class SceneSystem;
 
-    // Information about the point of contact between objects.
-    struct Collision
-    {
-        glm::vec3 mPoint;
-        glm::vec3 mNormal;
-        ECS::Entity mEntity;
-    };
+	// An optimisation layer and helper for quickly finding collision information for an Entity in a scene.
+	class CollisionSystem
+	{
+	private:
+		SceneSystem& m_scene_system;
 
-    // An optimisation layer and helper for quickly finding collision information for an Entity in a scene.
-    // A client of the Geometry library.
-    class CollisionSystem
-    {
-    private:
-        const MeshSystem& mMeshSystem;
-        SceneSystem& mSceneSystem;
+	public:
+		CollisionSystem(SceneSystem& p_scene_system) noexcept;
 
-    public:
-        CollisionSystem(SceneSystem& pSceneSystem, const MeshSystem& pMeshSystem);
+		// Returns the collision shape of p_entity in world space.
+		std::optional<Geometry::ContactPoint> get_collision(const ECS::Entity& p_entity, ECS::Entity* p_collided_entity = nullptr) const;
 
-        // Return the first (if-any) Collision found for pEntity.
-        // If a Collision is returned it is guranteed the Entity collided with has a Collider and Transform component of its own.
-        std::optional<Collision> getCollision(const ECS::Entity& pEntity, const Component::Transform& pTransform, const Component::Collider& pCollider) const;
-        // Does this ray collide with any entities.
-        bool castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const;
-        // Returns all the entities colliding with pRay. These are returned as pairs of Entity and the length along the ray from the Ray origin.
-        std::vector<std::pair<ECS::Entity, float>> getEntitiesAlongRay(const Geometry::Ray& pRay) const;
-    };
+		// Does this ray collide with any entities.
+		bool castRay(const Geometry::Ray& pRay, glm::vec3& outFirstIntersection) const;
+		// Returns all the entities colliding with pRay. These are returned as pairs of Entity and the length along the ray from the Ray origin.
+		std::vector<std::pair<ECS::Entity, float>> get_entities_along_ray(const Geometry::Ray& pRay) const;
+	};
 } // namespace System

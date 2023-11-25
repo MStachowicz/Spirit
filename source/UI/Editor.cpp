@@ -75,7 +75,7 @@ namespace UI
 						const auto& view_info = mOpenGLRenderer.mViewInformation;
 						auto cursorRay = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.mViewPosition, view_info.mProjection, view_info.mView);
 						m_click_rays.emplace_back(cursorRay);
-						auto entitiesUnderMouse = mCollisionSystem.getEntitiesAlongRay(cursorRay);
+						auto entitiesUnderMouse = mCollisionSystem.get_entities_along_ray(cursorRay);
 
 						if (!entitiesUnderMouse.empty())
 						{

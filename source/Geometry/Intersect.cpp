@@ -161,6 +161,104 @@ namespace Geometry
 
 		return true;
 	}
+	bool point_inside(const AABB& AABB, const glm::vec3& point)
+	{
+		return (point.x >= AABB.mMin.x && point.x <= AABB.mMax.x
+		     && point.y >= AABB.mMin.y && point.y <= AABB.mMax.y
+		     && point.z >= AABB.mMin.z && point.z <= AABB.mMax.z);
+	}
+	bool point_inside(const Cone& cone, const glm::vec3& point)
+	{
+		auto cone_height = glm::distance(cone.m_base, cone.m_top);
+
+		if (cone_height == 0.0f) // 0 height cone has no volume, so point cannot be inside it.
+			return false;
+
+		auto cone_direction = glm::normalize(cone.m_top - cone.m_base);
+		// Project tip_to_p onto the cone axis to get the point's distance along the axis
+		auto point_distance_along_axis = glm::dot(point - cone.m_base, cone_direction);
+
+		// Is the point orthogonally within the bounds of the cone's axis.
+		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cone_height)
+		{
+			// The distance from the point to the cone's axis.
+			auto orthogonal_distance = glm::distance(point, cone.m_base + (cone_direction * point_distance_along_axis));
+			// The radius of the cone at the point's distance along the axis.
+			auto cone_radius = cone.m_base_radius * ((cone_height - point_distance_along_axis) / cone_height);
+			// The point is inside the cone if the orthogonal distance is less than the cone's radius at that point along it's axis.
+			return orthogonal_distance <= cone_radius;
+		}
+		else
+			return false; // Outside the cone
+	}
+	bool point_inside(const Cylinder& cylinder, const glm::vec3& point)
+	{
+		auto cylinder_height = glm::distance(cylinder.m_base, cylinder.m_top);
+
+		if (cylinder_height == 0.0f) // 0 height cylinder has no volume, so point cannot be inside it.
+			return false;
+
+		auto cylinder_direction = glm::normalize(cylinder.m_top - cylinder.m_base);
+		// Project tip_to_p onto the cylinder axis to get the point's distance along the axis
+		auto point_distance_along_axis = glm::dot(point - cylinder.m_base, cylinder_direction);
+
+		// Is the point orthogonally within the bounds of the cylinder's axis.
+		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cylinder_height)
+		{
+			// The distance from the point to the cylinder's axis.
+			auto orthogonal_distance = glm::distance(point, cylinder.m_base + (cylinder_direction * point_distance_along_axis));
+			// The point is inside the cylinder if the orthogonal distance is less than the cylinder's radius.
+			return orthogonal_distance <= cylinder.m_radius;
+		}
+		else
+			return false; // Outside the cylinder
+	}
+	bool point_inside(const Line& line, const glm::vec3& point)
+	{
+		// Calculate vectors along the line and to the point
+		glm::vec3 AB = line.m_point_2    - line.m_point_1;
+		glm::vec3 AP = point  - line.m_point_1;
+
+		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
+		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
+
+		// If the cross product is (0, 0, 0), the point is on the line
+		return cross_AB_AP == glm::vec3(0.f);
+	}
+	bool point_inside(const LineSegment& lineSegment, const glm::vec3& point)
+	{
+		// Calculate vectors along the lineSegment and to the point
+		glm::vec3 AB = lineSegment.m_end - lineSegment.m_start;
+		glm::vec3 AP = point  - lineSegment.m_start;
+
+		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
+		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
+
+		// If the cross product is (0, 0, 0), the point is on the line
+		if (cross_AB_AP != glm::vec3(0.0f))
+			return false;
+
+		// Check if the point is within the line segment
+		float dot_AB_AP = glm::dot(AB, AP);
+		return dot_AB_AP >= 0.0f && dot_AB_AP <= glm::dot(AB, AB);
+	}
+	bool point_inside(const Ray& ray, const glm::vec3& point)
+	{
+		// Calculate vectors along the ray and to the point
+		glm::vec3 AB = ray.m_direction;
+		glm::vec3 AP = point - ray.m_start;
+
+		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
+		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
+
+		// If the cross product is (0, 0, 0), the point is along the ray direction
+		if (cross_AB_AP != glm::vec3(0.0f))
+			return false;
+
+		// Check if the point is ahead of or on the ray start
+		float dot_AB_AP = glm::dot(AB, AP);
+		return dot_AB_AP >= 0.0f;
+	}
 // ==============================================================================================================================
 // END UTILITIY FUNCTIONS
 // ==============================================================================================================================
@@ -220,12 +318,7 @@ namespace Geometry
 	}
 
 
-	std::optional<Point> get_intersection(const AABB& AABB, const Point& point)
-	{
-		if (intersecting(AABB, point)) return point;
-		else                           return std::nullopt;
-	}
-	std::optional<Geometry::Point> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
+	std::optional<ContactPoint> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
 	{
 		// Adapted from: Real-Time Collision Detection (Christer Ericson) - 5.3.3 Intersecting Ray or Segment Against Box pg 180
 
@@ -278,43 +371,17 @@ namespace Geometry
 		if (farthestEntry == -MAX || nearestExist == MAX)
 			return std::nullopt;
 
+		// Ray intersects all 3 slabs. Return point intersection_point and length_along_ray
 		if (distance_along_ray)
 			*distance_along_ray = farthestEntry;
 
-		// Ray intersects all 3 slabs. Return point intersection_point and length_along_ray
-		return Geometry::Point(ray.m_start + (ray.m_direction * farthestEntry));
+		ContactPoint point;
+		point.normal            = -ray.m_direction;
+		point.position          = ray.m_start + (ray.m_direction * farthestEntry);
+		point.penetration_depth = 0;
+		return point;
 	}
-	std::optional<Point> get_intersection(const Cone& cone, const Point& point)
-	{
-		if (intersecting(cone, point))        return point;
-		else                                  return std::nullopt;
-	}
-	std::optional<Point> get_intersection(const Cylinder& cylinder, const Point& point)
-	{
-		if (intersecting(cylinder, point))    return point;
-		else                                  return std::nullopt;
-	}
-	std::optional<Point> get_intersection(const Line& line, const Point& point)
-	{
-		if (intersecting(line, point))        return point;
-		else                                  return std::nullopt;
-	}
-	std::optional<Point> get_intersection(const LineSegment& lineSegment, const Point& point)
-	{
-		if (intersecting(lineSegment, point)) return point;
-		else                                  return std::nullopt;
-	}
-	std::optional<Point> get_intersection(const Point& point_1, const Point& point_2)
-	{
-		if (intersecting(point_1, point_2))   return point_1;
-		else                                  return std::nullopt;
-	}
-	std::optional<Point> get_intersection(const Point& point, const Ray& ray)
-	{
-		if (intersecting(point, ray))         return point;
-		else                                  return std::nullopt;
-	}
-	std::optional<Geometry::Point> get_intersection(const Line& line, const Triangle& triangle)
+	std::optional<ContactPoint> get_intersection(const Line& line, const Triangle& triangle)
 	{
 		// Identical to the above function but uses u, v, w to determine the intersection point to return.
 
@@ -339,12 +406,17 @@ namespace Geometry
 			u *= denom;
 			v *= denom;
 			w *= denom; // w = 1.0f - u - v;
-			return Geometry::Point{(u * triangle.m_point_1) + (v * triangle.m_point_2) + (w * triangle.m_point_3)};
+
+			ContactPoint point;
+			point.normal = glm::normalize(glm::cross(triangle.m_point_2 - triangle.m_point_1, triangle.m_point_3 - triangle.m_point_1));
+			point.position = (u * triangle.m_point_1) + (v * triangle.m_point_2) + (w * triangle.m_point_3);
+			point.penetration_depth = 0;
+			return point;
 		}
 		else
 			return std::nullopt;
 	}
-	std::optional<Geometry::Line> get_intersection(const Plane& plane_1, const Plane& plane_2)
+	std::optional<ContactPoint> get_intersection(const Plane& plane_1, const Plane& plane_2)
 	{
 		// Compute direction of intersection line
 		glm::vec3 direction = glm::cross(plane_1.m_normal, plane_2.m_normal);
@@ -357,9 +429,41 @@ namespace Geometry
 
 		// Compute point on intersection line
 		glm::vec3 point_on_intersection_line = glm::cross(plane_1.m_distance * plane_2.m_normal - plane_2.m_distance * plane_1.m_normal, direction) / denom;
-		return Geometry::Line{point_on_intersection_line, direction, false};
+		ContactPoint point;
+		point.normal            = direction;
+		point.position          = point_on_intersection_line;
+		point.penetration_depth = 0;
+		return point;
 	}
-	std::optional<Geometry::Point> get_intersection(const Plane& plane_1, const Plane& plane_2, const Plane& plane_3)
+	std::optional<ContactPoint> get_intersection(const Plane& plane, const Sphere& sphere)
+	{
+		// Compute the distance from the sphere center to the plane
+		float distance = glm::dot(plane.m_normal, sphere.m_center) - plane.m_distance;
+
+		// If the absolute value of the distance is less than the sphere radius, then the sphere is colliding with the plane
+		if (std::abs(distance) < sphere.m_radius)
+		{
+			// The penetration depth is the overlap of the sphere with the plane
+			float penetration_depth = sphere.m_radius - std::abs(distance);
+
+			// The normal of the contact is the normal of the plane, but it must be reversed if the sphere is behind the plane
+			glm::vec3 normal = plane.m_normal;
+			if (distance < 0)
+				normal = -normal;
+
+			// The position of the contact is point on the sphere surface towards the plane
+			glm::vec3 position = sphere.m_center - normal * sphere.m_radius;
+
+			ContactPoint point;
+			point.normal            = normal;
+			point.position          = position;
+			point.penetration_depth = penetration_depth;
+			return point;
+		}
+		else
+			return std::nullopt;
+	}
+	std::optional<glm::vec3> get_intersection(const Plane& plane_1, const Plane& plane_2, const Plane& plane_3)
 	{
 		const glm::vec3 u = glm::cross(plane_2.m_normal, plane_3.m_normal);
 		const float denom = glm::dot(plane_1.m_normal, u);
@@ -367,26 +471,34 @@ namespace Geometry
 		if (std::abs(denom) < Epsilon)
 			return std::nullopt;
 		else
-			return Geometry::Point{plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom};
+			return plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom;
 	}
-	std::optional<Geometry::LineSegment> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
+	std::optional<ContactPoint> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
 	{
-		// Returns the line segment that is the intersection of two spheres.
-		auto distance_between_centers = glm::distance(sphere_1.m_center, sphere_2.m_center);
-		auto radius_sum               = sphere_1.m_radius + sphere_2.m_radius;
-		auto overlap_distance         = radius_sum - distance_between_centers;
+		// Compute the displacement, or the distance between the two spheres
+		glm::vec3 displacement = sphere_1.m_center - sphere_2.m_center;
+		float distance = glm::length(displacement);
 
-		if (overlap_distance >= 0.0f) // Allow for spheres touching
+		// If the distance is less than the sum of the two radii, then the spheres are colliding
+		if (distance <= sphere_1.m_radius + sphere_2.m_radius)
 		{
-			auto mid_point    = (sphere_1.m_center + sphere_2.m_center) / 2.0f;
-			auto direction    = glm::normalize(sphere_2.m_center - sphere_1.m_center);
-			auto half_overlap = (overlap_distance / 2.0f) * direction;
-			auto start_point  = mid_point - half_overlap;
-			auto end_point    = mid_point + half_overlap;
-			return LineSegment{start_point, end_point};
+			// The penetration depth is the overlap of the spheres
+			float penetration_depth = sphere_1.m_radius + sphere_2.m_radius - distance;
+
+			// The normal of the contact is the normalized displacement
+			// If the spheres are in the same position (distance == 0.f), the normal is arbitrary, we choose up here.
+			glm::vec3 normal = distance == 0.f ? glm::vec3(0.f, 1.f, 0.f) : displacement / distance;
+			// The position of the contact is point on the surface of sphere_1 towards sphere_2
+			glm::vec3 position = sphere_1.m_center - normal * sphere_1.m_radius;
+
+			ContactPoint point;
+			point.normal            = normal;
+			point.position          = position;
+			point.penetration_depth = penetration_depth;
+			return point;
 		}
 		else
-			return std::nullopt; // No intersection, the spheres are separate.
+			return std::nullopt;
 	}
 	bool intersecting(const AABB& AABB_1, const AABB& AABB_2)
 	{
@@ -398,12 +510,6 @@ namespace Geometry
 			return false;
 		else
 			return true;
-	}
-	bool intersecting(const AABB& AABB, const Point& point)
-	{// Is point inside or on the surface of AABB?
-		return (point.m_position.x >= AABB.mMin.x && point.m_position.x <= AABB.mMax.x
-		     && point.m_position.y >= AABB.mMin.y && point.m_position.y <= AABB.mMax.y
-		     && point.m_position.z >= AABB.mMin.z && point.m_position.z <= AABB.mMax.z);
 	}
 	bool intersecting(const AABB& AABB, const Ray& ray)
 	{
@@ -461,102 +567,6 @@ namespace Geometry
 		// Ray intersects all 3 slabs.
 		return true;
 	}
-	bool intersecting(const Cone& cone, const Point& point)
-	{
-		auto cone_height = glm::distance(cone.m_base, cone.m_top);
-
-		if (cone_height == 0.0f) // 0 height cone has no volume, so point cannot be inside it.
-			return false;
-
-		auto cone_direction = glm::normalize(cone.m_top - cone.m_base);
-		// Project tip_to_p onto the cone axis to get the point's distance along the axis
-		auto point_distance_along_axis = glm::dot(point.m_position - cone.m_base, cone_direction);
-
-		// Is the point orthogonally within the bounds of the cone's axis.
-		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cone_height)
-		{
-			// The distance from the point to the cone's axis.
-			auto orthogonal_distance = glm::distance(point.m_position, cone.m_base + (cone_direction * point_distance_along_axis));
-			// The radius of the cone at the point's distance along the axis.
-			auto cone_radius = cone.m_base_radius * ((cone_height - point_distance_along_axis) / cone_height);
-			// The point is inside the cone if the orthogonal distance is less than the cone's radius at that point along it's axis.
-			return orthogonal_distance <= cone_radius;
-		}
-		else
-			return false; // Outside the cone
-	}
-	bool intersecting(const Cylinder& cylinder, const Point& point)
-	{
-		auto cylinder_height = glm::distance(cylinder.m_base, cylinder.m_top);
-
-		if (cylinder_height == 0.0f) // 0 height cylinder has no volume, so point cannot be inside it.
-			return false;
-
-		auto cylinder_direction = glm::normalize(cylinder.m_top - cylinder.m_base);
-		// Project tip_to_p onto the cylinder axis to get the point's distance along the axis
-		auto point_distance_along_axis = glm::dot(point.m_position - cylinder.m_base, cylinder_direction);
-
-		// Is the point orthogonally within the bounds of the cylinder's axis.
-		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cylinder_height)
-		{
-			// The distance from the point to the cylinder's axis.
-			auto orthogonal_distance = glm::distance(point.m_position, cylinder.m_base + (cylinder_direction * point_distance_along_axis));
-			// The point is inside the cylinder if the orthogonal distance is less than the cylinder's radius.
-			return orthogonal_distance <= cylinder.m_radius;
-		}
-		else
-			return false; // Outside the cylinder
-	}
-	bool intersecting(const Line& line, const Point& point)
-	{
-		// Calculate vectors along the line and to the point
-		glm::vec3 AB = line.m_point_2    - line.m_point_1;
-		glm::vec3 AP = point.m_position  - line.m_point_1;
-
-		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
-		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
-
-		// If the cross product is (0, 0, 0), the point is on the line
-		return cross_AB_AP == glm::vec3(0.f);
-	}
-	bool intersecting(const LineSegment& lineSegment, const Point& point)
-	{
-		// Calculate vectors along the lineSegment and to the point
-		glm::vec3 AB = lineSegment.m_end - lineSegment.m_start;
-		glm::vec3 AP = point.m_position  - lineSegment.m_start;
-
-		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
-		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
-
-		// If the cross product is (0, 0, 0), the point is on the line
-		if (cross_AB_AP != glm::vec3(0.0f))
-			return false;
-
-		// Check if the point is within the line segment
-		float dot_AB_AP = glm::dot(AB, AP);
-		return dot_AB_AP >= 0.0f && dot_AB_AP <= glm::dot(AB, AB);
-	}
-	bool intersecting(const Point& point_1, const Point& point_2)
-	{
-		return point_1.m_position == point_2.m_position;
-	}
-	bool intersecting(const Point& point, const Ray& ray)
-	{
-		// Calculate vectors along the ray and to the point
-		glm::vec3 AB = ray.m_direction;
-		glm::vec3 AP = point.m_position - ray.m_start;
-
-		// Calculate the cross product of the two vectors (area of parallelogram with AB and AP as sides)
-		glm::vec3 cross_AB_AP = glm::cross(AB, AP);
-
-		// If the cross product is (0, 0, 0), the point is along the ray direction
-		if (cross_AB_AP != glm::vec3(0.0f))
-			return false;
-
-		// Check if the point is ahead of or on the ray start
-		float dot_AB_AP = glm::dot(AB, AP);
-		return dot_AB_AP >= 0.0f;
-	}
 	bool intersecting(const Line& line, const Triangle& triangle)
 	{
 		// Below works for a double-sided triangle (both CW or CCW depending on which side it is viewed),
@@ -585,6 +595,13 @@ namespace Geometry
 			return false;
 		else
 			return true;
+	}
+	bool intersecting(const Plane& plane, const Sphere& sphere)
+	{
+		// For a normalized plane (|p.n| = 1), evaluating the plane equation for a point gives the signed distance of the point to the plane
+		float dist = glm::dot(sphere.m_center, plane.m_normal) - plane.m_distance;
+		// If sphere center within +/-radius from plane, plane intersects sphere
+		return std::abs(dist) <= sphere.m_radius;
 	}
 	bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2)
 	{
@@ -702,5 +719,4 @@ namespace Geometry
 		else
 			return true;
 	}
-
 } // namespace Geometry

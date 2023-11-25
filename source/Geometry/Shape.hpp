@@ -7,7 +7,6 @@
 #include "Geometry/Line.hpp"
 #include "Geometry/LineSegment.hpp"
 #include "Geometry/Plane.hpp"
-#include "Geometry/Point.hpp"
 #include "Geometry/Quad.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Sphere.hpp"
@@ -33,7 +32,6 @@ namespace Geometry
 			std::is_same<shape_type, Line>,
 			std::is_same<shape_type, LineSegment>,
 			std::is_same<shape_type, Plane>,
-			std::is_same<shape_type, Point>,
 			std::is_same<shape_type, Quad>,
 			std::is_same<shape_type, Ray>,
 			std::is_same<shape_type, Sphere>,
@@ -57,6 +55,6 @@ namespace Geometry
 			return std::get<T>(shape);
 		}
 
-		std::variant<AABB, Cone, Cuboid, Cylinder, Line, LineSegment, Plane, Point, Quad, Ray, Sphere, Triangle> shape;
+		std::variant<AABB, Cone, Cuboid, Cylinder, Line, LineSegment, Plane, Quad, Ray, Sphere, Triangle> shape;
 	};
 }
