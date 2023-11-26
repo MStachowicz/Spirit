@@ -36,7 +36,7 @@ namespace std
 	struct formatter<Geometry::Triangle>
 	{
 		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-		auto format(const Geometry::Triangle& v, format_context& ctx) { return format_to(ctx.out(), "({}, {}, {})", v.m_point_1, v.m_point_2, v.m_point_3); }
+		auto format(const Geometry::Triangle& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {}, {})", v.m_point_1, v.m_point_2, v.m_point_3); }
 	};
 }
 
