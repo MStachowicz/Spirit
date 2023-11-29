@@ -8,13 +8,24 @@ using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a f
 
 namespace Config
 {
-    inline const auto Source_Directory        = std::filesystem::path("${SOURCE_DIRECTORY}");
-    inline const auto GLSL_Shader_Directory   = std::filesystem::path(Source_Directory / "source" / "OpenGL" / "GLSL");
-    inline const auto Texture_Directory       = std::filesystem::path(Source_Directory / "source" / "Resources" / "Textures");
-    inline const auto Model_Directory         = std::filesystem::path(Source_Directory / "source" / "Resources" / "Models");
+	inline const auto Source_Directory        = std::filesystem::path("${SOURCE_DIRECTORY}");
+	inline const auto GLSL_Shader_Directory   = std::filesystem::path(Source_Directory / "source" / "OpenGL" / "GLSL");
+	inline const auto Texture_Directory       = std::filesystem::path(Source_Directory / "source" / "Resources" / "Textures");
+	inline const auto Model_Directory         = std::filesystem::path(Source_Directory / "source" / "Resources" / "Models");
 
-    inline const char* OpenGL_Version_String  = "${OPENGL_VERSION_STRING}";
-    inline const char* GLSL_Version_String    = "${GLSL_VERSION_STRING}";
-    inline constexpr int OpenGL_Version_Major = ${OPENGL_VERSION_MAJOR};
-    inline constexpr int OpenGL_Version_Minor = ${OPENGL_VERSION_MINOR};
+	inline const char* OpenGL_Version_String  = "${OPENGL_VERSION_STRING}";
+	inline const char* GLSL_Version_String    = "${GLSL_VERSION_STRING}";
+	inline constexpr int OpenGL_Version_Major = ${OPENGL_VERSION_MAJOR};
+	inline constexpr int OpenGL_Version_Minor = ${OPENGL_VERSION_MINOR};
+
+#ifdef Z_DEBUG
+	inline constexpr bool Is_Debug   = true;
+	inline constexpr bool Is_Release = false;
+#elif Z_RELEASE
+	inline constexpr bool Is_Debug   = false;
+	inline constexpr bool Is_Release = true;
+#else // Default to release
+	inline constexpr bool Is_Debug   = false;
+	inline constexpr bool Is_Release = true;
+#endif
 } // namespace Config

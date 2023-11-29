@@ -132,7 +132,7 @@ namespace ECS
             {
                 using DecayedComponentType = std::decay_t<ComponentType>;
                 Infos[ID]                  = std::make_optional<ComponentInfo>(ID, sizeof(DecayedComponentType), alignof(DecayedComponentType), Meta::PackArg<DecayedComponentType>());
-                LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->align)
+                LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->align);
             }
         }
         template <typename... ComponentTypes>
@@ -316,7 +316,7 @@ namespace ECS
                     }
                 }
             }
-            ASSERT(component_layouts[i].offset != 0 || i == 0, "Failed to set the position of ComponentID {} in the buffer.", component_layouts[i].info.ID)
+            ASSERT(component_layouts[i].offset != 0 || i == 0, "Failed to set the position of ComponentID {} in the buffer.", component_layouts[i].info.ID);
         }
 
         std::sort(component_layouts.begin(), component_layouts.end(), [](const auto& a, const auto& b) -> bool { return a.offset < b.offset; });

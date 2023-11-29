@@ -35,7 +35,7 @@ namespace Platform
         glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
         const auto window_size = size();
         const auto window_position = position();
-        m_handle = glfwCreateWindow(window_size.x, window_size.y, "Zephyr", m_fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+        m_handle = glfwCreateWindow(window_size.x, window_size.y, Config::Is_Debug ? "Zephyr - Debug" : "Zephyr", m_fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
         ASSERT(m_handle != nullptr, "[WINDOW] Failed to construct Window");
 
         glfwMakeContextCurrent(m_handle); // Set this window as the context for GL render calls.

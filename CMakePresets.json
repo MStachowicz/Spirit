@@ -1,126 +1,89 @@
 {
-    "version": 3,
-    "cmakeMinimumRequired":
-    {
-        "major": 3,
-        "minor": 22,
-        "patch": 0
-    },
-    "configurePresets":
-    [
-        {
-            "name": "visual-studio-17-2022-x64",
-            "displayName": "Visual Studio 2022",
-            "description": "Build for visual studio 2022 in x64.",
-            "generator": "Visual Studio 17 2022",
-            "binaryDir": "build/${presetName}",
-            "architecture":
-            {
-                "value": "x64",
-                "strategy": "set"
-            },
-            "toolset":
-            {
-                "value": "host=x64",
-                "strategy": "set"
-            }
-        },
-        {
-            "name": "gdb-release",
-            "displayName": "GDB Release",
-            "description": "Build using gcc and g++ release.",
-            "generator": "Ninja",
-            "binaryDir": "build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++"
-            }
-        },
-        {
-            "name": "gdb-debug",
-            "displayName": "GDB Debug",
-            "description": "Build using gcc and g++ debug.",
-            "generator": "Ninja",
-            "binaryDir": "build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++"
-            }
-        },
-        {
-            "name": "gdb-github-actions",
-            "displayName": "GDB Release GH",
-            "description": "Build using gcc and g++ release.",
-            "generator": "Ninja",
-            "binaryDir": "build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_C_COMPILER": "gcc-13",
-                "CMAKE_CXX_COMPILER": "g++-13"
-            }
-        },
-        {
-            "name": "windows-github-actions",
-            "displayName": "Windows Github Actions"
-        }
-    ],
-
-
-    "buildPresets":
-    [
-        {
-            "name": "visual-studio-release",
-            "displayName": "Release",
-            "configurePreset": "visual-studio-17-2022-x64",
-            "configuration": "Release",
-            "verbose": false,
-            "targets": ["Zephyr"]
-        },
-        {
-            "name": "visual-studio-debug",
-            "displayName": "Debug",
-            "configurePreset": "visual-studio-17-2022-x64",
-            "configuration": "Debug",
-            "verbose": true,
-            "targets": ["Zephyr"]
-        },
-        {
-            "name": "visual-studio-clean-debug",
-            "displayName": "Clean and Debug",
-            "configurePreset": "visual-studio-17-2022-x64",
-            "configuration": "Debug",
-            "cleanFirst": true,
-            "verbose": true,
-            "targets": ["Zephyr"]
-        },
-
-
-        {
-            "name": "gdb-release",
-            "displayName": "Release",
-            "configurePreset": "gdb-release",
-            "configuration": "Release",
-            "verbose": false,
-            "targets": ["Zephyr"]
-        },
-        {
-            "name": "gdb-debug",
-            "displayName": "Debug",
-            "configurePreset": "gdb-debug",
-            "configuration": "Debug",
-            "verbose": true,
-            "targets": ["Zephyr"]
-        },
-        {
-            "name": "gdb-clean-debug",
-            "displayName": "Clean and Debug",
-            "configurePreset": "gdb-debug",
-            "configuration": "Debug",
-            "cleanFirst": true,
-            "verbose": true,
-            "targets": ["Zephyr"]
-        }
-    ]
+	"version": 3,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 22,
+		"patch": 0
+	},
+	"configurePresets": [
+		{
+			"name": "Default",
+			"description": "Default preset for all platforms. Uses the default generator/compiler combo for the platform."
+		},
+		{
+			"name": "visual-studio-17-2022",
+			"displayName": "Visual Studio 2022",
+			"description": "Generate using visual studio 2022 x64. Windows only",
+			"generator": "Visual Studio 17 2022",
+			"binaryDir": "build/${presetName}",
+			"architecture": {
+				"value": "x64",
+				"strategy": "set"
+			},
+			"toolset": {
+				"value": "host=x64",
+				"strategy": "set"
+			},
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			},
+			"cacheVariables":
+			{
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
+				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE /MD /O2 /Ob2 /DNDEBUG",
+				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE /MD /O2 /Ob2 /DNDEBUG"
+			}
+		},
+		{
+			"name": "GCC",
+			"description": "Generate using Ninja multi-config, build using gcc and g++",
+			"generator": "Ninja Multi-Config",
+			"binaryDir": "build/${presetName}",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER":        "gcc",
+				"CMAKE_CXX_COMPILER":      "g++",
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -g3 -ggdb -O0",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -g3 -ggdb -O0",
+				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE -g0 -O3",
+				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE -g0 -O3"
+			}
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "msvc-release",
+			"configurePreset": "visual-studio-17-2022",
+			"displayName": "Release",
+			"configuration": "Release",
+			"verbose": false,
+			"targets": [ "Zephyr" ]
+		},
+		{
+			"name": "msvc-debug",
+			"configurePreset": "visual-studio-17-2022",
+			"displayName": "Debug",
+			"configuration": "Debug",
+			"verbose": true,
+			"targets": [ "Zephyr" ]
+		},
+		{
+			"name": "g++-release",
+			"displayName": "Release",
+			"configurePreset": "GCC",
+			"configuration": "Release",
+			"verbose": false,
+			"targets": [ "Zephyr" ]
+		},
+		{
+			"name": "g++-debug",
+			"displayName": "Debug",
+			"configurePreset": "GCC",
+			"configuration": "Debug",
+			"verbose": true,
+			"targets": [ "Zephyr" ]
+		}
+	]
 }
