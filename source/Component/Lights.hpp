@@ -17,11 +17,11 @@ namespace Component
 		DirectionalLight() noexcept;
 		DirectionalLight(const glm::vec3& p_direction, float p_ambient_intensity, float m_diffuse_intensity) noexcept;
 
-		glm::vec3 mDirection;
-		glm::vec3 mColour;
-		float mAmbientIntensity;
-		float mDiffuseIntensity;
-		float mSpecularIntensity;
+		glm::vec3 m_direction;
+		glm::vec3 m_colour;
+		float m_ambient_intensity;
+		float m_diffuse_intensity;
+		float m_specular_intensity;
 
 		float m_shadow_near_plane;
 		float m_shadow_far_plane;
@@ -38,16 +38,16 @@ namespace Component
 		PointLight() noexcept;
 		PointLight(const glm::vec3& p_position) noexcept;
 
-		glm::vec3 mPosition;
-		glm::vec3 mColour;
+		glm::vec3 m_position;
+		glm::vec3 m_colour;
 
-		float mAmbientIntensity;
-		float mDiffuseIntensity;
-		float mSpecularIntensity;
+		float m_ambient_intensity;
+		float m_diffuse_intensity;
+		float m_specular_intensity;
 
-		float mConstant;
-		float mLinear;
-		float mQuadratic;
+		float m_constant;
+		float m_linear;
+		float m_quadratic;
 
 		void draw_UI();
 	};
@@ -57,19 +57,19 @@ namespace Component
 	public:
 		SpotLight() noexcept;
 
-		glm::vec3 mPosition;
-		glm::vec3 mDirection;
-		glm::vec3 mColour;
-		float mAmbientIntensity;
-		float mDiffuseIntensity;
-		float mSpecularIntensity;
+		glm::vec3 m_position;
+		glm::vec3 m_direction;
+		glm::vec3 m_colour;
+		float m_ambient_intensity;
+		float m_diffuse_intensity;
+		float m_specular_intensity;
 
-		float mConstant;
-		float mLinear;
-		float mQuadratic;
+		float m_constant;
+		float m_linear;
+		float m_quadratic;
 
-		float mCutOff;
-		float mOuterCutOff;
+		float m_cutoff;
+		float m_outer_cutoff;
 
 		void draw_UI();
 	};

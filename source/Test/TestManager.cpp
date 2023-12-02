@@ -3,8 +3,8 @@
 #include "GeometryTester.hpp"
 #include "ResourceManagerTester.hpp"
 
-#include "Logger.hpp"
-#include "Stopwatch.hpp"
+#include "Utility/Logger.hpp"
+#include "Utility/Stopwatch.hpp"
 
 #include <format>
 
@@ -17,7 +17,7 @@ namespace Test
 		return std::format("{}:{}", p_location.file_name(), p_location.line());
 	}
 
-	void runUnitTests(const bool& pRunPerformanceTests)
+	void run_unit_tests(const bool& pRunPerformanceTests)
 	{
 		LOG("{} Starting Unit tests", seperator);
 		Utility::Stopwatch stopwatch;
@@ -43,25 +43,25 @@ namespace Test
 		: mName{pName}
 		, section_name_lengths{}
 		, running_section_name{""}
-		, mUnitTestsPassed{0}
-		, mUnitTestsFailed{0}
-		, mUnitTests{}
-		, mTimeTakenUnitTests{}
-		, mPerformanceTests{}
-		, mTimeTakenPerformanceTests{}
+		, m_unit_tests_pass_count{0}
+		, m_unit_tests_fail_count{0}
+		, m_unit_tests{}
+		, m_unit_tests_time_taken{}
+		, m_performance_tests{}
+		, m_performance_tests_time_taken{}
 	{}
 
-	void TestManager::runUnitTest(UnitTest&& pTest)
+	void TestManager::emplace_unit_test(UnitTest&& pTest)
 	{
 		if (!running_section_name.empty())
 			pTest.mName = running_section_name + " - " + pTest.mName;
 
-		mUnitTests.emplace_back(std::forward<const UnitTest>(pTest));
+		m_unit_tests.emplace_back(std::forward<const UnitTest>(pTest));
 
-		if (mUnitTests.back().mPassed)
-			mUnitTestsPassed++;
+		if (m_unit_tests.back().mPassed)
+			m_unit_tests_pass_count++;
 		else
-			mUnitTestsFailed++;
+			m_unit_tests_fail_count++;
 	}
 	void TestManager::push_section(const std::string& p_section_name)
 	{
@@ -73,46 +73,46 @@ namespace Test
 		running_section_name = running_section_name.substr(0, running_section_name.length() - section_name_lengths.back());
 		section_name_lengths.pop_back();
 	}
-	void TestManager::runPerformanceTest(const PerformanceTest&& pTest)
+	void TestManager::emplace_performance_test(const PerformanceTest&& pTest)
 	{
-		mPerformanceTests.emplace_back(std::forward<const PerformanceTest>(pTest));
+		m_performance_tests.emplace_back(std::forward<const PerformanceTest>(pTest));
 	}
 
 	void TestManager::run(const bool& pRunPerformanceTests)
 	{
 		{ // Unit Tests
 			Utility::Stopwatch stopwatch;
-			runUnitTests();
-			mTimeTakenUnitTests = stopwatch.duration_since_start<float, std::milli>();
+			run_unit_tests();
+			m_unit_tests_time_taken = stopwatch.duration_since_start<float, std::milli>();
 		}
 		if (pRunPerformanceTests)
 		{
 			Utility::Stopwatch stopwatch;
-			runPerformanceTests();
-			mTimeTakenPerformanceTests = stopwatch.duration_since_start<float, std::milli>();
+			run_performance_tests();
+			m_performance_tests_time_taken = stopwatch.duration_since_start<float, std::milli>();
 		}
 
 		std::string output = seperator + std::format("\n----------------- {} TESTS STARTING -----------------\n", mName);
-		output.reserve((mUnitTests.size() + mPerformanceTests.size()) * (60)); // Assuming an average of 60 chars per test summary here
+		output.reserve((m_unit_tests.size() + m_performance_tests.size()) * (60)); // Assuming an average of 60 chars per test summary here
 		{ // Build the output string
-			for (const auto& test : mUnitTests)
+			for (const auto& test : m_unit_tests)
 			{
 				if (test.mPassed)
 					output += std::format("PASSED '{}'\n", test.mName);
 				else
 					output += std::format("FAILED '{}' -> {}\n", test.mName, test.mFailMessage);
 			}
-			for (const auto& test : mPerformanceTests)
+			for (const auto& test : m_performance_tests)
 				output += std::format("PERF TEST '{}' - TOOK {}ms\n", test.mName, test.mTimeTaken.count());
 
 			output += std::format("***************** {} TEST SUMMARY *****************\n", mName);
 			output += std::format("----------------- UNIT TESTS -----------------\n");
-			output += std::format("TOTAL TESTS: {}\nPASSED: {}\nFAILED: {}\nTIME TAKEN: {}ms\n", mUnitTests.size(), mUnitTestsPassed, mUnitTestsFailed, mTimeTakenUnitTests.count());
+			output += std::format("TOTAL TESTS: {}\nPASSED: {}\nFAILED: {}\nTIME TAKEN: {}ms\n", m_unit_tests.size(), m_unit_tests_pass_count, m_unit_tests_fail_count, m_unit_tests_time_taken.count());
 
 			if (pRunPerformanceTests)
 			{
 				output += std::format("----------------- PERFORMANCE TESTS -----------------\n");
-				output += std::format("TOTAL TESTS: {}\nTIME TAKEN: {}ms\n", mPerformanceTests.size(), mTimeTakenPerformanceTests.count());
+				output += std::format("TOTAL TESTS: {}\nTIME TAKEN: {}ms\n", m_performance_tests.size(), m_performance_tests_time_taken.count());
 			}
 			output += seperator;
 		}

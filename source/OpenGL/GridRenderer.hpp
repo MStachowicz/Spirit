@@ -1,4 +1,4 @@
-#include "OpenGL/Shader.hpp"
+#include "Shader.hpp"
 
 #include "Component/Mesh.hpp"
 

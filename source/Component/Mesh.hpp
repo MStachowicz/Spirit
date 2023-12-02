@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Component/Vertex.hpp"
+#include "Geometry/AABB.hpp"
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
-#include "Geometry/AABB.hpp"
 
 #include "glm/vec4.hpp"
 #include "glm/vec3.hpp"
@@ -59,7 +59,7 @@ namespace Data
 					position));
 				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Position3D));
 
-				for (auto i = 0; i < vertex_data.size(); ++i)
+				for(size_t i = 0; i < vertex_data.size(); ++i)
 					AABB.unite(vertex_data[i].position);
 			}
 

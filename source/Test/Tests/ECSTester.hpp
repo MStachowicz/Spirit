@@ -4,22 +4,22 @@
 
 namespace ECS
 {
-    class Storage;
+	class Storage;
 }
 
 namespace Test
 {
-    class ECSTester : public TestManager
-    {
-    public:
-        ECSTester() : TestManager(std::string("ECS")) {}
+	class ECSTester : public TestManager
+	{
+	public:
+		ECSTester() : TestManager(std::string("ECS")) {}
 
-    protected:
-        void runUnitTests()        override;
-        void runPerformanceTests() override;
+	protected:
+		void run_unit_tests()        override;
+		void run_performance_tests() override;
 
-    private:
-        size_t countEntities(ECS::Storage& pStorage);
-        void runMemoryTests(const std::string& pTestName, const size_t& pAliveCountExpected);
-    };
+	private:
+		size_t countEntities(ECS::Storage& pStorage);
+		void runMemoryTests(const std::string& pTestName, const size_t& pAliveCountExpected);
+	};
 } // namespace Test

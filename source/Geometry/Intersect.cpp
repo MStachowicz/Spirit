@@ -5,8 +5,7 @@
 #include "Geometry/Ray.hpp"
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Triangle.hpp"
-
-#include "Logger.hpp"
+#include "Utility/Logger.hpp"
 
 #include <glm/glm.hpp>
 #include <limits>
@@ -163,9 +162,9 @@ namespace Geometry
 	}
 	bool point_inside(const AABB& AABB, const glm::vec3& point)
 	{
-		return (point.x >= AABB.mMin.x && point.x <= AABB.mMax.x
-		     && point.y >= AABB.mMin.y && point.y <= AABB.mMax.y
-		     && point.z >= AABB.mMin.z && point.z <= AABB.mMax.z);
+		return (point.x >= AABB.m_min.x && point.x <= AABB.m_max.x
+		     && point.y >= AABB.m_min.y && point.y <= AABB.m_max.y
+		     && point.z >= AABB.m_min.z && point.z <= AABB.m_max.z);
 	}
 	bool point_inside(const Cone& cone, const glm::vec3& point)
 	{
@@ -342,15 +341,15 @@ namespace Geometry
 			if (std::abs(ray.m_direction[i]) < EPSILON)
 			{
 				// Ray is parallel to slab. No hit if origin not within slab
-				if (ray.m_start[i] < AABB.mMin[i] || ray.m_start[i] > AABB.mMax[i])
+				if (ray.m_start[i] < AABB.m_min[i] || ray.m_start[i] > AABB.m_max[i])
 					return std::nullopt;
 			}
 			else
 			{
 				// Compute intersection values along ray with near and far plane of slab on i axis
 				const float ood = 1.0f / ray.m_direction[i];
-				float entry = (AABB.mMin[i] - ray.m_start[i]) * ood;
-				float exit = (AABB.mMax[i] - ray.m_start[i]) * ood;
+				float entry = (AABB.m_min[i] - ray.m_start[i]) * ood;
+				float exit = (AABB.m_max[i] - ray.m_start[i]) * ood;
 
 				if (entry > exit) // Make entry be intersection with near plane and exit with far plane
 					std::swap(entry, exit);
@@ -504,9 +503,9 @@ namespace Geometry
 	{
 		// Reference: Real-Time Collision Detection (Christer Ericson)
 		// Exit with no intersection if separated along an axis, overlapping on all axes means AABBs are intersecting
-		if (AABB_1.mMax[0] < AABB_2.mMin[0] || AABB_1.mMin[0] > AABB_2.mMax[0]
-		 || AABB_1.mMax[1] < AABB_2.mMin[1] || AABB_1.mMin[1] > AABB_2.mMax[1]
-		 || AABB_1.mMax[2] < AABB_2.mMin[2] || AABB_1.mMin[2] > AABB_2.mMax[2])
+		if (AABB_1.m_max[0] < AABB_2.m_min[0] || AABB_1.m_min[0] > AABB_2.m_max[0]
+		 || AABB_1.m_max[1] < AABB_2.m_min[1] || AABB_1.m_min[1] > AABB_2.m_max[1]
+		 || AABB_1.m_max[2] < AABB_2.m_min[2] || AABB_1.m_min[2] > AABB_2.m_max[2])
 			return false;
 		else
 			return true;
@@ -535,15 +534,15 @@ namespace Geometry
 			if (std::abs(ray.m_direction[i]) < EPSILON)
 			{
 				// Ray is parallel to slab. No hit if origin not within slab
-				if (ray.m_start[i] < AABB.mMin[i] || ray.m_start[i] > AABB.mMax[i])
+				if (ray.m_start[i] < AABB.m_min[i] || ray.m_start[i] > AABB.m_max[i])
 					return false;
 			}
 			else
 			{
 				// Compute intersection values along ray with near and far plane of slab on i axis
 				const float ood = 1.0f / ray.m_direction[i];
-				float entry = (AABB.mMin[i] - ray.m_start[i]) * ood;
-				float exit = (AABB.mMax[i] - ray.m_start[i]) * ood;
+				float entry = (AABB.m_min[i] - ray.m_start[i]) * ood;
+				float exit = (AABB.m_max[i] - ray.m_start[i]) * ood;
 
 				if (entry > exit) // Make entry be intersection with near plane and exit with far plane
 					std::swap(entry, exit);

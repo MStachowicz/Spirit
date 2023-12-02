@@ -55,10 +55,10 @@ namespace OpenGL
 
 		p_shader.use();
 
-		for (auto i = 0; i < m_uniform_count; ++i)
+		for (int i = 0; i < m_uniform_count; ++i)
 			std::visit([&](auto&& arg) { p_shader.set_uniform(m_uniforms[i].m_name, arg); }, m_uniforms[i].m_data);
 
-		for (auto i = 0; i < m_texture_count; ++i)
+		for (int i = 0; i < m_texture_count; ++i)
 		{
 			p_shader.set_uniform(m_textures[i].m_name, i); // TODO only needs to happen once per shader
 			OpenGL::active_texture(i);
@@ -86,10 +86,10 @@ namespace OpenGL
 
 		p_shader.use();
 
-		for (auto i = 0; i < m_uniform_count; ++i)
+		for (int i = 0; i < m_uniform_count; ++i)
 			std::visit([&](auto&& arg) { p_shader.set_uniform(m_uniforms[i].m_name, arg); }, m_uniforms[i].m_data);
 
-		for (auto i = 0; i < m_texture_count; ++i)
+		for (int i = 0; i < m_texture_count; ++i)
 		{
 			p_shader.set_uniform(m_textures[i].m_name, i); // TODO only needs to happen once per shader
 			OpenGL::active_texture(i);

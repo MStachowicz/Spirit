@@ -37,8 +37,8 @@ namespace Component
 	class Texture
 	{
 	public:
-		TextureRef mDiffuse;
-		TextureRef mSpecular;
+		TextureRef m_diffuse;
+		TextureRef m_specular;
 		float m_shininess;
 
 		Texture() noexcept;

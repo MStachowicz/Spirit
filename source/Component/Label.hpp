@@ -4,13 +4,13 @@
 
 namespace Component
 {
-    class Label
-    {
-    public:
-        Label(const std::string& pName)
-            : mName{pName}
-        {}
+	class Label
+	{
+	public:
+		Label(const std::string& pName)
+			: mName{pName}
+		{}
 
-        std::string mName;
-    };
+		std::string mName;
+	};
 }

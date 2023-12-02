@@ -1,5 +1,5 @@
 #include "GridRenderer.hpp"
-#include "OpenGL/DrawCall.hpp"
+#include "DrawCall.hpp"
 
 #include "Utility/MeshBuilder.hpp"
 
@@ -28,7 +28,7 @@ namespace OpenGL
 		}
 
 		// XZ-plane lines
-		for (auto i = -Size; i <= Size; i++)
+		for (int i = -Size; i <= Size; i++)
 		{
 			if (i % 10 == 0)
 			{

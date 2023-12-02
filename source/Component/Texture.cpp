@@ -19,13 +19,13 @@ namespace Data
 namespace Component
 {
 	Texture::Texture() noexcept
-		: mDiffuse{}
-		, mSpecular{}
+		: m_diffuse{}
+		, m_specular{}
 		, m_shininess{32.f}
 	{}
 	Texture::Texture(const TextureRef& m_diffuse) noexcept
-		: mDiffuse{m_diffuse}
-		, mSpecular{}
+		: m_diffuse{m_diffuse}
+		, m_specular{}
 		, m_shininess{32.f}
 	{}
 
@@ -33,19 +33,19 @@ namespace Component
 	{
 		if (ImGui::TreeNode("Texture"))
 		{
-			const std::string currentDiffuse  = mDiffuse ? mDiffuse->m_image_ref->name() : "None";
-			const std::string currentSpecular = mSpecular ? mSpecular->m_image_ref->name() : "None";
+			const std::string currentDiffuse  = m_diffuse ? m_diffuse->m_image_ref->name() : "None";
+			const std::string currentSpecular = m_specular ? m_specular->m_image_ref->name() : "None";
 
 			static size_t selected;
-			auto& availableTextures = p_texture_system.mAvailableTextures;
+			auto& availableTextures = p_texture_system.m_available_textures;
 			std::vector<std::string> availableTextureNames;
 			for (const auto& path : availableTextures)
 				availableTextureNames.push_back(path.stem().string());
 
 			if (ImGui::ComboContainer("Diffuse Texture", currentDiffuse.c_str(), availableTextureNames, selected))
-				mDiffuse = p_texture_system.getTexture(availableTextures[selected]);
+				m_diffuse = p_texture_system.getTexture(availableTextures[selected]);
 			if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
-				mSpecular = p_texture_system.getTexture(availableTextures[selected]);
+				m_specular = p_texture_system.getTexture(availableTextures[selected]);
 			ImGui::Slider("Shininess", m_shininess, 1.f, 512.f, "%.1f");
 
 			ImGui::TreePop();

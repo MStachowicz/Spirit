@@ -57,9 +57,9 @@ namespace Meta
 
     // Convert a std::array to a std::vector in one call.
     template<typename T, size_t N>
-    std::vector<T> makeVector(const std::array<T, N> pArray )
+    std::vector<T> make_vector(const std::array<T, N> p_array )
     {
-        return std::vector<T>(pArray.begin(), pArray.end());
+        return std::vector<T>(p_array.begin(), p_array.end());
     }
 
     // Returns the size of a parameter pack in bytes.

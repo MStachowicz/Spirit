@@ -59,7 +59,7 @@ namespace OpenGL
 		m_line_mb.clear();
 		m_tri_mb.clear();
 	}
-	void DebugRenderer::render(System::SceneSystem& p_scene, const glm::vec3& view_position)
+	void DebugRenderer::render(System::SceneSystem& p_scene)
 	{
 		auto line_mesh = m_line_mb.get_mesh();
 		if (!line_mesh.empty())
@@ -76,12 +76,12 @@ namespace OpenGL
 			dc.submit(m_debug_shader.value(), tri_mesh);
 		}
 
-		auto& scene = p_scene.getCurrentScene();
+		auto& scene = p_scene.get_current_scene();
 		auto& opt = m_debug_options;
 
 		if (opt.m_show_bounding_box)
 		{
-			scene.foreach([&](Component::Transform& p_transform, Component::Mesh& p_mesh, Component::Collider& p_collider)
+			scene.foreach([&](Component::Collider& p_collider)
 			{
 				auto model = glm::translate(glm::identity<glm::mat4>(), p_collider.m_world_AABB.get_center());
 				model = glm::scale(model, p_collider.m_world_AABB.get_size());
@@ -111,7 +111,7 @@ namespace OpenGL
 		if (opt.m_show_light_positions)
 		{
 			int point_light_count = 0;
-			scene.foreach([&point_light_count](Component::PointLight& point_light) { point_light_count++; });
+			scene.foreach([&point_light_count](Component::PointLight& point_light) { (void)point_light; point_light_count++; }); // #TODO replace with a storage::count<>()
 
 			if (point_light_count > 0)
 			{

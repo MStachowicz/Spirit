@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shader.hpp"
+
 #include "Utility/MeshBuilder.hpp"
 #include "Component/Mesh.hpp"
 
@@ -69,7 +70,7 @@ namespace OpenGL
 		static void init();
 		static void deinit();
 		static void clear();
-		static void render(System::SceneSystem& p_scene, const glm::vec3& view_position);
+		static void render(System::SceneSystem& p_scene);
 
 		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));

@@ -22,9 +22,13 @@
 
 #include <array>
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_HIDES_PREVIOUS_DECLERATION // Required to allow shadowing for the SCOPE_SECTION macro
+
+
 namespace Test
 {
-	void GeometryTester::runUnitTests()
+	void GeometryTester::run_unit_tests()
 	{
 		runAABBTests();
 		runTriangleTests();
@@ -32,10 +36,10 @@ namespace Test
 		run_sphere_tests();
 		run_point_tests();
 	}
-	void GeometryTester::runPerformanceTests()
+	void GeometryTester::run_performance_tests()
 	{
 		constexpr size_t triangleCount = 1000000 * 2;
-		std::vector<float> randomTrianglePoints = Utility::get_random(std::numeric_limits<float>::min(), std::numeric_limits<float>::max(), triangleCount * 3 * 3);
+		std::vector<float> randomTrianglePoints = Utility::get_random_numbers(std::numeric_limits<float>::min(), std::numeric_limits<float>::max(), triangleCount * 3 * 3);
 		std::vector<Geometry::Triangle> triangles;
 		triangles.reserve(triangleCount);
 
@@ -61,59 +65,34 @@ namespace Test
 		auto triangleTest10000 = [&triangleTest]() { triangleTest(10000); };
 		auto triangleTest100000 = [&triangleTest]() { triangleTest(100000); };
 		auto triangleTest1000000 = [&triangleTest]() { triangleTest(1000000); };
-		runPerformanceTest({"Triangle v Triangle 1", triangleTest1});
-		runPerformanceTest({"Triangle v Triangle 10", triangleTest10});
-		runPerformanceTest({"Triangle v Triangle 100", triangleTest100});
-		runPerformanceTest({"Triangle v Triangle 1,000", triangleTest1000});
-		runPerformanceTest({"Triangle v Triangle 10,000", triangleTest10000});
-		runPerformanceTest({"Triangle v Triangle 100,000", triangleTest100000});
-		runPerformanceTest({"Triangle v Triangle 1,000,000", triangleTest1000000});
+		emplace_performance_test({"Triangle v Triangle 1", triangleTest1});
+		emplace_performance_test({"Triangle v Triangle 10", triangleTest10});
+		emplace_performance_test({"Triangle v Triangle 100", triangleTest100});
+		emplace_performance_test({"Triangle v Triangle 1,000", triangleTest1000});
+		emplace_performance_test({"Triangle v Triangle 10,000", triangleTest10000});
+		emplace_performance_test({"Triangle v Triangle 100,000", triangleTest100000});
+		emplace_performance_test({"Triangle v Triangle 1,000,000", triangleTest1000000});
 	}
 
 	void GeometryTester::runAABBTests()
 	{
 		{SCOPE_SECTION("Default intiailise");
 			Geometry::AABB aabb;
-			runUnitTest({aabb.get_size() == glm::vec3(0.f), "AABB initialise size at 0", "Expected size of default AABB to be 0"});
-			runUnitTest({aabb.get_center () == glm::vec3(0.f), "AABB initialise to world origin", "Expected default AABB to start at [0, 0, 0]"});
-			runUnitTest({aabb.get_center () == glm::vec3(0.f), "AABB initialise to world origin", "Expected default AABB to start at [0, 0, 0]"});
+			emplace_unit_test({aabb.get_size() == glm::vec3(0.f), "AABB initialise size at 0", "Expected size of default AABB to be 0"});
+			emplace_unit_test({aabb.get_center () == glm::vec3(0.f), "AABB initialise to world origin", "Expected default AABB to start at [0, 0, 0]"});
+			emplace_unit_test({aabb.get_center () == glm::vec3(0.f), "AABB initialise to world origin", "Expected default AABB to start at [0, 0, 0]"});
 		}
 		{SCOPE_SECTION("Initialise with a min and max");
 			// An AABB at low point [-1,-1,-1] to [1,1,1]
 			auto aabb = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-			runUnitTest({aabb.get_size() == glm::vec3(2.f), "AABB initialised with min and max size at 2", "Expected size of AABB to be 2"});
-			runUnitTest({aabb.get_center() == glm::vec3(0.f), "AABB initialise with min and max position", "Expected AABB to center at [0, 0, 0]"});
+			emplace_unit_test({aabb.get_size() == glm::vec3(2.f), "AABB initialised with min and max size at 2", "Expected size of AABB to be 2"});
+			emplace_unit_test({aabb.get_center() == glm::vec3(0.f), "AABB initialise with min and max position", "Expected AABB to center at [0, 0, 0]"});
 		}
 		{SCOPE_SECTION("Initialise with a min and max not at origin");
 			// An AABB at low point [1,1,1] to [5,5,5] size of 4 center at [3,3,3]
 			auto aabb = Geometry::AABB(glm::vec3(1.f), glm::vec3(5.f));
-			runUnitTest({aabb.get_size() == glm::vec3(4.f), "AABB initialised with min and max not at origin", "Expected size of AABB to be 4.f"});
-			runUnitTest({aabb.get_center() == glm::vec3(3.f), "AABB initialised with min and max not at origin", "Expected AABB to center at [3, 3, 3]"});
-		}
-
-		{SCOPE_SECTION("Tranform");
-		}
-		{SCOPE_SECTION("Unite");
-
-			{SCOPE_SECTION("check result of the static AABB::unite is the same as member unite");
-			}
-		}
-		{SCOPE_SECTION("Contains");
-
-		}
-
-		{SCOPE_SECTION("Intersections");
-			{SCOPE_SECTION("No touch in all directions");
-				const auto originAABB = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-
-				// Create an AABB in line with all 6 faces
-				const auto leftAABB  = Geometry::AABB::transform(originAABB, glm::vec3(), glm::mat4(1.f), glm::vec3(1.f));
-				const auto rightAABB = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-				const auto aboveAABB = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-				const auto belowAABB = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-				const auto frontAABB = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-				const auto backAABB  = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-			}
+			emplace_unit_test({aabb.get_size() == glm::vec3(4.f), "AABB initialised with min and max not at origin", "Expected size of AABB to be 4.f"});
+			emplace_unit_test({aabb.get_center() == glm::vec3(3.f), "AABB initialised with min and max not at origin", "Expected AABB to center at [3, 3, 3]"});
 		}
 	}
 
@@ -720,3 +699,4 @@ namespace Test
 		ImGui::End();
 	}
 }// namespace Test
+DISABLE_WARNING_POP

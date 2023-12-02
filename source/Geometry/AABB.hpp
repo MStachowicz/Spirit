@@ -5,31 +5,28 @@
 
 namespace Geometry
 {
-    // Axis alligned bounding box
-    class AABB
-    {
-    public:
-        glm::vec3 mMin;
-        glm::vec3 mMax;
+	// Axis alligned bounding box
+	class AABB
+	{
+	public:
+		glm::vec3 m_min;
+		glm::vec3 m_max;
 
-        AABB();
-        AABB(const float& pLowX, const float& pHighX, const float& pLowY, const float& pHighY, const float& pLowZ, const float& pHighZ);
-        AABB(const glm::vec3& pLowPoint, const glm::vec3& pHighPoint);
+		AABB();
+		AABB(const float& p_low_X, const float& p_high_X, const float& p_low_Y, const float& p_high_Y, const float& p_low_Z, const float& p_high_Z);
+		AABB(const glm::vec3& p_min, const glm::vec3& p_max);
 
-        glm::vec3 get_size() const;
-        glm::vec3 get_center() const;
-        // Returns the surface normal of the AABB at pPointOnAABBInWorldSpace.
-        // This function does not handle edge points on the AABB and returns only the normal of one of the 6 faces of the cuboid.
-        glm::vec3 getNormal(const glm::vec3& pPointOnAABBInWorldSpace) const;
+		glm::vec3 get_size() const;
+		glm::vec3 get_center() const;
 
-        void unite(const glm::vec3& pPoint);
-        void unite(const AABB& pAABB);
+		void unite(const glm::vec3& p_point);
+		void unite(const AABB& p_AABB);
 
-        bool contains(const AABB& pAABB) const;
-        // Return a bounding box encompassing both bounding boxes.
-        static AABB unite(const AABB& pAABB, const AABB& pAABB2);
-        static AABB unite(const AABB& pAABB, const glm::vec3& pPoint);
-        // Returns an encompassing AABB after translating and transforming pAABB.
-        static AABB transform(const AABB& pAABB, const glm::vec3& pPosition, const glm::mat4& pRotation, const glm::vec3& pScale);
-    };
+		bool contains(const AABB& p_AABB) const;
+		// Return a bounding box encompassing both bounding boxes.
+		static AABB unite(const AABB& p_AABB, const AABB& pAABB2);
+		static AABB unite(const AABB& p_AABB, const glm::vec3& p_point);
+		// Returns an encompassing AABB after translating and transforming p_AABB.
+		static AABB transform(const AABB& p_AABB, const glm::vec3& p_position, const glm::mat4& p_rotation, const glm::vec3& p_scale);
+	};
 }// namespace Geometry

@@ -1,35 +1,28 @@
 #pragma once
 
-// System
-#include "CollisionSystem.hpp"
-#include "InputSystem.hpp"
-#include "MeshSystem.hpp"
-#include "PhysicsSystem.hpp"
-#include "SceneSystem.hpp"
-#include "TextureSystem.hpp"
+#include "System/CollisionSystem.hpp"
+#include "System/InputSystem.hpp"
+#include "System/MeshSystem.hpp"
+#include "System/PhysicsSystem.hpp"
+#include "System/SceneSystem.hpp"
+#include "System/TextureSystem.hpp"
 
-// UI
-#include "Editor.hpp"
+#include "UI/Editor.hpp"
 
-// Platform
-#include "Core.hpp"
-#include "Window.hpp"
-#include "Input.hpp"
+#include "Platform/Core.hpp"
+#include "Platform/Window.hpp"
+#include "Platform/Input.hpp"
 
-// OpenGL
-#include "OpenGLRenderer.hpp"
-#include "DebugRenderer.hpp"
+#include "OpenGL/OpenGLRenderer.hpp"
+#include "OpenGL/DebugRenderer.hpp"
 #include "OpenGL/GridRenderer.hpp"
 
-// Utility
-#include "File.hpp"
-#include "Logger.hpp"
-#include "Stopwatch.hpp"
+#include "Utility/File.hpp"
+#include "Utility/Logger.hpp"
+#include "Utility/Stopwatch.hpp"
 
-// Test
-#include "TestManager.hpp"
+#include "Test/TestManager.hpp"
 
-// STD
 #include <chrono>
 
 // Application manages the ownership and calling of all the Systems.
@@ -37,165 +30,167 @@
 class Application
 {
 public:
-    Application(Platform::Input& p_input, Platform::Window& p_window) noexcept;
-    ~Application() noexcept;
-    void simulationLoop();
+	Application(Platform::Input& p_input, Platform::Window& p_window) noexcept;
+	~Application() noexcept;
+	void simulation_loop();
 
 private:
-    Platform::Input& m_input;
-    Platform::Window& m_window; // Main window all application business takes place in. When this window is closed, the application ends and vice-versa.
+	Platform::Input& m_input;
+	Platform::Window& m_window; // Main window all application business takes place in. When this window is closed, the application ends and vice-versa.
 
-    System::TextureSystem mTextureSystem;
-    System::MeshSystem mMeshSystem;
-    System::SceneSystem mSceneSystem;
+	System::TextureSystem m_texture_system;
+	System::MeshSystem m_mesh_system;
+	System::SceneSystem m_scene_system;
 
-    OpenGL::OpenGLRenderer mOpenGLRenderer;
-    OpenGL::GridRenderer m_grid_renderer;
+	OpenGL::OpenGLRenderer m_openGL_renderer;
+	OpenGL::GridRenderer m_grid_renderer;
 
-    System::CollisionSystem mCollisionSystem;
-    System::PhysicsSystem mPhysicsSystem;
-    System::InputSystem mInputSystem;
+	System::CollisionSystem m_collision_system;
+	System::PhysicsSystem m_physics_system;
+	System::InputSystem m_input_system;
 
-    UI::Editor mEditor;
+	UI::Editor m_editor;
 
-    bool mSimulationLoopParamsChanged;       // True when the template params of simulationLoop change, causes an exit from the loop and re-run
-    int mPhysicsTicksPerSecond;              // The number of physics updates to perform per second. This is equivalent to the pPhysicsTicksPerSecond template param of simulationLoop.
-    int mRenderTicksPerSecond;               // The number of renders to perform per second. This is equivalent to the pRenderTicksPerSecond template param of simulationLoop.
-    int m_input_ticks_per_second;            // The number of input system updates to perform every second;
-    std::chrono::milliseconds maxFrameDelta; // If the time between loops is beyond this, cap at this duration
+	bool m_simulation_loop_params_changed;       // True when the template params of simulation_loop change, causes an exit from the loop and re-run
+	int m_physics_ticks_per_second;              // The number of physics updates to perform per second. This is equivalent to the pPhysicsTicksPerSecond template param of simulation_loop.
+	int m_render_ticks_per_second;               // The number of renders to perform per second. This is equivalent to the pRenderTicksPerSecond template param of simulation_loop.
+	int m_input_ticks_per_second;            // The number of input system updates to perform every second;
+	std::chrono::milliseconds maxFrameDelta; // If the time between loops is beyond this, cap at this duration
 
-    // This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
-    // It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
-    // pPhysicsTicksPerSecond: The target number of physics ticks per second. This template parameter is always equivalent to mPhysicsTicksPerSecond.
-    // pRenderTicksPerSecond: The target number of renders per second. This template parameter is always equivalent to mRenderTicksPerSecond.
-    template <int pPhysicsTicksPerSecond, int pRenderTicksPerSecond, int p_input_ticks_per_second>
-    void simulationLoop()
-    {
-        using Clock = std::chrono::steady_clock;
+	// This simulation loop uses a physics timestep based on integer type giving no truncation or round-off error.
+	// It's required to be templated to allow physicsTimestep to be set using std::ratio as the chrono::duration period.
+	// pPhysicsTicksPerSecond: The target number of physics ticks per second. This template parameter is always equivalent to m_physics_ticks_per_second.
+	// pRenderTicksPerSecond: The target number of renders per second. This template parameter is always equivalent to m_render_ticks_per_second.
+	template <int pPhysicsTicksPerSecond, int pRenderTicksPerSecond, int p_input_ticks_per_second>
+	void simulation_loop()
+	{
+		using Clock = std::chrono::steady_clock;
 
-        constexpr auto physicsTimestep = std::chrono::duration<Clock::rep, std::ratio<1, pPhysicsTicksPerSecond>>{1};
-        constexpr auto renderTimestep  = std::chrono::duration<Clock::rep, std::ratio<1, pRenderTicksPerSecond>>{1};
-        constexpr auto input_timestep  = std::chrono::duration<Clock::rep, std::ratio<1, p_input_ticks_per_second>>{1};
+		constexpr auto physicsTimestep = std::chrono::duration<Clock::rep, std::ratio<1, pPhysicsTicksPerSecond>>{1};
+		constexpr auto renderTimestep  = std::chrono::duration<Clock::rep, std::ratio<1, pRenderTicksPerSecond>>{1};
+		constexpr auto input_timestep  = std::chrono::duration<Clock::rep, std::ratio<1, p_input_ticks_per_second>>{1};
 
-        // The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both a Clock::duration and 1/60 of a second.
-        // Time-based arithmetic will have no truncation error, or any round-off error if Clock::duration is integral-based (std::chrono::nanoseconds for steady_clock is integral based).
-        using Duration  = decltype(Clock::duration{} + physicsTimestep);
-        using TimePoint = std::chrono::time_point<Clock, Duration>;
+		// The resultant sum of a Clock::duration and physicsTimestep. This will be the coarsest precision that can exactly represent both a Clock::duration and 1/60 of a second.
+		// Time-based arithmetic will have no truncation error, or any round-off error if Clock::duration is integral-based (std::chrono::nanoseconds for steady_clock is integral based).
+		using Duration  = decltype(Clock::duration{} + physicsTimestep);
+		using TimePoint = std::chrono::time_point<Clock, Duration>;
 
-        LOG("Target physics ticks per second: {} (timestep: {}ms = {})", pPhysicsTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count(), physicsTimestep);
-        LOG("Target render ticks per second:  {} (timestep: {}ms = {})", pRenderTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(renderTimestep).count(), renderTimestep);
-        LOG("Target input ticks per second:   {} (timestep: {}ms = {})", p_input_ticks_per_second, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(input_timestep).count(), input_timestep);
+		LOG("Target physics ticks per second: {} (timestep: {}ms = {})", pPhysicsTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physicsTimestep).count(), physicsTimestep);
+		LOG("Target render ticks per second:  {} (timestep: {}ms = {})", pRenderTicksPerSecond, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(renderTimestep).count(), renderTimestep);
+		LOG("Target input ticks per second:   {} (timestep: {}ms = {})", p_input_ticks_per_second, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(input_timestep).count(), input_timestep);
 
-        Duration durationSinceLastPhysicsTick   = Duration::zero();     // Accumulated time since the last physics update.
-        Duration durationSinceLastRenderTick    = Duration::zero();     // Accumulated time since the last render.
-        Duration duration_since_last_input_tick = Duration::zero();     // Accumulated time since the last input update.
-        Duration durationSinceLastFrame         = Duration::zero();     // Time between this frame and last frame.
-        Duration durationApplicationRunning     = Duration::zero();     // Total time the application has been running.
+		Duration duration_since_last_physics_tick   = Duration::zero();     // Accumulated time since the last physics update.
+		Duration duration_since_last_render_tick    = Duration::zero();     // Accumulated time since the last render.
+		Duration duration_since_last_input_tick = Duration::zero();     // Accumulated time since the last input update.
+		Duration duration_since_last_frame         = Duration::zero();     // Time between this frame and last frame.
+		Duration duration_application_running     = Duration::zero();     // Total time the application has been running.
 
-        TimePoint physicsTime{};      // The time point the physics is advanced to currently.
-        TimePoint timeFrameStarted{}; // The time point at the start of a new frame.
-        TimePoint timeLastFrameStarted = Clock::now();
+		TimePoint physics_time{};      // The time point the physics is advanced to currently.
+		TimePoint time_frame_started{}; // The time point at the start of a new frame.
+		TimePoint time_last_frame_started = Clock::now();
 
-        // Continuous loop until the main window is marked for closing or Input requests close.
-        // While looping the physics updates by fixed timestep physicsTimestep
-        // The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
-        while (true)
-        {
-            OpenGL::DebugRenderer::clear();
+		// Continuous loop until the main window is marked for closing or Input requests close.
+		// While looping the physics updates by fixed timestep physicsTimestep
+		// The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
+		while (true)
+		{
+			OpenGL::DebugRenderer::clear();
 
-            if (duration_since_last_input_tick >= input_timestep)
-            {
-                m_input.update(); // Poll events then check close_requested.
-                if (m_window.close_requested() || mSimulationLoopParamsChanged)
-                    break;
+			if (duration_since_last_input_tick >= input_timestep)
+			{
+				m_input.update(); // Poll events then check close_requested.
+				if (m_window.close_requested() || m_simulation_loop_params_changed)
+					break;
 
-                mInputSystem.update(input_timestep);
-                duration_since_last_input_tick = Duration::zero();
-            }
+				m_input_system.update(input_timestep);
+				duration_since_last_input_tick = Duration::zero();
+			}
 
-            timeFrameStarted = Clock::now();
-            durationSinceLastFrame = timeFrameStarted - timeLastFrameStarted;
-            if (durationSinceLastFrame > maxFrameDelta)
-                durationSinceLastFrame = maxFrameDelta;
+			time_frame_started = Clock::now();
+			duration_since_last_frame = time_frame_started - time_last_frame_started;
+			if (duration_since_last_frame > maxFrameDelta)
+				duration_since_last_frame = maxFrameDelta;
 
-            timeLastFrameStarted            = timeFrameStarted;
-            durationApplicationRunning      += durationSinceLastFrame;
-            durationSinceLastPhysicsTick    += durationSinceLastFrame;
-            durationSinceLastRenderTick     += durationSinceLastFrame;
-            duration_since_last_input_tick  += durationSinceLastFrame;
+			time_last_frame_started            = time_frame_started;
+			duration_application_running      += duration_since_last_frame;
+			duration_since_last_physics_tick  += duration_since_last_frame;
+			duration_since_last_render_tick   += duration_since_last_frame;
+			duration_since_last_input_tick    += duration_since_last_frame;
 
-            // Apply physics updates until accumulated time is below physicsTimestep step
-            while (durationSinceLastPhysicsTick >= physicsTimestep)
-            {
-                durationSinceLastPhysicsTick -= physicsTimestep;
-                physicsTime                  += physicsTimestep;
-                mPhysicsSystem.integrate(physicsTimestep); // PhysicsSystem::Integrate takes a floating point rep duration, conversion here is troublesome.
-                mSceneSystem.update_scene_bounds();
-            }
+			// Apply physics updates until accumulated time is below physicsTimestep step
+			while (duration_since_last_physics_tick >= physicsTimestep)
+			{
+				duration_since_last_physics_tick -= physicsTimestep;
+				physics_time                     += physicsTimestep;
+				m_physics_system.integrate(physicsTimestep); // PhysicsSystem::Integrate takes a floating point rep duration, conversion here is troublesome.
+				m_scene_system.update_scene_bounds();
+			}
 
-            if (durationSinceLastRenderTick >= renderTimestep)
-            {
-                // Rendering is only relevant if the data changed in the physics update.
-                // Not neccessary to decrement durationSinceLastRenderTick as in physics update above as repeated draws will be identical with no data changes.
-                m_window.start_ImGui_frame();
-                mOpenGLRenderer.start_frame();
+			if (duration_since_last_render_tick >= renderTimestep)
+			{
+				// Rendering is only relevant if the data changed in the physics update.
+				// Not neccessary to decrement duration_since_last_render_tick as in physics update above as repeated draws will be identical with no data changes.
+				m_window.start_ImGui_frame();
+				m_openGL_renderer.start_frame();
 
-                m_grid_renderer.draw();
-                mOpenGLRenderer.draw(durationSinceLastRenderTick);
-                mEditor.draw(durationSinceLastRenderTick);
-                OpenGL::DebugRenderer::render(mSceneSystem, mOpenGLRenderer.mViewInformation.mViewPosition);
+				m_grid_renderer.draw();
+				m_openGL_renderer.draw(duration_since_last_render_tick);
+				m_editor.draw(duration_since_last_render_tick);
+				OpenGL::DebugRenderer::render(m_scene_system);
 
-                mOpenGLRenderer.end_frame();
-                m_window.end_ImGui_frame();
-                m_window.swap_buffers();
+				m_openGL_renderer.end_frame();
+				m_window.end_ImGui_frame();
+				m_window.swap_buffers();
 
-                durationSinceLastRenderTick = Duration::zero();
-            }
-        }
+				duration_since_last_render_tick = Duration::zero();
+			}
+		}
 
-        const auto totalTimeSeconds = std::chrono::duration_cast<std::chrono::seconds>(durationApplicationRunning);
-        const float renderFPS  = static_cast<float>(mEditor.mDrawCount)          / totalTimeSeconds.count();
-        const float physicsFPS = static_cast<float>(mPhysicsSystem.m_update_count) / totalTimeSeconds.count();
-        const float input_FPS  = static_cast<float>(mInputSystem.m_update_count) / totalTimeSeconds.count();
+		#ifndef Z_RELEASE
+		const auto total_time_seconds = std::chrono::duration_cast<std::chrono::seconds>(duration_application_running);
+		const float render_FPS  = static_cast<float>(m_editor.m_draw_count)           / total_time_seconds.count();
+		const float physics_FPS = static_cast<float>(m_physics_system.m_update_count) / total_time_seconds.count();
+		const float input_FPS   = static_cast<float>(m_input_system.m_update_count)   / total_time_seconds.count();
 
-        LOG("------------------------------------------------------------------------");
-        LOG("Total simulation time: {}", totalTimeSeconds);
-        LOG("Total physics updates: {}", mPhysicsSystem.m_update_count);
-        LOG("Averaged physics updates per second: {}/s (target: {}/s)", physicsFPS, pPhysicsTicksPerSecond);
-        LOG("Total rendered frames: {}", mEditor.mDrawCount);
-        LOG("Averaged render frames per second: {}/s (target: {}/s)", renderFPS, pRenderTicksPerSecond);
-        LOG("Total input updates: {}", mInputSystem.m_update_count);
-        LOG("Averaged input updates per second: {}/s (target: {}/s)", input_FPS, p_input_ticks_per_second);
-    }
+		LOG("------------------------------------------------------------------------");
+		LOG("Total simulation time: {}", total_time_seconds);
+		LOG("Total physics updates: {}", m_physics_system.m_update_count);
+		LOG("Averaged physics updates per second: {}/s (target: {}/s)", physics_FPS, pPhysicsTicksPerSecond);
+		LOG("Total rendered frames: {}", m_editor.m_draw_count);
+		LOG("Averaged render frames per second: {}/s (target: {}/s)", render_FPS, pRenderTicksPerSecond);
+		LOG("Total input updates: {}", m_input_system.m_update_count);
+		LOG("Averaged input updates per second: {}/s (target: {}/s)", input_FPS, p_input_ticks_per_second);
+		#endif
+	}
 };
 
-int main(int argc, char *argv[])
-{
-    {
-        Utility::Stopwatch stopwatch;
+int main(int argc, char* argv[])
+{ (void)argv;
+	{
+		Utility::Stopwatch stopwatch;
 
-        // Library init order is important here
-        // GLFW <- Window/GL context <- OpenGL functions <- ImGui <- App
-        Platform::Core::initialise_directories();
-        Platform::Core::initialise_GLFW();
-        Platform::Input input   = Platform::Input();
-        Platform::Window window = Platform::Window(1920, 1080, input);
-        Platform::Core::initialise_OpenGL();
-        OpenGL::DebugRenderer::init();
-        Platform::Core::initialise_ImGui(window);
-        //Test::runUnitTests(false);
+		// Library init order is important here
+		// GLFW <- Window/GL context <- OpenGL functions <- ImGui <- App
+		Platform::Core::initialise_directories();
+		Platform::Core::initialise_GLFW();
+		Platform::Input input   = Platform::Input();
+		Platform::Window window = Platform::Window(1920, 1080, input);
+		Platform::Core::initialise_OpenGL();
+		OpenGL::DebugRenderer::init();
+		Platform::Core::initialise_ImGui(window);
+		//Test::run_unit_tests(false);
 
-        LOG("[INIT] Number of arguments passed on launch: {}", argc);
-        for (int index{}; index != argc; ++index)
-            LOG("Argument {}: {}", index + 1, argv[index]);
+		LOG("[INIT] Number of arguments passed on launch: {}", argc);
+		for (int index{}; index != argc; ++index)
+			LOG("Argument {}: {}", index + 1, argv[index]);
 
-        auto app = Application(input, window);
-        LOG("[INIT] initialisation took {}", stopwatch.duration_since_start<int, std::milli>());
+		auto app = Application(input, window);
+		LOG("[INIT] initialisation took {}", stopwatch.duration_since_start<int, std::milli>());
 
-        app.simulationLoop();
-    } // Window and input must go out of scope and destroy their resources before Core::cleanup
+		app.simulation_loop();
+	} // Window and input must go out of scope and destroy their resources before Core::cleanup
 
-    Platform::Core::cleanup();
-    OpenGL::DebugRenderer::deinit();
-    return EXIT_SUCCESS;
+	Platform::Core::cleanup();
+	OpenGL::DebugRenderer::deinit();
+	return EXIT_SUCCESS;
 }

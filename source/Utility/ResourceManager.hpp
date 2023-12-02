@@ -195,18 +195,18 @@ namespace Utility
 	private:
 		[[nodiscard]] Resource& get_resource(size_t p_index)
 		{
-			ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+			ASSERT_THROW(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!");
 			return m_resources[p_index]->m_resource;
 		}
 		[[nodiscard]] const Resource& get_resource(size_t p_index) const
 		{
-			ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+			ASSERT_THROW(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!");
 			return m_resources[p_index]->m_resource;
 		}
 
 		[[nodiscard]] size_t& get_counter(size_t p_index)
 		{
-			ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+			ASSERT_THROW(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!");
 			return m_resources[p_index]->m_count;
 		}
 
@@ -220,7 +220,7 @@ namespace Utility
 		// If the count reaches 0 then the ResourceData is removed from the manager.
 		void decrement(size_t p_index)
 		{
-			ASSERT(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!"); // Always
+			ASSERT_THROW(m_free_indices.contains(p_index) == false, "Trying to access a free p_index!");
 			if constexpr (LOG_REF_EVENTS) LOG("[ResourceManager] Decremented ResourceRef at index {} with count {}", p_index, get_counter(p_index) - 1);
 
 			if (--get_counter(p_index) == 0)

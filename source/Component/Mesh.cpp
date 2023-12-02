@@ -7,6 +7,5 @@ namespace Component
 	{}
 
 	void Mesh::draw_UI()
-	{
-	}
+	{}
 } // namespace Component

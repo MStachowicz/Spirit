@@ -1,14 +1,13 @@
 #include "PhysicsSystem.hpp"
+#include "CollisionSystem.hpp"
+#include "SceneSystem.hpp"
+
 #include "Component/Camera.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/RigidBody.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
-#include "System/CollisionSystem.hpp"
-#include "System/SceneSystem.hpp"
-
 #include "Geometry/Geometry.hpp"
-
 #include "Utility/Utility.hpp"
 
 namespace System
@@ -23,57 +22,57 @@ namespace System
 		, m_gravity{glm::vec3(0.f, -9.81f, 0.f)}
 	{}
 
-	void PhysicsSystem::integrate(const DeltaTime& pDeltaTime)
+	void PhysicsSystem::integrate(const DeltaTime& p_delta_time)
 	{
 		m_update_count++;
-		m_total_simulation_time += pDeltaTime;
+		m_total_simulation_time += p_delta_time;
 
-		auto& scene = m_scene_system.getCurrentScene();
-		scene.foreach([this, &pDeltaTime, &scene](ECS::Entity& entity, Component::RigidBody& rigid_body, Component::Transform& transform)
+		auto& scene = m_scene_system.get_current_scene();
+		scene.foreach([this, &p_delta_time, &scene](ECS::Entity& entity, Component::RigidBody& rigid_body, Component::Transform& transform)
 		{
-			if (rigid_body.mApplyGravity)
-				rigid_body.mForce += rigid_body.mMass * m_gravity; // F = ma
+			if (rigid_body.m_apply_gravity)
+				rigid_body.m_force += rigid_body.m_mass * m_gravity; // F = ma
 
 			{ // Linear motion
 				// Change in momentum is equal to the force = dp/dt = F
-				const auto changeInMomentum = rigid_body.mForce * pDeltaTime.count(); // dp = F dt
-				rigid_body.mMomentum += changeInMomentum;
+				const auto change_in_momentum = rigid_body.m_force * p_delta_time.count(); // dp = F dt
+				rigid_body.m_momentum += change_in_momentum;
 
 				// Convert momentum to velocity by dividing by mass: p = mv
-				rigid_body.mVelocity = rigid_body.mMomentum / rigid_body.mMass; // v = p/v
+				rigid_body.m_velocity = rigid_body.m_momentum / rigid_body.m_mass; // v = p/v
 
 				// Integrate velocity to find new position: dx/dt = v
-				const auto changeInPosition = rigid_body.mVelocity * pDeltaTime.count(); // dx = v dt
-				transform.mPosition += changeInPosition;
+				const auto change_in_position = rigid_body.m_velocity * p_delta_time.count(); // dx = v dt
+				transform.m_position += change_in_position;
 
-				rigid_body.mForce = glm::vec3(0.f); // Reset back to 0 after applying the force on the body.
+				rigid_body.m_force = glm::vec3(0.f); // Reset back to 0 after applying the force on the body.
 			}
 
 			{ // Angular motion
 				// http://physics.bu.edu/~redner/211-sp06/class-rigid-body/angularmo.html
-				const auto changeInAngularMomentum = rigid_body.mTorque * pDeltaTime.count(); // dL = T dt
-				rigid_body.mAngularMomentum += changeInAngularMomentum;
+				const auto change_in_angular_momentum = rigid_body.m_torque * p_delta_time.count(); // dL = T dt
+				rigid_body.m_angular_momentum += change_in_angular_momentum;
 
 				// Convert angular momentum to angular velocity by dividing by inertia tensor: L = Iω
-				rigid_body.mAngularVelocity = rigid_body.mAngularMomentum / rigid_body.mInertiaTensor; // ω = L / I
+				rigid_body.m_angular_velocity = rigid_body.m_angular_momentum / rigid_body.m_inertia_tensor; // ω = L / I
 
 				// To integrate the new quat orientation we convert the angular velocity into quaternion form - spin.
 				// Spin represents a time derivative of orientation. https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf
-				const glm::quat spin = 0.5f * glm::quat(0.f, (rigid_body.mAngularVelocity * pDeltaTime.count())) * transform.mOrientation;
+				const glm::quat spin = 0.5f * glm::quat(0.f, (rigid_body.m_angular_velocity * p_delta_time.count())) * transform.m_orientation;
 
 				// Integrate spin to find the new orientation
-				transform.mOrientation += spin;
-				transform.mOrientation = glm::normalize(transform.mOrientation);
+				transform.m_orientation += spin;
+				transform.m_orientation = glm::normalize(transform.m_orientation);
 				// Recalculate the direction and rotation mat
-				transform.mDirection = glm::normalize(transform.mOrientation * Component::Transform::Starting_Forward_Direction);
-				transform.mRollPitchYaw = glm::degrees(Utility::toRollPitchYaw(transform.mOrientation));
+				transform.m_direction = glm::normalize(transform.m_orientation * Component::Transform::Starting_Forward_Direction);
+				transform.m_roll_pitch_yaw = glm::degrees(Utility::to_roll_pitch_yaw(transform.m_orientation));
 			}
 
-			const auto rotationMatrix = glm::mat4_cast(transform.mOrientation);
+			const auto rotationMatrix = glm::mat4_cast(transform.m_orientation);
 
-			transform.mModel = glm::translate(glm::identity<glm::mat4>(), transform.mPosition);
-			transform.mModel *= rotationMatrix;
-			transform.mModel = glm::scale(transform.mModel, transform.mScale);
+			transform.m_model = glm::translate(glm::identity<glm::mat4>(), transform.m_position);
+			transform.m_model *= rotationMatrix;
+			transform.m_model = glm::scale(transform.m_model, transform.m_scale);
 
 			// After moving and updating the Collider, check for collisions and respond
 
@@ -84,21 +83,21 @@ namespace System
 				{
 					// A collision has occurred at the new position, the response depends on the collided entity having a rigibBody to apply a response to.
 					// We already know the collided Entity has a Transform component from CollisionSystem::getCollision so we dont have to check it here.
-					// The collision data returned is original-Entity-centric this convention is carried over in the response here when calling angularImpulse.
-					if (scene.hasComponents<Component::RigidBody>(collided_entity))
+					// The collision data returned is original-Entity-centric this convention is carried over in the response here when calling angular_impulse.
+					if (scene.has_components<Component::RigidBody>(collided_entity))
 					{
-						auto& rigidBody2 = m_scene_system.getCurrentScene().getComponentMutable<Component::RigidBody>(collided_entity);
-						auto& transform2 = m_scene_system.getCurrentScene().getComponentMutable<Component::Transform>(collided_entity);
+						auto& rigid_body_2 = m_scene_system.get_current_scene().get_component_mutable<Component::RigidBody>(collided_entity);
+						auto& transform_2  = m_scene_system.get_current_scene().get_component_mutable<Component::Transform>(collided_entity);
 
-						auto impulse = Geometry::angularImpulse(collision->position, collision->normal, m_restitution,
-																transform.mPosition, rigid_body.mVelocity, rigid_body.mAngularVelocity, rigid_body.mMass, rigid_body.mInertiaTensor,
-																transform2.mPosition, rigidBody2.mVelocity, rigidBody2.mAngularVelocity, rigidBody2.mMass, rigidBody2.mInertiaTensor);
+						auto impulse = Geometry::angular_impulse(collision->position, collision->normal, m_restitution,
+																transform.m_position, rigid_body.m_velocity, rigid_body.m_angular_velocity, rigid_body.m_mass, rigid_body.m_inertia_tensor,
+																transform_2.m_position, rigid_body_2.m_velocity, rigid_body_2.m_angular_velocity, rigid_body_2.m_mass, rigid_body_2.m_inertia_tensor);
 
-						const auto r             = collision->position - transform.mPosition;
-						const auto inverseTensor = glm::inverse(rigid_body.mInertiaTensor);
+						const auto r             = collision->position - transform.m_position;
+						const auto inverseTensor = glm::inverse(rigid_body.m_inertia_tensor);
 
-						rigid_body.mVelocity        = rigid_body.mVelocity + (impulse / rigid_body.mMass);
-						rigid_body.mAngularVelocity = rigid_body.mAngularVelocity + (glm::cross(r, impulse) * inverseTensor);
+						rigid_body.m_velocity        = rigid_body.m_velocity + (impulse / rigid_body.m_mass);
+						rigid_body.m_angular_velocity = rigid_body.m_angular_velocity + (glm::cross(r, impulse) * inverseTensor);
 
 						// #TODO: Apply a response to collision.mEntity
 					}

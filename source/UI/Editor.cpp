@@ -30,19 +30,19 @@
 
 namespace UI
 {
-	Editor::Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer)
+	Editor::Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system, System::SceneSystem& p_scene_system, System::CollisionSystem& p_collision_system, OpenGL::OpenGLRenderer& p_openGL_renderer)
 		: m_input{p_input}
 		, m_window{p_window}
-		, mTextureSystem{pTextureSystem}
-		, mMeshSystem{pMeshSystem}
-		, mSceneSystem{pSceneSystem}
-		, mCollisionSystem{pCollisionSystem}
-		, mOpenGLRenderer{pOpenGLRenderer}
+		, m_texture_system{p_texture_system}
+		, m_mesh_system{p_mesh_system}
+		, m_scene_system{p_scene_system}
+		, m_collision_system{p_collision_system}
+		, m_openGL_renderer{p_openGL_renderer}
 		, m_click_rays{}
-		, mSelectedEntities{}
+		, m_selected_entities{}
 		, m_console{}
-		, mWindowsToDisplay{}
-		, mDrawCount{0}
+		, m_windows_to_display{}
+		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
 	{
@@ -72,17 +72,17 @@ namespace UI
 				{
 					if (p_action == Platform::Action::Press)
 					{
-						const auto& view_info = mOpenGLRenderer.mViewInformation;
-						auto cursorRay = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.mViewPosition, view_info.mProjection, view_info.mView);
+						const auto& view_info = m_openGL_renderer.m_view_information;
+						auto cursorRay = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						m_click_rays.emplace_back(cursorRay);
-						auto entitiesUnderMouse = mCollisionSystem.get_entities_along_ray(cursorRay);
+						auto entitiesUnderMouse = m_collision_system.get_entities_along_ray(cursorRay);
 
 						if (!entitiesUnderMouse.empty())
 						{
 							std::sort(entitiesUnderMouse.begin(), entitiesUnderMouse.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
 							auto entityCollided = entitiesUnderMouse.front().first;
 
-							mSelectedEntities.push_back(entityCollided);
+							m_selected_entities.push_back(entityCollided);
 							LOG("[EDITOR] Entity{} has been selected", entityCollided.ID);
 						}
 					}
@@ -99,7 +99,7 @@ namespace UI
 		}
 	}
 	void Editor::on_key_event(Platform::Key p_key, Platform::Action p_action)
-	{}
+	{ (void)p_key; (void)p_action; }
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
 	{
@@ -112,28 +112,28 @@ namespace UI
 		{
 			if (ImGui::BeginMenu("View"))
 			{
-				ImGui::MenuItem("Entity hierarchy", NULL, &mWindowsToDisplay.Entity);
-				ImGui::MenuItem("Console",          NULL, &mWindowsToDisplay.Console);
+				ImGui::MenuItem("Entity hierarchy", NULL, &m_windows_to_display.Entity);
+				ImGui::MenuItem("Console",          NULL, &m_windows_to_display.Console);
 
 				if (ImGui::BeginMenu("Debug"))
 				{
-					ImGui::MenuItem("Debug options", NULL, &mWindowsToDisplay.Debug);
-					ImGui::MenuItem("FPS Timer",     NULL, &mWindowsToDisplay.FPSTimer);
+					ImGui::MenuItem("Debug options", NULL, &m_windows_to_display.Debug);
+					ImGui::MenuItem("FPS Timer",     NULL, &m_windows_to_display.FPSTimer);
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("ImGui"))
 				{
-					ImGui::MenuItem("Demo",             NULL, &mWindowsToDisplay.ImGuiDemo);
-					ImGui::MenuItem("Metrics/Debugger", NULL, &mWindowsToDisplay.ImGuiMetrics);
-					ImGui::MenuItem("Stack",            NULL, &mWindowsToDisplay.ImGuiStack);
-					ImGui::MenuItem("About",            NULL, &mWindowsToDisplay.ImGuiAbout);
-					ImGui::MenuItem("Style Editor",     NULL, &mWindowsToDisplay.ImGuiStyleEditor);
+					ImGui::MenuItem("Demo",             NULL, &m_windows_to_display.ImGuiDemo);
+					ImGui::MenuItem("Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
+					ImGui::MenuItem("Stack",            NULL, &m_windows_to_display.ImGuiStack);
+					ImGui::MenuItem("About",            NULL, &m_windows_to_display.ImGuiAbout);
+					ImGui::MenuItem("Style Editor",     NULL, &m_windows_to_display.ImGuiStyleEditor);
 
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenu();
 			}
-			if (mWindowsToDisplay.FPSTimer)
+			if (m_windows_to_display.FPSTimer)
 			{
 				auto fps = get_fps(m_duration_between_draws, m_time_to_average_over);
 				std::string fps_str = std::format("FPS: {:.1f}", fps);
@@ -144,68 +144,68 @@ namespace UI
 				else if (fps > 30.f) colour = glm::vec4(255.f, 255.f, 0.f, 255.f);
 				else                 colour = glm::vec4(255.f, 0.f, 0.f, 255.f);
 
-				ImGui::TextColored(colour, fps_str.c_str());
+				ImGui::TextColored(colour, "%s", fps_str.c_str());
 			}
 			ImGui::EndMenuBar();
 		}
-		if (mWindowsToDisplay.Entity)        draw_entity_tree_window();
-		if (mWindowsToDisplay.Console)       draw_console_window();
+		if (m_windows_to_display.Entity)        draw_entity_tree_window();
+		if (m_windows_to_display.Console)       draw_console_window();
 		draw_debug_window();
-		if (mWindowsToDisplay.ImGuiDemo)     ImGui::ShowDemoWindow(&mWindowsToDisplay.ImGuiDemo);
-		if (mWindowsToDisplay.ImGuiMetrics)  ImGui::ShowMetricsWindow(&mWindowsToDisplay.ImGuiMetrics);
-		if (mWindowsToDisplay.ImGuiStack)    ImGui::ShowStackToolWindow(&mWindowsToDisplay.ImGuiStack);
-		if (mWindowsToDisplay.ImGuiAbout)    ImGui::ShowAboutWindow(&mWindowsToDisplay.ImGuiAbout);
-		if (mWindowsToDisplay.ImGuiStyleEditor)
+		if (m_windows_to_display.ImGuiDemo)     ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
+		if (m_windows_to_display.ImGuiMetrics)  ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
+		if (m_windows_to_display.ImGuiStack)    ImGui::ShowStackToolWindow(&m_windows_to_display.ImGuiStack);
+		if (m_windows_to_display.ImGuiAbout)    ImGui::ShowAboutWindow(&m_windows_to_display.ImGuiAbout);
+		if (m_windows_to_display.ImGuiStyleEditor)
 		{
-			ImGui::Begin("Dear ImGui Style Editor", &mWindowsToDisplay.ImGuiStyleEditor);
+			ImGui::Begin("Dear ImGui Style Editor", &m_windows_to_display.ImGuiStyleEditor);
 			ImGui::ShowStyleEditor();
 			ImGui::End();
 		}
 
-		mDrawCount++;
+		m_draw_count++;
 	}
 	void Editor::draw_entity_tree_window()
 	{
-		if (ImGui::Begin("Entities", &mWindowsToDisplay.Entity))
+		if (ImGui::Begin("Entities", &m_windows_to_display.Entity))
 		{
-			auto& scene = mSceneSystem.getCurrentScene();
-			scene.foreachEntity([&](ECS::Entity& pEntity)
+			auto& scene = m_scene_system.get_current_scene();
+			scene.foreach_entity([&](ECS::Entity& p_entity)
 			{
-				std::string title = "Entity " + std::to_string(pEntity.ID);
-				if (scene.hasComponents<Component::Label>(pEntity))
+				std::string title = "Entity " + std::to_string(p_entity.ID);
+				if (scene.has_components<Component::Label>(p_entity))
 				{
-					auto label = scene.getComponentMutable<Component::Label&>(pEntity);
+					auto label = scene.get_component_mutable<Component::Label&>(p_entity);
 					title = label.mName;
 				}
 
 				if (ImGui::TreeNode(title.c_str()))
 				{
-					if (scene.hasComponents<Component::Transform>(pEntity))
-						scene.getComponentMutable<Component::Transform&>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::Collider>(pEntity))
-						scene.getComponentMutable<Component::Collider&>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::RigidBody>(pEntity))
-						scene.getComponentMutable<Component::RigidBody&>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::DirectionalLight>(pEntity))
-						scene.getComponentMutable<Component::DirectionalLight&>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::SpotLight>(pEntity))
-						scene.getComponentMutable<Component::SpotLight&>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::PointLight>(pEntity))
-						scene.getComponentMutable<Component::PointLight&>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::Camera>(pEntity))
-						scene.getComponentMutable<Component::Camera>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::ParticleEmitter>(pEntity))
-						scene.getComponentMutable<Component::ParticleEmitter>(pEntity).draw_UI(mTextureSystem);
-					if (scene.hasComponents<Component::Terrain>(pEntity))
-						scene.getComponentMutable<Component::Terrain>(pEntity).draw_UI(mTextureSystem);
-					if (scene.hasComponents<Component::Mesh>(pEntity))
-						scene.getComponentMutable<Component::Mesh>(pEntity).draw_UI();
-					if (scene.hasComponents<Component::Texture>(pEntity))
-						scene.getComponentMutable<Component::Texture>(pEntity).draw_UI(mTextureSystem);
+					if (scene.has_components<Component::Transform>(p_entity))
+						scene.get_component_mutable<Component::Transform&>(p_entity).draw_UI();
+					if (scene.has_components<Component::Collider>(p_entity))
+						scene.get_component_mutable<Component::Collider&>(p_entity).draw_UI();
+					if (scene.has_components<Component::RigidBody>(p_entity))
+						scene.get_component_mutable<Component::RigidBody&>(p_entity).draw_UI();
+					if (scene.has_components<Component::DirectionalLight>(p_entity))
+						scene.get_component_mutable<Component::DirectionalLight&>(p_entity).draw_UI();
+					if (scene.has_components<Component::SpotLight>(p_entity))
+						scene.get_component_mutable<Component::SpotLight&>(p_entity).draw_UI();
+					if (scene.has_components<Component::PointLight>(p_entity))
+						scene.get_component_mutable<Component::PointLight&>(p_entity).draw_UI();
+					if (scene.has_components<Component::Camera>(p_entity))
+						scene.get_component_mutable<Component::Camera>(p_entity).draw_UI();
+					if (scene.has_components<Component::ParticleEmitter>(p_entity))
+						scene.get_component_mutable<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
+					if (scene.has_components<Component::Terrain>(p_entity))
+						scene.get_component_mutable<Component::Terrain>(p_entity).draw_UI(m_texture_system);
+					if (scene.has_components<Component::Mesh>(p_entity))
+						scene.get_component_mutable<Component::Mesh>(p_entity).draw_UI();
+					if (scene.has_components<Component::Texture>(p_entity))
+						scene.get_component_mutable<Component::Texture>(p_entity).draw_UI(m_texture_system);
 
 					ImGui::SeparatorText("Quick options");
 					if (ImGui::Button("Delete entity"))
-						scene.deleteEntity(pEntity);
+						scene.delete_entity(p_entity);
 
 					ImGui::Separator();
 					ImGui::TreePop();
@@ -216,19 +216,19 @@ namespace UI
 	}
 	void Editor::draw_console_window()
 	{
-		m_console.draw("Console", &mWindowsToDisplay.Console);
+		m_console.draw("Console", &m_windows_to_display.Console);
 	}
 	void Editor::draw_debug_window()
 	{
-		if (mWindowsToDisplay.Debug)
+		if (m_windows_to_display.Debug)
 		{
-			if (ImGui::Begin("Debug options", &mWindowsToDisplay.Debug))
+			if (ImGui::Begin("Debug options", &m_windows_to_display.Debug))
 			{
 				{ ImGui::SeparatorText("Graphics");
 					ImGui::Text("Window size", m_window.size());
 					ImGui::Text("Aspect ratio", m_window.aspect_ratio());
 					bool VSync = m_window.get_VSync();
-					ImGui::Text("View Position", mOpenGLRenderer.mViewInformation.mViewPosition);
+					ImGui::Text("View Position", m_openGL_renderer.m_view_information.m_view_position);
 					ImGui::Separator();
 					ImGui::Checkbox("Show light positions", &OpenGL::DebugRenderer::m_debug_options.m_show_light_positions);
 					ImGui::Checkbox("Visualise normals", &OpenGL::DebugRenderer::m_debug_options.m_show_mesh_normals);
@@ -237,32 +237,34 @@ namespace UI
 				}
 
 				{ ImGui::SeparatorText("Post Processing");
-					ImGui::Checkbox("Invert", &mOpenGLRenderer.mPostProcessingOptions.mInvertColours);
-					ImGui::Checkbox("Grayscale", &mOpenGLRenderer.mPostProcessingOptions.mGrayScale);
-					ImGui::Checkbox("Sharpen", &mOpenGLRenderer.mPostProcessingOptions.mSharpen);
-					ImGui::Checkbox("Blur", &mOpenGLRenderer.mPostProcessingOptions.mBlur);
-					ImGui::Checkbox("Edge detection", &mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection);
+					ImGui::Checkbox("Invert", &m_openGL_renderer.m_post_processing_options.mInvertColours);
+					ImGui::Checkbox("Grayscale", &m_openGL_renderer.m_post_processing_options.mGrayScale);
+					ImGui::Checkbox("Sharpen", &m_openGL_renderer.m_post_processing_options.mSharpen);
+					ImGui::Checkbox("Blur", &m_openGL_renderer.m_post_processing_options.mBlur);
+					ImGui::Checkbox("Edge detection", &m_openGL_renderer.m_post_processing_options.mEdgeDetection);
 
-					const bool isPostProcessingOn = mOpenGLRenderer.mPostProcessingOptions.mInvertColours
-						|| mOpenGLRenderer.mPostProcessingOptions.mGrayScale || mOpenGLRenderer.mPostProcessingOptions.mSharpen
-						|| mOpenGLRenderer.mPostProcessingOptions.mBlur      || mOpenGLRenderer.mPostProcessingOptions.mEdgeDetection;
+					const bool isPostProcessingOn = m_openGL_renderer.m_post_processing_options.mInvertColours
+						|| m_openGL_renderer.m_post_processing_options.mGrayScale || m_openGL_renderer.m_post_processing_options.mSharpen
+						|| m_openGL_renderer.m_post_processing_options.mBlur      || m_openGL_renderer.m_post_processing_options.mEdgeDetection;
 
 					if (!isPostProcessingOn) ImGui::BeginDisabled();
-						ImGui::SliderFloat("Kernel offset", &mOpenGLRenderer.mPostProcessingOptions.mKernelOffset, -1.f, 1.f);
+						ImGui::SliderFloat("Kernel offset", &m_openGL_renderer.m_post_processing_options.mKernelOffset, -1.f, 1.f);
 					if (!isPostProcessingOn) ImGui::EndDisabled();
 				}
 
 				{ImGui::SeparatorText("Physics");
-					ImGui::Checkbox("Show orientations", &OpenGL::DebugRenderer::m_debug_options.m_show_orientations);
-					ImGui::Checkbox("Show bounding box", &OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box);
+					ImGui::Checkbox("Show orientations",              &OpenGL::DebugRenderer::m_debug_options.m_show_orientations);
+					ImGui::Checkbox("Show bounding box",              &OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box);
+
 					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::BeginDisabled();
-					ImGui::Checkbox("Fill bounding box", &OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box);
-					ImGui::ColorEdit3("Bounding box colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_colour[0]);
+					ImGui::Checkbox("Fill bounding box",              &OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box);
+					ImGui::ColorEdit3("Bounding box colour",          &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_colour[0]);
 					ImGui::ColorEdit3("Bounding box collided colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_collided_colour[0]);
 					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::EndDisabled();
-					ImGui::Checkbox("Show collision shape", &OpenGL::DebugRenderer::m_debug_options.m_show_collision_shape);
-					ImGui::Slider("Position offset factor", OpenGL::DebugRenderer::m_debug_options.m_position_offset_factor, -10.f, 10.f);
-					ImGui::Slider("Position offset units", OpenGL::DebugRenderer::m_debug_options.m_position_offset_units, -10.f, 10.f);
+
+					ImGui::Checkbox("Show collision shape",           &OpenGL::DebugRenderer::m_debug_options.m_show_collision_shape);
+					ImGui::Slider("Position offset factor",            OpenGL::DebugRenderer::m_debug_options.m_position_offset_factor, -10.f, 10.f);
+					ImGui::Slider("Position offset units",             OpenGL::DebugRenderer::m_debug_options.m_position_offset_units, -10.f, 10.f);
 				}
 
 				if (ImGui::Button("Reset"))

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "OpenGL/ParticleRenderer.hpp"
-#include "OpenGL/PhongRenderer.hpp"
-#include "OpenGL/Shader.hpp"
-#include "OpenGL/ShadowMapper.hpp"
-#include "OpenGL/Types.hpp"
+#include "ParticleRenderer.hpp"
+#include "PhongRenderer.hpp"
+#include "Shader.hpp"
+#include "ShadowMapper.hpp"
+#include "Types.hpp"
 
 #include "Component/Mesh.hpp"
 #include "Component/Texture.hpp"
@@ -39,21 +39,21 @@ namespace OpenGL
 		};
 		struct ViewInformation
 		{
-			glm::mat4 mView         = {glm::identity<glm::mat4>()};
-			glm::vec3 mViewPosition = {glm::vec3{0.f}};
-			glm::mat4 mProjection   = {glm::identity<glm::mat4>()};
+			glm::mat4 m_view          = {glm::identity<glm::mat4>()};
+			glm::vec3 m_view_position = {glm::vec3{0.f}};
+			glm::mat4 m_projection    = {glm::identity<glm::mat4>()};
 		};
 
 		Platform::Window& m_window;
-		FBO mScreenFramebuffer;
-		System::SceneSystem& mSceneSystem;
-		System::MeshSystem& mMeshSystem;
+		FBO m_screen_framebuffer;
+		System::SceneSystem& m_scene_system;
+		System::MeshSystem& m_mesh_system;
 
-		Shader mUniformColourShader;
+		Shader m_uniform_colour_shader;
 		Shader m_colour_shader;
-		Shader mTextureShader;
-		Shader mScreenTextureShader;
-		Shader mSkyBoxShader;
+		Shader m_texture_shader;
+		Shader m_screen_texture_shader;
+		Shader m_sky_box_shader;
 
 		PhongRenderer m_phong_renderer;
 		ParticleRenderer m_particle_renderer;
@@ -63,11 +63,11 @@ namespace OpenGL
 		Data::Mesh m_screen_quad;
 
 	public:
-		ViewInformation mViewInformation;
-		PostProcessingOptions mPostProcessingOptions;
+		ViewInformation m_view_information;
+		PostProcessingOptions m_post_processing_options;
 
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-		OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& pSceneSystem, System::MeshSystem& pMeshSystem, System::TextureSystem& pTextureSystem) noexcept;
+		OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& p_scene_system, System::MeshSystem& p_mesh_system, System::TextureSystem& p_texture_system) noexcept;
 
 		void start_frame();
 		void end_frame();

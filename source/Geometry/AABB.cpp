@@ -8,149 +8,110 @@
 
 namespace Geometry
 {
-    AABB::AABB()
-        : mMin{0.f, 0.f, 0.f}
-        , mMax{0.f, 0.f, 0.f}
-    {}
-    AABB::AABB(const float& pLowX, const float& pHighX, const float& pLowY, const float& pHighY, const float& pLowZ, const float& pHighZ)
-        : mMin{pLowX, pLowY, pLowZ}
-        , mMax{pHighX, pHighY, pHighZ}
-    {}
-    AABB::AABB(const glm::vec3& pLowPoint, const glm::vec3& pHighPoint)
-        : mMin{pLowPoint}
-        , mMax{pHighPoint}
-    {}
-    glm::vec3 AABB::get_size() const
-    {
-        return mMax - mMin;
-    }
-    glm::vec3 AABB::get_center() const
-    {
-        return (mMin + mMax) / 2.f;
-    }
-    glm::vec3 AABB::getNormal(const glm::vec3& pPointOnAABBInWorldSpace) const
-    {
-        // By moving the world space point to AABB space and finding which component of the size we are closest to, we can determine the normal.
-        // Additionally we can leverage the sign of the component in the local space to determine if the normal needs to be reversed.
+	AABB::AABB()
+		: m_min{0.f, 0.f, 0.f}
+		, m_max{0.f, 0.f, 0.f}
+	{}
+	AABB::AABB(const float& p_low_X, const float& p_high_X, const float& p_low_Y, const float& p_high_Y, const float& p_low_Z, const float& p_high_Z)
+		: m_min{p_low_X, p_low_Y, p_low_Z}
+		, m_max{p_high_X, p_high_Y, p_high_Z}
+	{}
+	AABB::AABB(const glm::vec3& p_min, const glm::vec3& p_max)
+		: m_min{p_min}
+		, m_max{p_max}
+	{}
+	glm::vec3 AABB::get_size() const
+	{
+		return m_max - m_min;
+	}
+	glm::vec3 AABB::get_center() const
+	{
+		return (m_min + m_max) / 2.f;
+	}
+	void AABB::unite(const glm::vec3& p_point)
+	{
+		m_min.x = std::min(m_min.x, p_point.x);
+		m_min.y = std::min(m_min.y, p_point.y);
+		m_min.z = std::min(m_min.z, p_point.z);
+		m_max.x = std::max(m_max.x, p_point.x);
+		m_max.y = std::max(m_max.y, p_point.y);
+		m_max.z = std::max(m_max.z, p_point.z);
+	}
+	void AABB::unite(const AABB& p_AABB)
+	{
+		m_min.x = std::min(m_min.x, p_AABB.m_min.x);
+		m_min.y = std::min(m_min.y, p_AABB.m_min.y);
+		m_min.z = std::min(m_min.z, p_AABB.m_min.z);
+		m_max.x = std::max(m_max.x, p_AABB.m_max.x);
+		m_max.y = std::max(m_max.y, p_AABB.m_max.y);
+		m_max.z = std::max(m_max.z, p_AABB.m_max.z);
+	}
 
-        // Move the Point to AABB space
-        const auto AABBPosition = pPointOnAABBInWorldSpace - get_center();
-        const auto size = get_size();
+	bool AABB::contains(const AABB& p_AABB) const
+	{
+		return
+			m_min.x <= p_AABB.m_max.x &&
+			m_max.x >= p_AABB.m_min.x &&
+			m_min.y <= p_AABB.m_max.y &&
+			m_max.y >= p_AABB.m_min.y &&
+			m_min.z <= p_AABB.m_max.z &&
+			m_max.z >= p_AABB.m_min.z;
+	}
 
-        // Set min and distance to difference between local point and x size
-        float distance = std::abs(size.x - std::abs(AABBPosition.x));
-        float min      = distance;
-        auto normal    = glm::vec3(1.f, 0.f, 0.f);
-        if (AABBPosition.x < 0)
-            normal *= -1.f;
+	AABB AABB::unite(const AABB& p_AABB, const AABB& pAABB2)
+	{
+		return {
+			std::min(p_AABB.m_min.x, pAABB2.m_min.x),
+			std::max(p_AABB.m_max.x, pAABB2.m_max.x),
+			std::min(p_AABB.m_min.y, pAABB2.m_min.y),
+			std::max(p_AABB.m_max.y, pAABB2.m_max.y),
+			std::min(p_AABB.m_min.z, pAABB2.m_min.z),
+			std::max(p_AABB.m_max.z, pAABB2.m_max.z)};
+	}
+	AABB AABB::unite(const AABB& p_AABB, const glm::vec3& p_point)
+	{
+		return {
+			std::min(p_AABB.m_min.x, p_point.x),
+			std::max(p_AABB.m_max.x, p_point.x),
+			std::min(p_AABB.m_min.y, p_point.y),
+			std::max(p_AABB.m_max.y, p_point.y),
+			std::min(p_AABB.m_min.z, p_point.z),
+			std::max(p_AABB.m_max.z, p_point.z)};
+	}
+	AABB AABB::transform(const AABB& p_AABB, const glm::vec3& p_position, const glm::mat4& p_rotation, const glm::vec3& p_scale)
+	{
+		// Reference: Real-Time Collision Detection (Christer Ericson)
+		// Each vertex of transformedAABB is a combination of three transformed min and max values from p_AABB.
+		// The minimum extent is the sum of all the smallers terms, the maximum extent is the sum of all the larger terms.
+		// Translation doesn't affect the size calculation of the new AABB so can be added in.
+		AABB transformedAABB;
+		const auto rotateScale = glm::scale(p_rotation, p_scale);
 
-        // Repeat for Y
-        distance = std::abs(size.y - std::abs(AABBPosition.y));
-        if (distance < min)
-        {
-            min = distance;
-            normal = glm::vec3(0.f, 1.f, 0.f);
-            if (AABBPosition.y < 0)
-                normal *= -1.f;
-        }
+		// For all 3 axes
+		for (int i = 0; i < 3; i++)
+		{
+			// Apply translation
+			transformedAABB.m_min[i] = transformedAABB.m_max[i] = p_position[i];
 
-        // Repeat for Z
-        distance = std::abs(size.z - std::abs(AABBPosition.z));
-        if (distance < min)
-        {
-            min = distance;
-            normal = glm::vec3(0.f, 1.f, 0.f);
-            if (AABBPosition.z < 0)
-                normal *= -1.f;
-        }
+			// Form extent by summing smaller and larger terms respectively.
+			for (int j = 0; j < 3; j++)
+			{
+				const float e = rotateScale[j][i] * p_AABB.m_min[j];
+				const float f = rotateScale[j][i] * p_AABB.m_max[j];
 
-        return normal;
-    }
+				if (e < f)
+				{
+					transformedAABB.m_min[i] += e;
+					transformedAABB.m_max[i] += f;
+				}
+				else
+				{
+					transformedAABB.m_min[i] += f;
+					transformedAABB.m_max[i] += e;
+				}
+			}
+		}
 
-    void AABB::unite(const glm::vec3& pPoint)
-    {
-        mMin.x = std::min(mMin.x, pPoint.x);
-        mMin.y = std::min(mMin.y, pPoint.y);
-        mMin.z = std::min(mMin.z, pPoint.z);
-        mMax.x = std::max(mMax.x, pPoint.x);
-        mMax.y = std::max(mMax.y, pPoint.y);
-        mMax.z = std::max(mMax.z, pPoint.z);
-    }
-    void AABB::unite(const AABB& pAABB)
-    {
-        mMin.x = std::min(mMin.x, pAABB.mMin.x);
-        mMin.y = std::min(mMin.y, pAABB.mMin.y);
-        mMin.z = std::min(mMin.z, pAABB.mMin.z);
-        mMax.x = std::max(mMax.x, pAABB.mMax.x);
-        mMax.y = std::max(mMax.y, pAABB.mMax.y);
-        mMax.z = std::max(mMax.z, pAABB.mMax.z);
-    }
-
-    bool AABB::contains(const AABB& pAABB) const
-    {
-        return
-            mMin.x <= pAABB.mMax.x &&
-            mMax.x >= pAABB.mMin.x &&
-            mMin.y <= pAABB.mMax.y &&
-            mMax.y >= pAABB.mMin.y &&
-            mMin.z <= pAABB.mMax.z &&
-            mMax.z >= pAABB.mMin.z;
-    }
-
-    AABB AABB::unite(const AABB& pAABB, const AABB& pAABB2)
-    {
-        return {
-            std::min(pAABB.mMin.x, pAABB2.mMin.x),
-            std::max(pAABB.mMax.x, pAABB2.mMax.x),
-            std::min(pAABB.mMin.y, pAABB2.mMin.y),
-            std::max(pAABB.mMax.y, pAABB2.mMax.y),
-            std::min(pAABB.mMin.z, pAABB2.mMin.z),
-            std::max(pAABB.mMax.z, pAABB2.mMax.z)};
-    }
-    AABB AABB::unite(const AABB& pAABB, const glm::vec3& pPoint)
-    {
-        return {
-            std::min(pAABB.mMin.x, pPoint.x),
-            std::max(pAABB.mMax.x, pPoint.x),
-            std::min(pAABB.mMin.y, pPoint.y),
-            std::max(pAABB.mMax.y, pPoint.y),
-            std::min(pAABB.mMin.z, pPoint.z),
-            std::max(pAABB.mMax.z, pPoint.z)};
-    }
-    AABB AABB::transform(const AABB& pAABB, const glm::vec3& pPosition, const glm::mat4& pRotation, const glm::vec3& pScale)
-    {
-        // Reference: Real-Time Collision Detection (Christer Ericson)
-        // Each vertex of transformedAABB is a combination of three transformed min and max values from pAABB.
-        // The minimum extent is the sum of all the smallers terms, the maximum extent is the sum of all the larger terms.
-        // Translation doesn't affect the size calculation of the new AABB so can be added in.
-        AABB transformedAABB;
-        const auto rotateScale = glm::scale(pRotation, pScale);
-
-        // For all 3 axes
-        for (int i = 0; i < 3; i++)
-        {
-            // Apply translation
-            transformedAABB.mMin[i] = transformedAABB.mMax[i] = pPosition[i];
-
-            // Form extent by summing smaller and larger terms respectively.
-            for (int j = 0; j < 3; j++)
-            {
-                const float e = rotateScale[j][i] * pAABB.mMin[j];
-                const float f = rotateScale[j][i] * pAABB.mMax[j];
-
-                if (e < f)
-                {
-                    transformedAABB.mMin[i] += e;
-                    transformedAABB.mMax[i] += f;
-                }
-                else
-                {
-                    transformedAABB.mMin[i] += f;
-                    transformedAABB.mMax[i] += e;
-                }
-            }
-        }
-
-        return transformedAABB;
-    }
+		return transformedAABB;
+	}
 } // namespace Geometry

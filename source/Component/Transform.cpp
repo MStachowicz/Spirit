@@ -6,19 +6,19 @@
 
 namespace Component
 {
-	void Transform::rotateEulerDegrees(const glm::vec3& pRollPitchYawDegrees)
+	void Transform::rotateEulerDegrees(const glm::vec3& p_roll_pitch_yawDegrees)
 	{
-		mRollPitchYaw = pRollPitchYawDegrees;
-		mOrientation  = glm::normalize(Utility::toQuaternion(glm::radians(mRollPitchYaw)));
-		mDirection    = glm::normalize(mOrientation * Starting_Forward_Direction);
+		m_roll_pitch_yaw = p_roll_pitch_yawDegrees;
+		m_orientation    = glm::normalize(Utility::to_quaternion(glm::radians(m_roll_pitch_yaw)));
+		m_direction      = glm::normalize(m_orientation * Starting_Forward_Direction);
 	}
 	void Transform::look_at(const glm::vec3& p_point)
 	{
-		if (p_point != mPosition)
+		if (p_point != m_position)
 		{
-			mDirection    = glm::normalize(p_point - mPosition);
-			mOrientation  = Utility::getRotation(Starting_Forward_Direction, mDirection);
-			mRollPitchYaw = Utility::toRollPitchYaw(mOrientation);
+			m_direction      = glm::normalize(p_point - m_position);
+			m_orientation    = Utility::get_rotation(Starting_Forward_Direction, m_direction);
+			m_roll_pitch_yaw = Utility::to_roll_pitch_yaw(m_orientation);
 		}
 	}
 
@@ -26,16 +26,16 @@ namespace Component
 	{
 		if (ImGui::TreeNode("Transform"))
 		{
-			ImGui::Slider("Position", mPosition, -50.f, 50.f, "%.3f m");
-			ImGui::Slider("Scale", mScale, 0.1f, 10.f);
+			ImGui::Slider("Position", m_position, -50.f, 50.f, "%.3f m");
+			ImGui::Slider("Scale", m_scale, 0.1f, 10.f);
 
 			// Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
-			if (ImGui::Slider("Roll Pitch Yaw", mRollPitchYaw, -179.f, 179.f, "%.3f °"))
-				rotateEulerDegrees(mRollPitchYaw);
+			if (ImGui::Slider("Roll Pitch Yaw", m_roll_pitch_yaw, -179.f, 179.f, "%.3f °"))
+				rotateEulerDegrees(m_roll_pitch_yaw);
 
 			ImGui::Separator();
-			ImGui::Text("Directon",    mDirection);
-			ImGui::Text("Orientation", mOrientation);
+			ImGui::Text("Directon",    m_direction);
+			ImGui::Text("Orientation", m_orientation);
 
 			ImGui::SeparatorText("Actions");
 			if (ImGui::Button("Focus on origin"))
@@ -45,11 +45,11 @@ namespace Component
 			// https://glm.g-truc.net/0.9.2/api/a00259.html#
 			if (ImGui::Button("Reset"))
 			{
-				mPosition     = glm::vec3(0.0f, 0.0f, 0.0f);
-				mRollPitchYaw = glm::vec3(0.0f);
-				mScale        = glm::vec3(1.0f);
-				mDirection    = Starting_Forward_Direction;
-				mOrientation  = glm::identity<glm::quat>();
+				m_position       = glm::vec3(0.0f, 0.0f, 0.0f);
+				m_roll_pitch_yaw = glm::vec3(0.0f);
+				m_scale          = glm::vec3(1.0f);
+				m_direction      = Starting_Forward_Direction;
+				m_orientation    = glm::identity<glm::quat>();
 			}
 			ImGui::TreePop();
 		}

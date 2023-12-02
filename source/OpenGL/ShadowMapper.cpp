@@ -1,14 +1,13 @@
 #include "ShadowMapper.hpp"
-#include "OpenGL/DrawCall.hpp"
+#include "DrawCall.hpp"
 
-#include "ECS/Storage.hpp"
 #include "Component/Camera.hpp"
 #include "Component/Lights.hpp"
-#include "Component/Transform.hpp"
 #include "Component/Mesh.hpp"
-#include "System/SceneSystem.hpp"
-
+#include "Component/Transform.hpp"
+#include "ECS/Storage.hpp"
 #include "Platform/Window.hpp"
+#include "System/SceneSystem.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/mat4x4.hpp"
@@ -29,7 +28,7 @@ namespace OpenGL
 		ASSERT(m_depth_map_FBO.isComplete(), "[OPENGL][SHADOW MAPPER] framebuffer not complete, have you attached a depth buffer + empty draw and read buffers.");
 
 		unsigned int directional_light_count = 0;
-		p_scene.m_entities.foreach([&directional_light_count](Component::DirectionalLight& p_light) { directional_light_count++; });
+		p_scene.m_entities.foreach([&directional_light_count](Component::DirectionalLight& p_light) { (void)p_light; directional_light_count++; }); // #TODO replace with a storage::count<>()
 
 		if (directional_light_count > 0)
 		{
@@ -45,7 +44,7 @@ namespace OpenGL
 					DrawCall dc;
 					dc.m_cull_face_enabled = false;
 					dc.set_uniform("light_space_mat", p_light.get_view_proj(p_scene.m_bound));
-					dc.set_uniform("model", p_transform.mModel);
+					dc.set_uniform("model", p_transform.m_model);
 					dc.submit(m_shadow_depth_shader, p_mesh.m_mesh);
 				});
 			});

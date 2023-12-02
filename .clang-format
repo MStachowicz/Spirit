@@ -33,4 +33,6 @@ NamespaceIndentation: All
 AlignConsecutiveAssignments: 'true'
 BreakConstructorInitializers: BeforeComma
 KeepEmptyLinesAtTheStartOfBlocks: 'false'
+BeforeLambdaBody: 'false'
+LambdaBodyIndentation : 'OuterSscope'
 ...

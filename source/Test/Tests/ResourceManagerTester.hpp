@@ -4,12 +4,12 @@
 
 namespace Test
 {
-    class ResourceManagerTester : public TestManager
-    {
-    public:
-        ResourceManagerTester() : TestManager(std::string("RESOURCE MANAGER")) {}
+	class ResourceManagerTester : public TestManager
+	{
+	public:
+		ResourceManagerTester() : TestManager(std::string("RESOURCE MANAGER")) {}
 
-        void runUnitTests()        override;
-        void runPerformanceTests() override;
-    };
+		void run_unit_tests()        override;
+		void run_performance_tests() override;
+	};
 } // namespace Test

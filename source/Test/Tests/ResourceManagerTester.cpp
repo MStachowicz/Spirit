@@ -1,182 +1,182 @@
 #include "ResourceManagerTester.hpp"
 #include "MemoryCorrectnessItem.hpp"
-#include "ResourceManager.hpp"
+#include "Utility/ResourceManager.hpp"
 
 #include <vector>
 
 namespace Test
 {
-    using Ref     = Utility::ResourceRef<MemoryCorrectnessItem>;
-    using Manager = Utility::ResourceManager<MemoryCorrectnessItem>;
+	using Ref     = Utility::ResourceRef<MemoryCorrectnessItem>;
+	using Manager = Utility::ResourceManager<MemoryCorrectnessItem>;
 
-    void Test::ResourceManagerTester::runUnitTests()
-    {
-        {// Check ResourceRef API
-            MemoryCorrectnessItem::reset();
+	void Test::ResourceManagerTester::run_unit_tests()
+	{
+		{// Check ResourceRef API
+			MemoryCorrectnessItem::reset();
 
-            auto ref = Ref();
-            CHECK_EQUAL(ref.has_value(), false, "ResourceRef isValid() check");
-            CHECK_TRUE(ref ? false : true,     "ResourceRef explicit bool operator check");
+			auto ref = Ref();
+			CHECK_EQUAL(ref.has_value(), false, "ResourceRef isValid() check");
+			CHECK_TRUE(ref ? false : true,     "ResourceRef explicit bool operator check");
 
-            Manager manager;
-            auto ref2 = manager.insert(MemoryCorrectnessItem{});
-            CHECK_EQUAL(ref2->countAlive(), 1,   "Use the Resource via the Ref");
-            CHECK_EQUAL((*ref2).countAlive(), 1, "Use the Resource via the Ref");
+			Manager manager;
+			auto ref2 = manager.insert(MemoryCorrectnessItem{});
+			CHECK_EQUAL(ref2->count_alive(), 1,   "Use the Resource via the Ref");
+			CHECK_EQUAL((*ref2).count_alive(), 1, "Use the Resource via the Ref");
 
-            const auto ref3 = manager.insert(MemoryCorrectnessItem{});
-            CHECK_EQUAL(ref3->countAlive(), 2,   "Use the Resource via the Ref");
-            CHECK_EQUAL((*ref3).countAlive(), 2, "Use the Resource via the Ref");
-        }
-        CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-        CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
+			const auto ref3 = manager.insert(MemoryCorrectnessItem{});
+			CHECK_EQUAL(ref3->count_alive(), 2,   "Use the Resource via the Ref");
+			CHECK_EQUAL((*ref3).count_alive(), 2, "Use the Resource via the Ref");
+		}
+		CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+		CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
 
-        { // Check memory leaks single insert
-            MemoryCorrectnessItem::reset();
+		{ // Check memory leaks single insert
+			MemoryCorrectnessItem::reset();
 
-            {
-                Manager manager;
-                {
-                    auto ref = manager.insert(MemoryCorrectnessItem{});
-                    CHECK_EQUAL(manager.size(), 1, "Size check after insert");
-                }
-                CHECK_EQUAL(manager.size(), 0, "Size check after destroyed ref");
-                CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check ref deleted");
-                CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check ref deleted");
-            }
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
-        {// Check memory leaks many inserts
-            MemoryCorrectnessItem::reset();
+			{
+				Manager manager;
+				{
+					auto ref = manager.insert(MemoryCorrectnessItem{});
+					CHECK_EQUAL(manager.size(), 1, "Size check after insert");
+				}
+				CHECK_EQUAL(manager.size(), 0, "Size check after destroyed ref");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check ref deleted");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check ref deleted");
+			}
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
+		{// Check memory leaks many inserts
+			MemoryCorrectnessItem::reset();
 
-            Manager manager;
-            manager.reserve(100);
-            {
-                std::vector<Ref> refs; // Maintain their lifetime in vector
-                refs.reserve(100);
-                for (auto i = 0; i < 100; i++)
-                    refs.push_back(manager.insert(MemoryCorrectnessItem{}));
-                CHECK_EQUAL(manager.size(), 100, "Size check after insert 100");
-            }
-            CHECK_EQUAL(manager.size(), 0, "Size check after insert 100 deleted");
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory error check");
-        }
-        {// Check capacity change maintains resource validity
-            MemoryCorrectnessItem::reset();
+			Manager manager;
+			manager.reserve(100);
+			{
+				std::vector<Ref> refs; // Maintain their lifetime in vector
+				refs.reserve(100);
+				for (int i = 0; i < 100; i++)
+					refs.push_back(manager.insert(MemoryCorrectnessItem{}));
+				CHECK_EQUAL(manager.size(), 100, "Size check after insert 100");
+			}
+			CHECK_EQUAL(manager.size(), 0, "Size check after insert 100 deleted");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory error check");
+		}
+		{// Check capacity change maintains resource validity
+			MemoryCorrectnessItem::reset();
 
-            {
-                Manager manager;
-                auto ref = manager.insert(MemoryCorrectnessItem{});
-                manager.reserve(manager.capacity() * 2);
-                CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 1, "Memory leak check");
-            }
+			{
+				Manager manager;
+				auto ref = manager.insert(MemoryCorrectnessItem{});
+				manager.reserve(manager.capacity() * 2);
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 1, "Memory leak check");
+			}
 
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
-        {// Check capacity change maintains resource validity many inserts
-            MemoryCorrectnessItem::reset();
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
+		{// Check capacity change maintains resource validity many inserts
+			MemoryCorrectnessItem::reset();
 
-            {
-                Manager manager;
-                ASSERT(manager.capacity() < 100, "Capacity has to be below 100 for test to work.");
-                std::vector<Ref> refs; // Maintain their lifetime in vector
-                refs.reserve(100);
+			{
+				Manager manager;
+				ASSERT(manager.capacity() < 100, "Capacity has to be below 100 for test to work.");
+				std::vector<Ref> refs; // Maintain their lifetime in vector
+				refs.reserve(100);
 
-                for (auto i = 0; i < 100; i++)
-                    refs.push_back(manager.insert(MemoryCorrectnessItem{}));
+				for (int i = 0; i < 100; i++)
+					refs.push_back(manager.insert(MemoryCorrectnessItem{}));
 
-                CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 100, "Memory leak check");
-            }
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 100, "Memory leak check");
+			}
 
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
-        { // Check memory leaks Manager::clear()
-            MemoryCorrectnessItem::reset();
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
+		{ // Check memory leaks Manager::clear()
+			MemoryCorrectnessItem::reset();
 			if (false)
-            {
+			{
 				// This Test crashes -
 				// ResourceRefs have no concept of the Manager having cleared them.
 				// When the refs vector is destroyed, it calls destructors on incorrectly valid ResourceRefs.
 				Manager manager;
-                std::vector<Ref> refs; // Maintain their lifetime in vector
-                refs.reserve(4);
-                for (auto i = 0; i < 4; i++)
-                    refs.push_back(manager.insert(MemoryCorrectnessItem{}));
+				std::vector<Ref> refs; // Maintain their lifetime in vector
+				refs.reserve(4);
+				for (int i = 0; i < 4; i++)
+					refs.push_back(manager.insert(MemoryCorrectnessItem{}));
 
-                CHECK_EQUAL(manager.size(), 4, "Size check after insert 4");
-                manager.clear();
-                CHECK_EQUAL(manager.size(), 0, "Size check after clear");
+				CHECK_EQUAL(manager.size(), 4, "Size check after insert 4");
+				manager.clear();
+				CHECK_EQUAL(manager.size(), 0, "Size check after clear");
 
-				CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-				CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory error check");
-            }
-        }
-        {// Check capacity change maintains resource validity with many resources
-            MemoryCorrectnessItem::reset();
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory error check");
+			}
+		}
+		{// Check capacity change maintains resource validity with many resources
+			MemoryCorrectnessItem::reset();
 
-            Manager manager;
-            for (auto i = 0; i < 100; i++)
-                auto ref = manager.insert(MemoryCorrectnessItem{});
-            manager.reserve(manager.capacity() * 2);
+			Manager manager;
+			for (int i = 0; i < 100; i++)
+				auto ref = manager.insert(MemoryCorrectnessItem{});
+			manager.reserve(manager.capacity() * 2);
 
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
-        {// Create an invalid resource and assign it a valid resource
-            MemoryCorrectnessItem::reset();
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
+		{// Create an invalid resource and assign it a valid resource
+			MemoryCorrectnessItem::reset();
 
-            {
-                Manager manager;
+			{
+				Manager manager;
 
-                auto ref = Ref();
-                CHECK_EQUAL(manager.size(), 0, "Size check after invalid ref");
+				auto ref = Ref();
+				CHECK_EQUAL(manager.size(), 0, "Size check after invalid ref");
 
-                ref = manager.insert(MemoryCorrectnessItem{});
-                CHECK_TRUE(ref.has_value(), "Invalid ResourceRef is valid after assigning");
-                CHECK_EQUAL(manager.size(), 1, "Size check after assigning to an invalid ref");
+				ref = manager.insert(MemoryCorrectnessItem{});
+				CHECK_TRUE(ref.has_value(), "Invalid ResourceRef is valid after assigning");
+				CHECK_EQUAL(manager.size(), 1, "Size check after assigning to an invalid ref");
 
-                auto ref2 = manager.insert(MemoryCorrectnessItem{});
-                CHECK_EQUAL(manager.size(), 2, "Size check after inserting a second resource");
+				auto ref2 = manager.insert(MemoryCorrectnessItem{});
+				CHECK_EQUAL(manager.size(), 2, "Size check after inserting a second resource");
 
-                // Copying a ref should give us access to the same resource and not change the size.
-                auto ref_copy = ref;
-                CHECK_TRUE(ref_copy.has_value(), "ResourceRef copy is valid");
-                CHECK_EQUAL(manager.size(), 2, "Size check after copying a ResourceRef");
-            }
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
-        {// Create an valid resource and assign it a valid resource
-            MemoryCorrectnessItem::reset();
-            {
-                Manager manager;
-                //manager.reserve(4);
+				// Copying a ref should give us access to the same resource and not change the size.
+				auto ref_copy = ref;
+				CHECK_TRUE(ref_copy.has_value(), "ResourceRef copy is valid");
+				CHECK_EQUAL(manager.size(), 2, "Size check after copying a ResourceRef");
+			}
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
+		{// Create an valid resource and assign it a valid resource
+			MemoryCorrectnessItem::reset();
+			{
+				Manager manager;
+				//manager.reserve(4);
 
-                auto ref = manager.insert(MemoryCorrectnessItem{}); // Construct, Move constructing, Delete
-                ref = manager.insert(MemoryCorrectnessItem{});      // Construct (new one), Move-assign, Delete
-                CHECK_TRUE(ref.has_value(), "Check ref is valid after being assigned while already owning a resource");
-                CHECK_EQUAL(manager.size(), 1, "Size remains the same after assigning to a valid ref");
-                CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 1, "Memory leak after move-assigning a valid ref");
-            }
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
-        {// Check Resource data is intact after a second insert
-            MemoryCorrectnessItem::reset();
-            {
-                Manager manager;
-                auto ref_1 = manager.insert(MemoryCorrectnessItem{});
+				auto ref = manager.insert(MemoryCorrectnessItem{}); // Construct, Move constructing, Delete
+				ref = manager.insert(MemoryCorrectnessItem{});      // Construct (new one), Move-assign, Delete
+				CHECK_TRUE(ref.has_value(), "Check ref is valid after being assigned while already owning a resource");
+				CHECK_EQUAL(manager.size(), 1, "Size remains the same after assigning to a valid ref");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 1, "Memory leak after move-assigning a valid ref");
+			}
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
+		{// Check Resource data is intact after a second insert
+			MemoryCorrectnessItem::reset();
+			{
+				Manager manager;
+				auto ref_1 = manager.insert(MemoryCorrectnessItem{});
 				ref_1->m_member = 5;
-                auto ref_2 = manager.insert(MemoryCorrectnessItem{});
+				auto ref_2 = manager.insert(MemoryCorrectnessItem{});
 
-                CHECK_EQUAL(ref_1->m_member.value(), 5, "Check data intact after a second insert");
-            }
-            CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-            CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
-        }
+				CHECK_EQUAL(ref_1->m_member.value(), 5, "Check data intact after a second insert");
+			}
+			CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+			CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
+		}
 		{// Test range-based for - these depend on the ResourceManager leaving gaps inside the buffer when erasing from non-end positions.
 			{ // Test range-based for non-const
 				MemoryCorrectnessItem::reset();
@@ -184,7 +184,7 @@ namespace Test
 					Manager manager;
 					std::vector<Ref> refs;
 					refs.reserve(5);
-					for (auto i = 0; i < 5; i++)
+					for (int i = 0; i < 5; i++)
 					{
 						refs.push_back(manager.insert(MemoryCorrectnessItem{}));
 						refs.back()->m_member = i;
@@ -251,8 +251,8 @@ namespace Test
 						CHECK_EQUAL(values.size(), 0, "Range-based for loop iteration clear buffer count");
 					}
 				}
-				CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-				CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
 			}
 
 			{// Test range-based for const correctness
@@ -261,7 +261,7 @@ namespace Test
 					const Manager manager;
 					std::vector<Ref> refs;
 					refs.reserve(5);
-					for (auto i = 0; i < 5; i++)
+					for (int i = 0; i < 5; i++)
 					{// Hack to get around the const-ness of the manager for this test.
 						Manager& non_const_manager = const_cast<Manager&>(manager);
 						refs.push_back(non_const_manager.insert(MemoryCorrectnessItem{}));
@@ -284,9 +284,9 @@ namespace Test
 					{
 						refs.erase(refs.begin() + 2);
 
-                        std::vector<int> values;
-                        for (auto resource : manager)
-                            values.push_back(*resource.m_member);
+						std::vector<int> values;
+						for (auto resource : manager)
+							values.push_back(*resource.m_member);
 
 						CHECK_EQUAL(values.size(), 4, "Range-based for loop iteration middle-gap buffer count");
 						CHECK_EQUAL(values[0], 0, "Range-based for loop iteration middle-gap buffer data validity 0");
@@ -329,18 +329,18 @@ namespace Test
 						CHECK_EQUAL(values.size(), 0, "Range-based for loop iteration clear buffer count");
 					}
 				}
-				CHECK_EQUAL(MemoryCorrectnessItem::countAlive(), 0, "Memory leak check");
-				CHECK_EQUAL(MemoryCorrectnessItem::countErrors(), 0, "Memory Error check");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), 0, "Memory leak check");
+				CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Memory Error check");
 			}
 		}
 
-        {// TODO test get_or_create
-        }
-        {// TODO Check move assigning and move constructing a ResourceManager
-        }
-        {// TODO check Ref is_valid() == false after the manager is cleared?
+		{// TODO test get_or_create
 		}
-    }
+		{// TODO Check move assigning and move constructing a ResourceManager
+		}
+		{// TODO check Ref is_valid() == false after the manager is cleared?
+		}
+	}
 
-    void Test::ResourceManagerTester::runPerformanceTests() {}
+	void Test::ResourceManagerTester::run_performance_tests() {}
 } // namespace Test

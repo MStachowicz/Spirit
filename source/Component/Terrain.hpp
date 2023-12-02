@@ -3,23 +3,23 @@
 
 namespace System
 {
-    class TextureSystem;
+	class TextureSystem;
 }
 namespace Component
 {
-    class Terrain
-    {
-        Data::Mesh generate_mesh() noexcept;
+	class Terrain
+	{
+		Data::Mesh generate_mesh() noexcept;
 
-    public:
-        glm::vec3 position;
-        int size_x;
-        int size_z;
-        float scale_factor;
-        TextureRef texture;
-        Data::Mesh mesh;
+	public:
+		glm::vec3 m_position;
+		int m_size_x;
+		int m_size_z;
+		float m_scale_factor;
+		TextureRef m_texture;
+		Data::Mesh m_mesh;
 
-        Terrain(int size_x, int size_z) noexcept;
-        void draw_UI(System::TextureSystem& texture_system);
-    };
+		Terrain(int p_size_x, int p_size_z) noexcept;
+		void draw_UI(System::TextureSystem& p_texture_system);
+	};
 } // namespace Component

@@ -1,12 +1,12 @@
 #include "MeshSystem.hpp"
-#include "System/TextureSystem.hpp"
+#include "TextureSystem.hpp"
+
 #include "Geometry/Cone.hpp"
 #include "Geometry/Cuboid.hpp"
 #include "Geometry/Cylinder.hpp"
 #include "Geometry/Plane.hpp"
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Quad.hpp"
-
 #include "Utility/MeshBuilder.hpp"
 #include "Utility/File.hpp"
 #include "Utility/Logger.hpp"
@@ -25,7 +25,7 @@ namespace System
 		, m_sphere{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Sphere))}
 		, m_quad{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Quad))}
 	{
-		Utility::File::forEachFileRecursive(Config::Model_Directory,[&](const std::filesystem::directory_entry& entry)
+		Utility::File::foreach_file_recursive(Config::Model_Directory,[&](const std::filesystem::directory_entry& entry)
 		{
 			if (entry.is_regular_file() && entry.path().has_extension() && entry.path().extension() == ".obj")
 				m_available_model_paths.push_back(entry.path());

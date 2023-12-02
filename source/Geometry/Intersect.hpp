@@ -9,6 +9,9 @@
 #include <optional>
 #include <variant>
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_UNUSED_PARAMETER // Until all the pairwise tests are implemented, disable the warnings for unused variables.
+
 namespace Geometry
 {
 	class AABB;
@@ -433,3 +436,4 @@ namespace Geometry
 //==============================================================================================================================
 
 } // namespace Geometry
+DISABLE_WARNING_POP

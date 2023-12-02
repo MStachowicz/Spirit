@@ -147,7 +147,7 @@ namespace Utility
 			{
 				const auto points_and_UVs = get_circle_points(center, radius, segments, normal);
 
-				for (auto i = 0; i < segments; ++i)
+				for (size_t i = 0; i < segments; ++i)
 				{
 					VertexType v1;
 					VertexType v2;
@@ -227,7 +227,7 @@ namespace Utility
 				const auto top_to_base    = glm::normalize(base - top);
 				const auto points_and_UVs = get_circle_points(base, radius, segments, top_to_base);
 
-				for (auto i = 0; i < segments; ++i)
+				for (size_t i = 0; i < segments; ++i)
 				{
 					VertexType v1;
 					VertexType v2;
@@ -277,7 +277,7 @@ namespace Utility
 					top_vertex_center.normal  = base_to_top_dir;
 				}
 
-				for (auto i = 0; i < segments; ++i)
+				for (size_t i = 0; i < segments; ++i)
 				{
 					VertexType base_vertex_1;
 					VertexType base_vertex_2;
@@ -339,28 +339,28 @@ namespace Utility
 				constexpr auto standard_points = get_icosahedron_points();
 				auto points = std::vector<glm::vec3>(standard_points.begin(), standard_points.end());
 
-				for (auto i = 0; i < subdivisions; i++)
+				for (size_t i = 0; i < subdivisions; i++)
 				{
 					std::vector<glm::vec3> new_points;
 					new_points.reserve(points.size() * 4);
 
 					// Going through each triangle, subdivide it into 4 triangles.
-					for (auto i = 0; i < points.size(); i += 3)
+					for (size_t j = 0; j < points.size(); j += 3)
 					{
-						const auto a = (points[i]     + points[i + 1]) / 2.f;
-						const auto b = (points[i + 1] + points[i + 2]) / 2.f;
-						const auto c = (points[i + 2] + points[i])     / 2.f;
+						const auto a = (points[j]     + points[j + 1]) / 2.f;
+						const auto b = (points[j + 1] + points[j + 2]) / 2.f;
+						const auto c = (points[j + 2] + points[j])     / 2.f;
 
 						// T1
-						new_points.emplace_back(points[i]);
+						new_points.emplace_back(points[j]);
 						new_points.emplace_back(a);
 						new_points.emplace_back(c);
 						// T2
-						new_points.emplace_back(points[i + 1]);
+						new_points.emplace_back(points[j + 1]);
 						new_points.emplace_back(b);
 						new_points.emplace_back(a);
 						// T3
-						new_points.emplace_back(points[i + 2]);
+						new_points.emplace_back(points[j + 2]);
 						new_points.emplace_back(c);
 						new_points.emplace_back(b);
 						// T4
@@ -371,7 +371,7 @@ namespace Utility
 					points = std::move(new_points);
 				}
 
-				for (auto i = 0; i < points.size(); i += 3)
+				for (size_t i = 0; i < points.size(); i += 3)
 				{
 					points[i]     = ((points[i]     / glm::length(points[i]    )) * radius) + center;
 					points[i + 1] = ((points[i + 1] / glm::length(points[i + 1])) * radius) + center;
@@ -383,7 +383,7 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_icosphere for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		void add_cuboid(const glm::vec3& center, const glm::vec3& size, const glm::quat& rotation = glm::identity<glm::quat>())
+		void add_cuboid(const glm::vec3& center, const glm::vec3& size)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
 			{
@@ -445,10 +445,10 @@ namespace Utility
 		{
 			std::vector<std::pair<glm::vec3, glm::vec2>> points_and_UVs;
 			points_and_UVs.reserve(segments);
-			const auto rotation = Utility::getRotation(glm::vec3{0.f, 1.f, 0.f}, normal); // Get the rotation quaternion to rotate the circle to the correct orientation.
+			const auto rotation = Utility::get_rotation(glm::vec3{0.f, 1.f, 0.f}, normal); // Get the rotation quaternion to rotate the circle to the correct orientation.
 			const float angle_step = 2.0f * std::numbers::pi_v<float> / segments;
 
-			for (auto i = 0; i < segments; ++i)
+			for (size_t i = 0; i < segments; ++i)
 			{
 				const auto angle = (float)i * angle_step;
 				const auto point = center + (rotation * glm::vec3(radius * glm::sin(angle), 0.f, radius * glm::cos(angle)));
@@ -514,7 +514,7 @@ namespace Utility
 			constexpr auto indices = get_icosahedron_points_and_indices().second;
 
 			std::array<glm::vec3, 60> points_flat = {};
-			for (auto i = 0; i < indices.size(); i++)
+			for (size_t i = 0; i < indices.size(); i++)
 				points_flat[i] = points[indices[i]];
 
 			return points_flat;

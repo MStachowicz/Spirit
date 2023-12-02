@@ -58,21 +58,21 @@ namespace UI
 
 		Platform::Input&         m_input;
 		Platform::Window&        m_window;
-		System::TextureSystem&   mTextureSystem;
-		System::MeshSystem&      mMeshSystem;
-		System::SceneSystem&     mSceneSystem;
-		System::CollisionSystem& mCollisionSystem;
-		OpenGL::OpenGLRenderer&  mOpenGLRenderer;
+		System::TextureSystem&   m_texture_system;
+		System::MeshSystem&      m_mesh_system;
+		System::SceneSystem&     m_scene_system;
+		System::CollisionSystem& m_collision_system;
+		OpenGL::OpenGLRenderer&  m_openGL_renderer;
 
 		std::vector<Geometry::Ray> m_click_rays; // On mouse click save the Ray to render.
-		std::vector<ECS::Entity> mSelectedEntities;
+		std::vector<ECS::Entity> m_selected_entities;
 		Console m_console;
-		Windows mWindowsToDisplay; // All the windows currently being displayed
+		Windows m_windows_to_display; // All the windows currently being displayed
 
 	public:
 		using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a float precision duration in seconds.
 
-		int mDrawCount;
+		int m_draw_count;
 		DeltaTime m_time_to_average_over; // The time over which to average out the fps.
 		std::vector<DeltaTime> m_duration_between_draws;
 
@@ -101,7 +101,7 @@ namespace UI
 			return 1.f / std::chrono::duration_cast<std::chrono::duration<Rep>>(avg_time_per_frame).count();
 		}
 
-		Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& pTextureSystem, System::MeshSystem& pMeshSystem, System::SceneSystem& pSceneSystem, System::CollisionSystem& pCollisionSystem, OpenGL::OpenGLRenderer& pOpenGLRenderer);
+		Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system, System::SceneSystem& p_scene_system, System::CollisionSystem& p_collision_system, OpenGL::OpenGLRenderer& p_openGL_renderer);
 
 		void draw(const DeltaTime& p_duration_since_last_draw);
 

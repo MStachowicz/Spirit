@@ -6,31 +6,31 @@
 
 namespace Platform
 {
-    enum class Key : uint8_t;
-    enum class MouseButton;
-    enum class Action;
-    enum class CursorMode;
-    class Window;
-    class Input;
+	enum class Key : uint8_t;
+	enum class MouseButton;
+	enum class Action;
+	enum class CursorMode;
+	class Window;
+	class Input;
 }
 namespace System
 {
-    class SceneSystem;
+	class SceneSystem;
 
-    // Listens to platform input events.
-    class InputSystem
-    {
-    public:
-        InputSystem(Platform::Input& p_input, Platform::Window& p_window, SceneSystem& pSceneSystem);
-        void update(const DeltaTime& p_delta_time);
+	// Listens to platform input events.
+	class InputSystem
+	{
+	public:
+		InputSystem(Platform::Input& p_input, Platform::Window& p_window, SceneSystem& p_scene_system);
+		void update(const DeltaTime& p_delta_time);
 
-        size_t m_update_count;
-    private:
-        void on_key_event(Platform::Key p_key, Platform::Action p_action);
+		size_t m_update_count;
+	private:
+		void on_key_event(Platform::Key p_key, Platform::Action p_action);
 
-        Platform::Input& m_input;
-        Platform::Window& m_window;
+		Platform::Input& m_input;
+		Platform::Window& m_window;
 
-        SceneSystem& mSceneSystem;
-    };
+		SceneSystem& m_scene_system;
+	};
 }
