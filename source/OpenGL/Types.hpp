@@ -11,17 +11,10 @@
 #include <vector>
 #include <utility>
 
-namespace Data
-{
-	class Model;
-	class CompositeMesh;
-	class Mesh;
-}
 namespace Utility
 {
 	class Image;
 }
-
 namespace OpenGL
 {
 	// These are per-vertex attributes found in Shader.

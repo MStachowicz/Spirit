@@ -1,11 +1,9 @@
 #include "Types.hpp"
 
-#include "Component/Mesh.hpp"
-#include "Component/Texture.hpp"
-
 #include "Utility/Logger.hpp"
 #include "Utility/File.hpp"
 
+#include "glm/vec2.hpp"
 #include "glad/gl.h"
 
 #include <array>
