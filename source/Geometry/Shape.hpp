@@ -21,23 +21,9 @@ namespace Geometry
 	{
 	public:
 		template<typename T>
+		requires std::is_constructible_v<std::variant<AABB, Cone, Cuboid, Cylinder, Line, LineSegment, Plane, Quad, Ray, Sphere, Triangle>, T>
 		Shape(T&& p_shape) : shape{std::forward<T>(p_shape)}
-		{
-			using shape_type = std::decay_t<T>;
-			static_assert(std::disjunction<
-			std::is_same<shape_type, AABB>,
-			std::is_same<shape_type, Cone>,
-			std::is_same<shape_type, Cuboid>,
-			std::is_same<shape_type, Cylinder>,
-			std::is_same<shape_type, Line>,
-			std::is_same<shape_type, LineSegment>,
-			std::is_same<shape_type, Plane>,
-			std::is_same<shape_type, Quad>,
-			std::is_same<shape_type, Ray>,
-			std::is_same<shape_type, Sphere>,
-			std::is_same<shape_type, Triangle>>::value,
-			"Type T must be one of the types in the variant");
-		}
+		{}
 
 		template<typename T>
 		constexpr bool is() const noexcept

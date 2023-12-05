@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Utility.hpp"
+
 #include "Component/Mesh.hpp"
+#include "Geometry/Shape.hpp"
 #include "OpenGL/GLState.hpp"
-#include "Utility/Utility.hpp"
 
 #include <array>
 #include <vector>
@@ -12,21 +14,52 @@
 
 namespace Utility
 {
-	template <typename VertexType = Data::Vertex, OpenGL::PrimitiveMode primitive_mode = OpenGL::PrimitiveMode::Triangles>
+	template <typename VertexType = Data::Vertex, OpenGL::PrimitiveMode primitive_mode = OpenGL::PrimitiveMode::Triangles, bool build_collision_shape = false>
 	requires Data::is_valid_mesh_vert<VertexType>
 	class MeshBuilder
 	{
 		std::vector<VertexType> data;
 		glm::vec4 current_colour;
+		std::vector<Geometry::Shape> shapes;
 
 	public:
 		MeshBuilder() noexcept
 			: data{}
 			, current_colour{glm::vec4{1.f}}
+			, shapes{}
 		{}
+		void reserve(size_t size)
+		{
+			data.reserve(size);
+		}
+		void clear()
+		{
+			data.clear();
+			shapes.clear();
+		}
+		void set_colour(const glm::vec4& colour)
+		{
+			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");
+			current_colour = colour;
+		}
+		void set_colour(const glm::vec3& colour)
+		{
+			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");
+			current_colour = glm::vec4(colour, 1.f);
+		}
+		[[nodiscard]] Data::Mesh get_mesh()
+		{
+			return Data::Mesh{data, primitive_mode};
+		}
 
+	private:
+		// Helpers for MeshBuilder::add_ functions. These perform the actual adding of vertices to the data vector.
+		// Impl versions do not add to the shapes vector. Only the publicly accessible versions do.
+		// This allows add_ functions to use the impl versions without adding extra shapes to the shapes vetor.
+
+		// Add a vertex to the mesh. _impl version (doesn't add to shapes vector).
 		template <typename Vertex>
-		void add_vertex(Vertex&& v)
+		void add_vertex_impl(Vertex&& v)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Points, "add_vertex requires MeshBuilder PrimitiveMode to be Points.");
 			static_assert(std::is_same_v<std::decay_t<Vertex>, VertexType>, "Vertex type must match the MeshBuilder VertexType.");
@@ -38,8 +71,9 @@ namespace Utility
 
 			data.emplace_back(std::forward<Vertex>(v));
 		}
+		// Add a line to the mesh. _impl version (doesn't add to shapes vector).
 		template <typename Vertex, typename Vertex2>
-		void add_line(Vertex&& v1, Vertex2&& v2)
+		void add_line_impl(Vertex&& v1, Vertex2&& v2)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Lines, "add_line requires MeshBuilder PrimitiveMode to be Lines.");
 			static_assert(!Data::has_normal_member<VertexType>, "add_line doesnt support normal data. Remove the normal from VertexType.");
@@ -51,7 +85,7 @@ namespace Utility
 				VertexType v2_t;
 				v1_t.position = v1;
 				v2_t.position = v2;
-				add_line(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t));
+				add_line_impl(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t));
 			}
 			else if constexpr (std::is_same_v<std::decay_t<Vertex>, VertexType> && std::is_same_v<std::decay_t<Vertex2>, VertexType>)
 			{
@@ -66,10 +100,9 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_line for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		// Add a triangle to the mesh.
-		// If VertexType has one, calculates the normal from the positions. If the normal is pre-computed use the other overload.
+		// Add triangle to the mesh. _impl version (doesn't add to shapes vector).
 		template <typename Vertex, typename Vertex2, typename Vertex3>
-		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
+		void add_triangle_impl(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
 
@@ -109,10 +142,9 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_triangle for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		// Add a triangle to the mesh.
-		// Uses the provided normal. If the vertices dont have a normal, use the other overload.
+		// Add triangle to the mesh with a pre-defined normal. _impl version (doesn't add to shapes vector).
 		template <typename Vertex, typename Vertex2, typename Vertex3>
-		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3, const glm::vec3& normal)
+		void add_triangle_impl(Vertex&& v1, Vertex2&& v2, Vertex3&& v3, const glm::vec3& normal)
 		{
 			static_assert(primitive_mode == OpenGL::PrimitiveMode::Triangles, "add_triangle requires MeshBuilder PrimitiveMode to be Triangles.");
 			static_assert(Data::has_normal_member<VertexType>, "VertexType must have a normal member. Call non-normal overload of add_triangle or remove normal data from VertexType.");
@@ -137,43 +169,8 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_triangle for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-
-
-
-
-		void add_circle(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
-		{
-			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
-			{
-				const auto points_and_UVs = get_circle_points(center, radius, segments, normal);
-
-				for (size_t i = 0; i < segments; ++i)
-				{
-					VertexType v1;
-					VertexType v2;
-					VertexType v3;
-
-					v1.position = points_and_UVs[(i + 1) % segments].first;
-					v2.position = center;
-					v3.position = points_and_UVs[i].first;
-
-					if constexpr (Data::has_UV_member<VertexType>)
-					{
-						v1.uv = glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
-						v2.uv = glm::vec2{0.5f, 0.5f};
-						v3.uv = glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f));
-					}
-
-					if constexpr (Data::has_normal_member<VertexType>)
-						add_triangle(v1, v2, v3, normal);
-					else
-						add_triangle(v1, v2, v3);
-				}
-			}
-			else
-				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_circle for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
-		}
-		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
+		// Add a quad to the mesh. _impl version (doesn't add to shapes vector).
+		void add_quad_impl(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
 			{
@@ -200,25 +197,102 @@ namespace Utility
 					if constexpr (Data::has_normal_member<VertexType>)
 					{
 						const auto normal = glm::normalize(glm::cross(bottom_left - top_left, top_right - top_left));
-						add_triangle(top_left_v, bottom_left_v, bottom_right_v, normal);
-						add_triangle(top_left_v, bottom_right_v, top_right_v, normal);
+						add_triangle_impl(top_left_v, bottom_left_v, bottom_right_v, normal);
+						add_triangle_impl(top_left_v, bottom_right_v, top_right_v, normal);
 					}
 					else
 					{
-						add_triangle(top_left_v, bottom_left_v, bottom_right_v);
-						add_triangle(top_left_v, bottom_right_v, top_right_v);
+						add_triangle_impl(top_left_v, bottom_left_v, bottom_right_v);
+						add_triangle_impl(top_left_v, bottom_right_v, top_right_v);
 					}
 				}
 				else if constexpr (primitive_mode == OpenGL::PrimitiveMode::Lines)
 				{
-					add_line(top_left_v, bottom_left_v);
-					add_line(bottom_left_v, bottom_right_v);
-					add_line(bottom_right_v, top_right_v);
-					add_line(top_right_v, top_left_v);
+					add_line_impl(top_left_v, bottom_left_v);
+					add_line_impl(bottom_left_v, bottom_right_v);
+					add_line_impl(bottom_right_v, top_right_v);
+					add_line_impl(top_right_v, top_left_v);
 				}
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_quad for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+		}
+		// Add a circle to the mesh. _impl version (doesn't add to shapes vector).
+		void add_circle_impl(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
+		{
+			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+			{
+				const auto points_and_UVs = get_circle_points(center, radius, segments, normal);
+
+				for (size_t i = 0; i < segments; ++i)
+				{
+					VertexType v1;
+					VertexType v2;
+					VertexType v3;
+
+					v1.position = points_and_UVs[(i + 1) % segments].first;
+					v2.position = center;
+					v3.position = points_and_UVs[i].first;
+
+					if constexpr (Data::has_UV_member<VertexType>)
+					{
+						v1.uv = glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
+						v2.uv = glm::vec2{0.5f, 0.5f};
+						v3.uv = glm::vec2(0.5f) - (points_and_UVs[i].second * glm::vec2(0.5f, -0.5f));
+					}
+
+					if constexpr (Data::has_normal_member<VertexType>)
+						add_triangle_impl(v1, v2, v3, normal);
+					else
+						add_triangle_impl(v1, v2, v3);
+				}
+			}
+			else
+				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_circle for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+		}
+
+	public:
+		template <typename Vertex>
+		void add_vertex(Vertex&& v)
+		{
+			static_assert(build_collision_shape == false, "Vertex mesh doesnt support collisions. Use Geometry::point_inside functions instead.");
+			add_vertex_impl(std::forward<Vertex>(v));
+		}
+		template <typename Vertex, typename Vertex2>
+		void add_line(Vertex&& v1, Vertex2&& v2)
+		{
+			add_line_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2));
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::LineSegment{v1.position, v2.position});
+		}
+		template <typename Vertex, typename Vertex2, typename Vertex3>
+		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
+		{
+			add_triangle_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3));
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Triangle{v1.position, v2.position, v3.position});
+		}
+		template <typename Vertex, typename Vertex2, typename Vertex3>
+		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3, const glm::vec3& normal)
+		{
+			add_triangle_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3), normal);
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Triangle{v1.position, v2.position, v3.position});
+		}
+		void add_circle(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
+		{
+			add_circle_impl(center, radius, segments, normal);
+
+			//#24 #TODO Add circle to Geometry::Shape
+			//if constexpr (build_collision_shape)
+			//shapes.emplace_back(Geometry::Circle{center, radius, normal});
+		}
+		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
+		{
+			add_quad_impl(top_left, top_right, bottom_left, bottom_right);
+
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Quad{top_left, top_right, bottom_left, bottom_right});
 		}
 		void add_cone(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
 		{
@@ -244,13 +318,17 @@ namespace Utility
 						v3.uv = glm::vec2(0.5f) - (points_and_UVs[(i + 1) % segments].second * glm::vec2(0.5f, -0.5f));
 					}
 
-					add_triangle(v1, v2, v3);
+					add_triangle_impl(v1, v2, v3);
 				}
 
-				add_circle(base, radius, segments, top_to_base);
+				//#TODO #OPTIMIZATION Reuse the circle points from points_and_UVs for the base circle like cylinder.
+				add_circle_impl(base, radius, segments, top_to_base);
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cone for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Cone{base, top, radius});
 		}
 		void add_cylinder(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
 		{
@@ -298,26 +376,29 @@ namespace Utility
 					}
 
 					{// Add the triangles for the side of the cylinder. Go in triangle pairs forming quads along the side.
-						add_triangle(base_vertex_1, top_vertex_1, base_vertex_2);
-						add_triangle(base_vertex_2, top_vertex_1, top_vertex_2);
+						add_triangle_impl(base_vertex_1, top_vertex_1, base_vertex_2);
+						add_triangle_impl(base_vertex_2, top_vertex_1, top_vertex_2);
 					}
 					{// Add the triangles for the circles at the base and top of the cylinder.
 					 // Though identical to MeshBuilder::add_circle, we dont want to call get_circle_points more than once so we reuse the base_circle_points.
 					 	if constexpr (Data::has_normal_member<VertexType>)
 						{
-							add_triangle(base_vertex_2, base_vertex_center, base_vertex_1, top_to_base_dir);
-							add_triangle(top_vertex_1, top_vertex_center, top_vertex_2, base_to_top_dir);
+							add_triangle_impl(base_vertex_2, base_vertex_center, base_vertex_1, top_to_base_dir);
+							add_triangle_impl(top_vertex_1, top_vertex_center, top_vertex_2, base_to_top_dir);
 						}
 						else
 						{
-							add_triangle(base_vertex_2, base_vertex_center, base_vertex_1);
-							add_triangle(top_vertex_1, top_vertex_center, top_vertex_2);
+							add_triangle_impl(base_vertex_2, base_vertex_center, base_vertex_1);
+							add_triangle_impl(top_vertex_1, top_vertex_center, top_vertex_2);
 						}
 					}
 				}
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cylinder for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Cylinder{base, top, radius});
 		}
 		void add_arrow(const glm::vec3& base, const glm::vec3& top, size_t segments = 16)
 		{
@@ -377,11 +458,15 @@ namespace Utility
 					points[i + 1] = ((points[i + 1] / glm::length(points[i + 1])) * radius) + center;
 					points[i + 2] = ((points[i + 2] / glm::length(points[i + 2])) * radius) + center;
 
-					add_triangle(points[i], points[i + 1], points[i + 2]);
+					add_triangle_impl(points[i], points[i + 1], points[i + 2]);
 				}
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_icosphere for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+
+			// A low subdivision icosphere only approximates a sphere. While we add a sphere here, below a certain subdivision level we could push just the faces.
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Sphere{center, radius});
 		}
 		void add_cuboid(const glm::vec3& center, const glm::vec3& size)
 		{
@@ -400,37 +485,18 @@ namespace Utility
 				const auto p7 = center + glm::vec3( half_size.x,  half_size.y,  half_size.z);
 				const auto p8 = center + glm::vec3( half_size.x,  half_size.y, -half_size.z);
 
-				add_quad(p7, p8, p3, p4); // Left
-				add_quad(p5, p6, p1, p2); // Right
-				add_quad(p2, p3, p1, p4); // Bottom
-				add_quad(p5, p8, p6, p7); // Top
-				add_quad(p6, p7, p2, p3); // Front
-				add_quad(p8, p5, p4, p1); // Back
+				add_quad_impl(p7, p8, p3, p4); // Left
+				add_quad_impl(p5, p6, p1, p2); // Right
+				add_quad_impl(p2, p3, p1, p4); // Bottom
+				add_quad_impl(p5, p8, p6, p7); // Top
+				add_quad_impl(p6, p7, p2, p3); // Front
+				add_quad_impl(p8, p5, p4, p1); // Back
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cuboid for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
-		}
-		void reserve(size_t size)
-		{
-			data.reserve(size);
-		}
-		void clear()
-		{
-			data.clear();
-		}
-		void set_colour(const glm::vec4& colour)
-		{
-			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");
-			current_colour = colour;
-		}
-		void set_colour(const glm::vec3& colour)
-		{
-			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");
-			current_colour = glm::vec4(colour, 1.f);
-		}
-		[[nodiscard]] Data::Mesh get_mesh()
-		{
-			return Data::Mesh{data, primitive_mode};
+
+			if constexpr (build_collision_shape)
+				shapes.emplace_back(Geometry::Cuboid{center, size});
 		}
 
 	private: // Helpers for MeshBuilder::add_ functions
