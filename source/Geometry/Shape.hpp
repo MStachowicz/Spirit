@@ -1,14 +1,10 @@
 #pragma once
 
-#include "Geometry/AABB.hpp"
 #include "Geometry/Cone.hpp"
 #include "Geometry/Cuboid.hpp"
 #include "Geometry/Cylinder.hpp"
-#include "Geometry/Line.hpp"
 #include "Geometry/LineSegment.hpp"
-#include "Geometry/Plane.hpp"
 #include "Geometry/Quad.hpp"
-#include "Geometry/Ray.hpp"
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Triangle.hpp"
 
@@ -21,7 +17,7 @@ namespace Geometry
 	{
 	public:
 		template<typename T>
-		requires std::is_constructible_v<std::variant<AABB, Cone, Cuboid, Cylinder, Line, LineSegment, Plane, Quad, Ray, Sphere, Triangle>, T>
+		requires std::is_constructible_v<std::variant<Cone, Cuboid, Cylinder, LineSegment, Quad, Sphere, Triangle>, T>
 		Shape(T&& p_shape) : shape{std::forward<T>(p_shape)}
 		{}
 
@@ -41,6 +37,6 @@ namespace Geometry
 			return std::get<T>(shape);
 		}
 
-		std::variant<AABB, Cone, Cuboid, Cylinder, Line, LineSegment, Plane, Quad, Ray, Sphere, Triangle> shape;
+		std::variant<Cone, Cuboid, Cylinder, LineSegment, Quad, Sphere, Triangle> shape;
 	};
 }
