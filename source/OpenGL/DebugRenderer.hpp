@@ -12,6 +12,7 @@ namespace Geometry
 {
 	class Cone;
 	class Cylinder;
+	class Cuboid;
 	class Frustrum;
 	class Plane;
 	class Point;
@@ -74,6 +75,7 @@ namespace OpenGL
 
 		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::Cuboid& p_cuboid,     const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::LineSegment& p_line,  const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Plane& p_plane,       const glm::vec4& p_colour = glm::vec4(1.f));

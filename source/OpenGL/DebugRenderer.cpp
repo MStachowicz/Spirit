@@ -8,6 +8,7 @@
 #include "ECS/Storage.hpp"
 #include "System/SceneSystem.hpp"
 
+#include "Geometry/Cuboid.hpp"
 #include "Geometry/Cylinder.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Geometry.hpp"
@@ -136,6 +137,11 @@ namespace OpenGL
 	{
 		m_tri_mb.set_colour(p_colour);
 		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, m_debug_options.m_segments);
+	}
+	void DebugRenderer::add(const Geometry::Cuboid& p_cuboid, const glm::vec4& p_colour)
+	{
+		m_tri_mb.set_colour(p_colour);
+		m_tri_mb.add_cuboid(p_cuboid.m_position, p_cuboid.m_scale);
 	}
 	void DebugRenderer::add(const Geometry::Quad& p_quad, const glm::vec4& p_colour)
 	{
