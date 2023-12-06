@@ -49,7 +49,7 @@ namespace Utility
 		}
 		[[nodiscard]] Data::Mesh get_mesh()
 		{
-			return Data::Mesh{data, primitive_mode};
+			return Data::Mesh{data, primitive_mode, shapes};
 		}
 
 	private:

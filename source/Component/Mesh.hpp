@@ -2,12 +2,9 @@
 
 #include "Component/Vertex.hpp"
 #include "Geometry/AABB.hpp"
+#include "Geometry/Shape.hpp"
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
-
-#include "glm/vec4.hpp"
-#include "glm/vec3.hpp"
-#include "glm/vec2.hpp"
 
 #include <vector>
 
@@ -21,7 +18,8 @@ namespace Data
 		OpenGL::PrimitiveMode primitive_mode;
 
 	public:
-		Geometry::AABB AABB;
+		Geometry::AABB AABB;                           // Object-space AABB for broad-phase collision detection.
+		std::vector<Geometry::Shape> collision_shapes; // Object-space shape for narrow-phase collision detection.
 
 		void draw()
 		{
@@ -36,11 +34,13 @@ namespace Data
 
 		template <typename VertexType>
 		requires is_valid_mesh_vert<VertexType>
-		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode) noexcept
+		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode, const std::vector<Geometry::Shape>& shapes) noexcept
 			: VAO{}
 			, VBO{}
 			, draw_size{(GLsizei)vertex_data.size()}
 			, primitive_mode{primitive_mode}
+			, AABB{} // TODO: Feed AABB out of the MeshBuilder like shapes.
+			, collision_shapes{shapes}
 		{
 			static_assert(has_position_member<VertexType>, "VertexType must have a position member");
 
