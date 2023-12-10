@@ -29,6 +29,7 @@ namespace Geometry
 		// Transform all the points in the triangle by the trasnformation matrix applying around the centroid of the triangle.
 		void transform(const glm::mat4& p_transform);
 		void translate(const glm::vec3& p_translate);
+		void draw_UI() const;
 
 		// Returns the current world-space centroid of the triangle.
 		glm::vec3 centroid() const;

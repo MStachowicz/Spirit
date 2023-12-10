@@ -36,12 +36,12 @@ namespace OpenGL
 		{// Create a cube meshes to represent AABBs.
 			{
 				auto mb = Utility::MeshBuilder<Data::PositionVertex, PrimitiveMode::Lines>{};
-				mb.add_cuboid(glm::vec3(0.f), glm::vec3(1.f));
+				mb.add_cuboid(Geometry::Cuboid(glm::vec3(0.f), glm::vec3(0.5f)));
 				m_AABB_outline_mesh = mb.get_mesh();
 			}
 			{
 				auto mb = Utility::MeshBuilder<Data::PositionVertex, PrimitiveMode::Triangles>{};
-				mb.add_cuboid(glm::vec3(0.f), glm::vec3(1.f));
+				mb.add_cuboid(Geometry::Cuboid(glm::vec3(0.f), glm::vec3(0.5f)));
 				m_AABB_filled_mesh = mb.get_mesh();
 			}
 		}
@@ -126,43 +126,43 @@ namespace OpenGL
 	void DebugRenderer::add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_triangle(p_triangle.m_point_1, p_triangle.m_point_2, p_triangle.m_point_3);
+		m_tri_mb.add_triangle(p_triangle);
 	}
 	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cone(p_cone.m_base, p_cone.m_top, p_cone.m_base_radius, m_debug_options.m_segments);
+		m_tri_mb.add_cone(p_cone, m_debug_options.m_segments);
 	}
 	void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, m_debug_options.m_segments);
+		m_tri_mb.add_cylinder(p_cylinder, m_debug_options.m_segments);
 	}
 	void DebugRenderer::add(const Geometry::Cuboid& p_cuboid, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cuboid(p_cuboid.m_position, p_cuboid.m_scale);
+		m_tri_mb.add_cuboid(p_cuboid);
 	}
 	void DebugRenderer::add(const Geometry::Quad& p_quad, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_quad(p_quad.m_point_1, p_quad.m_point_2, p_quad.m_point_3, p_quad.m_point_4);
+		m_tri_mb.add_quad(p_quad);
 	}
 	void DebugRenderer::add(const Geometry::LineSegment& p_line, const glm::vec4& p_colour)
 	{
 		m_line_mb.set_colour(p_colour);
-		m_line_mb.add_line(p_line.m_start, p_line.m_end);
+		m_line_mb.add_line(p_line);
 	}
 	void DebugRenderer::add(const Geometry::Ray& p_ray, const glm::vec4& p_colour)
 	{
-		// Because a Ray extends infinitely, we represent it as a Line extending beyond camera z-far which gives it an infinite appearance.
+		// Because a Ray extends infinitely, we represent it as a LineSegment extending beyond camera z-far which gives it an infinite appearance.
 		m_line_mb.set_colour(p_colour);
 		m_line_mb.add_line(p_ray.m_start, p_ray.m_start + (p_ray.m_direction * Z_Far_Scaler));
 	}
 	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, m_debug_options.m_subdivisions);
+		m_tri_mb.add_sphere(p_sphere, m_debug_options.m_subdivisions);
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
 	{

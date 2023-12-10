@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/vec3.hpp"
+#include "glm/fwd.hpp"
 
 namespace Geometry
 {
@@ -11,6 +12,9 @@ namespace Geometry
 			: m_center{p_position}
 			, m_radius{p_radius}
 		{}
+
+		void transform(const glm::mat4& p_transform, const glm::vec3& p_scale);
+		void draw_UI() const;
 
 		glm::vec3 m_center;
 		float m_radius;

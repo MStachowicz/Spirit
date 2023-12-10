@@ -3,6 +3,7 @@
 #include "Triangle.hpp"
 
 #include "glm/glm.hpp"
+#include "imgui.h"
 
 namespace Geometry
 {
@@ -31,6 +32,22 @@ namespace Geometry
 		m_point_2 = quad.m_point_2;
 		m_point_3 = quad.m_point_3;
 		m_point_4 = quad.m_point_4;
+	}
+	void Quad::transform(const glm::mat4& p_transform)
+	{
+		m_point_1 = glm::vec3(p_transform * glm::vec4(m_point_1, 1.f));
+		m_point_2 = glm::vec3(p_transform * glm::vec4(m_point_2, 1.f));
+		m_point_3 = glm::vec3(p_transform * glm::vec4(m_point_3, 1.f));
+		m_point_4 = glm::vec3(p_transform * glm::vec4(m_point_4, 1.f));
+	}
+	void Quad::draw_UI() const
+	{
+		ImGui::SeparatorText("Quad");
+		ImGui::Text("Point 1", m_point_1);
+		ImGui::Text("Point 2", m_point_2);
+		ImGui::Text("Point 3", m_point_3);
+		ImGui::Text("Point 4", m_point_4);
+		ImGui::Text("Center", center());
 	}
 	Quad::Quad(const Triangle& p_triangle) noexcept
 	{

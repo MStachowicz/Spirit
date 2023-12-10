@@ -4,6 +4,8 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "imgui.h"
+
 namespace Geometry
 {
 	glm::vec3 Triangle::centroid() const
@@ -28,6 +30,16 @@ namespace Geometry
 		m_point_1 += p_translate;
 		m_point_2 += p_translate;
 		m_point_3 += p_translate;
+	}
+
+	void Triangle::draw_UI() const
+	{
+		ImGui::SeparatorText("Triangle");
+		ImGui::Text("Point 1", m_point_1);
+		ImGui::Text("Point 2", m_point_2);
+		ImGui::Text("Point 3", m_point_3);
+		ImGui::Text("Centroid", centroid());
+		ImGui::Text("Normal", normal());
 	}
 
 	std::array<Triangle, 4> Triangle::subdivide() const

@@ -145,8 +145,11 @@ add_library(Geometry
 source/Geometry/AABB.cpp
 source/Geometry/AABB.hpp
 source/Geometry/Cylinder.hpp
+source/Geometry/Cylinder.cpp
 source/Geometry/Cone.hpp
+source/Geometry/Cone.cpp
 source/Geometry/Cuboid.hpp
+source/Geometry/Cuboid.cpp
 source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
 source/Geometry/Frustrum.hpp
@@ -164,6 +167,7 @@ source/Geometry/Quad.cpp
 source/Geometry/Quad.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
+source/Geometry/Sphere.cpp
 source/Geometry/Shape.hpp
 source/Geometry/Triangle.hpp
 source/Geometry/Triangle.cpp
@@ -175,6 +179,7 @@ PRIVATE source
 target_link_libraries(Geometry
 PUBLIC GLM
 PRIVATE Utility
+PRIVATE ImGui
 )
 target_compile_options(Geometry PRIVATE ${WARNING_COMPILE_FLAGS})
 # Geometry end ----------------------------------------------------------------------------------------------------------------------------

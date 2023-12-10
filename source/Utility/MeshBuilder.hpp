@@ -7,6 +7,11 @@
 #include "Geometry/LineSegment.hpp"
 #include "OpenGL/GLState.hpp"
 
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
+#include "glm/gtc/quaternion.hpp"
+
 #include <array>
 #include <vector>
 #include <numbers>
@@ -37,6 +42,10 @@ namespace Utility
 		{
 			data.clear();
 			shapes.clear();
+		}
+		bool empty() const
+		{
+			return data.empty();
 		}
 		void set_colour(const glm::vec4& colour)
 		{
@@ -266,6 +275,10 @@ namespace Utility
 			if constexpr (build_collision_shape)
 				shapes.emplace_back(Geometry::LineSegment{v1.position, v2.position});
 		}
+		void add_line(const Geometry::LineSegment& line)
+		{
+			add_line(line.m_start, line.m_end);
+		}
 		template <typename Vertex, typename Vertex2, typename Vertex3>
 		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
 		{
@@ -280,13 +293,9 @@ namespace Utility
 			if constexpr (build_collision_shape)
 				shapes.emplace_back(Geometry::Triangle{v1.position, v2.position, v3.position});
 		}
-		void add_circle(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
+		void add_triangle(const Geometry::Triangle& triangle)
 		{
-			add_circle_impl(center, radius, segments, normal);
-
-			//#24 #TODO Add circle to Geometry::Shape
-			//if constexpr (build_collision_shape)
-			//shapes.emplace_back(Geometry::Circle{center, radius, normal});
+			add_triangle(triangle.m_point_1, triangle.m_point_2, triangle.m_point_3);
 		}
 		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
@@ -295,7 +304,11 @@ namespace Utility
 			if constexpr (build_collision_shape)
 				shapes.emplace_back(Geometry::Quad{top_left, top_right, bottom_left, bottom_right});
 		}
-		void add_cone(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
+		void add_quad(const Geometry::Quad& quad)
+		{
+			add_quad(quad.m_point_1, quad.m_point_2, quad.m_point_3, quad.m_point_4);
+		}
+		void add_cone(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments = 16)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
@@ -331,7 +344,11 @@ namespace Utility
 			if constexpr (build_collision_shape)
 				shapes.emplace_back(Geometry::Cone{base, top, radius});
 		}
-		void add_cylinder(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
+		void add_cone(const Geometry::Cone& cone, size_t segments = 16)
+		{
+			add_cone(cone.m_base, cone.m_top, cone.m_base_radius, segments);
+		}
+		void add_cylinder(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments = 16)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
@@ -401,6 +418,10 @@ namespace Utility
 			if constexpr (build_collision_shape)
 				shapes.emplace_back(Geometry::Cylinder{base, top, radius});
 		}
+		void add_cylinder(const Geometry::Cylinder& cylinder, size_t segments = 16)
+		{
+			add_cylinder(cylinder.m_base, cylinder.m_top, cylinder.m_radius, segments);
+		}
 		void add_arrow(const glm::vec3& base, const glm::vec3& top, size_t segments = 16)
 		{
 			const auto base_to_top        = top - base;
@@ -469,35 +490,27 @@ namespace Utility
 			if constexpr (build_collision_shape)
 				shapes.emplace_back(Geometry::Sphere{center, radius});
 		}
-		void add_cuboid(const glm::vec3& center, const glm::vec3& size)
+		void add_sphere(const Geometry::Sphere sphere, size_t subdivisions)
+		{
+			add_icosphere(sphere.m_center, sphere.m_radius, subdivisions);
+		}
+		void add_cuboid(const Geometry::Cuboid& cuboid)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
 			{
-				const auto half_size = size / 2.f;
-
-				// Bottom face
-				const auto p1 = center + glm::vec3(-half_size.x, -half_size.y, -half_size.z);
-				const auto p2 = center + glm::vec3(-half_size.x, -half_size.y,  half_size.z);
-				const auto p3 = center + glm::vec3( half_size.x, -half_size.y,  half_size.z);
-				const auto p4 = center + glm::vec3( half_size.x, -half_size.y, -half_size.z);
-				// Top face
-				const auto p5 = center + glm::vec3(-half_size.x,  half_size.y, -half_size.z);
-				const auto p6 = center + glm::vec3(-half_size.x,  half_size.y,  half_size.z);
-				const auto p7 = center + glm::vec3( half_size.x,  half_size.y,  half_size.z);
-				const auto p8 = center + glm::vec3( half_size.x,  half_size.y, -half_size.z);
-
-				add_quad_impl(p7, p8, p3, p4); // Left
-				add_quad_impl(p5, p6, p1, p2); // Right
-				add_quad_impl(p2, p3, p1, p4); // Bottom
-				add_quad_impl(p5, p8, p6, p7); // Top
-				add_quad_impl(p6, p7, p2, p3); // Front
-				add_quad_impl(p8, p5, p4, p1); // Back
+				const auto vertices = cuboid.get_vertices();
+				add_quad_impl(vertices[3], vertices[1], vertices[2], vertices[0]); // Top
+				add_quad_impl(vertices[6], vertices[4], vertices[7], vertices[5]); // Bottom
+				add_quad_impl(vertices[3], vertices[2], vertices[7], vertices[6]); // Left
+				add_quad_impl(vertices[0], vertices[1], vertices[4], vertices[5]); // Right
+				add_quad_impl(vertices[2], vertices[0], vertices[6], vertices[4]); // Front
+				add_quad_impl(vertices[1], vertices[3], vertices[5], vertices[7]); // Back
 			}
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cuboid for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
 			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Cuboid{center, size});
+				shapes.emplace_back(cuboid);
 		}
 
 	private: // Helpers for MeshBuilder::add_ functions

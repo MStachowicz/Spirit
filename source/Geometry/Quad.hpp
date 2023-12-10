@@ -3,6 +3,7 @@
 #include "Triangle.hpp"
 
 #include "glm/vec3.hpp"
+#include "glm/fwd.hpp"
 
 #include <array>
 
@@ -35,6 +36,9 @@ namespace Geometry
 		Quad(const Triangle& p_triangle) noexcept;
 		// Construct a unit quad inside the plane centered at the closest point of the plane to the origin.
 		Quad(const Plane& p_plane) noexcept;
+
+		void transform(const glm::mat4& p_transform);
+		void draw_UI() const;
 
 		// Uniformly scale the Quad by p_scale factor from its center.
 		void scale(const float p_scale);
