@@ -124,7 +124,7 @@ namespace Utility
 				v1_t.position = v1;
 				v2_t.position = v2;
 				v3_t.position = v3;
-				add_triangle(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t), std::forward<VertexType>(v3_t));
+				add_triangle_impl(std::forward<VertexType>(v1_t), std::forward<VertexType>(v2_t), std::forward<VertexType>(v3_t));
 			}
 			else if constexpr (std::is_same_v<std::decay_t<Vertex>, VertexType> && std::is_same_v<std::decay_t<Vertex2>, VertexType> && std::is_same_v<std::decay_t<Vertex3>, VertexType>)
 			{
@@ -133,7 +133,7 @@ namespace Utility
 					const auto edge1       = v2.position - v1.position;
 					const auto edge2       = v3.position - v1.position;
 					const auto calc_normal = glm::cross(edge1, edge2);
-					add_triangle(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3), calc_normal);
+					add_triangle_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3), calc_normal);
 				}
 				else
 				{
