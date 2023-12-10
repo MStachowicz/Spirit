@@ -4,6 +4,7 @@
 
 #include "Component/Mesh.hpp"
 #include "Geometry/Shape.hpp"
+#include "Geometry/LineSegment.hpp"
 #include "OpenGL/GLState.hpp"
 
 #include <array>

@@ -3,7 +3,6 @@
 #include "Geometry/Cone.hpp"
 #include "Geometry/Cuboid.hpp"
 #include "Geometry/Cylinder.hpp"
-#include "Geometry/LineSegment.hpp"
 #include "Geometry/Quad.hpp"
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Triangle.hpp"
@@ -17,7 +16,6 @@ namespace Geometry
 		std::is_same<T, Cone>,
 		std::is_same<T, Cuboid>,
 		std::is_same<T, Cylinder>,
-		std::is_same<T, LineSegment>,
 		std::is_same<T, Quad>,
 		std::is_same<T, Sphere>,
 		std::is_same<T, Triangle>>;
@@ -27,7 +25,7 @@ namespace Geometry
 	{
 	public:
 		template<typename T>
-		requires std::is_constructible_v<std::variant<Cone, Cuboid, Cylinder, LineSegment, Quad, Sphere, Triangle>, T>
+		requires std::is_constructible_v<std::variant<Cone, Cuboid, Cylinder, Quad, Sphere, Triangle>, T>
 		Shape(T&& p_shape) : shape{std::forward<T>(p_shape)}
 		{}
 
@@ -50,6 +48,6 @@ namespace Geometry
 			return std::get<T>(shape);
 		}
 
-		std::variant<Cone, Cuboid, Cylinder, LineSegment, Quad, Sphere, Triangle> shape;
+		std::variant<Cone, Cuboid, Cylinder, Quad, Sphere, Triangle> shape;
 	};
 }
