@@ -25,7 +25,6 @@ namespace System
 		MeshRef m_cone;
 		MeshRef m_cube;
 		MeshRef m_cylinder;
-		MeshRef m_plane;
 		MeshRef m_sphere;
 		MeshRef m_quad;
 	};

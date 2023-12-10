@@ -21,7 +21,6 @@ namespace System
 		, m_cone{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Cone))}
 		, m_cube{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Cuboid))}
 		, m_cylinder{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Cylinder))}
-		, m_plane{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Plane))}
 		, m_sphere{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Sphere))}
 		, m_quad{m_mesh_manager.insert(make_mesh(Geometry::ShapeType::Quad))}
 	{
@@ -38,37 +37,31 @@ namespace System
 		{
 			case Geometry::ShapeType::Cone:
 			{
-				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
 				mb.add_cone(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, 16);
 				return mb.get_mesh();
 			}
 			case Geometry::ShapeType::Cuboid:
 			{
-				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
-				mb.add_cuboid(glm::vec3(0.f), glm::vec3(2.f, 2.f, 2.f));
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
+				mb.add_cuboid(Geometry::Cuboid(glm::vec3(0.f)));
 				return mb.get_mesh();
 			}
 			case Geometry::ShapeType::Cylinder:
 			{
-				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
 				mb.add_cylinder(glm::vec3(0.f, -1.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 1.f, 16);
-				return mb.get_mesh();
-			}
-			case Geometry::ShapeType::Plane:
-			{
-				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
-				mb.add_quad(glm::vec3(-1000.f, 0.f, -1000.f), glm::vec3(1000.f, 0.f, -1000.f), glm::vec3(-1000.f, 0.f, 1000.f), glm::vec3(1000.f, 0.f, 1000.f));
 				return mb.get_mesh();
 			}
 			case Geometry::ShapeType::Sphere:
 			{
-				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
 				mb.add_icosphere(glm::vec3(0.f, 0.f, 0.f), 1.f, 4);
 				return mb.get_mesh();
 			}
 			case Geometry::ShapeType::Quad:
 			{
-				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
+				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
 				mb.add_quad(glm::vec3(-1.f, 0.f, -1.f), glm::vec3(1.f, 0.f, -1.f), glm::vec3(-1.f, 0.f, 1.f), glm::vec3(1.f, 0.f, 1.f));
 				return mb.get_mesh();
 			}

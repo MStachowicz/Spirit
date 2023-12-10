@@ -265,17 +265,16 @@ namespace System
 			m_scene.m_entities.add_entity(mesh, transform, Component::Collider(), rigidBody, name);
 		}
 		{ // Floor
-			Component::Transform transform;
-			transform.rotateEulerDegrees(glm::vec3(-90.f, 0.f, 0.f));
-			transform.m_scale = glm::vec3(50.f);
-			Component::RigidBody rigidBody;
-			rigidBody.m_mass = 1.f;
+			auto transform     = Component::Transform{glm::vec3(0.f, 0.f, 0.f)};
+			transform.m_scale  = glm::vec3(10.f, 1.f, 10.f);
+
 			m_scene.m_entities.add_entity(
-				Component::Label("Floor"),
-				Component::Mesh{m_mesh_system.m_plane},
+				Component::Label{"Floor"},
+				Component::RigidBody{},
+				Component::Texture{m_texture_system.getTexture(Config::Texture_Directory / "wood_floor.png")},
 				transform,
-				Component::Collider(),
-				rigidBody);
+				Component::Mesh{m_mesh_system.m_quad},
+				Component::Collider{});
 		}
 		{// Lights
 			{// Point light
