@@ -16,6 +16,14 @@ namespace Geometry
 }
 namespace Utility
 {
+	constexpr float EPSILON = 1.0E-6F;
+
+	// Compare two floating-point values and return true if they are similar.
+	// @param p_a: The first value to compare.
+	// @param p_b: The second value to compare.
+	// @param p_epsilon: The maximum difference between the two values for them to be considered similar.
+	bool equal_floats(const float p_a, const float p_b, const float p_epsilon = EPSILON);
+
 	// Produces a random floating-point value in the interval min to max
 	// Satisfies all requirements of RandomNumberDistribution (https://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution)
 	template<class T>
@@ -78,7 +86,6 @@ namespace Utility
 	//@Param p_destination: The normalised destination direction vector.
 	//@Return: The quaternion rotation to get from p_start to p_destination.
 	glm::quat get_rotation(const glm::vec3& p_start, const glm::vec3& p_destination);
-
-	/// Returns a Ray with a starting point at p_view_position
+	// Returns a Ray with a starting point at p_view_position
 	Geometry::Ray get_cursor_ray(const glm::vec2& p_cursor_pos, const glm::ivec2& p_window_size, const glm::vec3& p_view_position, const glm::mat4& p_projection, const glm::mat4& p_view);
 }

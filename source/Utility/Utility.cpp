@@ -7,6 +7,11 @@
 
 namespace Utility
 {
+	bool equal_floats(const float p_a, const float p_b, const float p_epsilon)
+	{
+		return std::abs(p_a - p_b) < p_epsilon;
+	}
+
 	glm::mat4 make_model_matrix(const glm::vec3& p_position, const glm::vec3& p_rotation, const glm::vec3& p_scale)
 	{
 		glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), p_position);
@@ -63,14 +68,14 @@ namespace Utility
 
 	glm::quat get_rotation(const glm::vec3& p_start, const glm::vec3& p_destination)
 	{
-		ASSERT(glm::length2(p_start) == 1.f,       "[UTILITY] p_start is not normalized");
-		ASSERT(glm::length2(p_destination) == 1.f, "[UTILITY] p_destination is not normalized");
+		ASSERT(glm::abs(glm::length2(p_start) - 1.f) < EPSILON, "[UTILITY] p_start is not normalized");
+		ASSERT(glm::abs(glm::length2(p_destination) - 1.f) < EPSILON, "[UTILITY] p_destination is not normalized");
 
 		auto norm_u_norm_v = std::sqrt(glm::dot(p_start, p_start) * glm::dot(p_destination, p_destination));
 		auto real_part     = norm_u_norm_v + glm::dot(p_start, p_destination);
 		glm::vec3 w;
 
-		if (real_part < 1.e-6f * norm_u_norm_v)
+		if (real_part < EPSILON * norm_u_norm_v)
 		{
 			// If p_start and p_destination are exactly opposite, rotate 180 degrees round an arbitrary orthogonal axis.
 			// Axis normalisation can happen later, when we normalise the quaternion.
