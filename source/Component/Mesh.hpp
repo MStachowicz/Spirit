@@ -3,6 +3,7 @@
 #include "Component/Vertex.hpp"
 #include "Geometry/AABB.hpp"
 #include "Geometry/Shape.hpp"
+#include "Geometry/Triangle.hpp"
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
 
@@ -20,6 +21,7 @@ namespace Data
 	public:
 		Geometry::AABB AABB;                           // Object-space AABB for broad-phase collision detection.
 		std::vector<Geometry::Shape> collision_shapes; // Object-space shape for narrow-phase collision detection.
+		std::vector<Geometry::Triangle> triangles;     // Object-space triangles forming this mesh.
 
 		void draw()
 		{
@@ -41,6 +43,7 @@ namespace Data
 			, primitive_mode{primitive_mode}
 			, AABB{} // TODO: Feed AABB out of the MeshBuilder like shapes.
 			, collision_shapes{shapes}
+			, triangles{}
 		{
 			static_assert(has_position_member<VertexType>, "VertexType must have a position member");
 
@@ -61,6 +64,12 @@ namespace Data
 
 				for(size_t i = 0; i < vertex_data.size(); ++i)
 					AABB.unite(vertex_data[i].position);
+
+				if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
+				{
+					for (size_t i = 0; i < vertex_data.size(); i += 3)
+						triangles.emplace_back(vertex_data[i].position, vertex_data[i + 1].position, vertex_data[i + 2].position);
+				}
 			}
 
 			if constexpr (has_normal_member<VertexType>)
