@@ -224,14 +224,15 @@ namespace UI
 		{
 			if (ImGui::Begin("Debug options", &m_windows_to_display.Debug))
 			{
+				auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
 				{ ImGui::SeparatorText("Graphics");
 					ImGui::Text("Window size", m_window.size());
 					ImGui::Text("Aspect ratio", m_window.aspect_ratio());
 					bool VSync = m_window.get_VSync();
 					ImGui::Text("View Position", m_openGL_renderer.m_view_information.m_view_position);
 					ImGui::Separator();
-					ImGui::Checkbox("Show light positions", &OpenGL::DebugRenderer::m_debug_options.m_show_light_positions);
-					ImGui::Checkbox("Visualise normals", &OpenGL::DebugRenderer::m_debug_options.m_show_mesh_normals);
+					ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
+					ImGui::Checkbox("Visualise normals", &debug_options.m_show_mesh_normals);
 					if (ImGui::Checkbox("VSync", &VSync))
 						m_window.set_VSync(VSync);
 				}
@@ -253,22 +254,25 @@ namespace UI
 				}
 
 				{ImGui::SeparatorText("Physics");
-					ImGui::Checkbox("Show orientations",              &OpenGL::DebugRenderer::m_debug_options.m_show_orientations);
-					ImGui::Checkbox("Show bounding box",              &OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box);
 
-					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::BeginDisabled();
-					ImGui::Checkbox("Fill bounding box",              &OpenGL::DebugRenderer::m_debug_options.m_fill_bounding_box);
-					ImGui::ColorEdit3("Bounding box colour",          &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_colour[0]);
-					ImGui::ColorEdit3("Bounding box collided colour", &OpenGL::DebugRenderer::m_debug_options.m_bounding_box_collided_colour[0]);
-					if (!OpenGL::DebugRenderer::m_debug_options.m_show_bounding_box) ImGui::EndDisabled();
+					ImGui::Checkbox("Show orientations",        &debug_options.m_show_orientations);
+					ImGui::Checkbox("Show bounding box",        &debug_options.m_show_bounding_box);
+					ImGui::Checkbox("Fill bounding box",        &debug_options.m_fill_bounding_box);
+					ImGui::Checkbox("Show collision shapes",    &debug_options.m_show_collision_shapes);
+					ImGui::Checkbox("Show collision triangles", &debug_options.m_show_collision_triangles);
+					bool showing_collision_shapes = debug_options.m_show_bounding_box || debug_options.m_show_collision_shapes || debug_options.m_show_collision_triangles;
 
-					ImGui::Checkbox("Show collision shape",           &OpenGL::DebugRenderer::m_debug_options.m_show_collision_shape);
-					ImGui::Slider("Position offset factor",            OpenGL::DebugRenderer::m_debug_options.m_position_offset_factor, -10.f, 10.f);
-					ImGui::Slider("Position offset units",             OpenGL::DebugRenderer::m_debug_options.m_position_offset_units, -10.f, 10.f);
+					if (!showing_collision_shapes) ImGui::BeginDisabled();
+					ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
+					ImGui::ColorEdit3("Bounding box collided colour", &debug_options.m_bounding_box_collided_colour[0]);
+					if (!showing_collision_shapes) ImGui::EndDisabled();
+
+					ImGui::Slider("Position offset factor",            debug_options.m_position_offset_factor, -10.f, 10.f);
+					ImGui::Slider("Position offset units",             debug_options.m_position_offset_units, -10.f, 10.f);
 				}
 
 				if (ImGui::Button("Reset"))
-					OpenGL::DebugRenderer::m_debug_options = OpenGL::DebugRenderer::DebugOptions();
+					debug_options = OpenGL::DebugRenderer::DebugOptions();
 			}
 			ImGui::End();
 		}

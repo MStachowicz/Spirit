@@ -3,6 +3,7 @@
 #include "SceneSystem.hpp"
 
 #include "Component/Camera.hpp"
+#include "Component/Collider.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/RigidBody.hpp"
 #include "Component/Transform.hpp"
@@ -74,8 +75,69 @@ namespace System
 			transform.m_model *= rotationMatrix;
 			transform.m_model = glm::scale(transform.m_model, transform.m_scale);
 
-			// After moving and updating the Collider, check for collisions and respond
 
+			// Update the collider to match the new world-space position
+			if (scene.has_components<Component::Collider>(entity) && scene.has_components<Component::Mesh>(entity))
+			{
+				auto& collider = scene.get_component_mutable<Component::Collider>(entity);
+				auto& mesh     = scene.get_component_mutable<Component::Mesh>(entity);
+
+				// Update the collider's world-space AABB
+				collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, rotationMatrix, transform.m_scale);
+
+				collider.m_collision_shapes.clear();
+				for (const auto& shape : mesh.m_mesh->collision_shapes) // No std::visit here because some shapes require the scale.
+				{
+					if (shape.is<Geometry::Cone>())
+					{
+						auto cone = shape.get<Geometry::Cone>();
+						cone.transform(transform.m_model, transform.m_scale);
+						collider.m_collision_shapes.emplace_back(cone);
+					}
+					else if (shape.is<Geometry::Cuboid>())
+					{
+						auto cuboid = shape.get<Geometry::Cuboid>();
+						cuboid.transform(transform.m_position, transform.m_orientation, transform.m_scale);
+						collider.m_collision_shapes.emplace_back(cuboid);
+					}
+					else if (shape.is<Geometry::Cylinder>())
+					{
+						auto cylinder = shape.get<Geometry::Cylinder>();
+						cylinder.transform(transform.m_model, transform.m_scale);
+						collider.m_collision_shapes.emplace_back(cylinder);
+					}
+					else if (shape.is<Geometry::Quad>())
+					{
+						auto quad = shape.get<Geometry::Quad>();
+						quad.transform(transform.m_model);
+						collider.m_collision_shapes.emplace_back(quad);
+					}
+					else if (shape.is<Geometry::Sphere>())
+					{
+						auto sphere = shape.get<Geometry::Sphere>();
+						sphere.transform(transform.m_model, transform.m_scale);
+						collider.m_collision_shapes.emplace_back(sphere);
+					}
+					else if (shape.is<Geometry::Triangle>())
+					{
+						auto triangle = shape.get<Geometry::Triangle>();
+						triangle.transform(transform.m_model);
+						collider.m_collision_shapes.emplace_back(triangle);
+					}
+					else
+						ASSERT_THROW(false, "[DEBUG RENDERER] Unknown shape type for showing collision shape.");
+				}
+
+				collider.m_triangles.clear();
+				for (const auto& triangle : mesh.m_mesh->triangles)
+				{
+					auto transformed_triangle = triangle;
+					transformed_triangle.transform(transform.m_model);
+					collider.m_triangles.emplace_back(transformed_triangle);
+				}
+			}
+
+			// After moving and updating the Collider, check for collisions and respond
 			ECS::Entity collided_entity = ECS::Entity(0);
 			if (auto collision = m_collision_system.get_collision(entity, &collided_entity))
 			{
