@@ -132,25 +132,25 @@ namespace Test
 
 				{SCOPE_SECTION("Add by copy");
 					storage.add_entity(comp);
-					run_memory_test(1);
+					run_memory_test(2);
 				}
 				{SCOPE_SECTION("Add second copy");
 					storage.add_entity(comp);
-					run_memory_test(2);
+					run_memory_test(3);
 				}
 				{SCOPE_SECTION("New archetype");
 					storage.add_entity(1.f);
-					run_memory_test(2); // Should still be 2 alive because we didnt add another mem correctness item
+					run_memory_test(3); // Should still be 2 alive because we didnt add another mem correctness item
 				}
 				{SCOPE_SECTION("Add by move");
 					storage.add_entity(MemoryCorrectnessItem());
-					run_memory_test(3); // Should still be 2 alive because we didnt add another mem correctness item
+					run_memory_test(4); // Should still be 2 alive because we didnt add another mem correctness item
 				}
 				{SCOPE_SECTION("Add 100");
 					for (int i = 0; i < 100; i++)
 						storage.add_entity(MemoryCorrectnessItem());
 
-					run_memory_test(103);
+					run_memory_test(104);
 				}
 			}
 		}
@@ -160,13 +160,11 @@ namespace Test
 				ECS::Storage storage;
 
 				auto ent = storage.add_entity(1.f);
-				CHECK_EQUAL(storage.count_entities(), 0, "Add 1 entity");
+				CHECK_EQUAL(storage.count_entities(), 1, "Add 1 entity");
 
 				storage.delete_entity(ent);
 				CHECK_EQUAL(storage.count_entities(), 0, "Add 1 entity then delete");
 			}
-
-
 			{SCOPE_SECTION("Memory correctness");
 				{
 					MemoryCorrectnessItem::reset(); // Reset before starting new tests
@@ -418,28 +416,30 @@ namespace Test
 				}
 			}
 			{SCOPE_SECTION("Memory correctness");
-				MemoryCorrectnessItem::reset();
-				ECS::Storage storage;
-				auto mem_correct_entity = storage.add_entity(MemoryCorrectnessItem());
+				{
+					MemoryCorrectnessItem::reset();
+					ECS::Storage storage;
+					auto mem_correct_entity = storage.add_entity(MemoryCorrectnessItem());
 
-				{SCOPE_SECTION("const");
-					{SCOPE_SECTION("Return a reference");
-						const auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(1);
+					{SCOPE_SECTION("const");
+						{SCOPE_SECTION("Return a reference");
+							const auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(1);
+						}
+						{SCOPE_SECTION("Return by copy");
+							const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(2);
+						}
 					}
-					{SCOPE_SECTION("Return by copy");
-						const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(2);
-					}
-				}
-				{SCOPE_SECTION("non-const");
-					{SCOPE_SECTION("Return a reference");
-						auto& compRef = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(1);
-					}
-					{SCOPE_SECTION("Return by copy");
-						const auto compCopy = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(2);
+					{SCOPE_SECTION("non-const");
+						{SCOPE_SECTION("Return a reference");
+							auto& compRef = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(1);
+						}
+						{SCOPE_SECTION("Return by copy");
+							const auto compCopy = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(2);
+						}
 					}
 				}
 
@@ -513,7 +513,7 @@ namespace Test
 					CHECK_EQUAL(sum_double,  0.0, "Sum of doubles");
 					CHECK_EQUAL(sum_float,  0.0f, "Sum of floats");
 					CHECK_EQUAL(sum_int,       0, "Sum of ints");
-					CHECK_EQUAL(count, 3, "Iterate count");
+					CHECK_EQUAL(count, 0, "Iterate count");
 				}
 
 				storage.add_entity(13.69, 1.33f, 2);
@@ -620,7 +620,7 @@ namespace Test
 						count++;
 					});
 
-					CHECK_EQUAL(sum, 47.07, "Sum of doubles"); // 14.69 * 3 + 13.0 = 44.07
+					CHECK_EQUAL(sum, 57.07, "Sum of doubles"); // 14.69 * 3 + 13.0 = 57.07
 					CHECK_EQUAL(count, 4, "Iteration count");
 				}
 			}

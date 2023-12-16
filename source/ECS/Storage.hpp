@@ -472,9 +472,9 @@ namespace ECS
 					using ComponentType = std::decay_t<decltype(p_component)>;
 
 					const auto component_start_position = get_component_position<ComponentType>(m_next_instance_ID);
-					new (&m_data[component_start_position]) ComponentType(std::move(p_component));
+					new (&m_data[component_start_position]) ComponentType(std::forward<decltype(p_component)>(p_component));
 				};
-				(construct_func(std::move(p_component_values)), ...); // Unfold construct_func over the ComponentTypes
+				(construct_func(std::forward<ComponentTypes>(p_component_values)), ...); // Unfold construct_func over the ComponentTypes
 
 				m_entities.push_back(p_entity);
 				m_next_instance_ID++;
@@ -934,7 +934,7 @@ namespace ECS
 			for (const auto& archetype : m_archetypes)
 			{
 				if (requested_bitset == archetype.m_bitset || ((requested_bitset & archetype.m_bitset) == requested_bitset))
-					count ++;
+					count += archetype.m_next_instance_ID;
 			}
 
 			return count;

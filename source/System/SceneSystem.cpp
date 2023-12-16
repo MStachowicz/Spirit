@@ -184,8 +184,7 @@ namespace System
 			m_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 		}
 		{ // Terrain
-			auto terrain = Component::Terrain{100, 100};
-			m_scene.m_entities.add_entity(Component::Label{"Terrain"}, terrain);
+			m_scene.m_entities.add_entity(Component::Label{"Terrain"}, Component::Terrain{100, 100});
 		}
 	}
 
