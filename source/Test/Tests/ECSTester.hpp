@@ -19,7 +19,6 @@ namespace Test
 		void run_performance_tests() override;
 
 	private:
-		size_t countEntities(ECS::Storage& pStorage);
-		void runMemoryTests(const std::string& pTestName, const size_t& pAliveCountExpected);
+		void run_memory_test(const size_t& p_alive_count_expected);
 	};
 } // namespace Test
