@@ -724,33 +724,31 @@ namespace ECS
 		{
 			using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
 
-			const auto function_bitset = FunctionHelper<FunctionParameterPack>::get_bitset();
-			const auto archetype_IDs   = get_matching_or_contained_archetypes(function_bitset);
-
-			if (!archetype_IDs.empty())
+			if constexpr (FunctionHelper<FunctionParameterPack>::is_entity_function())
 			{
-				for (auto& archetype_ID : archetype_IDs)
+				for (EntityID i = 0; i < m_entity_to_archetype_ID.size(); i++)
 				{
-					if (m_archetypes[archetype_ID].m_next_instance_ID > 0)
+					if (m_entity_to_archetype_ID[i].has_value())
 					{
-						ApplyFunction<Func, FunctionParameterPack>::apply_to_archetype(p_function, m_archetypes[archetype_ID]);
+						auto ent = Entity(i);
+						p_function(ent);
 					}
 				}
 			}
-		}
-		// Calls Func on every EntityID. Func must have only one parameter of type ECS::EntityID otherwise wont compile.
-		template <typename Func>
-		void foreach_entity(const Func& p_function)
-		{
-			using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
-			static_assert(FunctionHelper<FunctionParameterPack>::is_entity_function(), "p_function is not a function that takes only one argument of type ECS::Entity");
-
-			for (EntityID i = 0; i < m_entity_to_archetype_ID.size(); i++)
+			else
 			{
-				if (m_entity_to_archetype_ID[i].has_value())
+				const auto function_bitset = FunctionHelper<FunctionParameterPack>::get_bitset();
+				const auto archetype_IDs   = get_matching_or_contained_archetypes(function_bitset);
+
+				if (!archetype_IDs.empty())
 				{
-					auto ent = Entity(i);
-					p_function(ent);
+					for (auto& archetype_ID : archetype_IDs)
+					{
+						if (m_archetypes[archetype_ID].m_next_instance_ID > 0)
+						{
+							ApplyFunction<Func, FunctionParameterPack>::apply_to_archetype(p_function, m_archetypes[archetype_ID]);
+						}
+					}
 				}
 			}
 		}

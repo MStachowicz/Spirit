@@ -169,7 +169,7 @@ namespace UI
 		if (ImGui::Begin("Entities", &m_windows_to_display.Entity))
 		{
 			auto& scene = m_scene_system.get_current_scene();
-			scene.foreach_entity([&](ECS::Entity& p_entity)
+			scene.foreach([&](ECS::Entity& p_entity)
 			{
 				std::string title = "Entity " + std::to_string(p_entity.ID);
 				if (scene.has_components<Component::Label>(p_entity))
