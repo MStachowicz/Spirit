@@ -276,8 +276,7 @@ namespace OpenGL
 		}
 
 		{ // Set DirectonalLight buffer data
-			GLuint directional_light_count = 0;
-			p_scene.m_entities.foreach([this, &directional_light_count](Component::DirectionalLight& p_directional_light) { (void)p_directional_light; directional_light_count++; }); // #TODO replace with a storage::count<>()
+			GLuint directional_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::DirectionalLight>());
 
 			m_directional_lights_buffer->bind();
 			{
@@ -318,9 +317,7 @@ namespace OpenGL
 			}
 		}
 		{ // Set PointLight buffer data
-			GLuint point_light_count = 0;
-			p_scene.m_entities.foreach([this, &point_light_count](Component::PointLight& p_point_light) { (void)p_point_light; point_light_count++; }); // #TODO replace with a storage::count<>()
-
+			GLuint point_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::PointLight>());
 			m_point_lights_buffer->bind();
 			{
 				const GLsizeiptr required_size = m_point_light_fixed_size + (m_point_light_array_stride * point_light_count);
@@ -363,9 +360,7 @@ namespace OpenGL
 			}
 		}
 		{ // Set Spotlight buffer data
-			GLuint spot_light_count = 0;
-			p_scene.m_entities.foreach([this, &spot_light_count](Component::SpotLight& p_spot_light) { (void)p_spot_light; spot_light_count++; }); // #TODO replace with a storage::count<>()
-
+			GLuint spot_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::SpotLight>());
 			m_spot_lights_buffer->bind();
 			{
 				const GLsizeiptr required_size = m_spot_light_fixed_size + (m_spot_light_array_stride * spot_light_count);
