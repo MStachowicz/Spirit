@@ -154,9 +154,7 @@ namespace OpenGL
 		}
 		if (opt.m_show_light_positions)
 		{
-			int point_light_count = 0;
-			scene.foreach([&point_light_count](Component::PointLight& point_light) { (void)point_light; point_light_count++; }); // #TODO replace with a storage::count<>()
-
+			GLsizei point_light_count = scene.count_components<Component::PointLight>();
 			if (point_light_count > 0)
 			{
 				DrawCall dc;
