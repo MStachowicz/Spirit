@@ -154,7 +154,7 @@ namespace OpenGL
 		}
 		if (opt.m_show_light_positions)
 		{
-			GLsizei point_light_count = scene.count_components<Component::PointLight>();
+			GLsizei point_light_count = static_cast<GLsizei>(scene.count_components<Component::PointLight>());
 			if (point_light_count > 0)
 			{
 				DrawCall dc;
