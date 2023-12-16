@@ -11,527 +11,692 @@
 #include <chrono>
 
 DISABLE_WARNING_PUSH
-DISABLE_WARNING_UNUSED_VARIABLE  // Required to stop variables being destroyed before they are used in tests.
-DISABLE_WARNING_UNUSED_PARAMETER // Required until ECS::Storage::count_components<ComponentTypes> is implemented
+DISABLE_WARNING_UNUSED_VARIABLE // Required to stop variables being destroyed before they are used in tests.
 
 namespace Test
 {
-	size_t ECSTester::countEntities(ECS::Storage& pStorage)
+	// Tests if any MemoryCorrectnessErrors occurred and if the number of items alive matches p_alive_count_expected
+	void ECSTester::run_memory_test(const size_t& p_alive_count_expected)
 	{
-		size_t count = 0;
-		pStorage.foreach([&count](const ECS::Entity& p_entity){ count++;});
-		return count;
+		CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Check memory errors");
+		CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), p_alive_count_expected, "Check alive count");
 	}
-
-	// Tests if any MemoryCorrectnessErrors occurred and if the number of items alive matches pAliveCountExpected
-	void ECSTester::runMemoryTests(const std::string& pTestName, const size_t& pAliveCountExpected)
-	{
-		emplace_unit_test({MemoryCorrectnessItem::count_errors() == 0, pTestName, "Mem Errors found"});
-		emplace_unit_test({MemoryCorrectnessItem::count_alive() == pAliveCountExpected, pTestName + " memory test", std::format("Expected {} MemItems alive, was {}", pAliveCountExpected, MemoryCorrectnessItem::count_alive())});
-	}
-
 
 	void ECSTester::run_performance_tests()
 	{}
 
 	void ECSTester::run_unit_tests()
-	{
-		{ // add_entity
-			{ // add_entity basic
-				MemoryCorrectnessItem::reset(); // Reset before starting new tests
-				ECS::Storage storage;
-				const float floatComponent = 42.f;
-				const double doubleComponent = 13.0;
+	{SCOPE_SECTION("ECS");
+		{SCOPE_SECTION("count_entities")
 
-				emplace_unit_test({countEntities(storage) == 0, "AddEntity - Start Empty", "Storage should initialise empty"});
-				runMemoryTests("AddEntity - Start empty", 0);
+			ECS::Storage storage;
+			CHECK_EQUAL(storage.count_entities(), 0, "Start Empty");
+			std::optional<ECS::Entity> double_ent;
+			std::optional<ECS::Entity> float_ent;
+			std::optional<ECS::Entity> float_and_double_ent;
 
-				storage.add_entity(floatComponent);
-				emplace_unit_test({countEntities(storage) == 1, "AddEntity - Add single component entity", "Storage should contain 1 entity"});
+			{SCOPE_SECTION("Add entity")
 
-				storage.add_entity(doubleComponent);
-				emplace_unit_test({countEntities(storage) == 2, "AddEntity - Add another single component entity", "Storage should contain 2 entities"});
+				double_ent = storage.add_entity(42.0);
+				CHECK_EQUAL(storage.count_entities(), 1, "Add single component entity");
 
-				storage.add_entity(doubleComponent, floatComponent);
-				emplace_unit_test({countEntities(storage) == 3, "AddEntity - Add another entity with both component types", "Storage should contain 3 entities"});
+				float_ent = storage.add_entity(13.f);
+				CHECK_EQUAL(storage.count_entities(), 2, "Add new archetype entity");
+
+				float_and_double_ent = storage.add_entity(13.f, 42.0);
+				CHECK_EQUAL(storage.count_entities(), 3, "Add another entity with both component types");
 			}
+			{SCOPE_SECTION("Delete entity");
+
+				storage.delete_entity(double_ent.value());
+				CHECK_EQUAL(storage.count_entities(), 2, "Delete entity");
+
+				storage.delete_entity(float_ent.value());
+				CHECK_EQUAL(storage.count_entities(), 1, "Delete another entity");
+
+				storage.delete_entity(float_and_double_ent.value());
+				CHECK_EQUAL(storage.count_entities(), 0, "Delete last entity");
+			}
+		}
+
+		{SCOPE_SECTION("count_components")
+
+			ECS::Storage storage;
+			CHECK_EQUAL(storage.count_components<double>(), 0, "Start Empty");
+			std::optional<ECS::Entity> double_ent;
+			std::optional<ECS::Entity> float_ent;
+			std::optional<ECS::Entity> float_and_double_ent;
+
+			{SCOPE_SECTION("Add component");
+
+				double_ent = storage.add_entity(42.0);
+				CHECK_EQUAL(storage.count_components<double>(), 1, "Add double ent");
+				CHECK_EQUAL(storage.count_components<float>(),  0, "Add double ent check float");
+				CHECK_EQUAL(storage.count_components<int>(),    0, "Add double ent check int");
+
+				float_ent = storage.add_entity(13.f);
+				CHECK_EQUAL(storage.count_components<double>(), 1, "Add float ent check double");
+				CHECK_EQUAL(storage.count_components<float>(),  1, "Add float ent check float");
+				CHECK_EQUAL(storage.count_components<int>(),    0, "Add float ent check int");
+
+				float_and_double_ent = storage.add_entity(13.f, 42.0);
+				CHECK_EQUAL(storage.count_components<double>(), 2, "Add float and double ent check double");
+				CHECK_EQUAL(storage.count_components<float>(),  2, "Add float and double ent check float");
+				CHECK_EQUAL(storage.count_components<int>(),    0, "Count type not in storage");
+				auto count_combo = storage.count_components<double, float>(); // comma in template args is not supported by CHECK_EQUAL
+				CHECK_EQUAL(count_combo, 1, "Add float and double ent check combo");
+			}
+
+			{SCOPE_SECTION("Delete entity")
+				storage.delete_entity(double_ent.value());
+				CHECK_EQUAL(storage.count_components<double>(), 1, "Remove double ent check double");
+				CHECK_EQUAL(storage.count_components<float>(),  2, "Remove double ent check float");
+
+				storage.delete_component<float>(float_and_double_ent.value());
+				CHECK_EQUAL(storage.count_components<double>(), 1, "Remove float from float_and_double ent check double");
+				CHECK_EQUAL(storage.count_components<float>(),  1, "Remove float from float_and_double ent check float");
+				auto count_combo = storage.count_components<double, float>(); // comma in template args is not supported by CHECK_EQUAL
+				CHECK_EQUAL(count_combo, 0, "Remove float from float_and_double ent check combo");
+
+				storage.delete_entity(float_and_double_ent.value());
+				CHECK_EQUAL(storage.count_components<double>(), 0, "Remove float and double ent check double");
+				CHECK_EQUAL(storage.count_components<float>(),  1, "Remove float and double ent check float");
+
+				storage.delete_entity(float_ent.value());
+				CHECK_EQUAL(storage.count_components<double>(), 0, "Remove float ent check double");
+				CHECK_EQUAL(storage.count_components<float>(),  0, "Remove float ent check float");
+			}
+		}
+
+		{SCOPE_SECTION("add_entity");
 			{
+				ECS::Storage storage;
+				const float float_comp   = 42.f;
+				const double double_comp = 13.0;
+
+				run_memory_test(0);
+
+				storage.add_entity(float_comp);
+				CHECK_EQUAL(storage.count_entities(), 1, "Add single component entity");
+
+				storage.add_entity(double_comp);
+				CHECK_EQUAL(storage.count_entities(), 2, "Add another single component entity");
+
+				storage.add_entity(double_comp, float_comp);
+				CHECK_EQUAL(storage.count_entities(), 3, "Add another entity with both component types");
+			}
+			{SCOPE_SECTION("Memory correctness");
 				MemoryCorrectnessItem::reset(); // Reset before starting new tests
 				ECS::Storage storage;
 				MemoryCorrectnessItem comp;
 
-				storage.add_entity(comp);
-				emplace_unit_test({countEntities(storage) == 1, "AddEntity - Add 1 entity by copy", "Storage should contain 1 entity"});
-				runMemoryTests("AddEntity - Add 1 entity by copy", 2);
-
-				float componentFloat = 13;
-				storage.add_entity(componentFloat);
-				emplace_unit_test({countEntities(storage) == 2, "AddEntity - Add second entity new component", "Storage doesnt contain 2 entities"});
-				emplace_unit_test({MemoryCorrectnessItem::count_errors() == 0, "AddEntity - Add second entity new component", "Memory correctness errors found"});
-
-				storage.add_entity(MemoryCorrectnessItem());
-				emplace_unit_test({countEntities(storage) == 3, "AddEntity - Add by rvalue", "Storage doesnt contain 3 entities"});
-				runMemoryTests("AddEntity - Add by rvalue", 3);
-
-				for (size_t i = 0; i < 100; i++)
+				{SCOPE_SECTION("Add by copy");
+					storage.add_entity(comp);
+					run_memory_test(1);
+				}
+				{SCOPE_SECTION("Add second copy");
+					storage.add_entity(comp);
+					run_memory_test(2);
+				}
+				{SCOPE_SECTION("New archetype");
+					storage.add_entity(1.f);
+					run_memory_test(2); // Should still be 2 alive because we didnt add another mem correctness item
+				}
+				{SCOPE_SECTION("Add by move");
 					storage.add_entity(MemoryCorrectnessItem());
+					run_memory_test(3); // Should still be 2 alive because we didnt add another mem correctness item
+				}
+				{SCOPE_SECTION("Add 100");
+					for (int i = 0; i < 100; i++)
+						storage.add_entity(MemoryCorrectnessItem());
 
-				emplace_unit_test({countEntities(storage) == 103, "AddEntity - Add 100 more entities", "Storage should contain 103 entities"});
-				runMemoryTests("AddEntity - Add by rvalue", 103);
+					run_memory_test(103);
+				}
 			}
 		}
-		{ // delete_entity - These rely on add_entity working correctly.
-			{
-				MemoryCorrectnessItem::reset(); // Reset before starting new tests
-				ECS::Storage storage;
-				auto item = MemoryCorrectnessItem();
 
-				auto ent = storage.add_entity(item);
+		{SCOPE_SECTION("delete_entity");
+			{
+				ECS::Storage storage;
+
+				auto ent = storage.add_entity(1.f);
+				CHECK_EQUAL(storage.count_entities(), 0, "Add 1 entity");
+
 				storage.delete_entity(ent);
-
-				emplace_unit_test({countEntities(storage) == 0, "delete_entity - Add 1 entity by copy then delete", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Add 1 entity by copy then delete", 1);
+				CHECK_EQUAL(storage.count_entities(), 0, "Add 1 entity then delete");
 			}
-			{
-				MemoryCorrectnessItem::reset(); // Reset before starting new tests
-				ECS::Storage storage;
-				auto ent = storage.add_entity(MemoryCorrectnessItem());
-				storage.delete_entity(ent);
 
-				emplace_unit_test({countEntities(storage) == 0, "delete_entity - Add 1 entity by rvalue then delete", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Add 1 entity by rvalue then delete", 0);
-			}
-			{
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
-				storage.add_entity(MemoryCorrectnessItem());
-			}
-			runMemoryTests("delete_entity - Storage out of scope cleanup", 0); // Dangling memory check
 
-			{// Add 3 delete back to front
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
-				auto frontEnt  = storage.add_entity(MemoryCorrectnessItem());
-				auto middleEnt = storage.add_entity(MemoryCorrectnessItem());
-				auto backEnt   = storage.add_entity(MemoryCorrectnessItem());
+			{SCOPE_SECTION("Memory correctness");
+				{
+					MemoryCorrectnessItem::reset(); // Reset before starting new tests
+					ECS::Storage storage;
 
-				storage.delete_entity(backEnt);
-				emplace_unit_test({countEntities(storage) == 2, "delete_entity - Delete 3 back-to-front first delete", "Storage should contain 2 entities"});
-				runMemoryTests("delete_entity - Delete 3 back-to-front first delete", 2);
-
-				storage.delete_entity(middleEnt);
-				emplace_unit_test({countEntities(storage) == 1, "delete_entity - Delete 3 back-to-front second delete", "Storage should contain 1 entity"});
-				runMemoryTests("delete_entity - Delete 3 back-to-front second delete", 1);
-
-				storage.delete_entity(frontEnt);
-				emplace_unit_test({countEntities(storage) == 0, "delete_entity - Delete 3 back-to-front third delete", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Delete 3 back-to-front third delete", 0);
-			}
-			{// Add 3 delete front to back
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
-				auto frontEnt  = storage.add_entity(MemoryCorrectnessItem());
-				auto middleEnt = storage.add_entity(MemoryCorrectnessItem());
-				auto backEnt   = storage.add_entity(MemoryCorrectnessItem());
-
-				storage.delete_entity(frontEnt);
-				emplace_unit_test({countEntities(storage) == 2, "delete_entity - Delete 3 front-to-back first delete", "Storage should contain 2 entities"});
-				runMemoryTests("delete_entity - Delete 3 front-to-back first delete", 2);
-
-				storage.delete_entity(middleEnt);
-				emplace_unit_test({countEntities(storage) == 1, "delete_entity - Delete 3 front-to-back second delete", "Storage should contain 1 entity"});
-				runMemoryTests("delete_entity - Delete 3 front-to-back second delete", 1);
-
-				storage.delete_entity(backEnt);
-				emplace_unit_test({countEntities(storage) == 0, "delete_entity - Delete 3 front-to-back third delete", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Delete 3 front-to-back third delete", 0);
-			}
-			{// Add 3 delete middle -> front -> back
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
-				auto frontEnt  = storage.add_entity(MemoryCorrectnessItem());
-				auto middleEnt = storage.add_entity(MemoryCorrectnessItem());
-				auto backEnt   = storage.add_entity(MemoryCorrectnessItem());
-
-				storage.delete_entity(middleEnt);
-				emplace_unit_test({countEntities(storage) == 2, "delete_entity - Add 3, delete middle -> front -> back", "Storage should contain 2 entities"});
-				runMemoryTests("delete_entity - Add 3, delete middle -> front -> back", 2);
-
-				storage.delete_entity(frontEnt);
-				emplace_unit_test({countEntities(storage) == 1, "delete_entity - Add 3, delete middle -> front -> back", "Storage should contain 1 entity"});
-				runMemoryTests("delete_entity - Add 3, delete middle -> front -> back", 1);
-
-				storage.delete_entity(backEnt);
-				emplace_unit_test({countEntities(storage) == 0, "delete_entity - Add 3, delete middle -> front -> back", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Add 3, delete middle -> front -> back", 0);
-			}
-			{// Add 100 delete 100 in random order
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
-
-				std::vector<ECS::Entity> entities;
-				for (size_t i = 0; i < 100; i++)
-					entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
-
-				// shuffle the order of entities
-				auto seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
-				auto e = std::default_random_engine(seed);
-				std::shuffle(entities.begin(), entities.end(), e);
-
-				for (auto& ent : entities)
+					auto ent = storage.add_entity(MemoryCorrectnessItem());
 					storage.delete_entity(ent);
+					run_memory_test(0);
+				}
 
-				emplace_unit_test({countEntities(storage) == 0, "delete_entity - Delete 100 entities in random order", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Delete 100 entities in random order", 0);
-			}
-			{ // Overwrite memory test
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
+				{SCOPE_SECTION("Destroy storage with entity still alive");
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+						storage.add_entity(MemoryCorrectnessItem());
+					}
+					run_memory_test(0); // Dangling memory check
+				}
 
-				auto ent = storage.add_entity(MemoryCorrectnessItem());
-				storage.delete_entity(ent);
-				storage.add_entity(MemoryCorrectnessItem());
+				{SCOPE_SECTION("Add 3 delete back to front"); // Back to front is easiest to deal with for removing, no moving is required.
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+						auto front_ent  = storage.add_entity(MemoryCorrectnessItem());
+						auto middle_ent = storage.add_entity(MemoryCorrectnessItem());
+						auto back_ent   = storage.add_entity(MemoryCorrectnessItem());
 
-				emplace_unit_test({countEntities(storage) == 1, "delete_entity - overwrite Add -> Delete -> Add", "Storage should contain 1 entity"});
-				runMemoryTests("delete_entity - overwrite Add -> Delete -> Add", 1);
-			}
-			{ // Overwrite memory test 100
-				MemoryCorrectnessItem::reset(); // Reset to not invalidate next MemoryCorrectness checks
-				ECS::Storage storage;
+						storage.delete_entity(back_ent);
+						CHECK_EQUAL(storage.count_entities(), 2, "First delete");
+						run_memory_test(2);
 
-				std::vector<ECS::Entity> entities;
-				for (size_t i = 0; i < 100; i++)
-					entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
-				for (auto& ent : entities)
-					storage.delete_entity(ent);
-				for (size_t i = 0; i < 100; i++)
-					entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
+						storage.delete_entity(middle_ent);
+						CHECK_EQUAL(storage.count_entities(), 1, "Second delete");
+						run_memory_test(1);
 
-				emplace_unit_test({countEntities(storage) == 100, "delete_entity - Add 100, Delete 100, Add 100", "Storage should contain 0 entities"});
-				runMemoryTests("delete_entity - Add 100, Delete 100, Add 100", 100);
+						storage.delete_entity(front_ent);
+						CHECK_EQUAL(storage.count_entities(), 0, "Third delete");
+						run_memory_test(0);
+					}
+					run_memory_test(0); // Dangling memory check
+				}
+
+				{SCOPE_SECTION("Add 3 delete front to back"); // Front to back is the worst case removal requiring moving of all items.
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+						auto front_ent  = storage.add_entity(MemoryCorrectnessItem());
+						auto middle_ent = storage.add_entity(MemoryCorrectnessItem());
+						auto back_ent   = storage.add_entity(MemoryCorrectnessItem());
+
+						storage.delete_entity(front_ent);
+						CHECK_EQUAL(storage.count_entities(), 2, "First delete");
+						run_memory_test(2);
+
+						storage.delete_entity(middle_ent);
+						CHECK_EQUAL(storage.count_entities(), 1, "Second delete");
+						run_memory_test(1);
+
+						storage.delete_entity(back_ent);
+						CHECK_EQUAL(storage.count_entities(), 0, "Third delete");
+						run_memory_test(0);
+					}
+					run_memory_test(0); // Dangling memory check
+				}
+				{SCOPE_SECTION("Add 3 delete middle -> front -> back");
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+						auto front_ent  = storage.add_entity(MemoryCorrectnessItem());
+						auto middle_ent = storage.add_entity(MemoryCorrectnessItem());
+						auto back_ent   = storage.add_entity(MemoryCorrectnessItem());
+
+						storage.delete_entity(middle_ent);
+						CHECK_EQUAL(storage.count_entities(), 2, "First delete");
+						run_memory_test(2);
+
+						storage.delete_entity(front_ent);
+						CHECK_EQUAL(storage.count_entities(), 1, "Second delete");
+						run_memory_test(1);
+
+						storage.delete_entity(back_ent);
+						CHECK_EQUAL(storage.count_entities(), 0, "Third delete");
+						run_memory_test(0);
+					}
+					run_memory_test(0); // Dangling memory check
+				}
+				{SCOPE_SECTION("Add 100 delete 100 in random order");
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+
+						std::vector<ECS::Entity> entities;
+						entities.reserve(100);
+
+						for (size_t i = 0; i < 100; i++)
+							entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
+
+						// shuffle the order of entities
+						auto seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
+						auto e = std::default_random_engine(seed);
+						std::shuffle(entities.begin(), entities.end(), e);
+
+						for (auto& ent : entities)
+							storage.delete_entity(ent);
+
+						run_memory_test(0);
+					}
+					run_memory_test(0); // Dangling memory check
+				}
+				{SCOPE_SECTION("Overwrite memory");
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+
+						auto ent = storage.add_entity(MemoryCorrectnessItem());
+						storage.delete_entity(ent);
+						storage.add_entity(MemoryCorrectnessItem());
+						CHECK_EQUAL(storage.count_entities(), 1, "Overwrite Add -> Delete -> Add");
+						run_memory_test(1);
+					}
+					run_memory_test(0);
+				}
+				{SCOPE_SECTION("Overwrite memory test 100");
+					{
+						MemoryCorrectnessItem::reset();
+						ECS::Storage storage;
+
+						std::vector<ECS::Entity> entities;
+						entities.reserve(100);
+
+						for (int i = 0; i < 100; i++)
+							entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
+
+						for (auto& ent : entities)
+							storage.delete_entity(ent);
+
+						for (int i = 0; i < 100; i++)
+							entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
+
+						CHECK_EQUAL(storage.count_entities(), 100, "Add 100, Delete 100, Add 100");
+						run_memory_test(100);
+					}
+					run_memory_test(0);
+				}
 			}
 		}
-		{ // get_component tests
-			{
+
+		{SCOPE_SECTION("get_component");
+
+			{SCOPE_SECTION("const")
 				ECS::Storage storage;
 				auto entity = storage.add_entity(42.0);
-				emplace_unit_test({storage.get_component<double>(entity) == 42.0,  "get_component - single component entity", "Incorrect value returned for single component (double)"});
+				CHECK_EQUAL(storage.get_component<double>(entity), 42.0, "single component entity");
 
 				// Signature variations
-				emplace_unit_test({storage.get_component<double&>(entity) == 42.0, "get_component - non-const & get", "Incorrect value returned for single component (double)"});
-				emplace_unit_test({storage.get_component<const double&>(entity) == 42.0, "get_component - const & get", "Incorrect value returned for single component (double)"});
+				CHECK_EQUAL(storage.get_component<double&>(entity), 42.0, "non-const & get");
+				CHECK_EQUAL(storage.get_component<const double&>(entity), 42.0, "const & get");
 
 				// std::decay doesnt work on * so the below dont compile for now.
-				// emplace_unit_test({storage.get_component<double*>(entity) == 42.0, "get_component - single component* entity", "Incorrect value returned for single component (double)"});
-				// emplace_unit_test({storage.get_component<const double*>(entity) == 42.0, "get_component - single 'const component*' entity", "Incorrect value returned for single component (double)"});
-			}
-			{ // This series of tests reuses the same storage instance
-				ECS::Storage storage;
-				{ // get front middle and end component.
+				// CHECK_EQUAL(storage.get_component<double*>(entity), 42.0, "single component* entity");
+				// CHECK_EQUAL(storage.get_component<const double*>(entity), 42.0, "single 'const component*' entity");
+
+				{SCOPE_SECTION("double float bool entity");
+
 					auto entity = storage.add_entity(1.0, 2.f, true);
-					emplace_unit_test({storage.get_component<double>(entity) == 1.0, "get_component - 3 component entity 1", "Incorrect value returned for front (double) component"});
-					emplace_unit_test({storage.get_component<float>(entity) == 2.0f, "get_component - 3 component entity 2", "Incorrect value returned for middle (float) component"});
-					emplace_unit_test({storage.get_component<bool>(entity) == true,  "get_component - 3 component entity 3", "Incorrect value returned for back (bool) component"});
+					CHECK_EQUAL(storage.get_component<double>(entity), 1.0, "get double");
+					CHECK_EQUAL(storage.get_component<float>(entity), 2.0f, "get float");
+					CHECK_EQUAL(storage.get_component<bool>(entity),  true, "get bool");
 				}
-				{ // Add an entity with the same component makeup but in a reverse order.
-					auto entityreverse = storage.add_entity(false, 1.f, 2.0);
-					emplace_unit_test({storage.get_component<double>(entityreverse) == 2.0, "get_component - 3 component entity - same types, reverse order 1", "Incorrect value returned for double component"});
-					emplace_unit_test({storage.get_component<float>(entityreverse) == 1.0f, "get_component - 3 component entity - same types, reverse order 2", "Incorrect value returned for float component"});
-					emplace_unit_test({storage.get_component<bool>(entityreverse) == false, "get_component - 3 component entity - same types, reverse order 3", "Incorrect value returned for bool component"});
+				{SCOPE_SECTION("bool float double entity"); // Reverse order but same components/archetype as previous
+
+					auto entity_reverse = storage.add_entity(false, 1.f, 2.0);
+					CHECK_EQUAL(storage.get_component<double>(entity_reverse), 2.0, "get double");
+					CHECK_EQUAL(storage.get_component<float>(entity_reverse), 1.0f, "get float");
+					CHECK_EQUAL(storage.get_component<bool>(entity_reverse), false, "get bool");
 				}
-				{ // Add an entity with the same component makeup but in a new order.
-					auto entityNew = storage.add_entity(13.f, true, 42.0);
-					emplace_unit_test({storage.get_component<double>(entityNew) == 42.0, "get_component - 3 component entity - same types, new order 1", "Incorrect value returned for double component"});
-					emplace_unit_test({storage.get_component<float>(entityNew) == 13.0f, "get_component - 3 component entity - same types, new order 2", "Incorrect value returned for float component"});
-					emplace_unit_test({storage.get_component<bool>(entityNew) == true,   "get_component - 3 component entity - same types, new order 3", "Incorrect value returned for bool component"});
+				{SCOPE_SECTION("float bool double entity"); // Different order but same components/archetype as previous 2
+					auto entity_new = storage.add_entity(13.f, true, 42.0);
+					CHECK_EQUAL(storage.get_component<double>(entity_new), 42.0, "get double");
+					CHECK_EQUAL(storage.get_component<float>(entity_new), 13.0f, "get float");
+					CHECK_EQUAL(storage.get_component<bool>(entity_new),   true, "get bool");
 				}
-				{ // Add an entity with a new combination of components.
-					auto entityNew = storage.add_entity('G');
-					emplace_unit_test({storage.get_component<char>(entityNew) == 'G', "get_component - new component combination", "Incorrect value returned for char component"});
+				{SCOPE_SECTION("char entity");
+					auto entity_new = storage.add_entity('G');
+					CHECK_EQUAL(storage.get_component<char>(entity_new), 'G', "get char");
 				}
 
-				{// Data type limits - setting as many bits as possible
-					constexpr double maxDouble = std::numeric_limits<double>::max();
-					constexpr double minDouble = std::numeric_limits<double>::min();
+				{SCOPE_SECTION("Data limits") // Setting as many bits as possible
+					constexpr double max_double = std::numeric_limits<double>::max();
+					constexpr double min_double = std::numeric_limits<double>::min();
 
-					auto entityMaxDouble1 = storage.add_entity(maxDouble);
-					auto entityMinDouble1 = storage.add_entity(minDouble);
-					auto entityMaxDouble2 = storage.add_entity(maxDouble);
-					auto entityMaxDouble3 = storage.add_entity(maxDouble);
-					auto entityMinDouble2 = storage.add_entity(minDouble);
-					auto entityMinDouble3 = storage.add_entity(minDouble);
-					auto entityMinDouble4 = storage.add_entity(minDouble);
-					auto entityMaxDouble4 = storage.add_entity(maxDouble);
+					auto entity_max_double_1 = storage.add_entity(max_double);
+					auto entity_min_double_1 = storage.add_entity(min_double);
+					auto entity_max_double_2 = storage.add_entity(max_double);
+					auto entity_max_double_3 = storage.add_entity(max_double);
+					auto entity_min_double_2 = storage.add_entity(min_double);
+					auto entity_min_double_3 = storage.add_entity(min_double);
+					auto entity_min_double_4 = storage.add_entity(min_double);
+					auto entity_max_double_4 = storage.add_entity(max_double);
 
-					emplace_unit_test({storage.get_component<double>(entityMaxDouble1) == maxDouble, "get_component - Data type limits 1", "Incorrect value returned for max double component"});
-					emplace_unit_test({storage.get_component<double>(entityMaxDouble2) == maxDouble, "get_component - Data type limits 2", "Incorrect value returned for max double component"});
-					emplace_unit_test({storage.get_component<double>(entityMaxDouble3) == maxDouble, "get_component - Data type limits 3", "Incorrect value returned for max double component"});
-					emplace_unit_test({storage.get_component<double>(entityMaxDouble4) == maxDouble, "get_component - Data type limits 4", "Incorrect value returned for max double component"});
-					emplace_unit_test({storage.get_component<double>(entityMinDouble1) == minDouble, "get_component - Data type limits 1", "Incorrect value returned for min double component"});
-					emplace_unit_test({storage.get_component<double>(entityMinDouble2) == minDouble, "get_component - Data type limits 2", "Incorrect value returned for min double component"});
-					emplace_unit_test({storage.get_component<double>(entityMinDouble3) == minDouble, "get_component - Data type limits 3", "Incorrect value returned for min double component"});
-					emplace_unit_test({storage.get_component<double>(entityMinDouble4) == minDouble, "get_component - Data type limits 4", "Incorrect value returned for min double component"});
+					CHECK_EQUAL(storage.get_component<double>(entity_max_double_1), max_double, "1");
+					CHECK_EQUAL(storage.get_component<double>(entity_max_double_2), max_double, "2");
+					CHECK_EQUAL(storage.get_component<double>(entity_max_double_3), max_double, "3");
+					CHECK_EQUAL(storage.get_component<double>(entity_max_double_4), max_double, "4");
+					CHECK_EQUAL(storage.get_component<double>(entity_min_double_1), min_double, "1");
+					CHECK_EQUAL(storage.get_component<double>(entity_min_double_2), min_double, "2");
+					CHECK_EQUAL(storage.get_component<double>(entity_min_double_3), min_double, "3");
+					CHECK_EQUAL(storage.get_component<double>(entity_min_double_4), min_double, "4");
 				}
-				{ // get_component MemoryCorrectness
-					MemoryCorrectnessItem::reset();
-					auto memCorrectEntity = storage.add_entity(MemoryCorrectnessItem());
-
-					auto& compRef = storage.get_component<MemoryCorrectnessItem>(memCorrectEntity);
-					runMemoryTests("get_component - get by reference no new items", 1);
-
-					// No &, copy comp
-					auto compCopy = storage.get_component<MemoryCorrectnessItem>(memCorrectEntity);
-					runMemoryTests("get_component - get by copy 1 new item", 2);
-				}
-				runMemoryTests("get_component - copy out of scope 1 remaining inside storage", 1);
 			}
-		}
-		{ // get_component_mutable tests
-			{ // edit component value
+			{SCOPE_SECTION("non-const")
 				ECS::Storage storage;
 
-				{ // Add -> get -> set -> check
-					auto entity     = storage.add_entity(42.0);
-					auto& comp      = storage.get_component_mutable<double>(entity);
-					comp            = 69.0;
-					auto& compAgain = storage.get_component<double>(entity);
-					emplace_unit_test({compAgain == 69.0, "get_component_mutable - get and set", "Assigned value not correct"});
+				{SCOPE_SECTION("Get and assign");
+					auto entity  = storage.add_entity(42.0);
+					auto& comp   = storage.get_component_mutable<double>(entity);
+					comp         = 69.0;
+
+					CHECK_EQUAL(storage.get_component<double>(entity), 69.0, "Value change after assign");
 
 					storage.get_component_mutable<double>(entity) += 10.0;
-					emplace_unit_test({compAgain == 79.0, "get_component_mutable - get and set one liner", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<double>(entity), 79.0, "get and set one liner");
+
 				}
-				{ // Add second ent to same archetype -> get -> set -> check
+				{SCOPE_SECTION("Get and assign second"); // Add to the same archetype
 					auto entity = storage.add_entity(27.0);
 					storage.get_component_mutable<double>(entity) += 3.0;
-					emplace_unit_test({storage.get_component<double>(entity) == 30.0, "get_component_mutable - get and set to same archetype", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<double>(entity), 30.0, "get and set to same archetype");
 				}
-				{ // Add to new archetype -> get -> set -> check
+
+				{SCOPE_SECTION("Add new archetype ent");
 					auto entity = storage.add_entity(27.0, 49.f);
 					storage.get_component_mutable<double>(entity) += 3.0;
-					emplace_unit_test({storage.get_component<double>(entity) == 30.0, "get_component_mutable - Add to new archetype -> get -> set -> check", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<double>(entity), 30.0, "check");
 
 					storage.get_component_mutable<float>(entity) += 1.0f;
-					emplace_unit_test({storage.get_component<float>(entity) == 50.0f, "get_component_mutable - Add to new archetype -> get -> set -> check 2", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<float>(entity), 50.0f, "check 2");
 				}
-				{ // Add 3 component entity and edit in reverse order in memory
+				{SCOPE_SECTION("double float int entity");
 					auto entity = storage.add_entity(1.0, 2.f, 3);
 					storage.get_component_mutable<int>(entity) += 1;
-					emplace_unit_test({storage.get_component<int>(entity) == 4, "get_component_mutable - Add 3 component entity -> edit each comp in reverse 1", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<int>(entity), 4, "Edit int");
 
 					storage.get_component_mutable<float>(entity) += 19.0f;
-					emplace_unit_test({storage.get_component<float>(entity) == 21.f, "get_component_mutable - Add 3 component entity -> edit each comp in reverse 2", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<float>(entity), 21.f, "Edit float");
 
 					storage.get_component_mutable<double>(entity) += 13.0;
-					emplace_unit_test({storage.get_component<double>(entity) == 14.0, "get_component_mutable - Add 3 component entity -> edit each comp in reverse 3", "Assigned value not correct"});
+					CHECK_EQUAL(storage.get_component<double>(entity), 14.0, "Edit double");
 				}
-				{ // get_component_mutable MemoryCorrectness
-					MemoryCorrectnessItem::reset();
-					auto memCorrectEntity = storage.add_entity(MemoryCorrectnessItem());
+			}
+			{SCOPE_SECTION("Memory correctness");
+				MemoryCorrectnessItem::reset();
+				ECS::Storage storage;
+				auto mem_correct_entity = storage.add_entity(MemoryCorrectnessItem());
 
-					auto& compRef = storage.get_component_mutable<MemoryCorrectnessItem>(memCorrectEntity);
-					runMemoryTests("get_component_mutable - get by reference no new items", 1);
-
-					// No &, copy comp
-					auto compCopy = storage.get_component_mutable<MemoryCorrectnessItem>(memCorrectEntity);
-					runMemoryTests("get_component_mutable - get by copy 1 new item", 2);
+				{SCOPE_SECTION("const");
+					{SCOPE_SECTION("Return a reference");
+						const auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+						run_memory_test(1);
+					}
+					{SCOPE_SECTION("Return by copy");
+						const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+						run_memory_test(2);
+					}
 				}
-				runMemoryTests("get_component_mutable - copy out of scope 1 remaining inside storage", 1);
+				{SCOPE_SECTION("non-const");
+					{SCOPE_SECTION("Return a reference");
+						auto& compRef = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
+						run_memory_test(1);
+					}
+					{SCOPE_SECTION("Return by copy");
+						const auto compCopy = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
+						run_memory_test(2);
+					}
+				}
+
+				run_memory_test(0);
 			}
 		}
-		{// hasComponent tests
+
+		{SCOPE_SECTION("has_components")
+
 			ECS::Storage storage;
-			{ // HasComponents exact match multiple types
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<double, float, bool>(entity);
-				emplace_unit_test({has_components == true, "has_components - exact match multiple types" , "has_components: incorrect"});
+			const auto double_float_bool_ent = storage.add_entity(1.0, 2.f, true);
+			const auto double_ent            = storage.add_entity(1.0);
+
+			{
+				auto has_components = storage.has_components<double>(double_ent);
+				CHECK_EQUAL(has_components, true, "exact match single type single component");
 			}
-			{ // HasComponents exact match multiple types different order
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<bool, float, double>(entity);
-				emplace_unit_test({has_components == true, "has_components - exact match different order multiple types" , "has_components: incorrect"});
+			{
+				bool has_components = storage.has_components<double, float, bool>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, true, "exact match multiple types");
 			}
-			{ // HasComponents exact match single type multiple component
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<float>(entity);
-				emplace_unit_test({has_components == true, "has_components - single type match from multiple component middle" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<bool, float, double>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, true, "exact match different order multiple types");
 			}
-			{ // HasComponents exact match single type single component
-				const auto entity  = storage.add_entity(1.0);
-				auto has_components = storage.has_components<double>(entity);
-				emplace_unit_test({has_components == true, "has_components - exact match single type single component" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<float>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, true, "single type match from multiple component middle");
 			}
-			{ // HasComponents subset match
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<double, bool>(entity);
-				emplace_unit_test({has_components == true, "has_components - subset match" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<double, bool>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, true, "subset match");
 			}
-			{ // HasComponents subset match different order
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<bool, double>(entity);
-				emplace_unit_test({has_components == true, "has_components - subset match different order" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<bool, double>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, true, "subset match different order");
 			}
-			{ //  HasComponents subset match single type
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<double>(entity);
-				emplace_unit_test({has_components == true, "has_components - subset match single type" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<double>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, true, "subset match single type");
 			}
-			{ //  HasComponents no match single type
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<std::string>(entity);
-				emplace_unit_test({has_components == false, "has_components - no match single type" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<std::string>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, false, "no match single type");
 			}
-			{ //  HasComponents no match multiple types
-				const auto entity  = storage.add_entity(1.0, 2.f, true);
-				auto has_components = storage.has_components<std::string, size_t>(entity);
-				emplace_unit_test({has_components == false, "has_components - no match multiple types" , "has_components: incorrect"});
+			{
+				auto has_components = storage.has_components<std::string, size_t>(double_float_bool_ent);
+				CHECK_EQUAL(has_components, false, "no match multiple types");
 			}
 		}
-		{// foreach tests
-			ECS::Storage storage;
-			storage.add_entity(13.69, 1.33f, 2);
-			storage.add_entity(13.69, 1.33f, 2);
-			storage.add_entity(13.69, 1.33f, 2);
 
-			{ // Exact match and order to archetype
-				size_t count = 0;
-				storage.foreach ([this, &count](double& p_double, float& pFloat, int& pInt)
-				{
-					emplace_unit_test({p_double == 13.69, "foreach - Exact match and order to archetype 1", "foreach: Missmatch value"});
-					emplace_unit_test({pInt == 2, "foreach - Exact match and order to archetype 2", "foreach: Missmatch value"});
-					emplace_unit_test({pFloat == 1.33f, "foreach - Exact match and order to archetype 3", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count Exact match and order to archetype", "foreach: Missmatch value"});
-			}
-			{ // Exact match different order to archetype
-				size_t count = 0;
-				storage.foreach ([this, &count](float& pFloat, int& pInt, double& p_double)
-				{
-					emplace_unit_test({p_double == 13.69, "foreach - Exact match different order to archetype 1", "foreach: Missmatch value"});
-					emplace_unit_test({pInt == 2, "foreach - Exact match function arguments different order to archetype 2", "foreach: Missmatch value"});
-					emplace_unit_test({pFloat == 1.33f, "foreach - Exact match function arguments different order to archetype 3", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count Exact match different order to archetype", "foreach: Missmatch value"});
-			}
-			{ // Subset match same order to archetype
-				size_t count = 0;
-				storage.foreach ([this, &count](double& p_double, float& pFloat)
-				{
-					emplace_unit_test({p_double == 13.69, "foreach - subset match same order to archetype 1", "foreach: Missmatch value"});
-					emplace_unit_test({pFloat == 1.33f, "foreach - subset match same order to archetype 2", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count subset match same order to archetype", "foreach: Missmatch value"});
-			}
-			{ // Subset match different order to archetype
-				size_t count = 0;
-				storage.foreach ([this, &count](int& pInt, float& pFloat)
-				{
-					emplace_unit_test({pInt == 2, "foreach - Subset match different order to archetype 1", "foreach: Missmatch value"});
-					emplace_unit_test({pFloat == 1.33f, "foreach - Subset match different order to archetype 2", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count - Subset match different order to archetype", "foreach: Missmatch value"});
-			}
-			{ // Single argument match to archetype
-				size_t count = 0;
-				storage.foreach ([this, &count](double& p_double)
-				{
-					emplace_unit_test({p_double == 13.69, "foreach - Single argument match to archetype", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count - Single argument match to archetype", "foreach: Missmatch value"});
-			}
-			{ // Single argument match to archetype - back component
-				size_t count = 0;
-				storage.foreach ([this, &count](int& pInt)
-				{
-					emplace_unit_test({pInt == 2, "foreach - Single argument match to archetype - back component", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count - Single argument match to archetype - back component", "foreach: Missmatch value"});
-			}
-			{ // Single argument match to archetype back component
-				size_t count = 0;
-				storage.foreach ([this, &count](float& pFloat)
-				{
-					emplace_unit_test({pFloat == 1.33f, "foreach - Single argument match to archetype back component", "foreach: Missmatch value"});
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count - Single argument match to archetype back component", "foreach: Missmatch value"});
-			}
-			{ // Exact match change data
-				size_t count = 0;
-				storage.foreach ([&count](double& p_double, float& pFloat, int& pInt)
-				{
-					p_double += 1.0;
-					pFloat += 1.0f;
-					pInt += 1;
-					count++;
-				});
-				emplace_unit_test({count == 3, "foreach - iterate count - Exact match change data", "foreach: Missmatch value"});
-			}
-			{ // Exact match check changed data
-				storage.foreach ([this](double& p_double, float& pFloat, int& pInt)
-				{
-					emplace_unit_test({p_double == 14.69, "foreach - Exact match check changed data", "foreach: Missmatch value"});
-					emplace_unit_test({pInt == 3, "foreach - Exact match check changed data", "foreach: Missmatch value"});
-					emplace_unit_test({pFloat == 2.33f, "foreach - Exact match check changed data", "foreach: Missmatch value"});
-				});
-			}
-			{ // Add a new entity to a new archetype
-				storage.add_entity(13.0);
-				size_t count = 0;
-				storage.foreach ([&count](double& p_double){ count++; });
-				emplace_unit_test({count == 4, "foreach - iterate a component inside two archetypes", "Expected 4 components of type double"});
-			}
-		}
-		{ // foreach with Entity
-			ECS::Storage storage;
-			std::vector<ECS::Entity> entities;
+		{SCOPE_SECTION("foreach");
+			{
+				ECS::Storage storage;
 
-			{// Iterate empty before add
-				size_t count = 0;
-				storage.foreach ([&count](ECS::Entity& p_entity, double& p_double, float& pFloat, bool& pInt) { count++; });
-				emplace_unit_test({count == 0, "foreach(Entity)", "Entity count should be 0 before any add"});
-			}
+				{SCOPE_SECTION("Iterate empty");
 
-			for (size_t i = 0; i < 12; i++)
-				entities.push_back(storage.add_entity(1.0, 2.f, true));
+					size_t count      = 0;
+					double sum_double = 0.0;
+					float sum_float   = 0.0f;
+					int sum_int       = 0;
 
-			{ // Iterate exact match archetype and count the same unique set of entities returned
-				std::set<ECS::Entity> entitySet;
-				storage.foreach ([&entitySet](ECS::Entity& p_entity, double& p_double, float& pFloat, bool& pInt)
-				{
-					entitySet.insert(p_entity);
-				});
+					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					{
+						sum_double += p_double;
+						sum_float  += p_float;
+						sum_int    += p_int;
+						count++;
+					});
 
-				emplace_unit_test({entitySet.size() == 12, "foreach(Entity)", "Set size should match the 12 entities added"});
-				for (const auto& entity : entities)
-					emplace_unit_test({entitySet.contains(entity), "foreach(Entity)", "Entity missing from foreach"});
-			}
-			{ // Iterate partial match archetype and count the same unique set of entities returned
-				std::set<ECS::Entity> entitySet;
-				storage.foreach ([&entitySet](ECS::Entity& p_entity, float& pFloat, double& p_double)
-				{
-					entitySet.insert(p_entity);
-				});
+					CHECK_EQUAL(sum_double,  0.0, "Sum of doubles");
+					CHECK_EQUAL(sum_float,  0.0f, "Sum of floats");
+					CHECK_EQUAL(sum_int,       0, "Sum of ints");
+					CHECK_EQUAL(count, 3, "Iterate count");
+				}
 
-				emplace_unit_test({entitySet.size() == 12, "foreach(Entity)", "Set size should match the 12 entities added"});
-				for (const auto& entity : entities)
-					emplace_unit_test({entitySet.contains(entity), "foreach(Entity)", "Entity missing from foreach"});
+				storage.add_entity(13.69, 1.33f, 2);
+				storage.add_entity(13.69, 1.33f, 2);
+				storage.add_entity(13.69, 1.33f, 2);
+
+				{SCOPE_SECTION("Exact match and order to archetype");
+					size_t count = 0;
+					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					{
+						CHECK_EQUAL(p_double, 13.69, "Check double");
+						CHECK_EQUAL(p_int,        2, "Check int");
+						CHECK_EQUAL(p_float,  1.33f, "Check float");
+						count++;
+					});
+					CHECK_EQUAL(count, 3, "Iterate count");
+				}
+				{SCOPE_SECTION("Exact match different order to archetype");
+					size_t count = 0;
+					storage.foreach([&](float& p_float, int& p_int, double& p_double)
+					{
+						CHECK_EQUAL(p_double, 13.69, "Check double");
+						CHECK_EQUAL(p_int,        2, "Check int");
+						CHECK_EQUAL(p_float,  1.33f, "Check float");
+						count++;
+					});
+					CHECK_EQUAL(count, 3, "Ieration count");
+				}
+				{SCOPE_SECTION("Subset match same order to archetype");
+					size_t count = 0;
+					storage.foreach([&](double& p_double, float& p_float)
+					{
+						CHECK_EQUAL(p_double, 13.69, "Check double");
+						CHECK_EQUAL(p_float,  1.33f, "Check float");
+						count++;
+					});
+					CHECK_EQUAL(count, 3, "Ieration count");
+				}
+				{SCOPE_SECTION("Subset match different order to archetype");
+					size_t count = 0;
+					storage.foreach([&](int& p_int, float& p_float)
+					{
+						CHECK_EQUAL(p_int,       2, "Check int");
+						CHECK_EQUAL(p_float, 1.33f, "Check float");
+						count++;
+					});
+					CHECK_EQUAL(count, 3, "Ieration count");
+				}
+				{SCOPE_SECTION("Single argument match to archetype");
+					{SCOPE_SECTION("Front");
+						size_t count = 0;
+						storage.foreach([&](double& p_double)
+						{
+							CHECK_EQUAL(p_double, 13.69, "Check double");
+							count++;
+						});
+						CHECK_EQUAL(count, 3, "Ieration count");
+					}
+					{SCOPE_SECTION("Middle");
+						size_t count = 0;
+						storage.foreach([&](float& p_float)
+						{
+							CHECK_EQUAL(p_float, 1.33f, "Check float");
+							count++;
+						});
+						CHECK_EQUAL(count, 3, "Ieration count");
+					}
+					{SCOPE_SECTION("Back");
+						size_t count = 0;
+						storage.foreach([&](int& p_int)
+						{
+							CHECK_EQUAL(p_int, 2, "Check int");
+							count++;
+						});
+						CHECK_EQUAL(count, 3, "Ieration count");
+					}
+				}
+				{SCOPE_SECTION("Exact match change data");
+					size_t count = 0;
+					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					{
+						p_double += 1.0;
+						p_float  += 1.0f;
+						p_int    += 1;
+						count++;
+					});
+					CHECK_EQUAL(count, 3, "Ieration count");
+				}
+				{SCOPE_SECTION("Exact match check changed data");
+					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					{
+						CHECK_EQUAL(p_double, 14.69, "Check double");
+						CHECK_EQUAL(p_int,        3, "Check int");
+						CHECK_EQUAL(p_float,  2.33f, "Check float");
+					});
+				}
+				{SCOPE_SECTION("Add a new entity to a new archetype");
+					storage.add_entity(13.0);
+					size_t count = 0;
+					double sum = 0.0;
+					storage.foreach([&](double& p_double)
+					{
+						sum += p_double;
+						count++;
+					});
+
+					CHECK_EQUAL(sum, 47.07, "Sum of doubles"); // 14.69 * 3 + 13.0 = 44.07
+					CHECK_EQUAL(count, 4, "Iteration count");
+				}
 			}
 
-			// Remove all the entities in storage
-			for (const auto& entity : entities)
-				storage.delete_entity(entity);
-			entities.clear();
+			{SCOPE_SECTION("Entity argument") // ECS::Entity inside the foreach func arguments, expecting the Entity passed with its owned components
 
-			{// Iterate empty after delete
-				size_t count = 0;
-				storage.foreach ([&count](ECS::Entity& p_entity, double& p_double, float& pFloat, bool& pInt) { count++; });
-				emplace_unit_test({count == 0, "foreach(Entity)", "Entity count should be 0 after all entities deleted"});
+				ECS::Storage storage;
+
+				std::vector<ECS::Entity> entities;
+				for (int i = 0; i < 12; i++)
+					entities.push_back(storage.add_entity(1.0, 2.f, true));
+
+				{SCOPE_SECTION("Iterate Entity only")
+
+					std::set<ECS::Entity> entity_set;
+					storage.foreach([&](ECS::Entity& p_entity){ entity_set.insert(p_entity); });
+
+					for (const auto& entity : entities)
+						CHECK_TRUE(entity_set.contains(entity), "Entity in set");
+				}
+
+				{SCOPE_SECTION("Iterate exact match");
+					std::set<ECS::Entity> entity_set;
+					double sum_double = 0.0;
+					float sum_float   = 0.0f;
+					int sum_int       = 0;
+
+					storage.foreach([&](ECS::Entity& p_entity, double& p_double, float& p_float, bool& p_int)
+					{
+						sum_double += p_double;
+						sum_float  += p_float;
+						sum_int    += p_int;
+						entity_set.insert(p_entity);
+					});
+
+					for (const auto& entity : entities)
+						CHECK_TRUE(entity_set.contains(entity), "Entity in set");
+				}
+
+				{SCOPE_SECTION("Iterate partial match");
+					std::set<ECS::Entity> entity_set;
+					double sum_double = 0.0;
+					float sum_float   = 0.0f;
+
+					storage.foreach([&](ECS::Entity& p_entity, float& p_float, double& p_double)
+					{
+						sum_double += p_double;
+						sum_float  += p_float;
+						entity_set.insert(p_entity);
+					});
+
+					for (const auto& entity : entities)
+						CHECK_TRUE(entity_set.contains(entity), "Entity in set");
+				}
+
+				{SCOPE_SECTION("Clear storage")
+					for (const auto& entity : entities)
+						storage.delete_entity(entity);
+					entities.clear();
+
+					{// Iterate empty after delete
+						double sum_double = 0.0;
+						float sum_float   = 0.0f;
+						int sum_int       = 0;
+						size_t count      = 0;
+
+						storage.foreach([&](ECS::Entity& p_entity, double& p_double, float& p_float, bool& p_int)
+						{
+							sum_double += p_double;
+							sum_float  += p_float;
+							sum_int    += p_int;
+							count++;
+						});
+						CHECK_EQUAL(count, 0, "No iteration after clear");
+					}
+				}
 			}
 		}
 	}

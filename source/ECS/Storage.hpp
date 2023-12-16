@@ -325,9 +325,9 @@ namespace ECS
 			ComponentBitset m_bitset;                  // The unique identifier for this archetype. Each bit corresponds to a ComponentType this archetype stores per ArchetypeInstanceID.
 			std::vector<ComponentLayout> m_components; // How the ComponentTypes are laid out in each instance of ArchetypeInstanceID.
 			std::vector<Entity> m_entities;            // Entity at every ArchetypeInstanceID. Should be indexed only using ArchetypeInstanceID.
-			size_t m_instance_size;                     // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
-			ArchetypeInstanceID m_next_instance_ID;      // The ArchetypeInstanceID past the end of the m_data. Equivalant to size() in a vector.
-			ArchetypeInstanceID m_capacity;           // The ArchetypeInstanceID count of how much memory is allocated in m_data for storage of components.
+			size_t m_instance_size;                    // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
+			ArchetypeInstanceID m_next_instance_ID;    // The ArchetypeInstanceID past the end of the m_data. Equivalant to size() in a vector.
+			ArchetypeInstanceID m_capacity;            // The ArchetypeInstanceID count of how much memory is allocated in m_data for storage of components.
 			std::byte* m_data;
 
 			// Construct an Archetype from a template list of ComponentTypes.
@@ -574,10 +574,10 @@ namespace ECS
 			}
 		}; // class Archetype
 
-		EntityID mNextEntity = 0;
+		EntityID m_next_entity_ID = 0;
 		std::vector<Archetype> m_archetypes;
 		// Maps EntityID to a position pair [ index in m_archetypes, ArchetypeInstanceID in archetype ].
-		// Nullopt here means the entity was deleted.
+		// Nullopt here means the entity was deleted. No gaps are created on delete so ID's are never reused.
 		std::vector<std::optional<std::pair<ArchetypeID, ArchetypeInstanceID>>> m_entity_to_archetype_ID;
 
 		template <typename... FunctionArgs>
@@ -701,7 +701,7 @@ namespace ECS
 				archetype_ID = m_archetypes.size() - 1;
 			}
 
-			const auto new_entity = Entity(mNextEntity++);
+			const auto new_entity = Entity(m_next_entity_ID++);
 			auto& archetype = m_archetypes[archetype_ID.value()];
 			archetype.push_back(new_entity, std::forward<ComponentTypes>(p_components)...);
 			m_entity_to_archetype_ID.push_back(std::make_optional(std::make_pair(archetype_ID.value(), archetype.m_next_instance_ID - 1)));
@@ -899,7 +899,7 @@ namespace ECS
 
 		// Check if Entity has been assigned all of the ComponentTypes queried. (Can be called with a single ComponentType)
 		template <typename... ComponentTypes>
-		bool has_components(const Entity& p_entity) const
+		[[nodiscard]] bool has_components(const Entity& p_entity) const
 		{
 			static_assert(sizeof...(ComponentTypes) != 0, "Cannot query has_components with 0 types.");
 
@@ -919,6 +919,35 @@ namespace ECS
 				const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
 				return m_archetypes[archetype].m_bitset.test(ComponentHelper::get_ID<ComponentType>());
 			}
+		}
+
+		// Return the number of components of ComponentType in the storage.
+		template <typename... ComponentTypes>
+		[[nodiscard]] size_t count_components() const
+		{
+			static_assert(sizeof...(ComponentTypes) != 0, "Cannot query count_components with 0 types.");
+
+			// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
+			const auto requested_bitset = ComponentHelper::get_component_bitset<ComponentTypes...>();
+			size_t count = 0;
+
+			for (const auto& archetype : m_archetypes)
+			{
+				if (requested_bitset == archetype.m_bitset || ((requested_bitset & archetype.m_bitset) == requested_bitset))
+					count ++;
+			}
+
+			return count;
+		}
+
+		[[nodiscard]] size_t count_entities() const
+		{
+			size_t count = 0;
+
+			for (const auto& archetype : m_archetypes)
+				count += archetype.m_next_instance_ID;
+
+			return count;
 		}
 	};
 } // namespace ECS
