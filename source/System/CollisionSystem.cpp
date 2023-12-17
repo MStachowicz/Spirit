@@ -21,9 +21,9 @@ namespace System
 		auto& scene = m_scene_system.get_current_scene();
 		if (scene.has_components<Component::Collider, Component::Mesh, Component::Transform>(p_entity))
 		{
-			auto& collider  = scene.get_component_mutable<Component::Collider>(p_entity);
-			auto& mesh      = scene.get_component_mutable<Component::Mesh>(p_entity);
-			auto& transform = scene.get_component_mutable<Component::Transform>(p_entity);
+			auto& collider  = scene.get_component<Component::Collider>(p_entity);
+			auto& mesh      = scene.get_component<Component::Mesh>(p_entity);
+			auto& transform = scene.get_component<Component::Transform>(p_entity);
 
 			const auto rotation_matrix = glm::mat4_cast(transform.m_orientation);
 			collider.m_world_AABB      = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, rotation_matrix, transform.m_scale);

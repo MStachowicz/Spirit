@@ -174,34 +174,35 @@ namespace UI
 				std::string title = "Entity " + std::to_string(p_entity.ID);
 				if (scene.has_components<Component::Label>(p_entity))
 				{
-					auto label = scene.get_component_mutable<Component::Label&>(p_entity);
+					auto label = scene.get_component<Component::Label&>(p_entity);
 					title = label.mName;
 				}
+				scene.get_component<Component::Transform&>(p_entity).draw_UI();
 
 				if (ImGui::TreeNode(title.c_str()))
 				{
 					if (scene.has_components<Component::Transform>(p_entity))
-						scene.get_component_mutable<Component::Transform&>(p_entity).draw_UI();
+						scene.get_component<Component::Transform&>(p_entity).draw_UI();
 					if (scene.has_components<Component::Collider>(p_entity))
-						scene.get_component_mutable<Component::Collider&>(p_entity).draw_UI();
+						scene.get_component<Component::Collider&>(p_entity).draw_UI();
 					if (scene.has_components<Component::RigidBody>(p_entity))
-						scene.get_component_mutable<Component::RigidBody&>(p_entity).draw_UI();
+						scene.get_component<Component::RigidBody&>(p_entity).draw_UI();
 					if (scene.has_components<Component::DirectionalLight>(p_entity))
-						scene.get_component_mutable<Component::DirectionalLight&>(p_entity).draw_UI();
+						scene.get_component<Component::DirectionalLight&>(p_entity).draw_UI();
 					if (scene.has_components<Component::SpotLight>(p_entity))
-						scene.get_component_mutable<Component::SpotLight&>(p_entity).draw_UI();
+						scene.get_component<Component::SpotLight&>(p_entity).draw_UI();
 					if (scene.has_components<Component::PointLight>(p_entity))
-						scene.get_component_mutable<Component::PointLight&>(p_entity).draw_UI();
+						scene.get_component<Component::PointLight&>(p_entity).draw_UI();
 					if (scene.has_components<Component::Camera>(p_entity))
-						scene.get_component_mutable<Component::Camera>(p_entity).draw_UI();
+						scene.get_component<Component::Camera>(p_entity).draw_UI();
 					if (scene.has_components<Component::ParticleEmitter>(p_entity))
-						scene.get_component_mutable<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
+						scene.get_component<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
 					if (scene.has_components<Component::Terrain>(p_entity))
-						scene.get_component_mutable<Component::Terrain>(p_entity).draw_UI(m_texture_system);
+						scene.get_component<Component::Terrain>(p_entity).draw_UI(m_texture_system);
 					if (scene.has_components<Component::Mesh>(p_entity))
-						scene.get_component_mutable<Component::Mesh>(p_entity).draw_UI();
+						scene.get_component<Component::Mesh>(p_entity).draw_UI();
 					if (scene.has_components<Component::Texture>(p_entity))
-						scene.get_component_mutable<Component::Texture>(p_entity).draw_UI(m_texture_system);
+						scene.get_component<Component::Texture>(p_entity).draw_UI(m_texture_system);
 
 					ImGui::SeparatorText("Quick options");
 					if (ImGui::Button("Delete entity"))

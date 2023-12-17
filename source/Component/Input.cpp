@@ -13,7 +13,7 @@ namespace Component
 	{
 		if (p_storage.has_components<Component::Camera>(p_entity))
 		{
-			auto& p_camera = p_storage.get_component_mutable<Component::Camera>(p_entity);
+			auto& p_camera = p_storage.get_component<Component::Camera>(p_entity);
 			if (p_camera.m_primary)
 			{
 				const auto mouse_offset = p_input.cursor_delta();
@@ -22,11 +22,11 @@ namespace Component
 
 				Component::RigidBody* body = nullptr;
 				if (p_storage.has_components<Component::RigidBody>(p_entity))
-					body = &p_storage.get_component_mutable<Component::RigidBody>(p_entity);
+					body = &p_storage.get_component<Component::RigidBody>(p_entity);
 
 				Component::Transform* transform = nullptr;
 				if (p_storage.has_components<Component::Transform>(p_entity))
-					transform = &p_storage.get_component_mutable<Component::Transform>(p_entity);
+					transform = &p_storage.get_component<Component::Transform>(p_entity);
 
 				if (transform || body)
 				{

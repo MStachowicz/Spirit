@@ -450,7 +450,7 @@ namespace ECS
 			// Returns a pointer to the ComponentType at p_instance_index.
 			// The position of this component is found using a linear search of mComponentLayouts. If the BufferPosition is known use reinterpret_cast directly.
 			template <typename ComponentType>
-			std::decay_t<ComponentType>* get_component_mutable(const ArchetypeInstanceID& p_instance_index)
+			std::decay_t<ComponentType>* get_component(const ArchetypeInstanceID& p_instance_index)
 			{
 				const auto component_position = get_component_position<ComponentType>(p_instance_index);
 				return reinterpret_cast<std::decay_t<ComponentType>*>(&m_data[component_position]);
@@ -466,7 +466,7 @@ namespace ECS
 				if (m_next_instance_ID + 1 > m_capacity)
 					reserve(next_greater_power_of_2(m_capacity));
 
-				// Each `ComponentType` in the parameter pack is placement-new move-constructed into m_data
+				// Each `ComponentType` in the parameter pack is placement-new constructed into m_data preserving the value category of the parameter.
 				auto construct_func = [&](auto&& p_component)
 				{
 					using ComponentType = std::decay_t<decltype(p_component)>;
@@ -753,22 +753,26 @@ namespace ECS
 			}
 		}
 
-		// Get a const reference to component of ComponentType belonging to Entity.
-		// If Entity doesn't own one exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		// Get a reference to component of ComponentType belonging to Entity.
+		// If Entity doesn't own one, an exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		//@param p_entity The Entity to get the component from.
+		//@return A const reference to the component.
 		template <typename ComponentType>
-		const std::decay_t<ComponentType>& get_component(const Entity& p_entity) const
+		[[nodiscard]] const std::decay_t<ComponentType>& get_component(const Entity& p_entity) const
 		{
 			const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
 			return *m_archetypes[archetype].get_component<ComponentType>(index);
 		}
 
 		// Get a reference to component of ComponentType belonging to Entity.
-		// If Entity doesn't own one exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		// If Entity doesn't own one, an exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		//@param p_entity The Entity to get the component from.
+		//@return A reference to the component.
 		template <typename ComponentType>
-		std::decay_t<ComponentType>& get_component_mutable(const Entity& p_entity)
+		[[nodiscard]] std::decay_t<ComponentType>& get_component(const Entity& p_entity)
 		{
 			const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
-			return *m_archetypes[archetype].get_component_mutable<ComponentType>(index);
+			return *m_archetypes[archetype].get_component<ComponentType>(index);
 		}
 
 		// Add the ComponentType to p_entity.

@@ -86,8 +86,8 @@ namespace System
 					// The collision data returned is original-Entity-centric this convention is carried over in the response here when calling angular_impulse.
 					if (scene.has_components<Component::RigidBody>(collided_entity))
 					{
-						auto& rigid_body_2 = m_scene_system.get_current_scene().get_component_mutable<Component::RigidBody>(collided_entity);
-						auto& transform_2  = m_scene_system.get_current_scene().get_component_mutable<Component::Transform>(collided_entity);
+						auto& rigid_body_2 = m_scene_system.get_current_scene().get_component<Component::RigidBody>(collided_entity);
+						auto& transform_2  = m_scene_system.get_current_scene().get_component<Component::Transform>(collided_entity);
 
 						auto impulse = Geometry::angular_impulse(collision->position, collision->normal, m_restitution,
 																transform.m_position, rigid_body.m_velocity, rigid_body.m_angular_velocity, rigid_body.m_mass, rigid_body.m_inertia_tensor,
