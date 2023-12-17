@@ -79,8 +79,8 @@ namespace System
 			// Update the collider to match the new world-space position
 			if (scene.has_components<Component::Collider>(entity) && scene.has_components<Component::Mesh>(entity))
 			{
-				auto& collider = scene.get_component_mutable<Component::Collider>(entity);
-				auto& mesh     = scene.get_component_mutable<Component::Mesh>(entity);
+				auto& collider = scene.get_component<Component::Collider>(entity);
+				auto& mesh     = scene.get_component<Component::Mesh>(entity);
 
 				// Update the collider's world-space AABB
 				collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, rotationMatrix, transform.m_scale);
