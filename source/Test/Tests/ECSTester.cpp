@@ -132,25 +132,25 @@ namespace Test
 
 				{SCOPE_SECTION("Add by copy");
 					storage.add_entity(comp);
-					run_memory_test(1);
+					run_memory_test(2);
 				}
 				{SCOPE_SECTION("Add second copy");
 					storage.add_entity(comp);
-					run_memory_test(2);
+					run_memory_test(3);
 				}
 				{SCOPE_SECTION("New archetype");
 					storage.add_entity(1.f);
-					run_memory_test(2); // Should still be 2 alive because we didnt add another mem correctness item
+					run_memory_test(3); // Should still be 3 alive because we didnt add another mem correctness item
 				}
 				{SCOPE_SECTION("Add by move");
 					storage.add_entity(MemoryCorrectnessItem());
-					run_memory_test(3); // Should still be 2 alive because we didnt add another mem correctness item
+					run_memory_test(4); // Should now be 4 alive because we move constructed a new one into storage
 				}
 				{SCOPE_SECTION("Add 100");
 					for (int i = 0; i < 100; i++)
 						storage.add_entity(MemoryCorrectnessItem());
 
-					run_memory_test(103);
+					run_memory_test(104);
 				}
 			}
 		}
@@ -160,13 +160,11 @@ namespace Test
 				ECS::Storage storage;
 
 				auto ent = storage.add_entity(1.f);
-				CHECK_EQUAL(storage.count_entities(), 0, "Add 1 entity");
+				CHECK_EQUAL(storage.count_entities(), 1, "Add 1 entity");
 
 				storage.delete_entity(ent);
 				CHECK_EQUAL(storage.count_entities(), 0, "Add 1 entity then delete");
 			}
-
-
 			{SCOPE_SECTION("Memory correctness");
 				{
 					MemoryCorrectnessItem::reset(); // Reset before starting new tests
@@ -314,6 +312,59 @@ namespace Test
 			}
 		}
 
+		{SCOPE_SECTION("add_component")
+			{
+				ECS::Storage storage;
+				auto entity = storage.add_entity(42.0);
+
+				storage.add_component(entity, 13.f);
+				CHECK_EQUAL(storage.count_components<float>(), 1, "Add another component to existing archetype");
+
+				storage.add_component(entity, true);
+				CHECK_EQUAL(storage.count_components<bool>(), 1, "Add another component to existing archetype");
+
+				storage.add_component(entity, 69);
+				CHECK_EQUAL(storage.count_components<int>(), 1, "Add another component to existing archetype");
+			}
+			{SCOPE_SECTION("Memory correctness");
+				{
+					MemoryCorrectnessItem::reset();
+					ECS::Storage storage;
+					auto comp = MemoryCorrectnessItem();
+
+					{SCOPE_SECTION("Add by copy");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, comp);
+						run_memory_test(2);
+					}
+					{SCOPE_SECTION("Add second copy");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, comp);
+						run_memory_test(3);
+					}
+					{SCOPE_SECTION("New archetype");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, 1.f);
+						run_memory_test(3); // Should still be 3 alive because we didnt add another mem correctness item
+					}
+					{SCOPE_SECTION("Add by move");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, MemoryCorrectnessItem());
+						run_memory_test(4); // Should now be 4 alive because we move constructed a new one into storage
+					}
+					{SCOPE_SECTION("Add 100");
+						for (int i = 0; i < 100; i++)
+						{
+							auto entity = storage.add_entity(42.0);
+							storage.add_component(entity, MemoryCorrectnessItem());
+						}
+
+						run_memory_test(104);
+					}
+				}
+			}
+		}
+
 		{SCOPE_SECTION("get_component");
 
 			{SCOPE_SECTION("const")
@@ -382,64 +433,66 @@ namespace Test
 
 				{SCOPE_SECTION("Get and assign");
 					auto entity  = storage.add_entity(42.0);
-					auto& comp   = storage.get_component_mutable<double>(entity);
+					auto& comp   = storage.get_component<double>(entity);
 					comp         = 69.0;
 
 					CHECK_EQUAL(storage.get_component<double>(entity), 69.0, "Value change after assign");
 
-					storage.get_component_mutable<double>(entity) += 10.0;
+					storage.get_component<double>(entity) += 10.0;
 					CHECK_EQUAL(storage.get_component<double>(entity), 79.0, "get and set one liner");
 
 				}
 				{SCOPE_SECTION("Get and assign second"); // Add to the same archetype
 					auto entity = storage.add_entity(27.0);
-					storage.get_component_mutable<double>(entity) += 3.0;
+					storage.get_component<double>(entity) += 3.0;
 					CHECK_EQUAL(storage.get_component<double>(entity), 30.0, "get and set to same archetype");
 				}
 
 				{SCOPE_SECTION("Add new archetype ent");
 					auto entity = storage.add_entity(27.0, 49.f);
-					storage.get_component_mutable<double>(entity) += 3.0;
+					storage.get_component<double>(entity) += 3.0;
 					CHECK_EQUAL(storage.get_component<double>(entity), 30.0, "check");
 
-					storage.get_component_mutable<float>(entity) += 1.0f;
+					storage.get_component<float>(entity) += 1.0f;
 					CHECK_EQUAL(storage.get_component<float>(entity), 50.0f, "check 2");
 				}
 				{SCOPE_SECTION("double float int entity");
 					auto entity = storage.add_entity(1.0, 2.f, 3);
-					storage.get_component_mutable<int>(entity) += 1;
+					storage.get_component<int>(entity) += 1;
 					CHECK_EQUAL(storage.get_component<int>(entity), 4, "Edit int");
 
-					storage.get_component_mutable<float>(entity) += 19.0f;
+					storage.get_component<float>(entity) += 19.0f;
 					CHECK_EQUAL(storage.get_component<float>(entity), 21.f, "Edit float");
 
-					storage.get_component_mutable<double>(entity) += 13.0;
+					storage.get_component<double>(entity) += 13.0;
 					CHECK_EQUAL(storage.get_component<double>(entity), 14.0, "Edit double");
 				}
 			}
 			{SCOPE_SECTION("Memory correctness");
-				MemoryCorrectnessItem::reset();
-				ECS::Storage storage;
-				auto mem_correct_entity = storage.add_entity(MemoryCorrectnessItem());
+				{
+					MemoryCorrectnessItem::reset();
+					ECS::Storage storage;
+					auto mem_correct_entity = storage.add_entity(MemoryCorrectnessItem());
 
-				{SCOPE_SECTION("const");
-					{SCOPE_SECTION("Return a reference");
-						const auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(1);
+					{SCOPE_SECTION("const");
+						{SCOPE_SECTION("Return a reference");
+							const auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(1);
+						}
+						{SCOPE_SECTION("Return by copy");
+							const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(2);
+						}
 					}
-					{SCOPE_SECTION("Return by copy");
-						const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(2);
-					}
-				}
-				{SCOPE_SECTION("non-const");
-					{SCOPE_SECTION("Return a reference");
-						auto& compRef = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(1);
-					}
-					{SCOPE_SECTION("Return by copy");
-						const auto compCopy = storage.get_component_mutable<MemoryCorrectnessItem>(mem_correct_entity);
-						run_memory_test(2);
+					{SCOPE_SECTION("non-const");
+						{SCOPE_SECTION("Return a reference");
+							auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(1);
+						}
+						{SCOPE_SECTION("Return by copy");
+							const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
+							run_memory_test(2);
+						}
 					}
 				}
 
@@ -513,7 +566,7 @@ namespace Test
 					CHECK_EQUAL(sum_double,  0.0, "Sum of doubles");
 					CHECK_EQUAL(sum_float,  0.0f, "Sum of floats");
 					CHECK_EQUAL(sum_int,       0, "Sum of ints");
-					CHECK_EQUAL(count, 3, "Iterate count");
+					CHECK_EQUAL(count, 0, "Iterate count");
 				}
 
 				storage.add_entity(13.69, 1.33f, 2);
@@ -620,7 +673,7 @@ namespace Test
 						count++;
 					});
 
-					CHECK_EQUAL(sum, 47.07, "Sum of doubles"); // 14.69 * 3 + 13.0 = 44.07
+					CHECK_EQUAL(sum, 57.07, "Sum of doubles"); // 14.69 * 3 + 13.0 = 57.07
 					CHECK_EQUAL(count, 4, "Iteration count");
 				}
 			}

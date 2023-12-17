@@ -226,7 +226,7 @@ target_link_libraries(Platform
 PUBLIC GLM
 PUBLIC Utility # EventDispatcher in Window and Input hpps.
 PRIVATE glfw
-PRIVATE glad_GL
+PRIVATE glad
 PRIVATE ImGui
 )
 target_compile_options(Platform PRIVATE ${WARNING_COMPILE_FLAGS})
@@ -267,7 +267,7 @@ PRIVATE System
 PRIVATE Platform
 PRIVATE Component
 PRIVATE ECS
-PRIVATE glad_GL
+PRIVATE glad
 )
 target_compile_options(OpenGL PRIVATE ${WARNING_COMPILE_FLAGS})
 # OpenGL end ------------------------------------------------------------------------------------------------------------------------------
@@ -369,8 +369,7 @@ target_compile_options(ECS PRIVATE ${WARNING_COMPILE_FLAGS})
 	# GLFW end ----------------------------------------------------------------------------------------------------------------------------
 
 	# GLAD --------------------------------------------------------------------------------------------------------------------------------
-	add_subdirectory(source/External/GLAD2/cmake source/External/GLAD2 SYSTEM)
-	glad_add_library(glad_GL API gl:core=${OPENGL_VERSION_MAJOR}.${OPENGL_VERSION_MINOR})
+	add_subdirectory(source/External/GLAD)
 	# GLAD end ----------------------------------------------------------------------------------------------------------------------------
 
 	# GLM ---------------------------------------------------------------------------------------------------------------------------------

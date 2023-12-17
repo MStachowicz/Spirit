@@ -124,8 +124,10 @@ namespace ECS
 			return componentBitset;
 		}
 
+		// Set the ComponentInfo for ComponentType if it isnt set already.
+		//@return The unique ID of the ComponentType.
 		template <typename ComponentType>
-		static inline void set_info()
+		static inline ComponentID set_info()
 		{
 			auto ID = get_ID<ComponentType>();
 			if (!Infos[ID].has_value())
@@ -134,6 +136,7 @@ namespace ECS
 				Infos[ID]                  = std::make_optional<ComponentInfo>(ID, sizeof(DecayedComponentType), alignof(DecayedComponentType), Meta::PackArg<DecayedComponentType>());
 				LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->align);
 			}
+			return ID;
 		}
 		template <typename... ComponentTypes>
 		static inline void set_infos()
@@ -450,7 +453,7 @@ namespace ECS
 			// Returns a pointer to the ComponentType at p_instance_index.
 			// The position of this component is found using a linear search of mComponentLayouts. If the BufferPosition is known use reinterpret_cast directly.
 			template <typename ComponentType>
-			std::decay_t<ComponentType>* get_component_mutable(const ArchetypeInstanceID& p_instance_index)
+			std::decay_t<ComponentType>* get_component(const ArchetypeInstanceID& p_instance_index)
 			{
 				const auto component_position = get_component_position<ComponentType>(p_instance_index);
 				return reinterpret_cast<std::decay_t<ComponentType>*>(&m_data[component_position]);
@@ -466,15 +469,15 @@ namespace ECS
 				if (m_next_instance_ID + 1 > m_capacity)
 					reserve(next_greater_power_of_2(m_capacity));
 
-				// Each `ComponentType` in the parameter pack is placement-new move-constructed into m_data
+				// Each `ComponentType` in the parameter pack is placement-new constructed into m_data preserving the value category of the parameter.
 				auto construct_func = [&](auto&& p_component)
 				{
 					using ComponentType = std::decay_t<decltype(p_component)>;
 
 					const auto component_start_position = get_component_position<ComponentType>(m_next_instance_ID);
-					new (&m_data[component_start_position]) ComponentType(std::move(p_component));
+					new (&m_data[component_start_position]) ComponentType(std::forward<decltype(p_component)>(p_component));
 				};
-				(construct_func(std::move(p_component_values)), ...); // Unfold construct_func over the ComponentTypes
+				(construct_func(std::forward<ComponentTypes>(p_component_values)), ...); // Unfold construct_func over the ComponentTypes
 
 				m_entities.push_back(p_entity);
 				m_next_instance_ID++;
@@ -724,61 +727,64 @@ namespace ECS
 		{
 			using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
 
-			const auto function_bitset = FunctionHelper<FunctionParameterPack>::get_bitset();
-			const auto archetype_IDs   = get_matching_or_contained_archetypes(function_bitset);
-
-			if (!archetype_IDs.empty())
+			if constexpr (FunctionHelper<FunctionParameterPack>::is_entity_function())
 			{
-				for (auto& archetype_ID : archetype_IDs)
+				for (EntityID i = 0; i < m_entity_to_archetype_ID.size(); i++)
 				{
-					if (m_archetypes[archetype_ID].m_next_instance_ID > 0)
+					if (m_entity_to_archetype_ID[i].has_value())
 					{
-						ApplyFunction<Func, FunctionParameterPack>::apply_to_archetype(p_function, m_archetypes[archetype_ID]);
+						auto ent = Entity(i);
+						p_function(ent);
+					}
+				}
+			}
+			else
+			{
+				const auto function_bitset = FunctionHelper<FunctionParameterPack>::get_bitset();
+				const auto archetype_IDs   = get_matching_or_contained_archetypes(function_bitset);
+
+				if (!archetype_IDs.empty())
+				{
+					for (auto& archetype_ID : archetype_IDs)
+					{
+						if (m_archetypes[archetype_ID].m_next_instance_ID > 0)
+						{
+							ApplyFunction<Func, FunctionParameterPack>::apply_to_archetype(p_function, m_archetypes[archetype_ID]);
+						}
 					}
 				}
 			}
 		}
-		// Calls Func on every EntityID. Func must have only one parameter of type ECS::EntityID otherwise wont compile.
-		template <typename Func>
-		void foreach_entity(const Func& p_function)
-		{
-			using FunctionParameterPack = typename Meta::GetFunctionInformation<Func>::GetParameterPack;
-			static_assert(FunctionHelper<FunctionParameterPack>::is_entity_function(), "p_function is not a function that takes only one argument of type ECS::Entity");
 
-			for (EntityID i = 0; i < m_entity_to_archetype_ID.size(); i++)
-			{
-				if (m_entity_to_archetype_ID[i].has_value())
-				{
-					auto ent = Entity(i);
-					p_function(ent);
-				}
-			}
-		}
-
-		// Get a const reference to component of ComponentType belonging to Entity.
-		// If Entity doesn't own one exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		// Get a reference to component of ComponentType belonging to Entity.
+		// If Entity doesn't own one, an exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		//@param p_entity The Entity to get the component from.
+		//@return A const reference to the component.
 		template <typename ComponentType>
-		const std::decay_t<ComponentType>& get_component(const Entity& p_entity) const
+		[[nodiscard]] const std::decay_t<ComponentType>& get_component(const Entity& p_entity) const
 		{
 			const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
 			return *m_archetypes[archetype].get_component<ComponentType>(index);
 		}
 
 		// Get a reference to component of ComponentType belonging to Entity.
-		// If Entity doesn't own one exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		// If Entity doesn't own one, an exception will be thrown. Owned ComponentTypes can be queried using has_components.
+		//@param p_entity The Entity to get the component from.
+		//@return A reference to the component.
 		template <typename ComponentType>
-		std::decay_t<ComponentType>& get_component_mutable(const Entity& p_entity)
+		[[nodiscard]] std::decay_t<ComponentType>& get_component(const Entity& p_entity)
 		{
 			const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
-			return *m_archetypes[archetype].get_component_mutable<ComponentType>(index);
+			return *m_archetypes[archetype].get_component<ComponentType>(index);
 		}
 
-		// Add the ComponentType to p_entity.
+		// Add the p_component to p_entity. If p_entity already owns this ComponentType, do nothing.
 		template <typename ComponentType>
 		void add_component(const Entity& p_entity, ComponentType&& p_component)
 		{
 			const auto& [from_archetype_ID, from_archetype_index] = *m_entity_to_archetype_ID[p_entity.ID];
-			const auto add_component_ID = ComponentHelper::get_ID<ComponentType>();
+			// Ensure the ComponentType is registered. AddComponent could be first encounter of this ComponentType.
+			const auto add_component_ID = ComponentHelper::set_info<ComponentType>();
 
 			if (m_archetypes[from_archetype_ID].m_bitset[add_component_ID]) // p_entity already own this ComponentType, do nothing.
 				return;
@@ -819,9 +825,9 @@ namespace ECS
 						// from_archetype.erase handles calling the destructors.
 					}
 
-					// placement-new move-construct the new component into m_data.
-					const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.get_component_layout(add_component_ID).offset];
-					new (&to_archetype.m_data[to_comp_address]) ComponentType(std::move(p_component));
+					// Placement-new construct p_component into m_data preserving the value category.
+					const auto add_component_start_position = to_end_instance_start + to_archetype.get_component_layout(add_component_ID).offset;
+					new (&to_archetype.m_data[add_component_start_position]) std::decay_t<ComponentType>(std::forward<decltype(p_component)>(p_component));
 
 					// Update m_entities and m_entity_to_archetype_ID.
 					from_archetype.erase(from_archetype_index, p_entity, m_entity_to_archetype_ID);
@@ -934,7 +940,7 @@ namespace ECS
 			for (const auto& archetype : m_archetypes)
 			{
 				if (requested_bitset == archetype.m_bitset || ((requested_bitset & archetype.m_bitset) == requested_bitset))
-					count ++;
+					count += archetype.m_next_instance_ID;
 			}
 
 			return count;
