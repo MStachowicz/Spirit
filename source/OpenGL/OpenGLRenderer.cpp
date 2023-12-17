@@ -21,7 +21,7 @@
 #include "Platform/Core.hpp"
 #include "Platform/Window.hpp"
 
-#include "glad/gl.h"
+#include "glad/glad.h"
 
 namespace OpenGL
 {
