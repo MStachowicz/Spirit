@@ -5,7 +5,7 @@
 #include "Utility/Config.hpp"
 #include "Component/Vertex.hpp"
 
-#include "glad/gl.h" // #TODO: Implement missing functions into the GLState and remove this include
+#include "glad/glad.h" // #TODO: Implement missing functions into the GLState and remove this include
 
 #include "glm/gtc/type_ptr.hpp"
 

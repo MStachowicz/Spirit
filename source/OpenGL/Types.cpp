@@ -4,7 +4,7 @@
 #include "Utility/File.hpp"
 
 #include "glm/vec2.hpp"
-#include "glad/gl.h"
+#include "glad/glad.h"
 
 #include <array>
 

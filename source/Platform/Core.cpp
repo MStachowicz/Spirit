@@ -6,7 +6,7 @@
 #include "Utility/File.hpp"
 #include "Utility/Config.hpp"
 
-#include "glad/gl.h"
+#include "glad/glad.h"
 #include "GLFW/glfw3.h"
 // ImGui.h (must be included after GLFW)
 #include "backends/imgui_impl_glfw.h"
@@ -46,10 +46,10 @@ namespace Platform
 	}
 
 	void Core::initialise_OpenGL()
-	{ // Load OpenGL functions, gladLoadGL returns the loaded version, 0 on error.
-		int version = gladLoadGL(glfwGetProcAddress);
+	{ // Load OpenGL functions
+		int version = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		ASSERT_THROW(version != 0, "[INIT] Failed to initialise GLAD OpenGL");
-		LOG("[INIT] Initialised GLAD OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+		LOG("[INIT] Initialised OpenGL {}", (const char*)glGetString(GL_VERSION));
 	}
 
 	void Core::initialise_ImGui(const Window& p_window)

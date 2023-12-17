@@ -5,7 +5,7 @@
 #include "glm/vec4.hpp"
 #include "glm/vec2.hpp"
 
-#include "glad/gl.h" // OpenGL functions
+#include "glad/glad.h" // OpenGL functions
 
 namespace OpenGL
 {
