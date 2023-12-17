@@ -312,6 +312,59 @@ namespace Test
 			}
 		}
 
+		{SCOPE_SECTION("add_component")
+			{
+				ECS::Storage storage;
+				auto entity = storage.add_entity(42.0);
+
+				storage.add_component(entity, 13.f);
+				CHECK_EQUAL(storage.count_components<float>(), 1, "Add another component to existing archetype");
+
+				storage.add_component(entity, true);
+				CHECK_EQUAL(storage.count_components<bool>(), 1, "Add another component to existing archetype");
+
+				storage.add_component(entity, 69);
+				CHECK_EQUAL(storage.count_components<int>(), 1, "Add another component to existing archetype");
+			}
+			{SCOPE_SECTION("Memory correctness");
+				{
+					MemoryCorrectnessItem::reset();
+					ECS::Storage storage;
+					auto comp = MemoryCorrectnessItem();
+
+					{SCOPE_SECTION("Add by copy");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, comp);
+						run_memory_test(2);
+					}
+					{SCOPE_SECTION("Add second copy");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, comp);
+						run_memory_test(3);
+					}
+					{SCOPE_SECTION("New archetype");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, 1.f);
+						run_memory_test(3); // Should still be 3 alive because we didnt add another mem correctness item
+					}
+					{SCOPE_SECTION("Add by move");
+						auto entity = storage.add_entity(42.0);
+						storage.add_component(entity, MemoryCorrectnessItem());
+						run_memory_test(4); // Should now be 4 alive because we move constructed a new one into storage
+					}
+					{SCOPE_SECTION("Add 100");
+						for (int i = 0; i < 100; i++)
+						{
+							auto entity = storage.add_entity(42.0);
+							storage.add_component(entity, MemoryCorrectnessItem());
+						}
+
+						run_memory_test(104);
+					}
+				}
+			}
+		}
+
 		{SCOPE_SECTION("get_component");
 
 			{SCOPE_SECTION("const")

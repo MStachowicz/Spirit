@@ -124,8 +124,10 @@ namespace ECS
 			return componentBitset;
 		}
 
+		// Set the ComponentInfo for ComponentType if it isnt set already.
+		//@return The unique ID of the ComponentType.
 		template <typename ComponentType>
-		static inline void set_info()
+		static inline ComponentID set_info()
 		{
 			auto ID = get_ID<ComponentType>();
 			if (!Infos[ID].has_value())
@@ -134,6 +136,7 @@ namespace ECS
 				Infos[ID]                  = std::make_optional<ComponentInfo>(ID, sizeof(DecayedComponentType), alignof(DecayedComponentType), Meta::PackArg<DecayedComponentType>());
 				LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->align);
 			}
+			return ID;
 		}
 		template <typename... ComponentTypes>
 		static inline void set_infos()
@@ -775,12 +778,13 @@ namespace ECS
 			return *m_archetypes[archetype].get_component<ComponentType>(index);
 		}
 
-		// Add the ComponentType to p_entity.
+		// Add the p_component to p_entity. If p_entity already owns this ComponentType, do nothing.
 		template <typename ComponentType>
 		void add_component(const Entity& p_entity, ComponentType&& p_component)
 		{
 			const auto& [from_archetype_ID, from_archetype_index] = *m_entity_to_archetype_ID[p_entity.ID];
-			const auto add_component_ID = ComponentHelper::get_ID<ComponentType>();
+			// Ensure the ComponentType is registered. AddComponent could be first encounter of this ComponentType.
+			const auto add_component_ID = ComponentHelper::set_info<ComponentType>();
 
 			if (m_archetypes[from_archetype_ID].m_bitset[add_component_ID]) // p_entity already own this ComponentType, do nothing.
 				return;
@@ -821,9 +825,9 @@ namespace ECS
 						// from_archetype.erase handles calling the destructors.
 					}
 
-					// placement-new move-construct the new component into m_data.
-					const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.get_component_layout(add_component_ID).offset];
-					new (&to_archetype.m_data[to_comp_address]) ComponentType(std::move(p_component));
+					// Placement-new construct p_component into m_data preserving the value category.
+					const auto add_component_start_position = to_end_instance_start + to_archetype.get_component_layout(add_component_ID).offset;
+					new (&to_archetype.m_data[add_component_start_position]) std::decay_t<ComponentType>(std::forward<decltype(p_component)>(p_component));
 
 					// Update m_entities and m_entity_to_archetype_ID.
 					from_archetype.erase(from_archetype_index, p_entity, m_entity_to_archetype_ID);
