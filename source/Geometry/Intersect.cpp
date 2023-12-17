@@ -160,6 +160,16 @@ namespace Geometry
 
 		return true;
 	}
+
+// ==============================================================================================================================
+// END UTILITIY FUNCTIONS
+// ==============================================================================================================================
+
+
+// ==============================================================================================================================
+// POINT_INSIDE + CLOSEST_POINT FUNCTIONS
+// ==============================================================================================================================
+
 	bool point_inside(const AABB& AABB, const glm::vec3& point)
 	{
 		return (point.x >= AABB.m_min.x && point.x <= AABB.m_max.x
@@ -258,9 +268,6 @@ namespace Geometry
 		float dot_AB_AP = glm::dot(AB, AP);
 		return dot_AB_AP >= 0.0f;
 	}
-// ==============================================================================================================================
-// END UTILITIY FUNCTIONS
-// ==============================================================================================================================
 
 	glm::vec3 closest_point(const Line& line, const glm::vec3& point)
 	{
@@ -315,6 +322,14 @@ namespace Geometry
 	{
 		return std::sqrt(distance_squared(line, point));
 	}
+	float distance(const Plane& plane, const glm::vec3& point)
+	{
+		return glm::dot(plane.m_normal, point) - plane.m_distance;
+	}
+
+// ==============================================================================================================================
+// END POINT_INSIDE FUNCTIONS
+// ==============================================================================================================================
 
 
 	std::optional<ContactPoint> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
@@ -415,7 +430,7 @@ namespace Geometry
 		else
 			return std::nullopt;
 	}
-	std::optional<ContactPoint> get_intersection(const Plane& plane_1, const Plane& plane_2)
+	std::optional<Line> get_intersection(const Plane& plane_1, const Plane& plane_2)
 	{
 		// Compute direction of intersection line
 		glm::vec3 direction = glm::cross(plane_1.m_normal, plane_2.m_normal);
@@ -428,11 +443,7 @@ namespace Geometry
 
 		// Compute point on intersection line
 		glm::vec3 point_on_intersection_line = glm::cross(plane_1.m_distance * plane_2.m_normal - plane_2.m_distance * plane_1.m_normal, direction) / denom;
-		ContactPoint point;
-		point.normal            = direction;
-		point.position          = point_on_intersection_line;
-		point.penetration_depth = 0;
-		return point;
+		return Line(point_on_intersection_line, direction);
 	}
 	std::optional<ContactPoint> get_intersection(const Plane& plane, const Sphere& sphere)
 	{

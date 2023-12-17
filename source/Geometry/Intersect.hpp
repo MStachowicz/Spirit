@@ -104,6 +104,12 @@ namespace Geometry
 	//@param point The point to find the distance from
 	//@return The distance from point to line
 	float distance(const LineSegment& line, const glm::vec3& point);
+	// Get the distance from the point to the plane.
+	// The distance is signed as the plane has a normal direction. If the point is on the opposite side of the plane to the normal, the distance will be negative.
+	//@param plane The plane to find the distance to
+	//@param point The point to find the distance from
+	//@return The signed distance from point to plane
+	float distance(const Plane& plane, const glm::vec3& point);
 
 
 //==============================================================================================================================
@@ -202,9 +208,8 @@ namespace Geometry
 	inline std::optional<ContactPoint> get_intersection(const Plane& plane,   const Cylinder& cylinder)                    { return get_intersection(cylinder, plane); }
 	inline std::optional<ContactPoint> get_intersection(const Plane& plane,   const Line& line)                            { return get_intersection(line, plane); }
 	inline std::optional<ContactPoint> get_intersection(const Plane& plane,   const LineSegment& lineSegment)              { return get_intersection(lineSegment, plane); }
-	       //@returns If the planes are parallel, std::nullopt is returned. If there is an intersection, the ContactPoint represents a
-		   // Line with the point being any point on the line and the normal being the direction.
-	       std::optional<ContactPoint> get_intersection(const Plane& plane_1, const Plane& plane_2);                       // IMPLEMENTED
+	       //@returns If the planes are parallel, std::nullopt is returned. If there is an intersection, the Line of intersection is returned.
+	       std::optional<Line> get_intersection(const Plane& plane_1, const Plane& plane_2);                               // IMPLEMENTED
 	inline std::optional<ContactPoint> get_intersection(const Plane& plane,   const Quad& quad)                            { LOG_WARN("[INTERSECT] Not implemented Plane v Quad"); return std::nullopt; } // #TODO
 	inline std::optional<ContactPoint> get_intersection(const Plane& plane,   const Ray& ray)                              { LOG_WARN("[INTERSECT] Not implemented Plane v Ray"); return std::nullopt; } // #TODO
 	       std::optional<ContactPoint> get_intersection(const Plane& plane,   const Sphere& sphere);                       // IMPLEMENTED
