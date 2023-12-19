@@ -380,6 +380,9 @@ namespace Geometry
 	}
 	std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2)
 	{
+		if (triangle_1.is_degenerate() || triangle_2.is_degenerate())
+			return std::nullopt;
+
 		auto intersection_segment = triangle_triangle(triangle_1, triangle_2);
 		if (intersection_segment)
 		{
@@ -537,6 +540,9 @@ namespace Geometry
 	}
 	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2)
 	{
+		if (triangle_1.is_degenerate() || triangle_2.is_degenerate())
+			return false;
+
 		return tri_tri_is_intersecting(triangle_1.m_point_1, triangle_1.m_point_2, triangle_1.m_point_3,
 		                               triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3);
 	}

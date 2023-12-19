@@ -31,6 +31,8 @@ namespace Geometry
 		void translate(const glm::vec3& p_translate);
 		void draw_UI() const;
 
+		// Returns true if any of the points in the triangle are equal to each other.
+		bool is_degenerate() const { return m_point_1 == m_point_2 || m_point_2 == m_point_3 || m_point_3 == m_point_1; }
 		// Returns the current world-space centroid of the triangle.
 		glm::vec3 centroid() const;
 		// Get the normalised direction vector representing the normal of the triangle.
