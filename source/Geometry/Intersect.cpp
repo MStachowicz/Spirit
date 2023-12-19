@@ -4,7 +4,9 @@
 #include "Geometry/Plane.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Sphere.hpp"
+#include "Geometry/TriTri.hpp"
 #include "Geometry/Triangle.hpp"
+
 #include "Utility/Logger.hpp"
 
 #include <glm/glm.hpp>
@@ -25,140 +27,6 @@ namespace Geometry
 	{
 		// [uvw] = [vwu] = [wuv] = −[uwv] = −[vuw] = −[wvu]
 		return glm::dot(glm::cross(u, v), w); // [uvw]
-	}
-	// This edge to edge test is based on Franlin Antonio's gem: Faster Line Segment Intersection - Graphics Gems III pp. 199-202
-	static bool edge_edge_test(const glm::vec3& V0, const glm::vec3& U0, const glm::vec3& U1, float& Ax, float& Ay, int& i0, int& i1)
-	{
-		float Bx = U0[i0] - U1[i0];
-		float By = U0[i1] - U1[i1];
-		float Cx = V0[i0] - U0[i0];
-		float Cy = V0[i1] - U0[i1];
-		float f  = Ay * Bx - Ax * By;
-		float d  = By * Cx - Bx * Cy;
-		if ((f > 0 && d >= 0 && d <= f) || (f < 0 && d <= 0 && d >= f))
-		{
-			float e = Ax * Cy - Ay * Cx;
-			if (f > 0)
-			{
-				if (e >= 0 && e <= f)
-					return true;
-			}
-			else
-			{
-				if (e <= 0 && e >= f)
-					return true;
-			}
-		}
-		return false;
-	}
-	static bool edge_against_tri_edges(const glm::vec3& V0, const glm::vec3& V1, const glm::vec3& U0, const glm::vec3& U1, const glm::vec3& U2, int& i0, int& i1)
-	{
-		float Ax = V1[i0] - V0[i0];
-		float Ay = V1[i1] - V0[i1];
-		// test edge U0,U1 against V0,V1 OR
-		// test edge U1,U2 against V0,V1 OR
-		// test edge U2,U1 against V0,V1
-		if (edge_edge_test(V0, U0, U1, Ax, Ay, i0, i1) || edge_edge_test(V0, U1, U2, Ax, Ay, i0, i1) || edge_edge_test(V0, U2, U0, Ax, Ay, i0, i1))
-			return true;
-		else
-			return false;
-
-	}
-	static bool point_in_tri(const glm::vec3& V0, const glm::vec3& U0, const glm::vec3& U1, const glm::vec3& U2, int i0, int i1)
-	{
-		float a, b, c, d0, d1, d2;
-		/* is T1 completly inside T2? */
-		/* check if V0 is inside tri(U0,U1,U2) */
-		a  = U1[i1] - U0[i1];
-		b  = -(U1[i0] - U0[i0]);
-		c  = -a * U0[i0] - b * U0[i1];
-		d0 = a * V0[i0] + b * V0[i1] + c;
-
-		a  = U2[i1] - U1[i1];
-		b  = -(U2[i0] - U1[i0]);
-		c  = -a * U1[i0] - b * U1[i1];
-		d1 = a * V0[i0] + b * V0[i1] + c;
-
-		a  = U0[i1] - U2[i1];
-		b  = -(U0[i0] - U2[i0]);
-		c  = -a * U2[i0] - b * U2[i1];
-		d2 = a * V0[i0] + b * V0[i1] + c;
-
-		if (d0 * d1 > 0.0)
-		{
-			if (d0 * d2 > 0.0)
-				return true;
-		}
-		return false;
-	}
-	static bool coplanar_tri_tri(const glm::vec3& N, const Triangle& triangle_1, const Triangle& triangle_2)
-	{
-		int i0, i1;
-		const glm::vec3 A = glm::abs(N);
-		// first project onto an axis-aligned plane, that maximizes the area of the triangles, compute indices: i0,i1.
-
-		if (A[0] > A[1])
-		{
-			if (A[0] > A[2])
-			{
-				i0 = 1; // A[0] is greatest
-				i1 = 2;
-			}
-			else
-			{
-				i0 = 0; // A[2] is greatest
-				i1 = 1;
-			}
-		}
-		else // A[0]<=A[1]
-		{
-			if (A[2] > A[1])
-			{
-				i0 = 0; // A[2] is greatest
-				i1 = 1;
-			}
-			else
-			{
-				i0 = 0; // A[1] is greatest
-				i1 = 2;
-			}
-		}
-
-		// test all edges of triangle_1 against the edges of triangle_2
-		if (edge_against_tri_edges(triangle_1.m_point_1, triangle_1.m_point_2, triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3, i0, i1)
-		|| edge_against_tri_edges(triangle_1.m_point_2, triangle_1.m_point_3, triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3, i0, i1)
-		|| edge_against_tri_edges(triangle_1.m_point_3, triangle_1.m_point_1, triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3, i0, i1))
-			return true;
-
-		// finally, test if triangle_1 is totally contained in triangle_2 or vice versa
-		if (point_in_tri(triangle_1.m_point_1, triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3, i0, i1) || point_in_tri(triangle_2.m_point_1, triangle_1.m_point_1, triangle_1.m_point_2, triangle_1.m_point_3, i0, i1))
-			return true;
-
-		return false;
-	}
-	static void isect(const float& VV0, const float& VV1, const float& VV2, const float& D0, const float& D1, const float& D2, float& isect0, float& isect1)
-	{
-		isect0 = VV0 + (VV1 - VV0) * D0 / (D0 - D1);
-		isect1 = VV0 + (VV2 - VV0) * D0 / (D0 - D2);
-	}
-	// Compute the intervals of two triangles and set the intersections to isect0 and isect1.
-	// Returns false if the triangles are coplanar and the assignment didnt happen.
-	static bool compute_intervals(const float& VV0, const float& VV1, const float& VV2, const float& D0, const float& D1, const float& D2, const float& D0D1, const float& D0D2, float& isect0, float& isect1)
-	{
-		if (D0D1 > 0.0f)
-			isect(VV2, VV0, VV1, D2, D0, D1, isect0, isect1); // here we know that D0D2<=0.0, that is D0, D1 are on the same side, D2 on the other or on the plane
-		else if (D0D2 > 0.0f)
-			isect(VV1, VV0, VV2, D1, D0, D2, isect0, isect1); // here we know that d0d1<=0.0
-		else if (D1 * D2 > 0.0f || D0 != 0.0f)
-			isect(VV0, VV1, VV2, D0, D1, D2, isect0, isect1); // here we know that d0d1<=0.0 or that D0!=0.0
-		else if (D1 != 0.0f)
-			isect(VV1, VV0, VV2, D1, D0, D2, isect0, isect1);
-		else if (D2 != 0.0f)
-			isect(VV2, VV0, VV1, D2, D0, D1, isect0, isect1);
-		else // triangles are coplanar
-			return false; // coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2);
-
-		return true;
 	}
 
 // ==============================================================================================================================
@@ -510,6 +378,53 @@ namespace Geometry
 		else
 			return std::nullopt;
 	}
+	std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2)
+	{
+		auto intersection_segment = triangle_triangle(triangle_1, triangle_2);
+		if (intersection_segment)
+		{
+			ContactPoint point;
+			point.normal            = glm::normalize(glm::cross(triangle_1.m_point_2 - triangle_1.m_point_1, triangle_1.m_point_3 - triangle_1.m_point_1));
+			// Halfway point on the line segment
+			point.position          = intersection_segment->m_start + ((intersection_segment->m_end - intersection_segment->m_start) * 0.5f);
+			point.penetration_depth = 0;
+			return point;
+		}
+		else
+			return std::nullopt;
+	}
+	std::optional<LineSegment> triangle_triangle(const Triangle& triangle_1, const Triangle& triangle_2, bool* is_coplanar)
+	{
+		bool coplanar           = false;
+		LineSegment lineSegment = LineSegment(glm::vec3(0.f), glm::vec3(0.f));
+		bool intersecting       = tri_tri_get_intersection(triangle_1.m_point_1, triangle_1.m_point_2, triangle_1.m_point_3, triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3,
+		                                                   coplanar, lineSegment.m_start, lineSegment.m_end);
+
+		if (coplanar && is_coplanar)
+			*is_coplanar = true;
+
+		if (intersecting)
+			return lineSegment; // If coplanar, the line
+		else
+			return std::nullopt;
+	}
+
+	std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2, bool* is_coplanar)
+	{
+		auto lineSegment_optional = triangle_triangle(triangle_1, triangle_2, is_coplanar);
+
+		if (lineSegment_optional)
+		{
+			ContactPoint point;
+			point.normal            = glm::normalize(glm::cross(triangle_1.m_point_2 - triangle_1.m_point_1, triangle_1.m_point_3 - triangle_1.m_point_1));
+			// Halfway point on the line segment
+			point.position          = lineSegment_optional->m_start + ((lineSegment_optional->m_end - lineSegment_optional->m_start) * 0.5f);
+			point.penetration_depth = 0;
+			return point;
+		}
+		else
+			return std::nullopt;
+	}
 	bool intersecting(const AABB& AABB_1, const AABB& AABB_2)
 	{
 		// Reference: Real-Time Collision Detection (Christer Ericson)
@@ -620,113 +535,9 @@ namespace Geometry
 		auto radius_sum               = sphere_1.m_radius + sphere_2.m_radius;
 		return distance_between_centers <= radius_sum;
 	}
-	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2, bool test_co_planar)
+	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2)
 	{
-		// Uses the Möller-Trumbore intersection algorithm to perform triangle-triangle collision detection. Adapted from:
-		// https://github.com/erich666/jgt-code/blob/master/Volume_08/Number_1/Shen2003/tri_tri_test/include/Moller97.c
-		// https://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
-
-		// compute plane of triangle_1
-		glm::vec3 E1 = triangle_1.m_point_2 - triangle_1.m_point_1;
-		glm::vec3 E2 = triangle_1.m_point_3 - triangle_1.m_point_1;
-		glm::vec3 N1 = glm::cross(E1, E2); // Normal of triangle_1
-		float d1 = -glm::dot(N1, triangle_1.m_point_1);
-		// plane equation 1: N1.X+d1=0
-
-		// Put triangle_2 into plane equation 1 to compute signed distances to the plane
-		float du0 = glm::dot(N1, triangle_2.m_point_1) + d1;
-		float du1 = glm::dot(N1, triangle_2.m_point_2) + d1;
-		float du2 = glm::dot(N1, triangle_2.m_point_3) + d1;
-
-		// coplanarity robustness check
-		if constexpr (Use_Epsilon_Test)
-		{
-			if (std::abs(du0) < Epsilon) du0 = 0.0;
-			if (std::abs(du1) < Epsilon) du1 = 0.0;
-			if (std::abs(du2) < Epsilon) du2 = 0.0;
-		}
-		float du0du1 = du0 * du1;
-		float du0du2 = du0 * du2;
-
-		if (du0du1 > 0.0f && du0du2 > 0.0f) // same sign on all of them + not equal 0 = no intersecton
-			return false;
-
-		// compute plane of triangle_2
-		E1 = triangle_2.m_point_2 - triangle_2.m_point_1;
-		E2 = triangle_2.m_point_3 - triangle_2.m_point_1;
-		glm::vec3 N2 = glm::cross(E1, E2); // Tr Normal
-		float d2 = -glm::dot(N2, triangle_2.m_point_1);
-		// plane equation 2: N2.X+d2=0
-
-		// put triangle_1 into plane equation of triangle_2
-		float dv0 = glm::dot(N2, triangle_1.m_point_1) + d2;
-		float dv1 = glm::dot(N2, triangle_1.m_point_2) + d2;
-		float dv2 = glm::dot(N2, triangle_1.m_point_3) + d2;
-
-		if constexpr (Use_Epsilon_Test)
-		{
-			if (std::abs(dv0) < Epsilon) dv0 = 0.0;
-			if (std::abs(dv1) < Epsilon) dv1 = 0.0;
-			if (std::abs(dv2) < Epsilon) dv2 = 0.0;
-		}
-
-		float dv0dv1 = dv0 * dv1;
-		float dv0dv2 = dv0 * dv2;
-
-		// Same sign on all of them and not equal to 0 then no intersection occurs
-		if (dv0dv1 > 0.0f && dv0dv2 > 0.0f)
-			return false;
-
-		// compute direction of intersection line
-		glm::vec3 D = glm::cross(N1, N2);
-
-		// compute and index to the largest component of D
-		float max = std::abs(D[0]);
-		float b   = std::abs(D[1]);
-		float c   = std::abs(D[2]);
-		int index = 0;
-
-		if (b > max) max = b, index = 1;
-		if (c > max) max = c, index = 2;
-
-		// this is the simplified projection onto L
-		float vp0 = triangle_1.m_point_1[index];
-		float vp1 = triangle_1.m_point_2[index];
-		float vp2 = triangle_1.m_point_3[index];
-
-		float up0 = triangle_2.m_point_1[index];
-		float up1 = triangle_2.m_point_2[index];
-		float up2 = triangle_2.m_point_3[index];
-
-		glm::vec2 isect1;
-		glm::vec2 isect2;
-
-		// compute interval for triangle_1 and triangle_2. If the interval check comes back false
-		// the triangles are coplanar and we can early out by checking for collision between coplanar triangles.
-		if (!compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2, isect1[0], isect1[1]))
-		{
-			if (test_co_planar)
-				return coplanar_tri_tri(N1, triangle_1, triangle_2);
-			else
-				return false;
-		}
-		if (!compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2, isect2[0], isect2[1]))
-		{
-			if (test_co_planar)
-				return coplanar_tri_tri(N1, triangle_1, triangle_2);
-			else
-				return false;
-		}
-
-		// Sort so components of isect1 and isect2 are in ascending order.
-		if (isect1[0] > isect1[1])
-			std::swap(isect1[0], isect1[1]);
-		if (isect2[0] > isect2[1])
-			std::swap(isect2[0], isect2[1]);
-
-		if (isect1[1] < isect2[0] || isect2[1] < isect1[0])
-			return false;
-		else
-			return true;
+		return tri_tri_is_intersecting(triangle_1.m_point_1, triangle_1.m_point_2, triangle_1.m_point_3,
+		                               triangle_2.m_point_1, triangle_2.m_point_2, triangle_2.m_point_3);
 	}
 } // namespace Geometry

@@ -171,6 +171,8 @@ source/Geometry/Sphere.cpp
 source/Geometry/Shape.hpp
 source/Geometry/Triangle.hpp
 source/Geometry/Triangle.cpp
+source/Geometry/TriTri.hpp
+source/Geometry/TriTri.cpp
 )
 target_include_directories(Geometry
 PRIVATE source/Geometry

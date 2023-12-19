@@ -271,7 +271,13 @@ namespace Geometry
 	inline std::optional<ContactPoint> get_intersection(const Triangle& triangle,   const Quad& quad)                                       { return get_intersection(quad, triangle); }
 	inline std::optional<ContactPoint> get_intersection(const Triangle& triangle,   const Ray& ray)                                         { return get_intersection(ray, triangle); }
 	inline std::optional<ContactPoint> get_intersection(const Triangle& triangle,   const Sphere& sphere)                                   { return get_intersection(sphere, triangle); }
-	inline std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2, bool test_co_planar = true) { LOG_WARN("[INTERSECT] Not implemented Triangle v Triangle"); return std::nullopt; } // #TODO
+	       std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2);
+
+	// Computes the LineSegment of intersection of the two triangles if it exists.
+	//@param triangle_1,triangle_2 The triangles to test for intersection.
+	//@param is_coplanar Optional out param set to true if the triangles are coplanar.
+	//@return The LineSegment of intersection if it exists, otherwise std::nullopt. If is_coplanar is true, the returned LineSegment is degerate.
+	std::optional<LineSegment> triangle_triangle(const Triangle& triangle_1, const Triangle& triangle_2, bool* is_coplanar = nullptr);
 //==============================================================================================================================
 // end get_intersection functions
 //==============================================================================================================================
@@ -435,7 +441,7 @@ namespace Geometry
 	inline bool intersecting(const Triangle& triangle,   const Quad& quad)               { return intersecting(quad, triangle); }
 	inline bool intersecting(const Triangle& triangle,   const Ray& ray)                 { return intersecting(ray, triangle); }
 	inline bool intersecting(const Triangle& triangle,   const Sphere& sphere)           { return intersecting(sphere, triangle); }
-	       bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2, bool test_co_planar = true); // IMPLEMENTED
+	       bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2); // IMPLEMENTED
 //==============================================================================================================================
 // end intersecting functions
 //==============================================================================================================================
