@@ -332,6 +332,9 @@ namespace Utility
 		}
 		void add_cylinder(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments)
 		{
+			if (base == top)
+				return;
+
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 			{
 				const auto base_to_top                = top - base;
