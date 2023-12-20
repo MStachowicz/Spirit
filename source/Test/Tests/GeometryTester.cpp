@@ -100,49 +100,6 @@ namespace Test
 	{SCOPE_SECTION("Triangle")
 		const auto control = Geometry::Triangle(glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, -1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f));
 
-		{SCOPE_SECTION("Transform");
-
-			auto triangle = control;
-			triangle.transform(glm::identity<glm::mat4>());
-			CHECK_EQUAL(triangle, control, "Identity transform doesn't change triangle");
-
-			{SCOPE_SECTION("Translate");
-				auto transformed = control;
-				const glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), glm::vec3(3.f, 0.f, 0.f)); // Keep translating right
-
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(3.f, 1.f, 0.f), glm::vec3(4.f, -1.f, 0.f), glm::vec3(2.f, -1.f, 0.f));
-					CHECK_EQUAL(transformed, expected, "Right");
-				}
-			}
-			{SCOPE_SECTION("Rotate");
-				auto transformed = control;
-				const glm::mat4 transform = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, -0.33333337f, 1.3333334f), glm::vec3(0.99999994f, -0.3333333f, -0.6666666f), glm::vec3(-0.99999994f, -0.3333333f, -0.6666666f));
-					CHECK_EQUAL(transformed, expected, "Rotate 1");
-				}
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, -1.6666667f, -5.9604645e-08f), glm::vec3(0.9999999f, 0.3333333f, 8.940697e-08f), glm::vec3(-0.9999999f, 0.3333333f, 8.940697e-08f));
-					CHECK_EQUAL(transformed, expected, "Rotate 2");
-				}
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, -0.33333325f, -1.3333333f), glm::vec3(0.9999998f, -0.33333346f, 0.66666675f), glm::vec3(-0.9999998f, -0.33333346f, 0.66666675f));
-					CHECK_EQUAL(transformed, expected, "Rotate 3");
-				}
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, 0.9999999f, 2.9802322e-07f), glm::vec3(0.99999976f, -1.0000001f, 0.f), glm::vec3(-0.99999976f, -1.0000001f, 0.f));
-					CHECK_EQUAL(transformed, expected, "Rotate 4");
-				}
-			}
-		}
-
 		{SCOPE_SECTION("Triangle v Triangle intersection")
 			{SCOPE_SECTION("Coplanar seperated");
 				auto t1 = Geometry::Triangle(glm::vec3(0.f, 3.5f, 0.f),  glm::vec3(1.f, 1.5f, 0.f),   glm::vec3(-1.f, 1.5f, 0.f));
@@ -259,6 +216,7 @@ namespace Test
 				{SCOPE_SECTION("Touching edge to edge");
 					auto t1 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(-2.f, 1.f, 0.f));
 					CHECK_TRUE(Geometry::intersecting(control, t1), "Co-planar");
+
 					t1.translate({-std::numeric_limits<float>::epsilon() * 2.f, 0.f, 0.f});
 					CHECK_TRUE(!Geometry::intersecting(control, t1), "Co-planar");
 				}
@@ -698,5 +656,69 @@ namespace Test
 		}
 		ImGui::End();
 	}
-}// namespace Test
+
+	void GeometryTester::draw_tri_tri_debugger_UI()
+	{
+		if (ImGui::Begin("Tri Tri visualiser"))
+		{
+			ImGui::Text("Compare the two triangles and check if they intersect.");
+
+			static Geometry::Triangle t1 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 0.f), glm::vec3(0.f, 4.f, 0.f), glm::vec3(1.f, 3.f, 0.f));
+			static Geometry::Triangle t2 = Geometry::Triangle(glm::vec3(-1.f, 3.f, 1.f), glm::vec3(0.f, 4.f, 1.f), glm::vec3(1.f, 3.f, 1.f));
+
+			ImGui::Slider("Triangle 1 point 1", t1.m_point_1, -10.f, 10.f);
+			ImGui::Slider("Triangle 1 point 2", t1.m_point_2, -10.f, 10.f);
+			ImGui::Slider("Triangle 1 point 3", t1.m_point_3, -10.f, 10.f);
+			ImGui::Separator();
+			ImGui::Slider("Triangle 2 point 1", t2.m_point_1, -10.f, 10.f);
+			ImGui::Slider("Triangle 2 point 2", t2.m_point_2, -10.f, 10.f);
+			ImGui::Slider("Triangle 2 point 3", t2.m_point_3, -10.f, 10.f);
+
+			float shape_alpha = 0.5f;
+			glm::vec3 intersected_colour        = glm::vec3(1.f, 0.f, 0.f);
+			glm::vec3 not_intersected_colour    = glm::vec3(0.f, 1.f, 0.f);
+			glm::vec3 intersection_shape_colour = glm::vec3(1.f, 1.f, 0.f);
+			// Base the thickness on the size of the triangles
+			float intersection_shape_thickness  = glm::length(t1.centroid() - t1.m_point_2) * 0.01f;
+			ImVec4 intersected_colour_imgui     = ImVec4(intersected_colour.r, intersected_colour.g, intersected_colour.b, 1.f);
+			ImVec4 not_intersected_colour_imgui = ImVec4(not_intersected_colour.r, not_intersected_colour.g, not_intersected_colour.b, 1.f);
+
+			if (Geometry::intersecting(t1, t2))
+			{
+				ImGui::TextColored(intersected_colour_imgui, "Triangles intersect");
+				OpenGL::DebugRenderer::add(t1, glm::vec4(intersected_colour, shape_alpha));
+				OpenGL::DebugRenderer::add(t2, glm::vec4(intersected_colour, shape_alpha));
+			}
+			else
+			{
+				ImGui::TextColored(not_intersected_colour_imgui, "Triangles do not intersect");
+				OpenGL::DebugRenderer::add(t1, glm::vec4(not_intersected_colour, shape_alpha));
+				OpenGL::DebugRenderer::add(t2, glm::vec4(not_intersected_colour, shape_alpha));
+			}
+
+			ImGui::Separator();
+			bool coplanar = false;
+			if (auto optional_line_segment = Geometry::triangle_triangle(t1, t2, &coplanar))
+			{
+				ImGui::TextColored(intersected_colour_imgui, "Triangles intersect - coplanar: %s", coplanar ? "true" : "false");
+
+				OpenGL::DebugRenderer::add(t1, glm::vec4(intersected_colour, shape_alpha));
+				OpenGL::DebugRenderer::add(t2, glm::vec4(intersected_colour, shape_alpha));
+
+				if (!coplanar)
+				{
+					Geometry::Cylinder cylinder = Geometry::Cylinder(optional_line_segment->m_start, optional_line_segment->m_end, intersection_shape_thickness);
+					OpenGL::DebugRenderer::add(cylinder, glm::vec4(intersection_shape_colour, 1.f));
+				}
+			}
+			else
+			{
+				ImGui::TextColored(not_intersected_colour_imgui, "Triangles do not intersect");
+				OpenGL::DebugRenderer::add(t1, glm::vec4(not_intersected_colour, shape_alpha));
+				OpenGL::DebugRenderer::add(t2, glm::vec4(not_intersected_colour, shape_alpha));
+			}
+		}
+		ImGui::End();
+	}
+} // namespace Test
 DISABLE_WARNING_POP

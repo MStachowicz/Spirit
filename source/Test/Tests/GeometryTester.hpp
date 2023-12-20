@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TestManager.hpp"
+#include "Test/TestManager.hpp"
 
 namespace Test
 {
@@ -13,6 +13,7 @@ namespace Test
 		void run_performance_tests() override;
 
 		static void draw_frustrum_debugger_UI(float aspect_ratio);
+		static void draw_tri_tri_debugger_UI();
 	private:
 		void runAABBTests();
 		void runTriangleTests();
