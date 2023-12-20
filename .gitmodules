@@ -17,3 +17,6 @@
 [submodule "source/External/GLAD"]
 	path = source/External/GLAD
 	url = https://github.com/kieranvs/GLAD.git
+[submodule "source/External/ImGuizmo"]
+	path = source/External/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

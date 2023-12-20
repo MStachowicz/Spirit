@@ -13,6 +13,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui.h"
+#include "ImGuizmo.h"
 
 #include <iostream>
 
@@ -156,6 +157,7 @@ namespace Platform
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 
 		{ // At the start of an ImGui frame, push a window the size of viewport to allow docking other ImGui windows to.
 			ImGui::SetNextWindowSize(size());

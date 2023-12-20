@@ -22,18 +22,19 @@ namespace Component
 			, m_model{glm::identity<glm::mat4>()}
 		{}
 
-		glm::vec3 m_position;   // World-space position.
-		glm::vec3 m_roll_pitch_yaw;   // Roll, Pitch, Yaw rotation represented in Euler degree angles. Range [-180 - 180].
+		glm::vec3 m_position;       // World-space position.
+		glm::vec3 m_roll_pitch_yaw; // Roll, Pitch, Yaw rotation represented in Euler degree angles. Range [-180 - 180].
 		glm::vec3 m_scale;
-		glm::vec3 m_direction; // World-space direction vector the entity is facing.
-		glm::quat m_orientation; // Unit quaternion taking the Starting_Forward_Direction to the current orientation.
-
+		glm::vec3 m_direction;      // World-space direction vector the entity is facing.
+		glm::quat m_orientation;    // Unit quaternion taking the Starting_Forward_Direction to the current orientation.
 		glm::mat4 m_model;
 
 		// Rotate the object to roll pitch and yaw euler angles in the order XYZ. Angles suppled are in degrees.
 		void rotateEulerDegrees(const glm::vec3& p_roll_pitch_yawDegrees);
 		// Focus the view direction/orientation on p_point.
 		void look_at(const glm::vec3& p_point);
+
+		void set_model_matrix(const glm::mat4& p_model);
 
 		glm::vec3 forward() const { return m_direction; };
 		glm::vec3 right()   const { return glm::normalize(m_orientation * glm::vec3(1.f,0.f,0.f)); };

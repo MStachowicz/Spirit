@@ -3,6 +3,7 @@
 
 #include "imgui.h"
 #include "glm/gtx/euler_angles.hpp"
+#include "glm/gtx/matrix_decompose.hpp"
 
 namespace Component
 {
@@ -20,6 +21,17 @@ namespace Component
 			m_orientation    = Utility::get_rotation(Starting_Forward_Direction, m_direction);
 			m_roll_pitch_yaw = Utility::to_roll_pitch_yaw(m_orientation);
 		}
+	}
+
+	void Transform::set_model_matrix(const glm::mat4& p_model)
+	{
+		glm::vec3 skew;
+		glm::vec4 perspective;
+		glm::decompose(p_model, m_scale, m_orientation, m_position, skew, perspective);
+
+		m_roll_pitch_yaw = Utility::to_roll_pitch_yaw(m_orientation);
+		m_direction      = glm::normalize(m_orientation * Starting_Forward_Direction);
+		m_model          = p_model;
 	}
 
 	void Transform::draw_UI()
