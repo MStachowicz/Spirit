@@ -24,7 +24,9 @@
 #include "Utility/Utility.hpp"
 
 #include "imgui.h"
+#include "ImGuizmo.h"
 #include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #include <format>
 
@@ -84,6 +86,11 @@ namespace UI
 
 							m_selected_entities.push_back(entityCollided);
 							LOG("[EDITOR] Entity{} has been selected", entityCollided.ID);
+						}
+						else
+						{
+							m_selected_entities.clear();
+							LOG("[EDITOR] Deselected entities");
 						}
 					}
 					break;
@@ -160,6 +167,34 @@ namespace UI
 			ImGui::Begin("Dear ImGui Style Editor", &m_windows_to_display.ImGuiStyleEditor);
 			ImGui::ShowStyleEditor();
 			ImGui::End();
+		}
+
+		{// Manipulators
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			auto window_pos  = ImGui::GetWindowPos();
+			auto window_size = ImGui::GetWindowSize();
+			ImGuizmo::SetRect(window_pos.x, window_pos.y, window_size.x, window_size.y);
+
+			for (const auto& selected_ent : m_selected_entities)
+			{
+				if (m_scene_system.get_current_scene().has_components<Component::Transform>(selected_ent))
+				{
+					auto& transform = m_scene_system.get_current_scene().get_component<Component::Transform>(selected_ent);
+
+					ImGuizmo::Manipulate(
+						glm::value_ptr(m_openGL_renderer.m_view_information.m_view),
+						glm::value_ptr(m_openGL_renderer.m_view_information.m_projection),
+						ImGuizmo::OPERATION::UNIVERSAL,
+						ImGuizmo::LOCAL,
+						glm::value_ptr(transform.m_model));
+
+					if (ImGuizmo::IsUsing())
+						transform.set_model_matrix(transform.m_model);
+
+					break; // ImGuizmo only allows one entity to be edited at a time.
+				}
+			}
 		}
 
 		m_draw_count++;

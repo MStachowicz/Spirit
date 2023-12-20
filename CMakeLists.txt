@@ -338,11 +338,14 @@ target_compile_options(ECS PRIVATE ${WARNING_COMPILE_FLAGS})
 	source/External/ImGui/imgui.cpp
 	source/External/ImGui/backends/imgui_impl_opengl3.cpp
 	source/External/ImGui/backends/imgui_impl_glfw.cpp
+	source/External/ImGuizmo/ImGuizmo.h
+	source/External/ImGuizmo/ImGuizmo.cpp
 	source/External/ImGuiUser/imgui_user.h
 	source/External/ImGuiUser/imgui_user_config.h
 	)
 	target_include_directories(ImGui SYSTEM
 	PUBLIC source/External/ImGui
+	PUBLIC source/External/ImGuizmo
 	PUBLIC source/External/ImGuiUser # Seperate folder to avoid comitting to ImGui
 	PRIVATE source/External/GLFW/include
 	)
