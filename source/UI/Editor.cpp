@@ -214,7 +214,6 @@ namespace UI
 					auto label = scene.get_component<Component::Label&>(p_entity);
 					title = label.mName;
 				}
-				scene.get_component<Component::Transform&>(p_entity).draw_UI();
 
 				if (ImGui::TreeNode(title.c_str()))
 				{
