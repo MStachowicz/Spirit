@@ -41,6 +41,8 @@ namespace std
 
 namespace Test
 {
+	extern const std::string seperator;
+
 	// Modifies source_location into a IDE hyperlink friendly format
 	std::string to_string(const std::source_location& p_location);
 
@@ -50,7 +52,8 @@ namespace Test
 
 	using TestDuration = std::chrono::duration<float, std::milli>;
 
-	void run_unit_tests(const bool& pRunPerformanceTests);
+	// Run all the unit tests, and return { total pass count, total failure count }.
+	std::pair<size_t, size_t> run_unit_tests(const bool& pRunPerformanceTests);
 
 	// A pure-virtual API for running unit tests and performance tests.
 	// Override the run_unit_tests and run_performance_tests functions to add your own tests.
@@ -120,6 +123,9 @@ namespace Test
 		// Executes all the tests filling up the m_unit_tests and m_performance_tests containers.
 		// When completed, outputs the results of all the tests.
 		void run(const bool& pRunPerformanceTests);
+
+		size_t get_test_pass_count() const { return m_unit_tests_pass_count; }
+		size_t get_test_fail_count() const { return m_unit_tests_fail_count; }
 
 	private:
 		std::string mName;

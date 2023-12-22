@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.27)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Zephyr ----------------------------------------------------------------------------------------------------------------------------------
 project(Zephyr)
 add_executable(Zephyr
@@ -18,10 +19,39 @@ PUBLIC OpenGL
 PUBLIC Platform
 PUBLIC UI
 PUBLIC Utility # Simulation loop runs in the header and uses Logger
-PUBLIC Test
 )
 target_compile_options(Zephyr PRIVATE ${WARNING_COMPILE_FLAGS})
 # Zephyr end ------------------------------------------------------------------------------------------------------------------------------
+
+# ------------------------ Test -----------------------------------------------------------------------------------------------------------
+add_executable(Test
+source/Test/TestMain.cpp
+source/Test/MemoryCorrectnessItem.hpp
+source/Test/MemoryCorrectnessItem.cpp
+source/Test/TestManager.hpp
+source/Test/TestManager.cpp
+source/Test/Tests/ECSTester.hpp
+source/Test/Tests/ECSTester.cpp
+source/Test/Tests/ResourceManagerTester.hpp
+source/Test/Tests/ResourceManagerTester.cpp
+source/Test/Tests/GeometryTester.hpp
+source/Test/Tests/GeometryTester.cpp
+)
+target_include_directories(Test
+PRIVATE source/Test/Tests
+PRIVATE source/Test
+PRIVATE source
+)
+target_link_libraries(Test
+PUBLIC Utility
+PRIVATE ECS
+PRIVATE Geometry
+PRIVATE GLM
+PRIVATE ImGui
+PRIVATE OpenGL
+)
+target_compile_options(Test PRIVATE ${WARNING_COMPILE_FLAGS})
+# Test end --------------------------------------------------------------------------------------------------------------------------------
 
 # Set variables after project() so we can use CMAKE_CXX_COMPILER_ID -----------------------------------------------------------------------
 set(SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}) # TODO remove this and use CMAKE_CURRENT_SOURCE_DIR directly
@@ -199,7 +229,6 @@ PRIVATE OpenGL
 PRIVATE ECS
 PRIVATE Utility
 PRIVATE ImGui
-PRIVATE Test #Included to easily add calls to visualisation functions in testers
 )
 target_compile_options(UI PRIVATE ${WARNING_COMPILE_FLAGS})
 # UI end ----------------------------------------------------------------------------------------------------------------------------------
@@ -297,35 +326,6 @@ PRIVATE UI # Logger.cpp uses Editor for output
 )
 target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 # Utility end -----------------------------------------------------------------------------------------------------------------------------
-
-# ------------------------ Test -----------------------------------------------------------------------------------------------------------
-add_library(Test
-source/Test/MemoryCorrectnessItem.hpp
-source/Test/MemoryCorrectnessItem.cpp
-source/Test/TestManager.hpp
-source/Test/TestManager.cpp
-source/Test/Tests/ECSTester.hpp
-source/Test/Tests/ECSTester.cpp
-source/Test/Tests/ResourceManagerTester.hpp
-source/Test/Tests/ResourceManagerTester.cpp
-source/Test/Tests/GeometryTester.hpp
-source/Test/Tests/GeometryTester.cpp
-)
-target_include_directories(Test
-PRIVATE source/Test/Tests
-PRIVATE source/Test
-PRIVATE source
-)
-target_link_libraries(Test
-PUBLIC Utility
-PRIVATE ECS
-PRIVATE Geometry
-PRIVATE GLM
-PRIVATE ImGui
-PRIVATE OpenGL
-)
-target_compile_options(ECS PRIVATE ${WARNING_COMPILE_FLAGS})
-# Test end --------------------------------------------------------------------------------------------------------------------------------
 
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
 	# ImGui --------------------------------------------------------------------------------------------------------------------------------
