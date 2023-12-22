@@ -37,6 +37,7 @@ namespace System
 		void add_default_camera();
 		void constructBouncingBallScene();
 		void constructBoxScene();
+		void construct_2_sphere_scene();
 		void primitives_scene();
 	};
 } // namespace System

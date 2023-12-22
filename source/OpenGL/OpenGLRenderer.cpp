@@ -96,20 +96,36 @@ namespace OpenGL
 
 		scene.foreach([&](ECS::Entity& p_entity, Component::Transform& p_transform, Component::Mesh& mesh_comp)
 		{
-			if (scene.has_components<Component::Texture>(p_entity))
+			if (mesh_comp.m_mesh)
 			{
-				auto& texComponent = scene.get_component<Component::Texture>(p_entity);
+				if (scene.has_components<Component::Texture>(p_entity))
+				{
+					auto& texComponent = scene.get_component<Component::Texture>(p_entity);
 
-				DrawCall dc;
-				dc.set_uniform("view_position", m_view_information.m_view_position);
-				dc.set_uniform("model", p_transform.m_model);
-				dc.set_uniform("shininess", texComponent.m_shininess);
-				dc.set_texture("diffuse",  texComponent.m_diffuse.has_value()  ? texComponent.m_diffuse  : m_missing_texture);
-				dc.set_texture("specular", texComponent.m_specular.has_value() ? texComponent.m_specular : m_blank_texture);
-				dc.submit(m_phong_renderer.get_shader(), mesh_comp.m_mesh);
-			}
-			else
-			{
+					if (texComponent.m_diffuse.has_value())
+					{
+						DrawCall dc;
+						dc.set_uniform("view_position", m_view_information.m_view_position);
+						dc.set_uniform("model", p_transform.m_model);
+						dc.set_uniform("shininess", texComponent.m_shininess);
+						dc.set_texture("diffuse",  texComponent.m_diffuse);
+						dc.set_texture("specular", texComponent.m_specular.has_value() ? texComponent.m_specular : m_blank_texture);
+						dc.submit(m_phong_renderer.get_texture_shader(), mesh_comp.m_mesh);
+					}
+					else // Has a Mesh and Texture but no diffuse texture. Use the colour instead.
+					{
+						DrawCall dc;
+						dc.set_uniform("view_position", m_view_information.m_view_position);
+						dc.set_uniform("model", p_transform.m_model);
+						dc.set_uniform("shininess", texComponent.m_shininess);
+						dc.set_uniform("uColour", texComponent.m_colour);
+						dc.submit(m_phong_renderer.get_uniform_colour_shader(), mesh_comp.m_mesh);
+					}
+
+					return;
+				}
+
+				// Fallback to rendering using default colour and no lighting.
 				DrawCall dc;
 				dc.set_uniform("model", p_transform.m_model);
 				dc.set_uniform("colour", glm::vec4(0.06f, 0.44f, 0.81f, 1.f));
@@ -126,7 +142,7 @@ namespace OpenGL
 				dc.set_uniform("shininess", 64.f);
 				dc.set_texture("diffuse", p_terrain.m_texture.has_value() ? p_terrain.m_texture : m_missing_texture);
 				dc.set_texture("specular",  m_blank_texture);
-				dc.submit(m_phong_renderer.get_shader(), p_terrain.m_mesh);
+				dc.submit(m_phong_renderer.get_texture_shader(), p_terrain.m_mesh);
 			});
 		}
 

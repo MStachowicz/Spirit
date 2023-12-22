@@ -4,6 +4,7 @@
 #include "Utility/ResourceManager.hpp"
 #include "Utility/File.hpp"
 
+#include <glm/vec4.hpp>
 #include <filesystem>
 
 namespace Data
@@ -41,8 +42,12 @@ namespace Component
 		TextureRef m_specular;
 		float m_shininess;
 
+		glm::vec4 m_colour;
+
 		Texture() noexcept;
 		Texture(const TextureRef& m_diffuse) noexcept;
+		Texture(const glm::vec4& p_colour) noexcept;
+
 		void draw_UI(System::TextureSystem& p_texture_system);
 	};
 }; // namespace Component

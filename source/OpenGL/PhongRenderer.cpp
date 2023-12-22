@@ -11,8 +11,9 @@
 namespace OpenGL
 {
 	PhongRenderer::PhongRenderer()
-		: m_phong_shader{"phong"}
-		, m_directional_lights_buffer{m_phong_shader.get_SSBO_backing("DirectionalLightsBuffer")}
+		: m_phong_texture{"phong-texture"}
+		, m_phong_uniform_colour{"phong-uColour"}
+		, m_directional_lights_buffer{m_phong_texture.get_SSBO_backing("DirectionalLightsBuffer")}
 		, m_directional_light_fixed_size{0}
 		, m_directional_light_count_offset{0}
 		, m_directional_light_array_stride{0}
@@ -21,7 +22,7 @@ namespace OpenGL
 		, m_directional_light_ambient_offset{0}
 		, m_directional_light_diffuse_offset{0}
 		, m_directional_light_specular_offset{0}
-		, m_point_lights_buffer{m_phong_shader.get_SSBO_backing("PointLightsBuffer")}
+		, m_point_lights_buffer{m_phong_texture.get_SSBO_backing("PointLightsBuffer")}
 		, m_point_light_fixed_size{0}
 		, m_point_light_count_offset{0}
 		, m_point_light_array_stride{0}
@@ -33,7 +34,7 @@ namespace OpenGL
 		, m_point_light_ambient_offset{0}
 		, m_point_light_diffuse_offset{0}
 		, m_point_light_specular_offset{0}
-		, m_spot_lights_buffer{m_phong_shader.get_SSBO_backing("SpotLightsBuffer")}
+		, m_spot_lights_buffer{m_phong_texture.get_SSBO_backing("SpotLightsBuffer")}
 		, m_spot_light_fixed_size{0}
 		, m_spot_light_count_offset{0}
 		, m_spot_light_array_stride{0}
@@ -260,19 +261,33 @@ namespace OpenGL
 
 	void PhongRenderer::update_light_data(System::Scene& p_scene, const Texture& p_shadow_map)
 	{
-		m_phong_shader.use();
-
-		{ // Set Directional light shadow data
-			p_scene.m_entities.foreach([this, &p_scene](Component::DirectionalLight& p_light)
+		{// Set Directional light shadow data
 			{
-				m_phong_shader.set_uniform("light_proj_view", p_light.get_view_proj(p_scene.m_bound));
-			});
+				m_phong_texture.use();
+				p_scene.m_entities.foreach([this, &p_scene](Component::DirectionalLight& p_light)
+				{
+					m_phong_texture.set_uniform("light_proj_view", p_light.get_view_proj(p_scene.m_bound));
+				});
 
-			m_phong_shader.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
+				m_phong_texture.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
 
-			active_texture(2);
-			m_phong_shader.set_uniform("shadow_map", 2);
-			p_shadow_map.bind();
+				active_texture(2);
+				m_phong_texture.set_uniform("shadow_map", 2);
+				p_shadow_map.bind();
+			}
+			{
+				m_phong_uniform_colour.use();
+				p_scene.m_entities.foreach([this, &p_scene](Component::DirectionalLight& p_light)
+				{
+					m_phong_uniform_colour.set_uniform("light_proj_view", p_light.get_view_proj(p_scene.m_bound));
+				});
+
+				m_phong_uniform_colour.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
+
+				active_texture(2);
+				m_phong_uniform_colour.set_uniform("shadow_map", 2);
+				p_shadow_map.bind();
+			}
 		}
 
 		{ // Set DirectonalLight buffer data
