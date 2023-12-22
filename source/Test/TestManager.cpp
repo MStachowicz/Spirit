@@ -10,28 +10,36 @@
 
 namespace Test
 {
-	static const std::string seperator = "*****************************************************************\n";
+	const std::string seperator = "*****************************************************************\n";
 
 	std::string to_string(const std::source_location& p_location)
 	{
 		return std::format("{}:{}", p_location.file_name(), p_location.line());
 	}
 
-	void run_unit_tests(const bool& pRunPerformanceTests)
+	std::pair<size_t, size_t> run_unit_tests(const bool& pRunPerformanceTests)
 	{
 		LOG("{} Starting Unit tests", seperator);
 		Utility::Stopwatch stopwatch;
 
-		ECSTester tester;
-		tester.run(pRunPerformanceTests);
+		ECSTester ecs_tester;
+		ecs_tester.run(pRunPerformanceTests);
 
-		GeometryTester geometryTester;
-		geometryTester.run(pRunPerformanceTests);
+		GeometryTester geometry_tester;
+		geometry_tester.run(pRunPerformanceTests);
 
 		ResourceManagerTester resource_manager_tester;
 		resource_manager_tester.run(pRunPerformanceTests);
 
 		LOG("All Unit tests complete - Time taken: {}ms\n{}", stopwatch.duration_since_start<float, std::milli>().count(), seperator);
+
+		auto total_passes = ecs_tester.get_test_pass_count() +
+		                    geometry_tester.get_test_pass_count() +
+		                    resource_manager_tester.get_test_pass_count();
+		auto total_fails = ecs_tester.get_test_fail_count() +
+		                   geometry_tester.get_test_fail_count() +
+		                   resource_manager_tester.get_test_fail_count();
+		return { total_passes, total_fails };
 	}
 
 	TestManager::UnitTest::UnitTest(const bool& pCondition, const std::string& pName, const std::string& pFailMessage) noexcept

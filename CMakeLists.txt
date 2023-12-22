@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.27)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Zephyr ----------------------------------------------------------------------------------------------------------------------------------
 project(Zephyr)
 add_executable(Zephyr
@@ -18,9 +19,21 @@ PUBLIC OpenGL
 PUBLIC Platform
 PUBLIC UI
 PUBLIC Utility # Simulation loop runs in the header and uses Logger
-PUBLIC Test
 )
 target_compile_options(Zephyr PRIVATE ${WARNING_COMPILE_FLAGS})
+# Zephyr end ------------------------------------------------------------------------------------------------------------------------------
+
+# TestRunner ----------------------------------------------------------------------------------------------------------------------------------
+add_executable(TestRunner
+source/Test/TestMain.cpp
+)
+target_include_directories(TestRunner
+PRIVATE source
+)
+target_link_libraries(TestRunner
+Test
+)
+target_compile_options(TestRunner PRIVATE ${WARNING_COMPILE_FLAGS})
 # Zephyr end ------------------------------------------------------------------------------------------------------------------------------
 
 # Set variables after project() so we can use CMAKE_CXX_COMPILER_ID -----------------------------------------------------------------------
@@ -199,7 +212,6 @@ PRIVATE OpenGL
 PRIVATE ECS
 PRIVATE Utility
 PRIVATE ImGui
-PRIVATE Test #Included to easily add calls to visualisation functions in testers
 )
 target_compile_options(UI PRIVATE ${WARNING_COMPILE_FLAGS})
 # UI end ----------------------------------------------------------------------------------------------------------------------------------
