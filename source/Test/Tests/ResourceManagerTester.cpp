@@ -153,7 +153,7 @@ namespace Test
 			MemoryCorrectnessItem::reset();
 			{
 				Manager manager;
-				//manager.reserve(4);
+				manager.reserve(4);
 
 				auto ref = manager.insert(MemoryCorrectnessItem{}); // Construct, Move constructing, Delete
 				ref = manager.insert(MemoryCorrectnessItem{});      // Construct (new one), Move-assign, Delete

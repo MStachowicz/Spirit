@@ -11,7 +11,7 @@ DISABLE_WARNING_UNINITIALIZED // Prevent warnings about usage of uninitialized m
 namespace Test
 {
 	MemoryCorrectnessItem::MemoryCorrectnessItem()
-		: m_ID(instanceID++)
+		: m_ID(s_instance_ID++)
 		, m_member(std::nullopt)
 	{
 		if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
@@ -45,11 +45,11 @@ namespace Test
 
 		m_member.reset();
 		m_status = MemoryStatus::Deleted;
-		s_destroy_coutn += 1;
+		s_destroy_count += 1;
 	}
 
 	MemoryCorrectnessItem::MemoryCorrectnessItem(const MemoryCorrectnessItem& p_other)
-		: m_ID(instanceID++)
+		: m_ID(s_instance_ID++)
 		, m_member(p_other.m_member)
 	{
 		if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
@@ -83,7 +83,7 @@ namespace Test
 	}
 
 	MemoryCorrectnessItem::MemoryCorrectnessItem(MemoryCorrectnessItem&& p_other)
-		: m_ID(instanceID++)
+		: m_ID(s_instance_ID++)
 		, m_member(std::move(p_other.m_member))
 	{
 		if constexpr (LOG_MEM_CORRECTNESS_EVENTS)
@@ -203,7 +203,7 @@ namespace Test
 	void MemoryCorrectnessItem::reset()
 	{
 		s_constructed_count    = 0;
-		s_destroy_coutn        = 0;
+		s_destroy_count        = 0;
 		s_copy_construct_count = 0;
 		s_move_construct_count = 0;
 		s_copy_assign_count    = 0;

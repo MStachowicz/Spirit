@@ -15,12 +15,7 @@ DISABLE_WARNING_UNUSED_VARIABLE // Required to stop variables being destroyed be
 
 namespace Test
 {
-	// Tests if any MemoryCorrectnessErrors occurred and if the number of items alive matches p_alive_count_expected
-	void ECSTester::run_memory_test(const size_t& p_alive_count_expected)
-	{
-		CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Check memory errors");
-		CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), p_alive_count_expected, "Check alive count");
-	}
+	#define RUN_MEMORY_TEST(p_alive_count_expected) CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Check memory errors"); CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), p_alive_count_expected, "Check alive count");
 
 	void ECSTester::run_performance_tests()
 	{}
@@ -114,7 +109,7 @@ namespace Test
 				const float float_comp   = 42.f;
 				const double double_comp = 13.0;
 
-				run_memory_test(0);
+				RUN_MEMORY_TEST(0);
 
 				storage.add_entity(float_comp);
 				CHECK_EQUAL(storage.count_entities(), 1, "Add single component entity");
@@ -132,25 +127,25 @@ namespace Test
 
 				{SCOPE_SECTION("Add by copy");
 					storage.add_entity(comp);
-					run_memory_test(2);
+					RUN_MEMORY_TEST(2);
 				}
 				{SCOPE_SECTION("Add second copy");
 					storage.add_entity(comp);
-					run_memory_test(3);
+					RUN_MEMORY_TEST(3);
 				}
 				{SCOPE_SECTION("New archetype");
 					storage.add_entity(1.f);
-					run_memory_test(3); // Should still be 3 alive because we didnt add another mem correctness item
+					RUN_MEMORY_TEST(3); // Should still be 3 alive because we didnt add another mem correctness item
 				}
 				{SCOPE_SECTION("Add by move");
 					storage.add_entity(MemoryCorrectnessItem());
-					run_memory_test(4); // Should now be 4 alive because we move constructed a new one into storage
+					RUN_MEMORY_TEST(4); // Should now be 4 alive because we move constructed a new one into storage
 				}
 				{SCOPE_SECTION("Add 100");
 					for (int i = 0; i < 100; i++)
 						storage.add_entity(MemoryCorrectnessItem());
 
-					run_memory_test(104);
+					RUN_MEMORY_TEST(104);
 				}
 			}
 		}
@@ -172,7 +167,7 @@ namespace Test
 
 					auto ent = storage.add_entity(MemoryCorrectnessItem());
 					storage.delete_entity(ent);
-					run_memory_test(0);
+					RUN_MEMORY_TEST(0);
 				}
 
 				{SCOPE_SECTION("Destroy storage with entity still alive");
@@ -181,7 +176,7 @@ namespace Test
 						ECS::Storage storage;
 						storage.add_entity(MemoryCorrectnessItem());
 					}
-					run_memory_test(0); // Dangling memory check
+					RUN_MEMORY_TEST(0); // Dangling memory check
 				}
 
 				{SCOPE_SECTION("Add 3 delete back to front"); // Back to front is easiest to deal with for removing, no moving is required.
@@ -194,17 +189,17 @@ namespace Test
 
 						storage.delete_entity(back_ent);
 						CHECK_EQUAL(storage.count_entities(), 2, "First delete");
-						run_memory_test(2);
+						RUN_MEMORY_TEST(2);
 
 						storage.delete_entity(middle_ent);
 						CHECK_EQUAL(storage.count_entities(), 1, "Second delete");
-						run_memory_test(1);
+						RUN_MEMORY_TEST(1);
 
 						storage.delete_entity(front_ent);
 						CHECK_EQUAL(storage.count_entities(), 0, "Third delete");
-						run_memory_test(0);
+						RUN_MEMORY_TEST(0);
 					}
-					run_memory_test(0); // Dangling memory check
+					RUN_MEMORY_TEST(0); // Dangling memory check
 				}
 
 				{SCOPE_SECTION("Add 3 delete front to back"); // Front to back is the worst case removal requiring moving of all items.
@@ -217,17 +212,17 @@ namespace Test
 
 						storage.delete_entity(front_ent);
 						CHECK_EQUAL(storage.count_entities(), 2, "First delete");
-						run_memory_test(2);
+						RUN_MEMORY_TEST(2);
 
 						storage.delete_entity(middle_ent);
 						CHECK_EQUAL(storage.count_entities(), 1, "Second delete");
-						run_memory_test(1);
+						RUN_MEMORY_TEST(1);
 
 						storage.delete_entity(back_ent);
 						CHECK_EQUAL(storage.count_entities(), 0, "Third delete");
-						run_memory_test(0);
+						RUN_MEMORY_TEST(0);
 					}
-					run_memory_test(0); // Dangling memory check
+					RUN_MEMORY_TEST(0); // Dangling memory check
 				}
 				{SCOPE_SECTION("Add 3 delete middle -> front -> back");
 					{
@@ -239,17 +234,17 @@ namespace Test
 
 						storage.delete_entity(middle_ent);
 						CHECK_EQUAL(storage.count_entities(), 2, "First delete");
-						run_memory_test(2);
+						RUN_MEMORY_TEST(2);
 
 						storage.delete_entity(front_ent);
 						CHECK_EQUAL(storage.count_entities(), 1, "Second delete");
-						run_memory_test(1);
+						RUN_MEMORY_TEST(1);
 
 						storage.delete_entity(back_ent);
 						CHECK_EQUAL(storage.count_entities(), 0, "Third delete");
-						run_memory_test(0);
+						RUN_MEMORY_TEST(0);
 					}
-					run_memory_test(0); // Dangling memory check
+					RUN_MEMORY_TEST(0); // Dangling memory check
 				}
 				{SCOPE_SECTION("Add 100 delete 100 in random order");
 					{
@@ -270,9 +265,9 @@ namespace Test
 						for (auto& ent : entities)
 							storage.delete_entity(ent);
 
-						run_memory_test(0);
+						RUN_MEMORY_TEST(0);
 					}
-					run_memory_test(0); // Dangling memory check
+					RUN_MEMORY_TEST(0); // Dangling memory check
 				}
 				{SCOPE_SECTION("Overwrite memory");
 					{
@@ -283,9 +278,9 @@ namespace Test
 						storage.delete_entity(ent);
 						storage.add_entity(MemoryCorrectnessItem());
 						CHECK_EQUAL(storage.count_entities(), 1, "Overwrite Add -> Delete -> Add");
-						run_memory_test(1);
+						RUN_MEMORY_TEST(1);
 					}
-					run_memory_test(0);
+					RUN_MEMORY_TEST(0);
 				}
 				{SCOPE_SECTION("Overwrite memory test 100");
 					{
@@ -305,9 +300,9 @@ namespace Test
 							entities.push_back(storage.add_entity(MemoryCorrectnessItem()));
 
 						CHECK_EQUAL(storage.count_entities(), 100, "Add 100, Delete 100, Add 100");
-						run_memory_test(100);
+						RUN_MEMORY_TEST(100);
 					}
-					run_memory_test(0);
+					RUN_MEMORY_TEST(0);
 				}
 			}
 		}
@@ -335,22 +330,22 @@ namespace Test
 					{SCOPE_SECTION("Add by copy");
 						auto entity = storage.add_entity(42.0);
 						storage.add_component(entity, comp);
-						run_memory_test(2);
+						RUN_MEMORY_TEST(2);
 					}
 					{SCOPE_SECTION("Add second copy");
 						auto entity = storage.add_entity(42.0);
 						storage.add_component(entity, comp);
-						run_memory_test(3);
+						RUN_MEMORY_TEST(3);
 					}
 					{SCOPE_SECTION("New archetype");
 						auto entity = storage.add_entity(42.0);
 						storage.add_component(entity, 1.f);
-						run_memory_test(3); // Should still be 3 alive because we didnt add another mem correctness item
+						RUN_MEMORY_TEST(3); // Should still be 3 alive because we didnt add another mem correctness item
 					}
 					{SCOPE_SECTION("Add by move");
 						auto entity = storage.add_entity(42.0);
 						storage.add_component(entity, MemoryCorrectnessItem());
-						run_memory_test(4); // Should now be 4 alive because we move constructed a new one into storage
+						RUN_MEMORY_TEST(4); // Should now be 4 alive because we move constructed a new one into storage
 					}
 					{SCOPE_SECTION("Add 100");
 						for (int i = 0; i < 100; i++)
@@ -359,7 +354,7 @@ namespace Test
 							storage.add_component(entity, MemoryCorrectnessItem());
 						}
 
-						run_memory_test(104);
+						RUN_MEMORY_TEST(104);
 					}
 				}
 			}
@@ -477,26 +472,26 @@ namespace Test
 					{SCOPE_SECTION("const");
 						{SCOPE_SECTION("Return a reference");
 							const auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-							run_memory_test(1);
+							RUN_MEMORY_TEST(1);
 						}
 						{SCOPE_SECTION("Return by copy");
 							const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-							run_memory_test(2);
+							RUN_MEMORY_TEST(2);
 						}
 					}
 					{SCOPE_SECTION("non-const");
 						{SCOPE_SECTION("Return a reference");
 							auto& compRef = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-							run_memory_test(1);
+							RUN_MEMORY_TEST(1);
 						}
 						{SCOPE_SECTION("Return by copy");
 							const auto compCopy = storage.get_component<MemoryCorrectnessItem>(mem_correct_entity);
-							run_memory_test(2);
+							RUN_MEMORY_TEST(2);
 						}
 					}
 				}
 
-				run_memory_test(0);
+				RUN_MEMORY_TEST(0);
 			}
 		}
 

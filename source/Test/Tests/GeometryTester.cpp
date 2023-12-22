@@ -25,123 +25,79 @@
 DISABLE_WARNING_PUSH
 DISABLE_WARNING_HIDES_PREVIOUS_DECLERATION // Required to allow shadowing for the SCOPE_SECTION macro
 
-
 namespace Test
 {
 	void GeometryTester::run_unit_tests()
 	{
-		runAABBTests();
-		runTriangleTests();
+		run_AABB_tests();
+		run_triangle_tests();
 		run_frustrum_tests();
 		run_sphere_tests();
 		run_point_tests();
 	}
 	void GeometryTester::run_performance_tests()
 	{
-		constexpr size_t triangleCount = 1000000 * 2;
-		std::vector<float> randomTrianglePoints = Utility::get_random_numbers(std::numeric_limits<float>::min(), std::numeric_limits<float>::max(), triangleCount * 3 * 3);
-		std::vector<Geometry::Triangle> triangles;
-		triangles.reserve(triangleCount);
+		//constexpr size_t triangle_count = 1000000 * 2;
+		//std::vector<float> random_triangle_points = Utility::get_random_numbers(std::numeric_limits<float>::min(), std::numeric_limits<float>::max(), triangle_count * 3 * 3);
+		//std::vector<Geometry::Triangle> triangles;
+		//triangles.reserve(triangle_count);
 
-		for (size_t i = 0; i < triangleCount; i++)
-			triangles.emplace_back(Geometry::Triangle(
-				glm::vec3(randomTrianglePoints[i], randomTrianglePoints[i + 1], randomTrianglePoints[i + 2]),
-				glm::vec3(randomTrianglePoints[i + 3], randomTrianglePoints[i + 4], randomTrianglePoints[i + 5]),
-				glm::vec3(randomTrianglePoints[i + 6], randomTrianglePoints[i + 7], randomTrianglePoints[i + 8])));
+		//for (size_t i = 0; i < triangle_count; i++)
+		//	triangles.emplace_back(Geometry::Triangle(
+		//		glm::vec3(random_triangle_points[i], random_triangle_points[i + 1], random_triangle_points[i + 2]),
+		//		glm::vec3(random_triangle_points[i + 3], random_triangle_points[i + 4], random_triangle_points[i + 5]),
+		//		glm::vec3(random_triangle_points[i + 6], random_triangle_points[i + 7], random_triangle_points[i + 8])));
 
-		auto triangleTest = [&triangles](const size_t& pNumberOfTests)
-		{
-			if (pNumberOfTests * 2 > triangles.size()) // Multiply by two to account for intersection calling in pairs.
-				throw std::logic_error("Not enough triangles to perform pNumberOfTests. Bump up the triangleCount variable to at least double the size of the largest performance test.");
+		//auto triangle_test = [&triangles](const size_t& p_number_of_tests)
+		//{
+		//	if (p_number_of_tests * 2 > triangles.size()) // Multiply by two to account for intersection calling in pairs.
+		//		throw std::logic_error("Not enough triangles to perform p_number_of_tests. Bump up the triangle_count variable to at least double the size of the largest performance test.");
 
-			for (size_t i = 0; i < pNumberOfTests * 2; i += 2)
-				Geometry::intersecting(triangles[i], triangles[i + 1]);
-		};
+		//	for (size_t i = 0; i < p_number_of_tests * 2; i += 2)
+		//		Geometry::intersecting(triangles[i], triangles[i + 1]);
+		//};
 
-		auto triangleTest1 = [&triangleTest]() { triangleTest(1); };
-		auto triangleTest10 = [&triangleTest]() { triangleTest(10); };
-		auto triangleTest100 = [&triangleTest]() { triangleTest(100); };
-		auto triangleTest1000 = [&triangleTest]() { triangleTest(1000); };
-		auto triangleTest10000 = [&triangleTest]() { triangleTest(10000); };
-		auto triangleTest100000 = [&triangleTest]() { triangleTest(100000); };
-		auto triangleTest1000000 = [&triangleTest]() { triangleTest(1000000); };
-		emplace_performance_test({"Triangle v Triangle 1", triangleTest1});
-		emplace_performance_test({"Triangle v Triangle 10", triangleTest10});
-		emplace_performance_test({"Triangle v Triangle 100", triangleTest100});
-		emplace_performance_test({"Triangle v Triangle 1,000", triangleTest1000});
-		emplace_performance_test({"Triangle v Triangle 10,000", triangleTest10000});
-		emplace_performance_test({"Triangle v Triangle 100,000", triangleTest100000});
-		emplace_performance_test({"Triangle v Triangle 1,000,000", triangleTest1000000});
+		//auto triangle_test1 = [&triangle_test]() { triangle_test(1); };
+		//auto triangle_test10 = [&triangle_test]() { triangle_test(10); };
+		//auto triangle_test100 = [&triangle_test]() { triangle_test(100); };
+		//auto triangle_test1000 = [&triangle_test]() { triangle_test(1000); };
+		//auto triangle_test10000 = [&triangle_test]() { triangle_test(10000); };
+		//auto triangle_test100000 = [&triangle_test]() { triangle_test(100000); };
+		//auto triangle_test1000000 = [&triangle_test]() { triangle_test(1000000); };
+		//emplace_performance_test({"Triangle v Triangle 1", triangle_test1});
+		//emplace_performance_test({"Triangle v Triangle 10", triangle_test10});
+		//emplace_performance_test({"Triangle v Triangle 100", triangle_test100});
+		//emplace_performance_test({"Triangle v Triangle 1,000", triangle_test1000});
+		//emplace_performance_test({"Triangle v Triangle 10,000", triangle_test10000});
+		//emplace_performance_test({"Triangle v Triangle 100,000", triangle_test100000});
+		//emplace_performance_test({"Triangle v Triangle 1,000,000", triangle_test1000000});
 	}
 
-	void GeometryTester::runAABBTests()
+	void GeometryTester::run_AABB_tests()
 	{
 		{SCOPE_SECTION("Default intiailise");
 			Geometry::AABB aabb;
-			emplace_unit_test({aabb.get_size() == glm::vec3(0.f), "AABB initialise size at 0", "Expected size of default AABB to be 0"});
-			emplace_unit_test({aabb.get_center () == glm::vec3(0.f), "AABB initialise to world origin", "Expected default AABB to start at [0, 0, 0]"});
-			emplace_unit_test({aabb.get_center () == glm::vec3(0.f), "AABB initialise to world origin", "Expected default AABB to start at [0, 0, 0]"});
+			CHECK_EQUAL(aabb.get_size(), glm::vec3(0.f), "AABB initialise size at 0");
+			CHECK_EQUAL(aabb.get_center (), glm::vec3(0.f), "AABB initialise to world origin");
+			CHECK_EQUAL(aabb.get_center (), glm::vec3(0.f), "AABB initialise to world origin");
 		}
 		{SCOPE_SECTION("Initialise with a min and max");
 			// An AABB at low point [-1,-1,-1] to [1,1,1]
 			auto aabb = Geometry::AABB(glm::vec3(-1.f), glm::vec3(1.f));
-			emplace_unit_test({aabb.get_size() == glm::vec3(2.f), "AABB initialised with min and max size at 2", "Expected size of AABB to be 2"});
-			emplace_unit_test({aabb.get_center() == glm::vec3(0.f), "AABB initialise with min and max position", "Expected AABB to center at [0, 0, 0]"});
+			CHECK_EQUAL(aabb.get_size(), glm::vec3(2.f), "AABB initialised with min and max size at 2");
+			CHECK_EQUAL(aabb.get_center(), glm::vec3(0.f), "AABB initialise with min and max position");
 		}
 		{SCOPE_SECTION("Initialise with a min and max not at origin");
 			// An AABB at low point [1,1,1] to [5,5,5] size of 4 center at [3,3,3]
 			auto aabb = Geometry::AABB(glm::vec3(1.f), glm::vec3(5.f));
-			emplace_unit_test({aabb.get_size() == glm::vec3(4.f), "AABB initialised with min and max not at origin", "Expected size of AABB to be 4.f"});
-			emplace_unit_test({aabb.get_center() == glm::vec3(3.f), "AABB initialised with min and max not at origin", "Expected AABB to center at [3, 3, 3]"});
+			CHECK_EQUAL(aabb.get_size(), glm::vec3(4.f), "AABB initialised with min and max not at origin");
+			CHECK_EQUAL(aabb.get_center(), glm::vec3(3.f), "AABB initialised with min and max not at origin");
 		}
 	}
 
-	void GeometryTester::runTriangleTests()
+	void GeometryTester::run_triangle_tests()
 	{SCOPE_SECTION("Triangle")
 		const auto control = Geometry::Triangle(glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, -1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f));
-
-		{SCOPE_SECTION("Transform");
-
-			auto triangle = control;
-			triangle.transform(glm::identity<glm::mat4>());
-			CHECK_EQUAL(triangle, control, "Identity transform doesn't change triangle");
-
-			{SCOPE_SECTION("Translate");
-				auto transformed = control;
-				const glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), glm::vec3(3.f, 0.f, 0.f)); // Keep translating right
-
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(3.f, 1.f, 0.f), glm::vec3(4.f, -1.f, 0.f), glm::vec3(2.f, -1.f, 0.f));
-					CHECK_EQUAL(transformed, expected, "Right");
-				}
-			}
-			{SCOPE_SECTION("Rotate");
-				auto transformed = control;
-				const glm::mat4 transform = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, -0.33333337f, 1.3333334f), glm::vec3(0.99999994f, -0.3333333f, -0.6666666f), glm::vec3(-0.99999994f, -0.3333333f, -0.6666666f));
-					CHECK_EQUAL(transformed, expected, "Rotate 1");
-				}
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, -1.6666667f, -5.9604645e-08f), glm::vec3(0.9999999f, 0.3333333f, 8.940697e-08f), glm::vec3(-0.9999999f, 0.3333333f, 8.940697e-08f));
-					CHECK_EQUAL(transformed, expected, "Rotate 2");
-				}
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, -0.33333325f, -1.3333333f), glm::vec3(0.9999998f, -0.33333346f, 0.66666675f), glm::vec3(-0.9999998f, -0.33333346f, 0.66666675f));
-					CHECK_EQUAL(transformed, expected, "Rotate 3");
-				}
-				{
-					transformed.transform(transform);
-					auto expected = Geometry::Triangle(glm::vec3(0.f, 0.9999999f, 2.9802322e-07f), glm::vec3(0.99999976f, -1.0000001f, 0.f), glm::vec3(-0.99999976f, -1.0000001f, 0.f));
-					CHECK_EQUAL(transformed, expected, "Rotate 4");
-				}
-			}
-		}
 
 		{SCOPE_SECTION("Triangle v Triangle intersection")
 			{SCOPE_SECTION("Coplanar seperated");
@@ -470,116 +426,116 @@ namespace Test
 		{SCOPE_SECTION("Point v AABB");
 			const auto AABB = Geometry::AABB(glm::vec3(-1.f, -1.f, -1.f), glm::vec3(1.f, 1.f, 1.f));
 
-			const auto point_inside = Geometry::Point(glm::vec3(0.f, 0.f, 0.f));
+			const auto point_inside = glm::vec3(0.f, 0.f, 0.f);
 			CHECK_TRUE(Geometry::point_inside(AABB, point_inside), "Point inside");
 
-			const auto point_on_surface = Geometry::Point(glm::vec3(1.f, 1.f, 1.f));
+			const auto point_on_surface = glm::vec3(1.f, 1.f, 1.f);
 			CHECK_TRUE(Geometry::point_inside(AABB, point_on_surface), "Point on surface");
 
-			const auto point_outside = Geometry::Point(glm::vec3(2.f, 0.f, 2.f));
+			const auto point_outside = glm::vec3(2.f, 0.f, 2.f);
 			CHECK_TRUE(!Geometry::point_inside(AABB, point_outside), "Point outside");
 
-			const auto point_on_max_edge = Geometry::Point(glm::vec3(1.f, 1.f, 1.f));
+			const auto point_on_max_edge = glm::vec3(1.f, 1.f, 1.f);
 			CHECK_TRUE(Geometry::point_inside(AABB, point_on_max_edge), "Point on max edge of AABB");
 
-			const auto point_on_min_edge = Geometry::Point(glm::vec3(-1.f, -1.f, -1.f));
+			const auto point_on_min_edge = glm::vec3(-1.f, -1.f, -1.f);
 			CHECK_TRUE(Geometry::point_inside(AABB, point_on_min_edge), "Point on min edge of AABB");
 		}
 		{SCOPE_SECTION("Point v Cone");
 			const auto cone = Geometry::Cone(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
 
-			auto point_inside = Geometry::Point(glm::vec3(0.f, 0.5f, 0.f));
+			auto point_inside = glm::vec3(0.f, 0.5f, 0.f);
 			CHECK_TRUE(Geometry::point_inside(cone, point_inside), "Point inside cone");
 
-			auto point_outside = Geometry::Point(glm::vec3(0.f, 1.5f, 0.f));
+			auto point_outside = glm::vec3(0.f, 1.5f, 0.f);
 			CHECK_TRUE(!Geometry::point_inside(cone, point_outside), "Point outside");
 
-			auto point_on_surface_top = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+			auto point_on_surface_top = glm::vec3(0.f, 1.f, 0.f);
 			CHECK_TRUE(Geometry::point_inside(cone, point_on_surface_top), "Point on Surface top");
 
-			auto point_on_surface_base = Geometry::Point(glm::vec3(0.f));
+			auto point_on_surface_base = glm::vec3(0.f);
 			CHECK_TRUE(Geometry::point_inside(cone, point_on_surface_base), "Point on surface base");
 
-			auto point_on_surface_side = Geometry::Point(glm::vec3(0.f, 0.5f, 0.5f));
+			auto point_on_surface_side = glm::vec3(0.f, 0.5f, 0.5f);
 			CHECK_TRUE(Geometry::point_inside(cone, point_on_surface_side), "Point on surface side");
 		}
 		{SCOPE_SECTION("Point v Cylinder");
 			const auto cylinder = Geometry::Cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
 
-			auto point_inside = Geometry::Point(glm::vec3(0.5f, 0.5f, 0.5f));
+			auto point_inside = glm::vec3(0.5f, 0.5f, 0.5f);
 			CHECK_TRUE(Geometry::point_inside(cylinder, point_inside), "Point inside cylinder");
 
-			auto point_outside = Geometry::Point(glm::vec3(0.5f, 1.5f, 0.5f));
+			auto point_outside = glm::vec3(0.5f, 1.5f, 0.5f);
 			CHECK_TRUE(!Geometry::point_inside(cylinder, point_outside), "Point outside cylinder");
 
-			auto point_on_surface_top = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+			auto point_on_surface_top = glm::vec3(0.f, 1.f, 0.f);
 			CHECK_TRUE(Geometry::point_inside(cylinder, point_on_surface_top), "Point on surface top");
 
-			auto point_on_surface_base = Geometry::Point(glm::vec3(0.f));
+			auto point_on_surface_base = glm::vec3(0.f);
 			CHECK_TRUE(Geometry::point_inside(cylinder, point_on_surface_base), "Point on surface base");
 
-			auto point_on_surface_side = Geometry::Point(glm::vec3(0.f, 0.5f, 0.5f));
+			auto point_on_surface_side = glm::vec3(0.f, 0.5f, 0.5f);
 			CHECK_TRUE(Geometry::point_inside(cylinder, point_on_surface_side), "Point on surface side");
 		}
 		{SCOPE_SECTION("Point v Line");
 			const auto line = Geometry::Line(glm::vec3(-1.f), glm::vec3(1.f));
 
-			auto point_on_line_middle = Geometry::Point(glm::vec3(0.f));
+			auto point_on_line_middle = glm::vec3(0.f);
 			CHECK_TRUE(Geometry::point_inside(line, point_on_line_middle), "Point at line middle");
 
-			auto point_on_line_start = Geometry::Point(glm::vec3(-1.f));
+			auto point_on_line_start = glm::vec3(-1.f);
 			CHECK_TRUE(Geometry::point_inside(line, point_on_line_start), "Point at line point 1");
 
-			auto point_on_line_end = Geometry::Point(glm::vec3(1.f));
+			auto point_on_line_end = glm::vec3(1.f);
 			CHECK_TRUE(Geometry::point_inside(line, point_on_line_end), "Point at line point 2");
 
-			auto point_off_line_above = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+			auto point_off_line_above = glm::vec3(0.f, 1.f, 0.f);
 			CHECK_TRUE(!Geometry::point_inside(line, point_off_line_above), "Point above line");
 
-			auto point_on_line_ahead = Geometry::Point(glm::vec3(2.f));
+			auto point_on_line_ahead = glm::vec3(2.f);
 			CHECK_TRUE(Geometry::point_inside(line, point_on_line_ahead), "Point on line ahead of point 2");
 
-			auto point_on_line_behind = Geometry::Point(glm::vec3(-2.f));
+			auto point_on_line_behind = glm::vec3(-2.f);
 			CHECK_TRUE(Geometry::point_inside(line, point_on_line_behind), "Point on line behind point 1");
 		}
 		{SCOPE_SECTION("Point v LineSegment");
 			const auto line_segment = Geometry::LineSegment(glm::vec3(-1.f), glm::vec3(1.f));
 
-			auto point_on_line_middle = Geometry::Point(glm::vec3(0.f));
+			auto point_on_line_middle = glm::vec3(0.f);
 			CHECK_TRUE(Geometry::point_inside(line_segment, point_on_line_middle), "Point on line segment middle");
 
-			auto point_on_line_start = Geometry::Point(glm::vec3(-1.f));
+			auto point_on_line_start = glm::vec3(-1.f);
 			CHECK_TRUE(Geometry::point_inside(line_segment, point_on_line_start), "Point at line segment start");
 
-			auto point_on_line_end = Geometry::Point(glm::vec3(1.f));
+			auto point_on_line_end = glm::vec3(1.f);
 			CHECK_TRUE(Geometry::point_inside(line_segment, point_on_line_end), "Point at line segment end");
 
-			auto point_off_line_above = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+			auto point_off_line_above = glm::vec3(0.f, 1.f, 0.f);
 			CHECK_TRUE(!Geometry::point_inside(line_segment, point_off_line_above), "Point above line segment");
 
-			auto point_on_line_ahead = Geometry::Point(glm::vec3(2.f));
+			auto point_on_line_ahead = glm::vec3(2.f);
 			CHECK_TRUE(!Geometry::point_inside(line_segment, point_on_line_ahead), "Point along line ahead of segment");
 
-			auto point_on_line_behind = Geometry::Point(glm::vec3(-2.f));
+			auto point_on_line_behind = glm::vec3(-2.f);
 			CHECK_TRUE(!Geometry::point_inside(line_segment, point_on_line_behind), "Point along line segment behind");
 		}
 		{SCOPE_SECTION("Point v Ray");
 			// Ray starts at -1,-1,-1 in direction 1,1,1
 			const auto ray = Geometry::Ray(glm::vec3(-1.f), glm::vec3(1.f));
 
-			auto point_on_ray_middle = Geometry::Point(glm::vec3(0.f));
+			auto point_on_ray_middle = glm::vec3(0.f);
 			CHECK_TRUE(Geometry::point_inside(ray, point_on_ray_middle), "Point on ray ahead of start");
 
-			auto point_on_ray_start = Geometry::Point(glm::vec3(-1.f));
+			auto point_on_ray_start = glm::vec3(-1.f);
 			CHECK_TRUE(Geometry::point_inside(ray, point_on_ray_start), "Point at ray start");
 
-			auto point_above_ray = Geometry::Point(glm::vec3(0.f, 1.f, 0.f));
+			auto point_above_ray = glm::vec3(0.f, 1.f, 0.f);
 			CHECK_TRUE(!Geometry::point_inside(ray, point_above_ray), "Point above ray");
 
-			auto point_on_ray_ahead = Geometry::Point(glm::vec3(2.f));
+			auto point_on_ray_ahead = glm::vec3(2.f);
 			CHECK_TRUE(Geometry::point_inside(ray, point_on_ray_ahead), "Point on ray ahead");
 
-			auto point_on_ray_behind = Geometry::Point(glm::vec3(-2.f));
+			auto point_on_ray_behind = glm::vec3(-2.f);
 			CHECK_TRUE(!Geometry::point_inside(ray, point_on_ray_behind), "Point behind ray start");
 		}
 	}

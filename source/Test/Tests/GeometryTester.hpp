@@ -14,8 +14,8 @@ namespace Test
 
 		static void draw_frustrum_debugger_UI(float aspect_ratio);
 	private:
-		void runAABBTests();
-		void runTriangleTests();
+		void run_AABB_tests();
+		void run_triangle_tests();
 		void run_frustrum_tests();
 		void run_sphere_tests();
 		void run_point_tests();
