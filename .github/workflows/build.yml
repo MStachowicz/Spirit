@@ -56,10 +56,10 @@ jobs:
 
     - name: Test (Debug)
       if: matrix.buildPreset == 'g++-debug' || matrix.buildPreset == 'msvc-debug'
-      run: ./TestRunner
+      run: ./Test
       working-directory: ${{ github.workspace }}/build/${{ matrix.configurePreset }}/Debug
 
     - name: Test (Release)
       if: matrix.buildPreset == 'g++-release' || matrix.buildPreset == 'msvc-release'
-      run: ./TestRunner
+      run: ./Test
       working-directory: ${{ github.workspace }}/build/${{ matrix.configurePreset }}/Release

@@ -23,18 +23,35 @@ PUBLIC Utility # Simulation loop runs in the header and uses Logger
 target_compile_options(Zephyr PRIVATE ${WARNING_COMPILE_FLAGS})
 # Zephyr end ------------------------------------------------------------------------------------------------------------------------------
 
-# TestRunner ----------------------------------------------------------------------------------------------------------------------------------
-add_executable(TestRunner
+# ------------------------ Test -----------------------------------------------------------------------------------------------------------
+add_executable(Test
 source/Test/TestMain.cpp
+source/Test/MemoryCorrectnessItem.hpp
+source/Test/MemoryCorrectnessItem.cpp
+source/Test/TestManager.hpp
+source/Test/TestManager.cpp
+source/Test/Tests/ECSTester.hpp
+source/Test/Tests/ECSTester.cpp
+source/Test/Tests/ResourceManagerTester.hpp
+source/Test/Tests/ResourceManagerTester.cpp
+source/Test/Tests/GeometryTester.hpp
+source/Test/Tests/GeometryTester.cpp
 )
-target_include_directories(TestRunner
+target_include_directories(Test
+PRIVATE source/Test/Tests
+PRIVATE source/Test
 PRIVATE source
 )
-target_link_libraries(TestRunner
-Test
+target_link_libraries(Test
+PUBLIC Utility
+PRIVATE ECS
+PRIVATE Geometry
+PRIVATE GLM
+PRIVATE ImGui
+PRIVATE OpenGL
 )
-target_compile_options(TestRunner PRIVATE ${WARNING_COMPILE_FLAGS})
-# Zephyr end ------------------------------------------------------------------------------------------------------------------------------
+target_compile_options(Test PRIVATE ${WARNING_COMPILE_FLAGS})
+# Test end --------------------------------------------------------------------------------------------------------------------------------
 
 # Set variables after project() so we can use CMAKE_CXX_COMPILER_ID -----------------------------------------------------------------------
 set(SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}) # TODO remove this and use CMAKE_CURRENT_SOURCE_DIR directly
@@ -309,35 +326,6 @@ PRIVATE UI # Logger.cpp uses Editor for output
 )
 target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 # Utility end -----------------------------------------------------------------------------------------------------------------------------
-
-# ------------------------ Test -----------------------------------------------------------------------------------------------------------
-add_library(Test
-source/Test/MemoryCorrectnessItem.hpp
-source/Test/MemoryCorrectnessItem.cpp
-source/Test/TestManager.hpp
-source/Test/TestManager.cpp
-source/Test/Tests/ECSTester.hpp
-source/Test/Tests/ECSTester.cpp
-source/Test/Tests/ResourceManagerTester.hpp
-source/Test/Tests/ResourceManagerTester.cpp
-source/Test/Tests/GeometryTester.hpp
-source/Test/Tests/GeometryTester.cpp
-)
-target_include_directories(Test
-PRIVATE source/Test/Tests
-PRIVATE source/Test
-PRIVATE source
-)
-target_link_libraries(Test
-PUBLIC Utility
-PRIVATE ECS
-PRIVATE Geometry
-PRIVATE GLM
-PRIVATE ImGui
-PRIVATE OpenGL
-)
-target_compile_options(ECS PRIVATE ${WARNING_COMPILE_FLAGS})
-# Test end --------------------------------------------------------------------------------------------------------------------------------
 
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
 	# ImGui --------------------------------------------------------------------------------------------------------------------------------
