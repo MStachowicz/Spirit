@@ -73,8 +73,8 @@ namespace OpenGL
 		static void clear();
 		static void render(System::SceneSystem& p_scene);
 
-		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f));
-		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
+		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
 		static void add(const Geometry::Cuboid& p_cuboid,     const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::LineSegment& p_line,  const glm::vec4& p_colour = glm::vec4(1.f));
@@ -82,7 +82,7 @@ namespace OpenGL
 		static void add(const Geometry::Point& p_point,       const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Quad& p_quad,         const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Ray& p_ray,           const glm::vec4& p_colour = glm::vec4(1.f));
-		static void add(const Geometry::Sphere& p_sphere,     const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::Sphere& p_sphere,     const glm::vec4& p_colour = glm::vec4(1.f), size_t subdivisions = m_debug_options.m_subdivisions);
 		static void add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour = glm::vec4(1.f));
 	};
 }
