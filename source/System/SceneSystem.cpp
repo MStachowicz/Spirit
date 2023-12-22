@@ -17,6 +17,7 @@
 #include "Geometry/Geometry.hpp"
 
 #include "Utility/Config.hpp"
+#include "Utility/MeshBuilder.hpp"
 
 namespace System
 {
@@ -26,7 +27,8 @@ namespace System
 		, m_scene{}
 	{
 		add_default_camera();
-		primitives_scene();
+		construct_2_sphere_scene();
+		//primitives_scene();
 		//constructBoxScene();
 		//constructBouncingBallScene();
 	}
@@ -242,6 +244,40 @@ namespace System
 				m_scene.m_entities.add_entity(Component::SpotLight(), name);
 			}
 		}
+	}
+	void SceneSystem::construct_2_sphere_scene()
+	{
+		auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
+		mb.add_icosphere(glm::vec3(0.f), 1.f, 1);
+		auto icosphere_mesh = mb.get_mesh();
+		auto icosphere_meshref = m_mesh_system.insert(std::move(icosphere_mesh));
+
+		m_scene.m_entities.add_entity(
+			Component::Label{"Directional light 1"},
+			Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.f, 0.5f});
+
+			{ // Red point light in-front of the box.
+				auto point_light      = Component::PointLight{};
+				point_light.m_position = glm::vec3(0.f, 3.f, 0.f);
+				point_light.m_colour   = glm::vec3(1.f);
+				m_scene.m_entities.add_entity(Component::Label{"Point light"}, point_light);
+			}
+
+		m_scene.m_entities.add_entity(
+			Component::Label{"Sphere 1"},
+			Component::RigidBody{},
+			Component::Transform{glm::vec3(2.f, 0.f, 0.f)},
+			Component::Mesh{icosphere_meshref},
+			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 1.f)},
+			Component::Collider{});
+
+		m_scene.m_entities.add_entity(
+			Component::Label{"Sphere 2"},
+			Component::RigidBody{},
+			Component::Transform{glm::vec3(5.f, 0.f, 0.f)},
+			Component::Mesh{icosphere_meshref},
+			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 1.f)},
+			Component::Collider{});
 	}
 	void SceneSystem::constructBouncingBallScene()
 	{

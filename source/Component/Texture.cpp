@@ -22,11 +22,19 @@ namespace Component
 		: m_diffuse{}
 		, m_specular{}
 		, m_shininess{32.f}
+		, m_colour{glm::vec4(1.f)}
 	{}
 	Texture::Texture(const TextureRef& m_diffuse) noexcept
 		: m_diffuse{m_diffuse}
 		, m_specular{}
 		, m_shininess{32.f}
+		, m_colour{glm::vec4(1.f)}
+	{}
+	Texture::Texture(const glm::vec4& p_colour) noexcept
+		: m_diffuse{}
+		, m_specular{}
+		, m_shininess{32.f}
+		, m_colour{p_colour}
 	{}
 
 	void Texture::draw_UI(System::TextureSystem& p_texture_system)
@@ -47,6 +55,10 @@ namespace Component
 			if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
 				m_specular = p_texture_system.getTexture(availableTextures[selected]);
 			ImGui::Slider("Shininess", m_shininess, 1.f, 512.f, "%.1f");
+
+			ImGui::ColorEdit4("Colour", &m_colour[0]);
+			ImGui::SameLine();
+			ImGui::Text("Used if no textures are specified.");
 
 			ImGui::TreePop();
 		}

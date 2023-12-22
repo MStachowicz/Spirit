@@ -15,7 +15,8 @@ namespace OpenGL
 {
 	class PhongRenderer
 	{
-		Shader m_phong_shader; // Used to fetch the Directional, Point and spot light buffers.
+		Shader m_phong_texture;        // Variation of phong shader that uses specular and diffuse textures. Used to fetch the Directional, Point and spot light buffers.
+		Shader m_phong_uniform_colour; // Variation of phong shader that uses a uniform colour instead of a texture.
 
 		Utility::ResourceRef<SSBO> m_directional_lights_buffer; // The SSBO used across shaders to bind DirectionalLight data.
 		GLsizeiptr m_directional_light_fixed_size; // Size in bytes of the fixed portion of the directional light shader storage block (excludes any variable-sized-array variables sizes).
@@ -58,7 +59,8 @@ namespace OpenGL
 
 	public:
 		PhongRenderer();
-		Shader& get_shader() { return m_phong_shader; }
+		Shader& get_texture_shader()        { return m_phong_texture; }
+		Shader& get_uniform_colour_shader() { return m_phong_uniform_colour; }
 
 		// Update the storage block buffer object data for all the lights in p_storage.
 		// Only needs to happen once per frame or on changes to a light.
