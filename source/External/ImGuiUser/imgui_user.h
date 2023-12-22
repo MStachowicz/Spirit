@@ -19,6 +19,14 @@
 // Add extra functions within the ImGui:: namespace here.
 namespace ImGui
 {
+	inline void Text(const char* p_label, const char* p_string)
+	{
+		Text("%s: [%s]", p_label, p_string);
+	}
+	inline void Text(const char* p_label, const std::string& p_string)
+	{
+		Text(p_label, p_string.c_str());
+	}
 	inline void Text(const char* p_label, const bool& p_bool)
 	{
 		Text("%s: [%s]", p_label, p_bool ? "true" : "false");

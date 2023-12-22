@@ -20,6 +20,12 @@ namespace System
 
 	public:
 		MeshSystem(TextureSystem& p_texture_system) noexcept;
+
+		// Insert a mesh into the mesh manager.
+		//@param p_mesh_data The mesh data to insert by move.
+		//@returns A reference to the inserted mesh.
+		[[nodiscard]] MeshRef insert(Data::Mesh&& p_mesh_data);
+
 		std::vector<std::filesystem::path> m_available_model_paths;
 
 		MeshRef m_cone;

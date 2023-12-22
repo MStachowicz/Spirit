@@ -66,7 +66,7 @@
 			"configurePreset": "visual-studio-17-2022",
 			"displayName": "Debug",
 			"configuration": "Debug",
-			"verbose": true,
+			"verbose": false,
 			"targets": [ "Zephyr" ]
 		},
 		{
@@ -82,7 +82,7 @@
 			"displayName": "Debug",
 			"configurePreset": "GCC",
 			"configuration": "Debug",
-			"verbose": true,
+			"verbose": false,
 			"targets": [ "Zephyr" ]
 		}
 	]

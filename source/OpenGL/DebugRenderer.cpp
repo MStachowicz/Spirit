@@ -177,15 +177,15 @@ namespace OpenGL
 		m_line_mb.set_colour(p_colour);
 		m_line_mb.add_line(Geometry::LineSegment(p_contact_point.position, p_contact_point.position + (-p_contact_point.normal * p_contact_point.penetration_depth)));
 	}
-	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour)
+	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour, size_t segments)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cone(p_cone, m_debug_options.m_segments);
+		m_tri_mb.add_cone(p_cone.m_base, p_cone.m_top, p_cone.m_base_radius, segments);
 	}
-	void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour)
+	void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour, size_t segments)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cylinder(p_cylinder, m_debug_options.m_segments);
+		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, segments);
 	}
 	void DebugRenderer::add(const Geometry::Cuboid& p_cuboid, const glm::vec4& p_colour)
 	{
@@ -208,10 +208,10 @@ namespace OpenGL
 		m_line_mb.set_colour(p_colour);
 		m_line_mb.add_line(p_ray.m_start, p_ray.m_start + (p_ray.m_direction * Z_Far_Scaler));
 	}
-	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour)
+	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour, size_t subdivisions)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_sphere(p_sphere, m_debug_options.m_subdivisions);
+		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, subdivisions);
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
 	{
