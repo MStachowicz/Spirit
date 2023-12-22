@@ -32,6 +32,11 @@ namespace System
 		});
 	}
 
+	MeshRef MeshSystem::insert(Data::Mesh&& p_mesh_data)
+	{
+		return m_mesh_manager.insert(std::move(p_mesh_data));
+	}
+
 	Data::Mesh MeshSystem::make_mesh(Geometry::ShapeType p_shape_type)
 	{
 		switch (p_shape_type)
