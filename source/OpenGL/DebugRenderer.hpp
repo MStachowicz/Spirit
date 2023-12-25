@@ -53,9 +53,10 @@ namespace OpenGL
 			bool m_show_light_positions  = true;
 			float m_light_position_scale = 0.25f;
 			bool m_show_mesh_normals     = false;
+			bool m_show_origin_arrows    = false;
 			// Physics
 			bool m_show_orientations                 = false; // Draw an arrow in the direction the meshes are facing.
-			bool m_show_collision_shapes             = true;  // Draw the collision shapes of the meshes.
+			bool m_show_collision_shapes             = false;  // Draw the collision shapes of the meshes.
 			bool m_show_collision_triangles          = false; // Draw the triangles forming the mesh.
 			bool m_show_bounding_box                 = false; // Draw the bounding boxes of the meshes. Used for broad phase collision detection.
 			bool m_fill_bounding_box                 = false; // Fill the bounding boxes of the meshes. Only valid if m_show_bounding_box is true.

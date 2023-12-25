@@ -1,5 +1,6 @@
 #include "GridRenderer.hpp"
 #include "DrawCall.hpp"
+#include "DebugRenderer.hpp"
 
 #include "Utility/MeshBuilder.hpp"
 
@@ -73,6 +74,7 @@ namespace OpenGL
 			dc.m_cull_face_enabled = false;
 			dc.submit(m_grid_shader, m_grid);
 		}
+		if (OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows)
 		{
 			DrawCall dc;
 			dc.m_cull_face_enabled = false;
