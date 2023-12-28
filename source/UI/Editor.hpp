@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Geometry/Ray.hpp"
 #include "UI/Console.hpp"
-
-#include "glm/fwd.hpp"
-#include "glm/vec3.hpp"
+#include "ECS/Storage.hpp"
 
 #include <chrono>
 #include <string>
@@ -31,11 +28,6 @@ namespace OpenGL
 {
 	class OpenGLRenderer;
 }
-namespace ECS
-{
-	class Entity;
-}
-
 namespace UI
 {
 	// Editor is a Debug-build only overlay for Zephyr that provides a UI for interaction using ImGui.
@@ -64,7 +56,6 @@ namespace UI
 		System::CollisionSystem& m_collision_system;
 		OpenGL::OpenGLRenderer&  m_openGL_renderer;
 
-		std::vector<Geometry::Ray> m_click_rays; // On mouse click save the Ray to render.
 		std::vector<ECS::Entity> m_selected_entities;
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed

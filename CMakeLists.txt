@@ -198,12 +198,12 @@ PRIVATE source/UI
 PRIVATE source
 )
 target_link_libraries(UI
-PUBLIC Geometry
 PUBLIC GLM
+PUBLIC ECS
+PRIVATE Geometry
 PRIVATE System
 PRIVATE Platform
 PRIVATE OpenGL
-PRIVATE ECS
 PRIVATE Utility
 PRIVATE ImGui
 PRIVATE Test #Included to easily add calls to visualisation functions in testers

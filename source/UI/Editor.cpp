@@ -42,7 +42,6 @@ namespace UI
 		, m_scene_system{p_scene_system}
 		, m_collision_system{p_collision_system}
 		, m_openGL_renderer{p_openGL_renderer}
-		, m_click_rays{}
 		, m_selected_entities{}
 		, m_console{}
 		, m_windows_to_display{}
@@ -77,17 +76,25 @@ namespace UI
 					if (p_action == Platform::Action::Press)
 					{
 						const auto& view_info = m_openGL_renderer.m_view_information;
-						auto cursorRay = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
-						m_click_rays.emplace_back(cursorRay);
-						auto entitiesUnderMouse = m_collision_system.get_entities_along_ray(cursorRay);
+						auto cursor_ray = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+						auto entities_under_mouse = m_collision_system.get_entities_along_ray(cursor_ray);
 
-						if (!entitiesUnderMouse.empty())
+						if (!entities_under_mouse.empty())
 						{
-							std::sort(entitiesUnderMouse.begin(), entitiesUnderMouse.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
-							auto entityCollided = entitiesUnderMouse.front().first;
+							std::sort(entities_under_mouse.begin(), entities_under_mouse.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
+							auto entity_collided = entities_under_mouse.front().first;
 
-							m_selected_entities.push_back(entityCollided);
-							LOG("[EDITOR] Entity{} has been selected", entityCollided.ID);
+							auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), entity_collided);
+							if (it == m_selected_entities.end())
+							{
+								m_selected_entities.push_back(entity_collided);
+								LOG("[EDITOR] Entity{} has been selected", entity_collided.ID);
+							}
+							else
+							{// If the entity is already selected, deselect it.
+								m_selected_entities.erase(it);
+								LOG("[EDITOR] Entity{} has been deselected", entity_collided.ID);
+							}
 						}
 						else
 						{
@@ -97,12 +104,8 @@ namespace UI
 					}
 					break;
 				}
-				case Platform::MouseButton::Middle:
-				{
-					m_click_rays.clear();
-					break;
-				}
-				case Platform::MouseButton::Right: break;
+				case Platform::MouseButton::Middle: break;
+				case Platform::MouseButton::Right:  break;
 				default: break;
 			}
 		}
@@ -125,9 +128,6 @@ namespace UI
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
 	{
 		m_duration_between_draws.push_back(p_duration_since_last_draw);
-
-		for (const auto& ray : m_click_rays)
-			OpenGL::DebugRenderer::add(ray);
 
 		if (ImGui::BeginMenuBar())
 		{
@@ -190,12 +190,15 @@ namespace UI
 			auto window_size = ImGui::GetWindowSize();
 			ImGuizmo::SetRect(window_pos.x, window_pos.y, window_size.x, window_size.y);
 
-			for (const auto& selected_ent : m_selected_entities)
+			if (!m_selected_entities.empty())
 			{
-				if (m_scene_system.get_current_scene().has_components<Component::Transform>(selected_ent))
-				{
-					auto& transform = m_scene_system.get_current_scene().get_component<Component::Transform>(selected_ent);
+				// Find the first selected entity from the back of m_selected_entities that has a transform component
+				auto it = std::find_if(m_selected_entities.rbegin(), m_selected_entities.rend(), [&](const auto& p_entity)
+				             { return m_scene_system.get_current_scene().has_components<Component::Transform>(p_entity); });
 
+				if (it != m_selected_entities.rend())
+				{
+					auto& transform = m_scene_system.get_current_scene().get_component<Component::Transform>(*it);
 					ImGuizmo::Manipulate(
 						glm::value_ptr(m_openGL_renderer.m_view_information.m_view),
 						glm::value_ptr(m_openGL_renderer.m_view_information.m_projection),
@@ -205,8 +208,6 @@ namespace UI
 
 					if (ImGuizmo::IsUsing())
 						transform.set_model_matrix(transform.m_model);
-
-					break; // ImGuizmo only allows one entity to be edited at a time.
 				}
 			}
 		}
