@@ -59,7 +59,7 @@ namespace Utility
 		}
 		[[nodiscard]] Data::Mesh get_mesh()
 		{
-			return Data::Mesh{data, primitive_mode, shapes};
+			return Data::Mesh{data, primitive_mode, shapes, build_collision_shape};
 		}
 
 	private:

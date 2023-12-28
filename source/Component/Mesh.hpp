@@ -8,6 +8,7 @@
 #include "Utility/ResourceManager.hpp"
 
 #include <vector>
+#include <algorithm>
 
 namespace Data
 {
@@ -19,6 +20,7 @@ namespace Data
 		OpenGL::PrimitiveMode primitive_mode;
 
 	public:
+		std::vector<glm::vec3> vertex_positions;       // Unique vertex positions for collision detection.
 		Geometry::AABB AABB;                           // Object-space AABB for broad-phase collision detection.
 		std::vector<Geometry::Shape> collision_shapes; // Object-space shape for narrow-phase collision detection.
 		std::vector<Geometry::Triangle> triangles;     // Object-space triangles forming this mesh.
@@ -36,11 +38,12 @@ namespace Data
 
 		template <typename VertexType>
 		requires is_valid_mesh_vert<VertexType>
-		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode, const std::vector<Geometry::Shape>& shapes) noexcept
+		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode, const std::vector<Geometry::Shape>& shapes, bool build_collision_data) noexcept
 			: VAO{}
 			, VBO{}
 			, draw_size{(GLsizei)vertex_data.size()}
 			, primitive_mode{primitive_mode}
+			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder like shapes.
 			, AABB{} // TODO: Feed AABB out of the MeshBuilder like shapes.
 			, collision_shapes{shapes}
 			, triangles{}
@@ -62,9 +65,17 @@ namespace Data
 					position));
 				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Position3D));
 
-				for(size_t i = 0; i < vertex_data.size(); ++i)
-					AABB.unite(vertex_data[i].position);
+				if (build_collision_data)
+				{
+					for(size_t i = 0; i < vertex_data.size(); ++i)
+					{
+						auto it = std::find(vertex_positions.begin(), vertex_positions.end(), vertex_data[i].position);
+						if (it == vertex_positions.end())
+							vertex_positions.push_back(vertex_data[i].position);
 
+						AABB.unite(vertex_data[i].position);
+					}
+				}
 				if (primitive_mode == OpenGL::PrimitiveMode::Triangles)
 				{
 					for (size_t i = 0; i < vertex_data.size(); i += 3)
