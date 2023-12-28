@@ -118,6 +118,12 @@ namespace OpenGL
 						dc.set_uniform("view_position", m_view_information.m_view_position);
 						dc.set_uniform("model", p_transform.m_model);
 						dc.set_uniform("shininess", texComponent.m_shininess);
+
+						// Dont write transparent pixels to the depth buffer. This prevents transparent objects from culling other objects behind them.
+						// TODO: This is a hacky solution. Find a better way to handle transparency.
+						if (texComponent.m_colour.a < 1.f)
+							dc.m_depth_test_enabled = false;
+
 						dc.set_uniform("uColour", texComponent.m_colour);
 						dc.submit(m_phong_renderer.get_uniform_colour_shader(), mesh_comp.m_mesh);
 					}

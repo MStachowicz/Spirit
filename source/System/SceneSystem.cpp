@@ -268,7 +268,7 @@ namespace System
 			Component::RigidBody{},
 			Component::Transform{glm::vec3(2.f, 0.f, 0.f)},
 			Component::Mesh{icosphere_meshref},
-			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 1.f)},
+			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 0.6f)}, // Grey
 			Component::Collider{});
 
 		m_scene.m_entities.add_entity(
@@ -276,7 +276,7 @@ namespace System
 			Component::RigidBody{},
 			Component::Transform{glm::vec3(5.f, 0.f, 0.f)},
 			Component::Mesh{icosphere_meshref},
-			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 1.f)},
+			Component::Texture{glm::vec4(1.f, 0.647f, 0.f, 0.6f)}, // Orange
 			Component::Collider{});
 	}
 	void SceneSystem::constructBouncingBallScene()

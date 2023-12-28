@@ -97,6 +97,8 @@ void main()
     {
         Colour += directional_light_contribution(directional_lights[i], frag_normal, view_direction);
     }
+
+	Colour.a = uColour.a;
 }
 
 vec4 directional_light_contribution(DirectionalLight p_light, vec3 p_frag_normal, vec3 p_view_direction)
