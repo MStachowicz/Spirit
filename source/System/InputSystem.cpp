@@ -17,9 +17,7 @@ namespace System
 		, m_input{p_input}
 		, m_window{p_window}
 		, m_scene_system{p_scene_system}
-	{
-		m_input.m_key_event.subscribe(this, &InputSystem::on_key_event);
-	}
+	{}
 
 	void InputSystem::update(const DeltaTime& p_delta_time)
 	{
@@ -34,20 +32,6 @@ namespace System
 			{
 				p_input.m_function(p_delta_time, p_entity, m_scene_system.get_current_scene(), m_input);
 			});
-		}
-	}
-	// use onKeyPressed to perform one-time actions. e.g. UI events are best not repeated every frame.
-	// On the other hand, game logic is best suited to Platform::Core::is_key_down since this alows repeated events.
-	void InputSystem::on_key_event(Platform::Key p_key, Platform::Action p_action)
-	{
-		if (p_action == Platform::Action::Press)
-		{
-			switch (p_key)
-			{
-				case Platform::Key::Escape: m_window.request_close();     break;
-				case Platform::Key::F11:    m_window.toggle_fullscreen(); break;
-				default: break;
-			}
 		}
 	}
 }

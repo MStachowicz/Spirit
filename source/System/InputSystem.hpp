@@ -26,8 +26,6 @@ namespace System
 
 		size_t m_update_count;
 	private:
-		void on_key_event(Platform::Key p_key, Platform::Action p_action);
-
 		Platform::Input& m_input;
 		Platform::Window& m_window;
 

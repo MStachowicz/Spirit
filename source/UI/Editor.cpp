@@ -108,7 +108,19 @@ namespace UI
 		}
 	}
 	void Editor::on_key_event(Platform::Key p_key, Platform::Action p_action)
-	{ (void)p_key; (void)p_action; }
+	{
+		switch (p_key)
+		{
+			case Platform::Key::Escape:
+			{
+				if (p_action == Platform::Action::Release)
+					m_window.request_close();
+				break;
+			}
+			case Platform::Key::F11: m_window.toggle_fullscreen(); break;
+			default: break;
+		}
+	}
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
 	{

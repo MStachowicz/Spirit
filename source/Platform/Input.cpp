@@ -81,6 +81,11 @@ namespace Platform
 		else if (p_action == GLFW_RELEASE)
 		{
 			m_keys_pressed[static_cast<std::underlying_type_t<Key>>(glfw_to_key(p_key))] = false;
+			m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
+		}
+		else if (p_action == GLFW_REPEAT)
+		{
+			m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
 		}
 	}
 	void Input::glfw_mouse_press(int p_button, int p_action, int p_modifiers)
@@ -154,6 +159,10 @@ namespace Platform
 			case GLFW_KEY_ESCAPE: return Key::Escape;
 			case GLFW_KEY_ENTER:  return Key::Enter;
 			case GLFW_KEY_TAB:    return Key::Tab;
+			case GLFW_KEY_LEFT:   return Key::Left_Arrow;
+			case GLFW_KEY_RIGHT:  return Key::Right_Arrow;
+			case GLFW_KEY_UP:     return Key::Up_Arrow;
+			case GLFW_KEY_DOWN:   return Key::Down_Arrow;
 			case GLFW_KEY_UNKNOWN:
 			default:
 				LOG_WARN("[INPUT] Could not convert GLFW key '{}' to Platform::Key", p_glfw_key);
