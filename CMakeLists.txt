@@ -152,6 +152,8 @@ source/Geometry/Cuboid.hpp
 source/Geometry/Cuboid.cpp
 source/Geometry/Geometry.hpp
 source/Geometry/Geometry.cpp
+source/Geometry/GJK.hpp
+source/Geometry/GJK.cpp
 source/Geometry/Frustrum.hpp
 source/Geometry/Frustrum.cpp
 source/Geometry/Intersect.cpp
