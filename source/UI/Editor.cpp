@@ -44,6 +44,10 @@ namespace UI
 		, m_selected_entities{}
 		, m_console{}
 		, m_windows_to_display{}
+		, m_debug_GJK{false}
+		, m_debug_GJK_entity_1{}
+		, m_debug_GJK_entity_2{}
+		, m_debug_GJK_step{0}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
@@ -113,6 +117,44 @@ namespace UI
 	{
 		switch (p_key)
 		{
+			case Platform::Key::Left_Arrow:
+			{
+				if (p_action == Platform::Action::Release || p_action == Platform::Action::Repeat)
+				{
+					if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2 && m_debug_GJK_step > 0)
+						m_debug_GJK_step--;
+				}
+				break;
+			}
+			case Platform::Key::Right_Arrow:
+			{
+				if (p_action == Platform::Action::Release || p_action == Platform::Action::Repeat)
+				{
+					if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2)
+						m_debug_GJK_step++;
+				}
+				break;
+			}
+			case Platform::Key::G:
+			{
+				if (p_action == Platform::Action::Release)
+				{
+					if (!m_debug_GJK && m_selected_entities.size() == 2)
+					{
+						m_debug_GJK = true;
+						m_debug_GJK_step = 0;
+						m_debug_GJK_entity_1 = m_selected_entities[0];
+						m_debug_GJK_entity_2 = m_selected_entities[1];
+					}
+					else
+					{
+						m_debug_GJK = false;
+						m_debug_GJK_entity_1.reset();
+						m_debug_GJK_entity_2.reset();
+					}
+				}
+				break;
+			}
 			case Platform::Key::Escape:
 			{
 				if (p_action == Platform::Action::Release)
@@ -303,6 +345,19 @@ namespace UI
 				}
 
 				{ImGui::SeparatorText("Physics");
+					{// GJK visualiser
+						if (m_selected_entities.size() != 2)
+							ImGui::BeginDisabled();
+
+						ImGui::Checkbox("Toggle GJK debug", &m_debug_GJK);
+
+						if (m_selected_entities.size() != 2)
+						{
+							ImGui::SameLine();
+							ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Select 2 entities to debug GJK");
+							ImGui::EndDisabled();
+						}
+					}
 
 					ImGui::Checkbox("Show orientations",        &debug_options.m_show_orientations);
 					ImGui::Checkbox("Show bounding box",        &debug_options.m_show_bounding_box);
@@ -323,6 +378,11 @@ namespace UI
 					debug_options = OpenGL::DebugRenderer::DebugOptions();
 			}
 			ImGui::End();
+		}
+
+		{// Regardless of the debug window being displayed, we want to display or do certain things related to the options.
+			if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2)
+				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.m_scene, m_debug_GJK_step);
 		}
 	}
 

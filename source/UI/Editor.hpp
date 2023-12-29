@@ -60,6 +60,11 @@ namespace UI
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed
 
+		bool m_debug_GJK;
+		std::optional<ECS::Entity> m_debug_GJK_entity_1;
+		std::optional<ECS::Entity> m_debug_GJK_entity_2;
+		int m_debug_GJK_step;
+
 	public:
 		using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a float precision duration in seconds.
 

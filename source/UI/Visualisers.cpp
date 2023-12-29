@@ -9,6 +9,7 @@
 #include "System/SceneSystem.hpp"
 #include "System/MeshSystem.hpp"
 
+#include "Geometry/GJK.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Intersect.hpp"
 
@@ -190,6 +191,167 @@ namespace UI
 				ImGui::TextColored(not_intersected_colour_imgui, "Triangles do not intersect");
 				OpenGL::DebugRenderer::add(t1, glm::vec4(not_intersected_colour, shape_alpha));
 				OpenGL::DebugRenderer::add(t2, glm::vec4(not_intersected_colour, shape_alpha));
+			}
+		}
+		ImGui::End();
+	}
+
+	void draw_GJK_debugger(ECS::Entity& p_entity_1, ECS::Entity& p_entity_2, System::Scene& p_scene, int p_debug_step)
+	{
+		if (ImGui::Begin("GJK visualiser"))
+		{
+			ImGui::TextWrapped("Compare if two entities are intersecting by stepping through the GJK algorithm.");
+
+			static float cloud_points_size = 0.01f;
+			static float result_point_size = cloud_points_size * 3.f;
+			static float line_thickness    = result_point_size * 0.25f;
+			{
+				ImGui::SeparatorText("Options");
+				ImGui::Slider("Cloud points size", cloud_points_size, 0.005f, 0.1f);
+				ImGui::Slider("Result point size", result_point_size, 0.005f, 0.1f);
+				ImGui::Slider("Line thickness",    line_thickness,    0.005f, 0.1f);
+			}
+
+			auto draw_simplex_debug = [&](const GJK::Simplex& p_simplex)
+			{
+				switch (p_simplex.size)
+				{
+					case 1: // Draw the point
+						ImGui::Text("Simplex is a point");
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						break;
+					case 2: // Draw the points and edge
+						ImGui::Text("Simplex is a line");
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[1], result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[1], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						break;
+					case 3: // Draw the points, edges and face of the triangle
+						ImGui::Text("Simplex is a triangle");
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[1], result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[2], result_point_size), glm::vec4(0.f, 0.f, 1.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[1], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[1], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[1], p_simplex[2]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
+						break;
+					case 4: // Draw the points, edges and face of the tetrahedron
+						ImGui::Text("Simplex is a tetrahedron");
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[1], result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[2], result_point_size), glm::vec4(0.f, 0.f, 1.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[3], result_point_size), glm::vec4(0.f, 1.f, 1.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[1], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[3], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[1], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[1], p_simplex[3], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[2], p_simplex[3], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[1], p_simplex[2]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
+						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[1], p_simplex[3]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
+						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[2], p_simplex[3]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
+						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[1], p_simplex[2], p_simplex[3]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
+						break;
+					default:
+						break;
+				}
+			};
+
+			auto entity_1_transform = &p_scene.m_entities.get_component<Component::Transform>(p_entity_1);
+			auto entity_2_transform = &p_scene.m_entities.get_component<Component::Transform>(p_entity_2);
+			auto entity_1_mesh      = &p_scene.m_entities.get_component<Component::Mesh>(p_entity_1);
+			auto entity_2_mesh      = &p_scene.m_entities.get_component<Component::Mesh>(p_entity_2);
+
+			if (entity_1_transform && entity_2_transform && entity_1_mesh && entity_2_mesh && entity_1_mesh->m_mesh && entity_2_mesh->m_mesh)
+			{
+				{ // Render a debug point cloud of the Minkowski difference.
+					ImGui::Separator();
+					ImGui::Text("Mesh 1 vertex count", entity_1_mesh->m_mesh->vertex_positions.size());
+					ImGui::Text("Mesh 2 vertex count", entity_2_mesh->m_mesh->vertex_positions.size());
+					ImGui::Text("Current step", p_debug_step + 1);
+
+					// The GJK algorithm avoids ever doing this by transforming the support point directions into the local space of the objects and transforming the result.
+					for (auto& vertex_1 : entity_1_mesh->m_mesh->vertex_positions)
+						for (auto& vertex_2 : entity_2_mesh->m_mesh->vertex_positions)
+						{
+							auto vertex_1_world_space = glm::vec3(entity_1_transform->m_model * glm::vec4(vertex_1, 1.f));
+							auto vertex_2_world_space = glm::vec3(entity_2_transform->m_model * glm::vec4(vertex_2, 1.f));
+							OpenGL::DebugRenderer::add(Geometry::Sphere(vertex_1_world_space - vertex_2_world_space, cloud_points_size), glm::vec4(1.f, 1.f, 1.f, 1.f), 0);
+						}
+				}
+
+				// Start direction is the vector between the two entities. Improvement would be to use the previous GJK result as the starting direction.
+				glm::vec3 direction = glm::normalize(entity_2_transform->m_position - entity_1_transform->m_position);
+				GJK::Simplex simplex = {GJK::support_point(direction,
+				                                           entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->m_model, entity_1_transform->m_orientation,
+				                                           entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->m_model, entity_2_transform->m_orientation)};
+				direction = -simplex[0]; // AO, search in the direction of the origin. Reversed direction to point towards the origin.
+
+				std::optional<bool> intersecting;
+				int step_count = 0;
+				GJK::Simplex last_simplex = simplex; // Used to draw the last simplex before the result.
+
+				if (p_debug_step > 0)
+				{
+					while (true) // Main GJK loop. Converge on a simplex that encloses the origin.
+					{
+						auto new_support_point = GJK::support_point(direction,
+						                                            entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->m_model, entity_1_transform->m_orientation,
+						                                            entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->m_model, entity_2_transform->m_orientation);
+
+						if (glm::dot(new_support_point, direction) <= 0.f)
+						{// If the new support point is not past the origin then its impossible to enclose the origin.
+							intersecting = false;
+							break;
+						}
+
+						last_simplex = simplex;
+						// Shift the simplex points along to retain A as the most recently added support point as do_simplex expects.
+						simplex.push_front(new_support_point);
+
+						if (++step_count > p_debug_step)
+							break; // Stop the loop at the current step.
+
+						if (GJK::do_simplex(simplex, direction))
+						{
+							intersecting = true;
+							break;
+						}
+					}
+				}
+
+				{
+					ImGui::Separator();
+
+					if (intersecting)
+					{
+						draw_simplex_debug(simplex);
+
+						if (*intersecting) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The two entities are intersecting.");
+						else               ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "The two entities are not intersecting.");
+
+						auto str = std::format("Took {} steps to converge on the result.", step_count);
+						ImGui::Text(str.c_str());
+					}
+					else
+					{
+						draw_simplex_debug(last_simplex);
+
+						static bool draw_direction = true;
+						ImGui::Checkbox("Draw direction", &draw_direction);
+						if (draw_direction)
+						{ // Draw the next point search direction as a plane
+
+							if (last_simplex.size > 0) OpenGL::DebugRenderer::add(Geometry::Ray(last_simplex[0], glm::normalize(direction)));
+							if (last_simplex.size > 1) OpenGL::DebugRenderer::add(Geometry::Ray(last_simplex[1], glm::normalize(direction)));
+							if (last_simplex.size > 2) OpenGL::DebugRenderer::add(Geometry::Ray(last_simplex[2], glm::normalize(direction)));
+							if (last_simplex.size > 3) OpenGL::DebugRenderer::add(Geometry::Ray(last_simplex[3], glm::normalize(direction)));
+
+							ImGui::TextWrapped("Keep stepping over to converge on the GJK result using Left and Right arrows");
+						}
+					}
+				}
 			}
 		}
 		ImGui::End();
