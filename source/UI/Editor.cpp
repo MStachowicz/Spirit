@@ -1,4 +1,5 @@
 #include "Editor.hpp"
+#include "Visualisers.hpp"
 
 #include "ECS/Storage.hpp"
 #include "Component/Camera.hpp"
@@ -22,8 +23,6 @@
 #include "Platform/Window.hpp"
 #include "Utility/Logger.hpp"
 #include "Utility/Utility.hpp"
-
-#include "Test/Tests/GeometryTester.hpp"
 
 #include "imgui.h"
 #include "ImGuizmo.h"
@@ -325,8 +324,6 @@ namespace UI
 			}
 			ImGui::End();
 		}
-
-		Test::GeometryTester::draw_tri_tri_debugger_UI();
 	}
 
 	void Editor::log(const std::string& p_message)

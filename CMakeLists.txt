@@ -190,10 +190,12 @@ target_compile_options(Geometry PRIVATE ${WARNING_COMPILE_FLAGS})
 
 # UI --------------------------------------------------------------------------------------------------------------------------------------
 add_library(UI
-source/UI/Editor.hpp
-source/UI/Editor.cpp
 source/UI/Console.hpp
 source/UI/Console.cpp
+source/UI/Editor.hpp
+source/UI/Editor.cpp
+source/UI/Visualisers.hpp
+source/UI/Visualisers.cpp
 )
 target_include_directories(UI
 PRIVATE source/UI
@@ -326,12 +328,10 @@ PRIVATE source/Test
 PRIVATE source
 )
 target_link_libraries(Test
-PUBLIC Utility
+PRIVATE Utility
 PRIVATE ECS
 PRIVATE Geometry
 PRIVATE GLM
-PRIVATE ImGui
-PRIVATE OpenGL
 )
 target_compile_options(ECS PRIVATE ${WARNING_COMPILE_FLAGS})
 # Test end --------------------------------------------------------------------------------------------------------------------------------

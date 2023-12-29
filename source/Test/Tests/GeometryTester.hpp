@@ -12,9 +12,7 @@ namespace Test
 		void run_unit_tests()        override;
 		void run_performance_tests() override;
 
-		static void draw_frustrum_debugger_UI(float aspect_ratio);
-		static void draw_tri_tri_debugger_UI();
-	private:
+private:
 		void runAABBTests();
 		void runTriangleTests();
 		void run_frustrum_tests();
