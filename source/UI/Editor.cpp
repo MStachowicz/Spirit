@@ -309,9 +309,8 @@ namespace UI
 					ImGui::Checkbox("Show bounding box",        &debug_options.m_show_bounding_box);
 					ImGui::Checkbox("Fill bounding box",        &debug_options.m_fill_bounding_box);
 					ImGui::Checkbox("Show collision shapes",    &debug_options.m_show_collision_shapes);
-					ImGui::Checkbox("Show collision triangles", &debug_options.m_show_collision_triangles);
-					bool showing_collision_shapes = debug_options.m_show_bounding_box || debug_options.m_show_collision_shapes || debug_options.m_show_collision_triangles;
 
+					bool showing_collision_shapes = debug_options.m_show_bounding_box || debug_options.m_show_collision_shapes;
 					if (!showing_collision_shapes) ImGui::BeginDisabled();
 					ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
 					ImGui::ColorEdit3("Bounding box collided colour", &debug_options.m_bounding_box_collided_colour[0]);

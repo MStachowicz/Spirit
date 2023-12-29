@@ -127,14 +127,6 @@ namespace System
 					else
 						ASSERT_THROW(false, "[DEBUG RENDERER] Unknown shape type for showing collision shape.");
 				}
-
-				collider.m_triangles.clear();
-				for (const auto& triangle : mesh.m_mesh->triangles)
-				{
-					auto transformed_triangle = triangle;
-					transformed_triangle.transform(transform.m_model);
-					collider.m_triangles.emplace_back(transformed_triangle);
-				}
 			}
 
 			// After moving and updating the Collider, check for collisions and respond

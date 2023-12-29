@@ -112,14 +112,12 @@ namespace OpenGL
 			});
 		}
 
-		if (opt.m_show_collision_shapes || opt.m_show_collision_triangles)
+		if (opt.m_show_collision_shapes)
 		{
 			auto collision_shapes_mb = Utility::MeshBuilder<Data::PositionVertex, PrimitiveMode::Triangles>();
 
 			scene.foreach([&](Component::Collider& p_collider)
 			{
-				if (opt.m_show_collision_shapes)
-				{
 					for (const auto& shape : p_collider.m_collision_shapes)
 					{
 						if (shape.is<Geometry::Cone>())          collision_shapes_mb.add_cone(shape.get<Geometry::Cone>(), m_debug_options.m_segments);
@@ -129,12 +127,6 @@ namespace OpenGL
 						else if (shape.is<Geometry::Sphere>())   collision_shapes_mb.add_sphere(shape.get<Geometry::Sphere>(), m_debug_options.m_subdivisions);
 						else if (shape.is<Geometry::Triangle>()) collision_shapes_mb.add_triangle(shape.get<Geometry::Triangle>());
 						else ASSERT_THROW(false, "[DEBUG RENDERER] Unknown shape type for showing collision shape.");
-					}
-				}
-				if (opt.m_show_collision_triangles)
-				{
-					for (const auto& triangle : p_collider.m_triangles)
-						collision_shapes_mb.add_triangle(triangle);
 				}
 			});
 
@@ -152,6 +144,7 @@ namespace OpenGL
 				dc.submit(*m_bound_shader, collision_shapes_mesh);
 			}
 		}
+
 		if (opt.m_show_light_positions)
 		{
 			GLsizei point_light_count = static_cast<GLsizei>(scene.count_components<Component::PointLight>());

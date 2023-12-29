@@ -8,7 +8,6 @@ namespace Component
 	Collider::Collider()
 		: m_world_AABB{}
 		, m_collision_shapes{}
-		, m_triangles{}
 		, m_collided(false)
 	{}
 
@@ -19,7 +18,6 @@ namespace Component
 			ImGui::Checkbox("Colliding", &m_collided);
 			ImGui::Text("World AABB min", m_world_AABB.m_min);
 			ImGui::Text("World AABB max", m_world_AABB.m_max);
-			ImGui::Text("Triangle count", m_triangles.size());
 
 			if (m_collision_shapes.size() == 0)
 				ImGui::Text("No collision shapes.");
