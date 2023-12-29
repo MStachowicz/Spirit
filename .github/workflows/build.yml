@@ -52,4 +52,14 @@ jobs:
 
     - name: Build
       run: cmake --build . --preset "${{ matrix.buildPreset }}"
-      working-directory: ${{github.workspace}}
+      working-directory: ${{ github.workspace }}
+
+    - name: Test (Debug)
+      if: matrix.buildPreset == 'g++-debug' || matrix.buildPreset == 'msvc-debug'
+      run: ./Test
+      working-directory: ${{ github.workspace }}/build/${{ matrix.configurePreset }}/Debug
+
+    - name: Test (Release)
+      if: matrix.buildPreset == 'g++-release' || matrix.buildPreset == 'msvc-release'
+      run: ./Test
+      working-directory: ${{ github.workspace }}/build/${{ matrix.configurePreset }}/Release

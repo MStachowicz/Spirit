@@ -21,8 +21,6 @@
 #include "Utility/Logger.hpp"
 #include "Utility/Stopwatch.hpp"
 
-#include "Test/TestManager.hpp"
-
 #include <chrono>
 
 // Application manages the ownership and calling of all the Systems.
@@ -178,7 +176,6 @@ int main(int argc, char* argv[])
 		Platform::Core::initialise_OpenGL();
 		OpenGL::DebugRenderer::init();
 		Platform::Core::initialise_ImGui(window);
-		//Test::run_unit_tests(false);
 
 		LOG("[INIT] Number of arguments passed on launch: {}", argc);
 		for (int index{}; index != argc; ++index)

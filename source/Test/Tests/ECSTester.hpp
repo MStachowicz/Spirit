@@ -17,8 +17,5 @@ namespace Test
 	protected:
 		void run_unit_tests()        override;
 		void run_performance_tests() override;
-
-	private:
-		void run_memory_test(const size_t& p_alive_count_expected);
 	};
 } // namespace Test

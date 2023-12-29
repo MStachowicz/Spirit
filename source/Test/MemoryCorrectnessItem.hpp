@@ -18,23 +18,22 @@ namespace Test
 		};
 
 		inline static size_t s_constructed_count    = 0;
-		inline static size_t s_destroy_coutn        = 0;
+		inline static size_t s_destroy_count        = 0;
 		inline static size_t s_copy_construct_count = 0;
 		inline static size_t s_move_construct_count = 0;
 		inline static size_t s_copy_assign_count    = 0;
 		inline static size_t s_move_assign_count    = 0;
 		inline static size_t s_error_count          = 0;
-
-		inline static size_t instanceID         = 0; // Unique ID per instance of MemoryCorrectnessItem
+		inline static size_t s_instance_ID             = 0; // Unique ID per instance of MemoryCorrectnessItem
 
 		size_t m_ID; // Unique ID of a constructed MemoryCorrectnessItem instance.
-		volatile MemoryStatus m_status;
-		volatile size_t m_memory_initialisation_token;
 		// Padding to push the memory_status back a little
 		// Without this, some tests seem to generate false positive errors, which could be due to the memory at the start
 		// of the object being reused for something else after deletion, changing the memory status while leaving the
 		// token intact.
-		char m_padding[16];
+		std::byte m_padding[16];
+		volatile MemoryStatus m_status;
+		volatile size_t m_memory_initialisation_token;
 
 		std::string to_string() const;
 		std::string get_memory_status() const;
@@ -46,7 +45,7 @@ namespace Test
 		static void reset();
 		static size_t count_alive()
 		{
-			return s_constructed_count + s_copy_construct_count + s_move_construct_count - s_destroy_coutn;
+			return s_constructed_count + s_copy_construct_count + s_move_construct_count - s_destroy_count;
 		}
 		static size_t count_errors()
 		{
