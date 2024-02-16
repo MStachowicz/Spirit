@@ -1,4 +1,5 @@
 #include "GJK.hpp"
+#include "Intersect.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
@@ -251,5 +252,181 @@ namespace GJK
 			if (do_simplex(simplex, direction))
 				return true;
 		}
+	}
+
+	// Tests if the reverse of an edge already exists in the list and if so, removes it.
+	void add_if_unique_edge(std::vector<std::pair<unsigned int, unsigned int>>& edges, const std::vector<unsigned int>& faces, unsigned int a, unsigned int b)
+	{
+		// By virtue of winding order, if a neighbouring face shares an edge, it will be in reverse order.
+		// We only want to store the edges that we are going to save because every edge gets removed first, then we repair.
+
+		auto reverse = std::find(edges.begin(), edges.end(), std::make_pair(faces[b], faces[a]));
+
+		if (reverse != edges.end())
+			edges.erase(reverse);
+		else
+			edges.emplace_back(faces[a], faces[b]);
+	}
+
+	// Returns a list of face normals and the index of the closest face.
+	//@param polytope: The list of points that define the polytope.
+	//@param faces: The list of indices that define the faces of the polytope.
+	//@returns A pair containing the list of face normals (xyz pos + w distance) and the index of the closest face.
+	std::pair<std::vector<glm::vec4>, size_t> get_face_normals(const std::vector<glm::vec3>& polytope, const std::vector<unsigned int>& faces)
+	{
+		std::vector<glm::vec4> face_normals;
+		face_normals.reserve(faces.size() / 3);
+		unsigned int min_triangle   = 0;
+		float min_distance = std::numeric_limits<float>::max();
+
+		for (unsigned int i = 0; i < static_cast<unsigned int>(faces.size()); i += 3)
+		{
+			glm::vec3 a = polytope[faces[i]];
+			glm::vec3 b = polytope[faces[i + 1]];
+			glm::vec3 c = polytope[faces[i + 2]];
+
+			glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
+			float distance   = glm::dot(normal, a);
+
+			if (distance < 0)
+			{
+				normal   *= -1;
+				distance *= -1;
+			}
+			face_normals.emplace_back(normal, distance);
+
+			if (distance < min_distance)
+			{
+				min_triangle = i / 3u;
+				min_distance = distance;
+			}
+		}
+
+		return {face_normals, min_triangle};
+	}
+
+	CollisionPoint EPA(const Simplex& p_simplex,
+	                   const std::vector<glm::vec3>& p_points_1, const glm::mat4& p_transform_1, const glm::quat& p_orientation_1,
+	                   const std::vector<glm::vec3>& p_points_2, const glm::mat4& p_transform_2, const glm::quat& p_orientation_2)
+	{
+		if (p_simplex.size != 4)
+			throw std::runtime_error("[GJK] Invalid simplex size in EPA function. EPA expects incoming simplex to be a tetrahedron.");
+
+		std::vector<glm::vec3> polytope = {p_simplex[0], p_simplex[1], p_simplex[2], p_simplex[3]};
+		std::vector<unsigned int> faces = {
+		    0, 1, 2,
+		    0, 3, 1,
+		    0, 2, 3,
+		    1, 3, 2};
+		auto [face_normals, min_face] = get_face_normals(polytope, faces);
+
+		glm::vec3 min_normal = face_normals[min_face];
+		float min_distance   = std::numeric_limits<float>::max();
+
+		while (min_distance == std::numeric_limits<float>::max())
+		{
+			min_normal   = face_normals[min_face];
+			min_distance = face_normals[min_face].w;
+
+			glm::vec3 support = support_point(min_normal,
+			                                  p_points_1, p_transform_1, p_orientation_1,
+			                                  p_points_2, p_transform_2, p_orientation_2);
+			float s_distance  = dot(min_normal, support);
+
+			if (std::abs(s_distance - min_distance) > 0.001f)
+			{
+				min_distance = std::numeric_limits<float>::max();
+
+				// When expanding the polytope, we cannot just add a vertex, we need to repair the faces as well.
+				// When two faces result in the same support point being added, duplicate faces end up inside the polytope and cause incorrect results.
+				// We have to remove every face that is pointing in the direction of the support point relative to the triangle.
+				// To repair afterwards, we keep track of unique_edges and use those along with the support point's index to make new faces.
+				std::vector<std::pair<unsigned int, unsigned int>> unique_edges;
+				for (unsigned int i = 0; i < face_normals.size(); i++)
+				{
+					// This line compares the shortest distance of two parallel planes and the origin,
+					// passing by a forced point (support vertex vs point of current face).
+					// If the distance of the support point is lower, then the result would be a concave polytope, which is undesired.
+					// if ( normals[i].dot(support) > normals[i].dot(polytope[faces[i*3]]))
+					// Check same_direction relative to the triangle, not just the face normal.
+
+					if (same_direction(face_normals[i], support - polytope[faces[i * 3]]))
+					{
+						unsigned int face_index = i * 3;
+
+						add_if_unique_edge(unique_edges, faces, face_index, face_index + 1);
+						add_if_unique_edge(unique_edges, faces, face_index + 1, face_index + 2);
+						add_if_unique_edge(unique_edges, faces, face_index + 2, face_index);
+
+						faces[face_index + 2] = faces.back();
+						faces.pop_back();
+						faces[face_index + 1] = faces.back();
+						faces.pop_back();
+						faces[face_index] = faces.back();
+						faces.pop_back();
+
+						face_normals[i] = face_normals.back(); // pop-erase
+						face_normals.pop_back();
+
+						i--;
+					}
+				}
+				if (unique_edges.size() == 0)
+					break;
+
+				// Now that we have a list of unique_edges, we can add the new_faces to a list and add the supporting point to the polytope.
+				// Storing the new_faces in their own list allows us to calculate only the normals of these new_faces.
+				std::vector<unsigned int> new_faces;
+				for (auto [edge_index_1, edge_index_2] : unique_edges)
+				{
+					new_faces.push_back(edge_index_1);
+					new_faces.push_back(edge_index_2);
+					new_faces.push_back(static_cast<unsigned int>(polytope.size()));
+				}
+				polytope.push_back(support);
+				auto [new_normals, new_min_face] = get_face_normals(polytope, new_faces);
+
+				// After calculating the new normals, we need to find the new closest face.
+				// We only iterate over the old normals, and compare the closest one to the closest face of the new normals.
+				// Then we can add these new faces and normals to the end of faces and face_normals respectively.
+				float new_min_distance = std::numeric_limits<float>::max();
+				for (size_t i = 0; i < face_normals.size(); i++)
+				{
+					if (face_normals[i].w < new_min_distance)
+					{
+						new_min_distance = face_normals[i].w;
+						min_face         = i;
+					}
+				}
+				if (new_normals[new_min_face].w < new_min_distance)
+				{
+					min_face = new_min_face + face_normals.size();
+				}
+
+				faces.insert(faces.end(), new_faces.begin(), new_faces.end());
+				face_normals.insert(face_normals.end(), new_normals.begin(), new_normals.end());
+			}
+		}
+
+		if (min_distance == std::numeric_limits<float>::max())
+			throw std::runtime_error("[GJK] EPA failed to find a collision point. This should never happen.");
+
+
+		// The closest face of the polytope to the origin of the Minkowski difference is the face that represents the deepest penetration.
+		// The normal of this face is the collision normal, and its distance to the origin is the penetration depth.
+		// The collision point is the point on the face closest to the origin.
+
+		auto min_face_a = polytope[faces[min_face * 3]]; // * 3 because faces is a list of indices, not points.
+		auto min_face_b = polytope[faces[min_face * 3 + 1]];
+		auto min_face_c = polytope[faces[min_face * 3 + 2]];
+		auto closest_point = Geometry::closest_point(Geometry::Triangle(min_face_a, min_face_b, min_face_c), glm::vec3(0.f));
+		// Once a supporting point isn't found further from the closest face,
+		// We return that face's normal and its distance in a CollisionPoint.
+		CollisionPoint point;
+		point.normal            = min_normal;
+		point.A                 = glm::inverse(p_transform_1) * glm::vec4(closest_point + point.normal * min_distance, 1.f);
+		point.B                 = glm::inverse(p_transform_2) * glm::vec4(closest_point - point.normal * min_distance, 1.f);
+		point.penetration_depth = min_distance + 0.001f;
+		return point;
 	}
 } // namespace GJK

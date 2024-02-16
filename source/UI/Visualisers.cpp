@@ -333,6 +333,26 @@ namespace UI
 
 						auto str = std::format("Took {} steps to converge on the result.", step_count);
 						ImGui::Text(str.c_str());
+
+						if (*intersecting)
+						{
+							auto cp = GJK::EPA(simplex,
+											entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->m_model, entity_1_transform->m_orientation,
+											entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->m_model, entity_2_transform->m_orientation);
+
+							cp.A = glm::vec3(entity_1_transform->m_model * glm::vec4(cp.A, 1.f));
+							cp.B = glm::vec3(entity_2_transform->m_model * glm::vec4(cp.B, 1.f));
+
+							OpenGL::DebugRenderer::add(Geometry::Sphere(cp.A, result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+							OpenGL::DebugRenderer::add(Geometry::Sphere(cp.B, result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+							OpenGL::DebugRenderer::add(Geometry::Cylinder(cp.A, cp.B, line_thickness), glm::vec4(0.5f, 0.5f, 0.5f, 1.f));
+
+							ImGui::SeparatorText("EPA");
+							ImGui::Text("A: [%.3f, %.3f, %.3f]", cp.A.x, cp.A.y, cp.A.z);
+							ImGui::Text("B: [%.3f, %.3f, %.3f]", cp.B.x, cp.B.y, cp.B.z);
+							ImGui::Text("Normal: [%.3f, %.3f, %.3f]", cp.normal.x, cp.normal.y, cp.normal.z);
+							ImGui::Text("Penetration depth: %.3f", cp.penetration_depth);
+						}
 					}
 					else
 					{

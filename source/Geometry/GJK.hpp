@@ -10,6 +10,14 @@
 
 namespace GJK
 {
+	struct CollisionPoint
+	{
+		glm::vec3 A;             // Furthest point of A into B
+		glm::vec3 B;             // Furthest point of B into A
+		glm::vec3 normal;        // B – A normalized
+		float penetration_depth; // Length of B – A
+	};
+
 	// Simplex is a set of points that define a convex shape.
 	// The size of the simplex determines the shape.
 	// 0 = empty, 1 = point, 2 = line, 3 = triangle, 4 = tetrahedron
@@ -88,4 +96,15 @@ namespace GJK
 	bool intersecting(const std::vector<glm::vec3>& p_points_1, const glm::mat4& p_transform_1, const glm::quat& p_orientation_1,
 	                  const std::vector<glm::vec3>& p_points_2, const glm::mat4& p_transform_2, const glm::quat& p_orientation_2,
 	                  const glm::vec3& p_initial_direction = glm::vec3(1.f, 0.f, 0.f));
+
+	// Expanding Polytope Algorithm (EPA).
+	// Given two convex shapes defined by a set of points in object space, and their transforms and orientations, determine their collision point.
+	// This function assumes that the two convex shapes intersect. Use the intersecting function and pass the resulting simplex if true.
+	//@param p_points_1,p_points_2: The object-space point set that defines the convex shapes in object space.
+	//@param p_transform_1,p_transform_2: The object->world space transform of the convex shapes.
+	//@param p_orientation_1,p_orientation_2 The orientation of the convex shapes.
+	//@param p_simplex The simplex that contains the origin as returned by the GJK algorithm.
+	CollisionPoint EPA(const Simplex& p_simplex,
+	                   const std::vector<glm::vec3>& p_points_1, const glm::mat4& p_transform_1, const glm::quat& p_orientation_1,
+	                   const std::vector<glm::vec3>& p_points_2, const glm::mat4& p_transform_2, const glm::quat& p_orientation_2);
 } // namespace GJK
