@@ -93,6 +93,11 @@ namespace Geometry
 	//@param point The point to find the closest point to
 	//@return The closest point on ray to point
 	glm::vec3 closest_point(const Ray& ray, const glm::vec3& point);
+	// Get the closest point on a triangle to the point
+	//@param triangle The triangle to find the closest point on
+	//@param point The point to find the closest point to
+	//@return The closest point on triangle to point
+	glm::vec3 closest_point(const Triangle& triangle, const glm::vec3& point);
 
 	// Get the distance from the point to the line squared
 	//@param line The line to find the distance to
@@ -110,6 +115,12 @@ namespace Geometry
 	//@param point The point to find the distance from
 	//@return The signed distance from point to plane
 	float distance(const Plane& plane, const glm::vec3& point);
+
+	// Compute barycentric coordinates for a point p with respect to triangle (a, b, c).
+	//@param a,b,c The vertices of the triangle
+	//@param p The point to compute the barycentric coordinates for
+	//@return The barycentric coordinates of p with respect to triangle (a, b, c) as a vector (u, v, w).
+	glm::vec3 barycentric(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& p);
 
 
 //==============================================================================================================================
