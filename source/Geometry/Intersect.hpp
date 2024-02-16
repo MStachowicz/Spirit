@@ -85,6 +85,7 @@ namespace Geometry
 //==============================================================================================================================
 // get_intersection functions: Return the point of intersection between two shapes from the perspective of shape A.
 //==============================================================================================================================
+	std::optional<glm::vec3> get_intersection(const Ray& ray, const Plane& plane);
 	std::optional<glm::vec3> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray = nullptr);
 	std::optional<glm::vec3> get_intersection(const Line& line, const Triangle& triangle);
 	//@returns If the planes are parallel, std::nullopt is returned. If there is an intersection, the Line of intersection is returned.

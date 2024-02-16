@@ -280,6 +280,26 @@ namespace Geometry
 // END POINT_INSIDE FUNCTIONS
 // ==============================================================================================================================
 
+	std::optional<glm::vec3> get_intersection(const Ray& ray, const Plane& plane)
+	{
+		// Compute the dot product between the ray direction and the plane normal
+		float dot_direction_normal = glm::dot(ray.m_direction, plane.m_normal);
+
+		// If the dot product is zero, the ray is parallel to the plane
+		if (std::abs(dot_direction_normal) < Epsilon)
+			return std::nullopt;
+
+		// Compute the distance from the ray origin to the plane
+		float distance = (plane.m_distance - glm::dot(ray.m_start, plane.m_normal)) / dot_direction_normal;
+
+		// If the distance is negative, the plane is behind the ray
+		if (distance < 0.0f)
+			return std::nullopt;
+
+		// Compute the intersection point
+		return ray.m_start + (ray.m_direction * distance);
+
+	}
 
 	std::optional<glm::vec3> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
 	{
