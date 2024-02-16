@@ -254,14 +254,7 @@ namespace System
 
 		m_scene.m_entities.add_entity(
 			Component::Label{"Directional light 1"},
-			Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.f, 0.5f});
-
-			{ // Red point light in-front of the box.
-				auto point_light      = Component::PointLight{};
-				point_light.m_position = glm::vec3(0.f, 3.f, 0.f);
-				point_light.m_colour   = glm::vec3(1.f);
-				m_scene.m_entities.add_entity(Component::Label{"Point light"}, point_light);
-			}
+			Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.3f, 0.5f});
 
 		m_scene.m_entities.add_entity(
 			Component::Label{"Sphere 1"},
