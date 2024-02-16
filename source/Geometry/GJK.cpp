@@ -1,5 +1,6 @@
 #include "GJK.hpp"
 #include "Intersect.hpp"
+#include "Triangle.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"

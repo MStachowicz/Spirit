@@ -16,7 +16,7 @@ namespace System
 		: m_scene_system{p_scene_system}
 	{}
 
-	std::optional<Geometry::ContactPoint> CollisionSystem::get_collision(const ECS::Entity& p_entity, const ECS::Entity* p_collided_entity) const
+	std::optional<ContactPoint> CollisionSystem::get_collision(const ECS::Entity& p_entity, const ECS::Entity* p_collided_entity) const
 	{
 		auto& scene = m_scene_system.get_current_scene();
 		if (scene.has_components<Component::Collider, Component::Mesh, Component::Transform>(p_entity))
@@ -63,7 +63,7 @@ namespace System
 				if (!min_intersection_along_ray.has_value() || length_along_ray < min_intersection_along_ray)
 				{
 					min_intersection_along_ray = length_along_ray;
-					out_first_intersection     = intersection->position;
+					out_first_intersection     = *intersection;
 				}
 			}
 		});

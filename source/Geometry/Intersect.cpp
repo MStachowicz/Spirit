@@ -1,6 +1,8 @@
 #include "Intersect.hpp"
 
 #include "Geometry/AABB.hpp"
+#include "Geometry/Cone.hpp"
+#include "Geometry/Cylinder.hpp"
 #include "Geometry/Plane.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Sphere.hpp"
@@ -279,7 +281,7 @@ namespace Geometry
 // ==============================================================================================================================
 
 
-	std::optional<ContactPoint> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
+	std::optional<glm::vec3> get_intersection(const AABB& AABB, const Ray& ray, float* distance_along_ray)
 	{
 		// Adapted from: Real-Time Collision Detection (Christer Ericson) - 5.3.3 Intersecting Ray or Segment Against Box pg 180
 
@@ -336,13 +338,9 @@ namespace Geometry
 		if (distance_along_ray)
 			*distance_along_ray = farthestEntry;
 
-		ContactPoint point;
-		point.normal            = -ray.m_direction;
-		point.position          = ray.m_start + (ray.m_direction * farthestEntry);
-		point.penetration_depth = 0;
-		return point;
+		return ray.m_start + (ray.m_direction * farthestEntry);
 	}
-	std::optional<ContactPoint> get_intersection(const Line& line, const Triangle& triangle)
+	std::optional<glm::vec3> get_intersection(const Line& line, const Triangle& triangle)
 	{
 		// Identical to the above function but uses u, v, w to determine the intersection point to return.
 
@@ -368,11 +366,7 @@ namespace Geometry
 			v *= denom;
 			w *= denom; // w = 1.0f - u - v;
 
-			ContactPoint point;
-			point.normal = glm::normalize(glm::cross(triangle.m_point_2 - triangle.m_point_1, triangle.m_point_3 - triangle.m_point_1));
-			point.position = (u * triangle.m_point_1) + (v * triangle.m_point_2) + (w * triangle.m_point_3);
-			point.penetration_depth = 0;
-			return point;
+			return (u * triangle.m_point_1) + (v * triangle.m_point_2) + (w * triangle.m_point_3);
 		}
 		else
 			return std::nullopt;
@@ -392,7 +386,7 @@ namespace Geometry
 		glm::vec3 point_on_intersection_line = glm::cross(plane_1.m_distance * plane_2.m_normal - plane_2.m_distance * plane_1.m_normal, direction) / denom;
 		return Line(point_on_intersection_line, direction);
 	}
-	std::optional<ContactPoint> get_intersection(const Plane& plane, const Sphere& sphere)
+	std::optional<glm::vec3> get_intersection(const Plane& plane, const Sphere& sphere)
 	{
 		// Compute the distance from the sphere center to the plane
 		float distance = glm::dot(plane.m_normal, sphere.m_center) - plane.m_distance;
@@ -400,22 +394,13 @@ namespace Geometry
 		// If the absolute value of the distance is less than the sphere radius, then the sphere is colliding with the plane
 		if (std::abs(distance) < sphere.m_radius)
 		{
-			// The penetration depth is the overlap of the sphere with the plane
-			float penetration_depth = sphere.m_radius - std::abs(distance);
-
 			// The normal of the contact is the normal of the plane, but it must be reversed if the sphere is behind the plane
 			glm::vec3 normal = plane.m_normal;
 			if (distance < 0)
 				normal = -normal;
 
 			// The position of the contact is point on the sphere surface towards the plane
-			glm::vec3 position = sphere.m_center - normal * sphere.m_radius;
-
-			ContactPoint point;
-			point.normal            = normal;
-			point.position          = position;
-			point.penetration_depth = penetration_depth;
-			return point;
+			return sphere.m_center - normal * sphere.m_radius;
 		}
 		else
 			return std::nullopt;
@@ -430,7 +415,7 @@ namespace Geometry
 		else
 			return plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom;
 	}
-	std::optional<ContactPoint> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
+	std::optional<glm::vec3> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
 	{
 		// Compute the displacement, or the distance between the two spheres
 		glm::vec3 displacement = sphere_1.m_center - sphere_2.m_center;
@@ -439,38 +424,24 @@ namespace Geometry
 		// If the distance is less than the sum of the two radii, then the spheres are colliding
 		if (distance <= sphere_1.m_radius + sphere_2.m_radius)
 		{
-			// The penetration depth is the overlap of the spheres
-			float penetration_depth = sphere_1.m_radius + sphere_2.m_radius - distance;
-
 			// The normal of the contact is the normalized displacement
 			// If the spheres are in the same position (distance == 0.f), the normal is arbitrary, we choose up here.
 			glm::vec3 normal = distance == 0.f ? glm::vec3(0.f, 1.f, 0.f) : displacement / distance;
 			// The position of the contact is point on the surface of sphere_1 towards sphere_2
-			glm::vec3 position = sphere_1.m_center - normal * sphere_1.m_radius;
-
-			ContactPoint point;
-			point.normal            = normal;
-			point.position          = position;
-			point.penetration_depth = penetration_depth;
-			return point;
+			return sphere_1.m_center - normal * sphere_1.m_radius;
 		}
 		else
 			return std::nullopt;
 	}
-	std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2)
+	std::optional<glm::vec3> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2)
 	{
 		if (triangle_1.is_degenerate() || triangle_2.is_degenerate())
 			return std::nullopt;
 
 		auto intersection_segment = triangle_triangle(triangle_1, triangle_2);
 		if (intersection_segment)
-		{
-			ContactPoint point;
-			point.normal            = glm::normalize(glm::cross(triangle_1.m_point_2 - triangle_1.m_point_1, triangle_1.m_point_3 - triangle_1.m_point_1));
-			// Halfway point on the line segment
-			point.position          = intersection_segment->m_start + ((intersection_segment->m_end - intersection_segment->m_start) * 0.5f);
-			point.penetration_depth = 0;
-			return point;
+		{// Halfway point on the line segment
+			return intersection_segment->m_start + ((intersection_segment->m_end - intersection_segment->m_start) * 0.5f);
 		}
 		else
 			return std::nullopt;
@@ -487,23 +458,6 @@ namespace Geometry
 
 		if (intersecting)
 			return lineSegment; // If coplanar, the line
-		else
-			return std::nullopt;
-	}
-
-	std::optional<ContactPoint> get_intersection(const Triangle& triangle_1, const Triangle& triangle_2, bool* is_coplanar)
-	{
-		auto lineSegment_optional = triangle_triangle(triangle_1, triangle_2, is_coplanar);
-
-		if (lineSegment_optional)
-		{
-			ContactPoint point;
-			point.normal            = glm::normalize(glm::cross(triangle_1.m_point_2 - triangle_1.m_point_1, triangle_1.m_point_3 - triangle_1.m_point_1));
-			// Halfway point on the line segment
-			point.position          = lineSegment_optional->m_start + ((lineSegment_optional->m_end - lineSegment_optional->m_start) * 0.5f);
-			point.penetration_depth = 0;
-			return point;
-		}
 		else
 			return std::nullopt;
 	}

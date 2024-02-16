@@ -162,14 +162,6 @@ namespace OpenGL
 		m_tri_mb.set_colour(p_colour);
 		m_tri_mb.add_triangle(p_triangle);
 	}
-	void DebugRenderer::add(const Geometry::ContactPoint& p_contact_point, const glm::vec4& p_colour)
-	{// Draw an arrow in the normal direction from the contact point + draw a line over the penertation depth from the contact point.
-		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_arrow(p_contact_point.position, p_contact_point.position + (p_contact_point.normal * 2.f));
-
-		m_line_mb.set_colour(p_colour);
-		m_line_mb.add_line(Geometry::LineSegment(p_contact_point.position, p_contact_point.position + (-p_contact_point.normal * p_contact_point.penetration_depth)));
-	}
 	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour, size_t segments)
 	{
 		m_tri_mb.set_colour(p_colour);
