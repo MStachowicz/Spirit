@@ -60,16 +60,11 @@ namespace UI
 
 	void Editor::on_mouse_event(Platform::MouseButton p_button, Platform::Action p_action)
 	{
-		if (p_button == Platform::MouseButton::Right && p_action == Platform::Action::Press)
-		{
-			if (m_input.cursor_captured())
-				m_input.set_cursor_mode(Platform::CursorMode::Normal);
-			else if (!m_input.cursor_over_UI()) // We are editing. If we click on non-UI re-capture mouse
-				m_input.set_cursor_mode(Platform::CursorMode::Captured);
-		}
+		if (p_button == Platform::MouseButton::Right && p_action == Platform::Action::Release)
+			m_windows_to_display.add_entity_popup = true;
+
 		if (m_input.cursor_captured())
 			return;
-
 		if (!m_input.cursor_over_UI())
 		{
 			switch (p_button)
@@ -161,6 +156,17 @@ namespace UI
 					m_window.request_close();
 				break;
 			}
+			case Platform::Key::Space:
+			{
+				if (p_action == Platform::Action::Release)
+				{
+					if (m_input.cursor_captured())
+						m_input.set_cursor_mode(Platform::CursorMode::Normal);
+					else if (!m_input.cursor_over_UI()) // We are editing. If we click on non-UI re-capture mouse
+						m_input.set_cursor_mode(Platform::CursorMode::Captured);
+				}
+				break;
+			}
 			case Platform::Key::F11: m_window.toggle_fullscreen(); break;
 			default: break;
 		}
@@ -223,6 +229,7 @@ namespace UI
 			ImGui::ShowStyleEditor();
 			ImGui::End();
 		}
+		entity_creation_popup();
 
 		{// Manipulators
 			ImGuizmo::SetOrthographic(false);
@@ -383,6 +390,61 @@ namespace UI
 		{// Regardless of the debug window being displayed, we want to display or do certain things related to the options.
 			if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2)
 				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.m_scene, m_debug_GJK_step);
+		}
+	}
+
+	void Editor::entity_creation_popup()
+	{
+		// ImGui API requires that the OpenPopup is called outside of the BeginPopup context.
+		if (m_windows_to_display.add_entity_popup)
+		{// On right click, open the entity creation popup
+			ImGui::OpenPopup("Create entity");
+			m_windows_to_display.add_entity_popup = false;
+		}
+
+		ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y), ImGuiCond_Appearing);
+		if (ImGui::BeginPopup("Create entity"))
+		{
+			if (ImGui::BeginMenu("Add"))
+			{
+				if (ImGui::BeginMenu("Shape"))
+				{
+					if (ImGui::Button("Cube"))
+					{
+						const auto& view_info = m_openGL_renderer.m_view_information;
+						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
+
+						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
+						{
+							m_scene_system.get_current_scene().add_entity(
+							    Component::Label{"Cube"},
+							    Component::RigidBody{},
+							    Component::Transform{intersection.value()},
+							    Component::Mesh{m_mesh_system.m_cube},
+							    Component::Collider{});
+						}
+					}
+					if (ImGui::Button("Light"))
+					{
+						const auto& view_info = m_openGL_renderer.m_view_information;
+						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
+
+						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
+						{
+							m_scene_system.get_current_scene().add_entity(
+							    Component::Label{"Light"},
+							    Component::Transform{intersection.value()},
+							    Component::PointLight{intersection.value()});
+						}
+					}
+
+					ImGui::EndMenu();
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndPopup();
 		}
 	}
 

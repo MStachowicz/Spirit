@@ -37,15 +37,16 @@ namespace UI
 	{
 		struct Windows
 		{
-			bool Entity                  = false;
-			bool FPSTimer                = true;
-			bool Debug                   = false;
-			bool ImGuiDemo               = false;
-			bool ImGuiMetrics            = false;
-			bool ImGuiStack              = false;
-			bool ImGuiAbout              = false;
-			bool ImGuiStyleEditor        = false;
-			bool Console                 = true;
+			bool Entity           = false;
+			bool FPSTimer         = true;
+			bool add_entity_popup = false;
+			bool Debug            = false;
+			bool ImGuiDemo        = false;
+			bool ImGuiMetrics     = false;
+			bool ImGuiStack       = false;
+			bool ImGuiAbout       = false;
+			bool ImGuiStyleEditor = false;
+			bool Console          = true;
 		};
 
 		Platform::Input&         m_input;
@@ -112,6 +113,8 @@ namespace UI
 		void draw_entity_tree_window();
 		void draw_debug_window();
 		void draw_console_window();
+
+		void entity_creation_popup();
 
 		void initialiseStyling();
 	};
