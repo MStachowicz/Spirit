@@ -2,13 +2,10 @@
 
 #include "Geometry/Line.hpp"
 #include "Geometry/LineSegment.hpp"
+#include "Utility/Logger.hpp"
 
 #include "glm/vec3.hpp"
-#include "Utility/Logger.hpp"
 #include <optional>
-
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_UNUSED_PARAMETER // Until all the pairwise tests are implemented, disable the warnings for unused variables.
 
 namespace Geometry
 {
@@ -112,4 +109,3 @@ namespace Geometry
 	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2);
 
 } // namespace Geometry
-DISABLE_WARNING_POP

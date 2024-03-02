@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace GJK

@@ -332,7 +332,7 @@ namespace UI
 						else               ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "The two entities are not intersecting.");
 
 						auto str = std::format("Took {} steps to converge on the result.", step_count);
-						ImGui::Text(str.c_str());
+						ImGui::Text("%s", str.c_str());
 
 						if (*intersecting)
 						{

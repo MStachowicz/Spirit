@@ -3,6 +3,7 @@
 #include "Geometry/AABB.hpp"
 #include "Geometry/Cone.hpp"
 #include "Geometry/Cylinder.hpp"
+#include "Geometry/Sphere.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Intersect.hpp"
 #include "Geometry/Line.hpp"
@@ -308,9 +309,7 @@ namespace Test
 
 				if (intersection.has_value())
 				{SCOPE_SECTION("Contact Info");
-					CHECK_EQUAL(intersection->position, glm::vec3(1.f, 0.f, 0.f), "Position");
-					CHECK_EQUAL(intersection->normal, glm::vec3(-1.f, 0.f, 0.f), "Normal");
-					CHECK_EQUAL(intersection->penetration_depth, 0.f, "Penetration depth");
+					CHECK_EQUAL(*intersection, glm::vec3(1.f, 0.f, 0.f), "Position");
 				}
 			}
 			{SCOPE_SECTION("Sphere 2"); // Swap the spheres around, should get the same result with the normals flipped
@@ -319,9 +318,7 @@ namespace Test
 
 				if (intersection.has_value())
 				{SCOPE_SECTION("Contact Info");
-					CHECK_EQUAL(intersection->position, glm::vec3(1.f, 0.f, 0.f), "Position"); // Same as sphere 1
-					CHECK_EQUAL(intersection->normal, glm::vec3(1.f, 0.f, 0.f), "Normal");     // Opposite of sphere 1
-					CHECK_EQUAL(intersection->penetration_depth, 0.f, "Penetration depth");    // Same as sphere 1
+					CHECK_EQUAL(*intersection, glm::vec3(1.f, 0.f, 0.f), "Position"); // Same as sphere 1
 				}
 			}
 		}
@@ -350,9 +347,7 @@ namespace Test
 
 				if (intersection.has_value())
 				{SCOPE_SECTION("Contact Info");
-					CHECK_EQUAL(intersection->position, glm::vec3(1.25f, 0.f, 0.f), "Position");
-					CHECK_EQUAL(intersection->normal, glm::vec3(-1.f, 0.f, 0.f), "Normal");
-					CHECK_EQUAL(intersection->penetration_depth, 0.5f, "Penetration depth");
+					CHECK_EQUAL(*intersection, glm::vec3(1.25f, 0.f, 0.f), "Position");
 				}
 			}
 			{SCOPE_SECTION("Sphere 2");
@@ -361,9 +356,7 @@ namespace Test
 
 				if (intersection.has_value())
 				{SCOPE_SECTION("Contact Info");
-					CHECK_EQUAL(intersection->position, glm::vec3(0.75f, 0.f, 0.f), "Position"); // Different to sphere 1
-					CHECK_EQUAL(intersection->normal, glm::vec3(1.f, 0.f, 0.f), "Normal");       // Opposite of sphere 1
-					CHECK_EQUAL(intersection->penetration_depth, 0.5f, "Penetration depth");     // Same as sphere 1
+					CHECK_EQUAL(*intersection, glm::vec3(0.75f, 0.f, 0.f), "Position"); // Different to sphere 1
 				}
 			}
 			{SCOPE_SECTION("Sphere overlaps past half way");
@@ -373,9 +366,7 @@ namespace Test
 
 					if (intersection.has_value())
 					{SCOPE_SECTION("Contact Info");
-						CHECK_EQUAL(intersection->position, glm::vec3(1.25f, 0.f, 0.f), "Position");
-						CHECK_EQUAL(intersection->normal, glm::vec3(-1.f, 0.f, 0.f), "Normal");
-						CHECK_EQUAL(intersection->penetration_depth, 2.25f, "Penetration depth");
+						CHECK_EQUAL(*intersection, glm::vec3(1.25f, 0.f, 0.f), "Position");
 					}
 				}
 				{SCOPE_SECTION("Sphere 3");
@@ -384,9 +375,7 @@ namespace Test
 
 					if (intersection.has_value())
 					{SCOPE_SECTION("Contact Info");
-						CHECK_EQUAL(intersection->position, glm::vec3(-1.f, 0.f, 0.f), "Position");
-						CHECK_EQUAL(intersection->normal, glm::vec3(1.f, 0.f, 0.f), "Normal");
-						CHECK_EQUAL(intersection->penetration_depth, 2.25f, "Penetration depth");
+						CHECK_EQUAL(*intersection, glm::vec3(-1.f, 0.f, 0.f), "Position");
 					}
 				}
 			}
@@ -411,9 +400,7 @@ namespace Test
 			CHECK_TRUE(intersection.has_value(), "intersection");
 			if (intersection.has_value())
 			{SCOPE_SECTION("Contact Info");
-				CHECK_EQUAL(intersection->position, glm::vec3(0.f, -1.f, 0.f), "Position"); // Bottom of sphere 1
-				CHECK_EQUAL(intersection->normal, glm::vec3(0.f, 1.f, 0.f), "Normal"); // Resolve normal as 'up'
-				CHECK_EQUAL(intersection->penetration_depth, 2.f, "Penetration depth");
+				CHECK_EQUAL(*intersection, glm::vec3(0.f, -1.f, 0.f), "Position"); // Bottom of sphere 1
 			}
 		}
 	}
