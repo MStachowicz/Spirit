@@ -4,24 +4,24 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Zephyr ----------------------------------------------------------------------------------------------------------------------------------
-project(Zephyr)
-add_executable(Zephyr
+# Spirit ----------------------------------------------------------------------------------------------------------------------------------
+project(Spirit)
+add_executable(Spirit
 source/Application.hpp
 source/Application.cpp
 )
-target_include_directories(Zephyr
+target_include_directories(Spirit
 PRIVATE source
 )
-target_link_libraries(Zephyr
+target_link_libraries(Spirit
 PUBLIC System
 PUBLIC OpenGL
 PUBLIC Platform
 PUBLIC UI
 PUBLIC Utility # Simulation loop runs in the header and uses Logger
 )
-target_compile_options(Zephyr PRIVATE ${WARNING_COMPILE_FLAGS})
-# Zephyr end ------------------------------------------------------------------------------------------------------------------------------
+target_compile_options(Spirit PRIVATE ${WARNING_COMPILE_FLAGS})
+# Spirit end ------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------ Test -----------------------------------------------------------------------------------------------------------
 add_executable(Test
@@ -77,9 +77,9 @@ ELSE() # If we could not determine the compile ID match put warning message up
 ENDIF()
 message (STATUS "Compiling with \"${CMAKE_CXX_COMPILER_ID}\" - Adding compiler flags to non-externals libs: \"${WARNING_COMPILE_FLAGS}\"")
 
-# IF generator is Visual Studio set the startup project to Zephyr -------------------------------------------------------------------------
+# IF generator is Visual Studio set the startup project to Spirit -------------------------------------------------------------------------
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
-	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Zephyr) # Makes Zephyr the startup project in VS .sln
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Spirit) # Makes Spirit the startup project in VS .sln
 endif ()
 #------------------------------------------------------------------------------------------------------------------------------------------
 

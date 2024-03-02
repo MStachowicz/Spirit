@@ -20,7 +20,7 @@ public:
 private:
 	static constexpr bool s_log_to_file    = false;
 	static constexpr bool s_log_to_console = true;
-	static constexpr bool s_log_to_editor  = true; // Warning: the editor depends on core and platform work to be done before it can be constructed, thus lots of log messages will not print until it can be assigned later into Zephyr initialisation.
+	static constexpr bool s_log_to_editor  = true; // Warning: the editor depends on core and platform work to be done before it can be constructed, thus lots of log messages will not print until it can be assigned later into Spirit initialisation.
 	static std::string to_string(const std::source_location& p_location);
 };
 

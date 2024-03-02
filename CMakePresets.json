@@ -59,7 +59,7 @@
 			"displayName": "Release",
 			"configuration": "Release",
 			"verbose": false,
-			"targets": [ "Zephyr", "Test" ]
+			"targets": [ "Spirit", "Test" ]
 		},
 		{
 			"name": "msvc-debug",
@@ -67,7 +67,7 @@
 			"displayName": "Debug",
 			"configuration": "Debug",
 			"verbose": false,
-			"targets": [ "Zephyr", "Test" ]
+			"targets": [ "Spirit", "Test" ]
 		},
 		{
 			"name": "g++-release",
@@ -75,7 +75,7 @@
 			"configurePreset": "GCC",
 			"configuration": "Release",
 			"verbose": false,
-			"targets": [ "Zephyr", "Test" ]
+			"targets": [ "Spirit", "Test" ]
 		},
 		{
 			"name": "g++-debug",
@@ -83,7 +83,7 @@
 			"configurePreset": "GCC",
 			"configuration": "Debug",
 			"verbose": false,
-			"targets": [ "Zephyr", "Test" ]
+			"targets": [ "Spirit", "Test" ]
 		}
 	]
 }

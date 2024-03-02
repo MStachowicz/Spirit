@@ -30,7 +30,7 @@ namespace OpenGL
 }
 namespace UI
 {
-	// Editor is a Debug-build only overlay for Zephyr that provides a UI for interaction using ImGui.
+	// Editor is a Debug-build only overlay for Spirit that provides a UI for interaction using ImGui.
 	// The individual Component clases define their own draw_UI functions which the Editor is in charge of calling.
 	// Editor also handles the rendering of the FPS counter and the Console.
 	class Editor
