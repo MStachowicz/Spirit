@@ -52,13 +52,13 @@ namespace UI
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
 	{
-		m_input.m_mouse_event.subscribe(this, &Editor::on_mouse_event);
-		m_input.m_key_event.subscribe(this,   &Editor::on_key_event);
+		m_input.m_mouse_button_event.subscribe(this, &Editor::on_mouse_button_event);
+		m_input.m_key_event.subscribe(this,          &Editor::on_key_event);
 
 		initialiseStyling();
 	}
 
-	void Editor::on_mouse_event(Platform::MouseButton p_button, Platform::Action p_action)
+	void Editor::on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action)
 	{
 		if (p_button == Platform::MouseButton::Right && p_action == Platform::Action::Release)
 			m_windows_to_display.add_entity_popup = true;

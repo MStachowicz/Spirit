@@ -7,9 +7,10 @@
 namespace Platform
 {
 	enum class Key : uint8_t;
-	enum class MouseButton;
-	enum class Action;
-	enum class CursorMode;
+	enum class MouseButton : uint8_t;
+	enum class Action : uint8_t;
+	enum class CursorMode : uint8_t;
+
 	class Window;
 	class Input;
 }

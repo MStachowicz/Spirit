@@ -20,19 +20,19 @@ namespace Platform
 		Left_Arrow, Right_Arrow, Up_Arrow, Down_Arrow,
 		Unknown
 	};
-	enum class MouseButton
+	enum class MouseButton : uint8_t
 	{
 		Left, Middle, Right,
 		Button_1, Button_2, Button_3, Button_4, Button_5,
 		Unknown
 	};
-	enum class Action
+	enum class Action : uint8_t
 	{
 		Press, Release, Repeat,
 		Unknown
 	};
 
-	enum class CursorMode
+	enum class CursorMode : uint8_t
 	{
 		Normal,   // Cursor is visible and not being captured by the window.
 		Hidden,   // Cursor is hidden when hovering over the window and not being captured by it.
@@ -46,6 +46,7 @@ namespace Platform
 		constexpr static auto Max_Mouse_Index = std::numeric_limits<std::underlying_type_t<MouseButton>>::max();
 
 		std::array<bool, Max_Key_Index> m_keys_pressed;
+		std::array<bool, Max_Mouse_Index> m_mouse_buttons_pressed;
 		glm::vec2 m_cursor_position; // The cursor position relative to the upper left corner of the window.
 		glm::vec2 m_cursor_delta;    // The pixels the mouse cursor moved by since the last Input::update call.
 		CursorMode m_cursor_mode;
@@ -63,20 +64,22 @@ namespace Platform
 
 	public:
 		Utility::EventDispatcher<Key, Action> m_key_event;
-		Utility::EventDispatcher<MouseButton, Action> m_mouse_event;
+		Utility::EventDispatcher<MouseButton, Action> m_mouse_button_event;
+		Utility::EventDispatcher<glm::vec2> m_mouse_move_event;
 
 		Input() noexcept;
 		// Polls for events and updates the state.
 		// Cause the window and input callbacks associated with those events to be called.
 		void update();
 
-		bool is_key_down(const Key& p_key) const;
+		bool is_key_down(Key p_key) const;
+		bool is_mouse_down(MouseButton p_button) const;
 		// Returns the most recent cursor position change (change since the last Input update call).
 		glm::vec2 cursor_delta() const;
 		// Returns the cursor position relative to the upper left corner of the window.
 		glm::vec2 cursor_position() const;
 		// Set the cursor style for the window associated with this Input.
-		void set_cursor_mode(const CursorMode& p_cursor_mode);
+		void set_cursor_mode(CursorMode p_cursor_mode);
 		CursorMode cursor_mode() const { return m_cursor_mode; };
 		bool cursor_captured() const { return m_cursor_mode == CursorMode::Captured && !m_captured_this_frame; }
 

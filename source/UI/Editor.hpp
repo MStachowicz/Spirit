@@ -9,10 +9,10 @@
 
 namespace Platform
 {
-	enum class Key : uint8_t;
-	enum class MouseButton;
-	enum class Action;
-	enum class CursorMode;
+	enum class Key         : uint8_t;
+	enum class MouseButton : uint8_t;
+	enum class Action      : uint8_t;
+	enum class CursorMode  : uint8_t;
 
 	class Window;
 	class Input;
@@ -107,7 +107,7 @@ namespace UI
 		void log_error(const std::string& p_message);
 
 	private:
-		void on_mouse_event(Platform::MouseButton p_button, Platform::Action p_action);
+		void on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action);
 		void on_key_event(Platform::Key p_key, Platform::Action p_action);
 
 		void draw_entity_tree_window();

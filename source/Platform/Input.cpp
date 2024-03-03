@@ -9,13 +9,15 @@ namespace Platform
 {
 	Input::Input() noexcept
 		: m_keys_pressed{false}
+		, m_mouse_buttons_pressed{false}
 		, m_cursor_position{0.f, 0.f} // Initial value set in Window constructor.
 		, m_cursor_delta{0.f, 0.f}
 		, m_cursor_mode{CursorMode::Normal}
 		, m_captured_this_frame{false}
 		, m_handle{nullptr} // Initial value set in Window constructor
 		, m_key_event{}
-		, m_mouse_event{}
+		, m_mouse_button_event{}
+		, m_mouse_move_event{}
 	{}
 
 	void Input::update()
@@ -25,9 +27,13 @@ namespace Platform
 		glfwPollEvents();
 	}
 
-	bool Input::is_key_down(const Key& p_key) const
+	bool Input::is_key_down(Key p_key) const
 	{
 		return m_keys_pressed[static_cast<std::underlying_type_t<Key>>(p_key)];
+	}
+	bool Input::is_mouse_down(MouseButton p_button) const
+	{
+		return m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(p_button)];
 	}
 	glm::vec2 Input::cursor_delta() const
 	{
@@ -38,7 +44,7 @@ namespace Platform
 		return m_cursor_position;
 	}
 
-	void Input::set_cursor_mode(const CursorMode& p_cursor_mode)
+	void Input::set_cursor_mode(CursorMode p_cursor_mode)
 	{
 		m_cursor_mode = p_cursor_mode;
 		switch (m_cursor_mode)
@@ -74,23 +80,26 @@ namespace Platform
 		(void)p_scancode; (void)p_mode; // Unused parameters, required signature for GLFW callbacks, cant be deleted
 
 		if (p_action == GLFW_PRESS)
-		{
 			m_keys_pressed[static_cast<std::underlying_type_t<Key>>(glfw_to_key(p_key))] = true;
-			m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
-		}
 		else if (p_action == GLFW_RELEASE)
-		{
 			m_keys_pressed[static_cast<std::underlying_type_t<Key>>(glfw_to_key(p_key))] = false;
-			m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
-		}
-		else if (p_action == GLFW_REPEAT)
-		{
-			m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
-		}
+		//else if (p_action == GLFW_REPEAT)
+
+		m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
 	}
 	void Input::glfw_mouse_press(int p_button, int p_action, int p_modifiers)
 	{ (void)p_modifiers; // Unused parameter, required signature for GLFW callbacks, cant be deleted
-		m_mouse_event.dispatch(glfw_to_mouse_button(p_button), glfw_to_action(p_action));
+
+		if (p_action == GLFW_PRESS)
+		{
+			m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(glfw_to_mouse_button(p_button))] = true;
+		}
+		else if (p_action == GLFW_RELEASE)
+		{
+			m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(glfw_to_mouse_button(p_button))] = false;
+		}
+
+		m_mouse_button_event.dispatch(glfw_to_mouse_button(p_button), glfw_to_action(p_action));
 	}
 	void Input::glfw_mouse_move(double p_cursor_new_x_pos, double p_cursor_new_y_pos)
 	{
@@ -101,6 +110,8 @@ namespace Platform
 		m_cursor_position = {static_cast<float>(p_cursor_new_x_pos), static_cast<float>(p_cursor_new_y_pos)};
 		// reversed y-coordinates to stay relative to top-left
 		m_cursor_delta = {m_cursor_position.x - old_cursor_pos.x, old_cursor_pos.y - m_cursor_position.y};
+
+		m_mouse_move_event.dispatch(glm::vec2{m_cursor_delta});
 	}
 
 	constexpr Key Input::glfw_to_key(int p_glfw_key)
