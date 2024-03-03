@@ -28,7 +28,7 @@ namespace System
 		m_update_count++;
 		m_total_simulation_time += p_delta_time;
 
-		auto& scene = m_scene_system.get_current_scene();
+		auto& scene = m_scene_system.get_current_scene_entities();
 		scene.foreach([this, &p_delta_time, &scene](ECS::Entity& entity, Component::RigidBody& rigid_body, Component::Transform& transform)
 		{
 			if (rigid_body.m_apply_gravity)
@@ -140,8 +140,8 @@ namespace System
 					// The collision data returned is original-Entity-centric this convention is carried over in the response here when calling angular_impulse.
 					if (scene.has_components<Component::RigidBody>(collided_entity))
 					{
-						auto& rigid_body_2 = m_scene_system.get_current_scene().get_component<Component::RigidBody>(collided_entity);
-						auto& transform_2  = m_scene_system.get_current_scene().get_component<Component::Transform>(collided_entity);
+						auto& rigid_body_2 = m_scene_system.get_current_scene_entities().get_component<Component::RigidBody>(collided_entity);
+						auto& transform_2  = m_scene_system.get_current_scene_entities().get_component<Component::Transform>(collided_entity);
 
 						auto impulse = Geometry::angular_impulse(collision->position, collision->normal, m_restitution,
 																transform.m_position, rigid_body.m_velocity, rigid_body.m_angular_velocity, rigid_body.m_mass, rigid_body.m_inertia_tensor,

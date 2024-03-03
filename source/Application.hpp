@@ -121,11 +121,12 @@ private:
 				duration_since_last_physics_tick -= physicsTimestep;
 				physics_time                     += physicsTimestep;
 				m_physics_system.integrate(physicsTimestep); // PhysicsSystem::Integrate takes a floating point rep duration, conversion here is troublesome.
-				m_scene_system.update_scene_bounds();
 			}
 
 			if (duration_since_last_render_tick >= renderTimestep)
 			{
+				m_scene_system.get_current_scene().update(m_window.aspect_ratio(), nullptr);
+
 				// Rendering is only relevant if the data changed in the physics update.
 				// Not neccessary to decrement duration_since_last_render_tick as in physics update above as repeated draws will be identical with no data changes.
 				m_window.start_ImGui_frame();

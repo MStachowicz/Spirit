@@ -139,6 +139,14 @@ namespace Component
 
 		return Geometry::Frustrum(projection(p_aspect_ratio) * view);
 	}
+	ViewInformation Camera::view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const
+	{
+		ViewInformation view_info;
+		view_info.m_view_position = p_eye_position;
+		view_info.m_view          = view(p_eye_position);
+		view_info.m_projection    = projection(p_aspect_ratio);
+		return view_info;
+	}
 	glm::mat4 Camera::projection(const float p_aspect_ratio) const
 	{
 		return glm::perspective(glm::radians(m_FOV), p_aspect_ratio, m_near, m_far);

@@ -73,7 +73,7 @@ namespace UI
 				{
 					if (p_action == Platform::Action::Press)
 					{
-						const auto& view_info = m_openGL_renderer.m_view_information;
+						const auto& view_info = m_scene_system.get_current_scene_view_info();
 						auto cursor_ray = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						auto entities_under_mouse = m_collision_system.get_entities_along_ray(cursor_ray);
 
@@ -242,14 +242,14 @@ namespace UI
 			{
 				// Find the first selected entity from the back of m_selected_entities that has a transform component
 				auto it = std::find_if(m_selected_entities.rbegin(), m_selected_entities.rend(), [&](const auto& p_entity)
-				             { return m_scene_system.get_current_scene().has_components<Component::Transform>(p_entity); });
+					{ return m_scene_system.get_current_scene_entities().has_components<Component::Transform>(p_entity); });
 
 				if (it != m_selected_entities.rend())
 				{
-					auto& transform = m_scene_system.get_current_scene().get_component<Component::Transform>(*it);
+					auto& transform = m_scene_system.get_current_scene_entities().get_component<Component::Transform>(*it);
 					ImGuizmo::Manipulate(
-						glm::value_ptr(m_openGL_renderer.m_view_information.m_view),
-						glm::value_ptr(m_openGL_renderer.m_view_information.m_projection),
+						glm::value_ptr(m_scene_system.get_current_scene_view_info().m_view),
+						glm::value_ptr(m_scene_system.get_current_scene_view_info().m_projection),
 						ImGuizmo::OPERATION::UNIVERSAL,
 						ImGuizmo::LOCAL,
 						glm::value_ptr(transform.m_model));
@@ -266,7 +266,7 @@ namespace UI
 	{
 		if (ImGui::Begin("Entities", &m_windows_to_display.Entity))
 		{
-			auto& scene = m_scene_system.get_current_scene();
+			auto& scene = m_scene_system.get_current_scene_entities();
 			scene.foreach([&](ECS::Entity& p_entity)
 			{
 				std::string title = "Entity " + std::to_string(p_entity.ID);
@@ -327,7 +327,7 @@ namespace UI
 					ImGui::Text("Window size", m_window.size());
 					ImGui::Text("Aspect ratio", m_window.aspect_ratio());
 					bool VSync = m_window.get_VSync();
-					ImGui::Text("View Position", m_openGL_renderer.m_view_information.m_view_position);
+					ImGui::Text("View Position", m_scene_system.get_current_scene_view_info().m_view_position);
 					ImGui::Separator();
 					ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
 					ImGui::Checkbox("Visualise normals", &debug_options.m_show_mesh_normals);
@@ -389,7 +389,7 @@ namespace UI
 
 		{// Regardless of the debug window being displayed, we want to display or do certain things related to the options.
 			if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2)
-				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.m_scene, m_debug_GJK_step);
+				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.get_current_scene(), m_debug_GJK_step);
 		}
 	}
 
@@ -411,13 +411,13 @@ namespace UI
 				{
 					if (ImGui::Button("Cube"))
 					{
-						const auto& view_info = m_openGL_renderer.m_view_information;
+						const auto& view_info = m_scene_system.get_current_scene_view_info();
 						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
 
 						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
 						{
-							m_scene_system.get_current_scene().add_entity(
+							m_scene_system.get_current_scene_entities().add_entity(
 							    Component::Label{"Cube"},
 							    Component::RigidBody{},
 							    Component::Transform{intersection.value()},
@@ -427,13 +427,13 @@ namespace UI
 					}
 					if (ImGui::Button("Light"))
 					{
-						const auto& view_info = m_openGL_renderer.m_view_information;
+						const auto& view_info = m_scene_system.get_current_scene_view_info();
 						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
 
 						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
 						{
-							m_scene_system.get_current_scene().add_entity(
+							m_scene_system.get_current_scene_entities().add_entity(
 							    Component::Label{"Light"},
 							    Component::Transform{intersection.value()},
 							    Component::PointLight{intersection.value()});

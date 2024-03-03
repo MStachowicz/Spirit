@@ -79,7 +79,7 @@ namespace OpenGL
 			dc.submit(m_debug_shader.value(), tri_mesh);
 		}
 
-		auto& scene = p_scene.get_current_scene();
+		auto& scene = p_scene.get_current_scene_entities();
 		auto& opt = m_debug_options;
 
 		if (opt.m_show_bounding_box)

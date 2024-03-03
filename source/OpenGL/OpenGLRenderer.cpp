@@ -48,7 +48,6 @@ namespace OpenGL
 		, m_missing_texture{p_texture_system.m_texture_manager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
 		, m_blank_texture{p_texture_system.m_texture_manager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
 		, m_screen_quad{make_screen_quad_mesh()}
-		, m_view_information{}
 		, m_post_processing_options{}
 	{
 		const auto windowSize = m_window.size();
@@ -61,23 +60,13 @@ namespace OpenGL
 	void OpenGLRenderer::start_frame()
 	{
 		{ // Set global shader uniforms.
-			m_scene_system.get_current_scene().foreach([this](Component::Camera& p_camera, Component::Transform& p_transform)
-			{
-				if (p_camera.m_primary)
-				{
-					m_view_information.m_view_position = p_transform.m_position;
-					m_view_information.m_view         = p_camera.view(p_transform.m_position);// glm::lookAt(p_transform.m_position, p_transform.m_position + p_transform.m_direction, camera_up);
-					m_view_information.m_projection   = glm::perspective(glm::radians(p_camera.m_FOV), m_window.aspect_ratio(), p_camera.m_near, p_camera.m_far);
-
-					Shader::set_block_uniform("ViewProperties.view", m_view_information.m_view);
-					Shader::set_block_uniform("ViewProperties.projection", m_view_information.m_projection);
-				}
-			});
+			Shader::set_block_uniform("ViewProperties.view", m_scene_system.get_current_scene_view_info().m_view);
+			Shader::set_block_uniform("ViewProperties.projection", m_scene_system.get_current_scene_view_info().m_projection);
 		}
 
 		FBO::unbind();
 
-		m_shadow_mapper.shadow_pass(m_scene_system.m_scene);
+		m_shadow_mapper.shadow_pass(m_scene_system.get_current_scene());
 
 		{ // Prepare m_screen_framebuffer for rendering
 			const auto window_size = m_window.size();
@@ -91,21 +80,21 @@ namespace OpenGL
 
 	void OpenGLRenderer::draw(const DeltaTime& delta_time)
 	{
-		m_phong_renderer.update_light_data(m_scene_system.m_scene, m_shadow_mapper.get_depth_map());
-		auto& scene = m_scene_system.get_current_scene();
+		m_phong_renderer.update_light_data(m_scene_system.get_current_scene(), m_shadow_mapper.get_depth_map());
 
-		scene.foreach([&](ECS::Entity& p_entity, Component::Transform& p_transform, Component::Mesh& mesh_comp)
+		auto& entities = m_scene_system.get_current_scene_entities();
+		entities.foreach([&](ECS::Entity& p_entity, Component::Transform& p_transform, Component::Mesh& mesh_comp)
 		{
 			if (mesh_comp.m_mesh)
 			{
-				if (scene.has_components<Component::Texture>(p_entity))
+				if (entities.has_components<Component::Texture>(p_entity))
 				{
-					auto& texComponent = scene.get_component<Component::Texture>(p_entity);
+					auto& texComponent = entities.get_component<Component::Texture>(p_entity);
 
 					if (texComponent.m_diffuse.has_value())
 					{
 						DrawCall dc;
-						dc.set_uniform("view_position", m_view_information.m_view_position);
+						dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
 						dc.set_uniform("model", p_transform.m_model);
 						dc.set_uniform("shininess", texComponent.m_shininess);
 						dc.set_texture("diffuse",  texComponent.m_diffuse);
@@ -115,7 +104,7 @@ namespace OpenGL
 					else // Has a Mesh and Texture but no diffuse texture. Use the colour instead.
 					{
 						DrawCall dc;
-						dc.set_uniform("view_position", m_view_information.m_view_position);
+						dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
 						dc.set_uniform("model", p_transform.m_model);
 						dc.set_uniform("shininess", texComponent.m_shininess);
 
@@ -140,10 +129,10 @@ namespace OpenGL
 		});
 
 		{// Draw terrain
-			scene.foreach([&](Component::Terrain& p_terrain)
+			entities.foreach([&](Component::Terrain& p_terrain)
 			{
 				DrawCall dc;
-				dc.set_uniform("view_position", m_view_information.m_view_position);
+				dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
 				dc.set_uniform("model", glm::translate(glm::identity<glm::mat4>(), p_terrain.m_position));
 				dc.set_uniform("shininess", 64.f);
 				dc.set_texture("diffuse", p_terrain.m_texture.has_value() ? p_terrain.m_texture : m_missing_texture);
@@ -152,7 +141,7 @@ namespace OpenGL
 			});
 		}
 
-		m_particle_renderer.update(delta_time, m_scene_system.m_scene, m_view_information.m_view_position);
+		m_particle_renderer.update(delta_time, m_scene_system.get_current_scene(), m_scene_system.get_current_scene_view_info().m_view_position);
 	}
 
 	void OpenGLRenderer::end_frame()

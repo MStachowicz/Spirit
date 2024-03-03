@@ -123,6 +123,7 @@ source/Component/Texture.hpp
 source/Component/Transform.cpp
 source/Component/Transform.hpp
 source/Component/Vertex.hpp
+source/Component/ViewInformation.hpp
 )
 target_include_directories(Component
 PRIVATE source/Component

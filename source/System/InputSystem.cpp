@@ -28,9 +28,9 @@ namespace System
 
 		if (!m_input.keyboard_captured_by_UI())
 		{
-			m_scene_system.get_current_scene().foreach([&](ECS::Entity& p_entity, Component::Input& p_input)
+			m_scene_system.get_current_scene_entities().foreach([&](ECS::Entity& p_entity, Component::Input& p_input)
 			{
-				p_input.m_function(p_delta_time, p_entity, m_scene_system.get_current_scene(), m_input);
+				p_input.m_function(p_delta_time, p_entity, m_scene_system.get_current_scene_entities(), m_input);
 			});
 		}
 	}

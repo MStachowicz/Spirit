@@ -33,39 +33,45 @@ namespace System
 		//constructBouncingBallScene();
 	}
 
-	Component::Camera* Scene::get_primary_camera()
+	void Scene::update(float aspect_ratio, Component::ViewInformation* view_info_override /*= nullptr*/)
 	{
-		Component::Camera* primary_camera = nullptr;
+		{// Update scene bounds
+			m_bound.m_min = glm::vec3(0.f);
+			m_bound.m_max = glm::vec3(0.f);
 
-		m_entities.foreach([&primary_camera](Component::Camera& pCamera)
-		{
-			if (pCamera.m_primary)
+			m_entities.foreach([&](ECS::Entity p_entity, Component::Transform& p_transform, Component::Mesh& p_mesh)
 			{
-				primary_camera = &pCamera;
-				return;
-			}
-		});
-		return primary_camera;
-	}
-
-	void SceneSystem::update_scene_bounds()
-	{
-		m_scene.m_bound.m_min = glm::vec3(0.f);
-		m_scene.m_bound.m_max = glm::vec3(0.f);
-
-		get_current_scene().foreach([&scene = m_scene.m_entities, &scene_bounds = m_scene.m_bound](ECS::Entity p_entity, Component::Transform& p_transform, Component::Mesh& p_mesh)
-		{
-			if (scene.has_components<Component::Collider>(p_entity))
+				if (m_entities.has_components<Component::Collider>(p_entity))
+				{
+					auto& collider = m_entities.get_component<Component::Collider>(p_entity);
+					m_bound.unite(collider.m_world_AABB);
+				}
+				else
+				{
+					const auto world_AABB = Geometry::AABB::transform(p_mesh.m_mesh->AABB, p_transform.m_position, glm::mat4_cast(p_transform.m_orientation), p_transform.m_scale);
+					m_bound.unite(world_AABB);
+				}
+			});
+		}
+		{// Update the view information
+			if (view_info_override)
 			{
-				auto& collider = scene.get_component<Component::Collider>(p_entity);
-				scene_bounds.unite(collider.m_world_AABB);
+				m_view_information = *view_info_override;
 			}
 			else
 			{
-				const auto world_AABB = Geometry::AABB::transform(p_mesh.m_mesh->AABB, p_transform.m_position, glm::mat4_cast(p_transform.m_orientation), p_transform.m_scale);
-				scene_bounds.unite(world_AABB);
+				m_entities.foreach([&](Component::Camera& p_camera, Component::Transform& p_transform)
+				{
+					if (p_camera.m_primary)
+					{
+						m_view_information.m_view_position = p_transform.m_position;
+						m_view_information.m_view          = p_camera.view(p_transform.m_position);// glm::lookAt(p_transform.m_position, p_transform.m_position + p_transform.m_direction, camera_up);
+						m_view_information.m_projection    = glm::perspective(glm::radians(p_camera.m_FOV), aspect_ratio, p_camera.m_near, p_camera.m_far);
+						return;
+					}
+				});
 			}
-		});
+		}
 	}
 
 	void SceneSystem::add_default_camera()
@@ -79,8 +85,7 @@ namespace System
 			camera_transform,
 			camera,
 			Component::Label("Camera"),
-			Component::RigidBody(),
-			Component::Input(Component::Input::Camera_Move_Look));
+			Component::RigidBody());
 	}
 
 	// Lines up all the available primitive meshes along the x axis with the camera facing them.

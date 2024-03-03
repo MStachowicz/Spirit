@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Component/Transform.hpp"
+#include "Component/ViewInformation.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Utility/Config.hpp"
 
@@ -62,6 +63,12 @@ namespace Component
 		// Get the view transformation matrix taking vertices from world-space to view-space.
 		//@param p_eye_position Position of the camera.
 		glm::mat4 view(const glm::vec3& p_eye_position) const;
+		// Get the ViewInformation representing the state of the camera.
+		//@param p_eye_position Position of the camera.
+		//@param p_aspect_ratio Aspect ratio of the parent window (width / height).
+		//@return ViewInformation representing the state of the camera.
+		ViewInformation view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const;
+
 		//@param p_aspect_ratio Aspect ratio of the parent window (width / height).
 		//@return The projection matrix. Used to transform points into clip-space.
 		glm::mat4 projection(const float p_aspect_ratio) const;

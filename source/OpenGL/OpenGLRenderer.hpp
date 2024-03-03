@@ -37,12 +37,6 @@ namespace OpenGL
 			bool mEdgeDetection = false;
 			float mKernelOffset = 1.0f / 300.0f;
 		};
-		struct ViewInformation
-		{
-			glm::mat4 m_view          = {glm::identity<glm::mat4>()};
-			glm::vec3 m_view_position = {glm::vec3{0.f}};
-			glm::mat4 m_projection    = {glm::identity<glm::mat4>()};
-		};
 
 		Platform::Window& m_window;
 		FBO m_screen_framebuffer;
@@ -63,7 +57,6 @@ namespace OpenGL
 		Data::Mesh m_screen_quad;
 
 	public:
-		ViewInformation m_view_information;
 		PostProcessingOptions m_post_processing_options;
 
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.

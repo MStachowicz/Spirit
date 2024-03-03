@@ -18,7 +18,7 @@ namespace System
 
 	std::optional<ContactPoint> CollisionSystem::get_collision(const ECS::Entity& p_entity, const ECS::Entity* p_collided_entity) const
 	{
-		auto& scene = m_scene_system.get_current_scene();
+		auto& scene = m_scene_system.get_current_scene_entities();
 		if (scene.has_components<Component::Collider, Component::Mesh, Component::Transform>(p_entity))
 		{
 			auto& collider  = scene.get_component<Component::Collider>(p_entity);
@@ -53,7 +53,7 @@ namespace System
 	{
 		std::optional<float> min_intersection_along_ray;
 
-		m_scene_system.get_current_scene().foreach([&](Component::Collider& p_collider)
+		m_scene_system.get_current_scene_entities().foreach([&](Component::Collider& p_collider)
 		{
 			float length_along_ray = 0.f;
 			if (auto intersection = Geometry::get_intersection(p_collider.m_world_AABB, p_ray, &length_along_ray))
@@ -75,7 +75,7 @@ namespace System
 	{
 		std::vector<std::pair<ECS::Entity, float>> entities_and_distance;
 
-		m_scene_system.get_current_scene().foreach([&](ECS::Entity& p_entity, Component::Collider& p_collider)
+		m_scene_system.get_current_scene_entities().foreach([&](ECS::Entity& p_entity, Component::Collider& p_collider)
 		{
 			float length_along_ray = 0.f;
 			if (auto intersection = Geometry::get_intersection(p_collider.m_world_AABB, p_ray, &length_along_ray))
