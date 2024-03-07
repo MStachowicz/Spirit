@@ -58,6 +58,8 @@ namespace Platform
 		void glfw_key_press(int p_key, int p_scancode, int p_action, int p_mode);
 		void glfw_mouse_press(int p_button, int p_action, int p_modifiers);
 		void glfw_mouse_move(double p_cursor_new_x_pos, double p_cursor_new_y_pos);
+		void glfw_mouse_scroll(double p_x_offset, double p_y_offset);
+
 		static constexpr Key glfw_to_key(int p_glfw_key);
 		static constexpr MouseButton glfw_to_mouse_button(int p_glfw_mouse_button);
 		static constexpr Action glfw_to_action(int p_glfw_action);
@@ -66,6 +68,7 @@ namespace Platform
 		Utility::EventDispatcher<Key, Action> m_key_event;
 		Utility::EventDispatcher<MouseButton, Action> m_mouse_button_event;
 		Utility::EventDispatcher<glm::vec2> m_mouse_move_event;
+		Utility::EventDispatcher<glm::vec2> m_mouse_scroll_event;
 
 		Input() noexcept;
 		// Polls for events and updates the state.

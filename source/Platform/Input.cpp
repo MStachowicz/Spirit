@@ -18,6 +18,7 @@ namespace Platform
 		, m_key_event{}
 		, m_mouse_button_event{}
 		, m_mouse_move_event{}
+		, m_mouse_scroll_event{}
 	{}
 
 	void Input::update()
@@ -113,7 +114,10 @@ namespace Platform
 
 		m_mouse_move_event.dispatch(glm::vec2{m_cursor_delta});
 	}
-
+	void Input::glfw_mouse_scroll(double p_x_offset, double p_y_offset)
+	{
+		m_mouse_scroll_event.dispatch(glm::vec2{static_cast<float>(p_x_offset), static_cast<float>(p_y_offset)});
+	}
 	constexpr Key Input::glfw_to_key(int p_glfw_key)
 	{
 		switch (p_glfw_key)

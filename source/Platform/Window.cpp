@@ -55,6 +55,7 @@ namespace Platform
 				glfwSetKeyCallback(m_handle,         [](GLFWwindow* p_handle, int p_key, int p_scancode, int p_action, int p_mode){((Window*)glfwGetWindowUserPointer(p_handle))->m_input.glfw_key_press(p_key, p_scancode, p_action, p_mode);});
 				glfwSetMouseButtonCallback(m_handle, [](GLFWwindow* p_handle, int p_button, int p_action, int p_modifiers){((Window*)glfwGetWindowUserPointer(p_handle))->m_input.glfw_mouse_press(p_button, p_action, p_modifiers);});
 				glfwSetCursorPosCallback(m_handle,   [](GLFWwindow* p_handle, double p_mouse_new_x_position, double p_mouse_new_y_position){((Window*)glfwGetWindowUserPointer(p_handle))->m_input.glfw_mouse_move(p_mouse_new_x_position, p_mouse_new_y_position);});
+				glfwSetScrollCallback(m_handle,      [](GLFWwindow* p_handle, double p_x_offset, double p_y_offset){((Window*)glfwGetWindowUserPointer(p_handle))->m_input.glfw_mouse_scroll(p_x_offset, p_y_offset);});
 
 				// Because Input is constructed before we have access to the Window, its necessary to set the defaults from Input here after glfwCreateWindow.
 				double x, y;
