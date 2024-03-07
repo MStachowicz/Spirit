@@ -85,7 +85,8 @@ namespace System
 			camera_transform,
 			camera,
 			Component::Label("Camera"),
-			Component::RigidBody());
+			Component::RigidBody(),
+			Component::Input(Component::Input::Camera_Move_Look));
 	}
 
 	// Lines up all the available primitive meshes along the x axis with the camera facing them.

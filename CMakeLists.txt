@@ -122,6 +122,8 @@ source/Component/Texture.cpp
 source/Component/Texture.hpp
 source/Component/Transform.cpp
 source/Component/Transform.hpp
+source/Component/TwoAxisCamera.cpp
+source/Component/TwoAxisCamera.hpp
 source/Component/Vertex.hpp
 source/Component/ViewInformation.hpp
 )

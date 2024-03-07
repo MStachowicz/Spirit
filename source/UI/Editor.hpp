@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UI/Console.hpp"
+#include "Component/TwoAxisCamera.hpp"
 #include "ECS/Storage.hpp"
 
 #include <chrono>
@@ -35,6 +36,12 @@ namespace UI
 	// Editor also handles the rendering of the FPS counter and the Console.
 	class Editor
 	{
+		enum class State
+		{
+			Editing, // The editor is active and the user is interacting with the scene.
+			Playing  // The editor is inactive and the scene is running.
+		};
+
 		struct Windows
 		{
 			bool Entity           = false;
@@ -57,6 +64,9 @@ namespace UI
 		System::CollisionSystem& m_collision_system;
 		OpenGL::OpenGLRenderer&  m_openGL_renderer;
 
+		State m_state;                          // The current state of the editor.
+		Component::TwoAxisCamera m_camera;      // Camera used when m_state is Editing.
+		Component::ViewInformation m_view_info; // View information for m_camera required to provide persistant memory.
 		std::vector<ECS::Entity> m_selected_entities;
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed
@@ -101,14 +111,20 @@ namespace UI
 		Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system, System::SceneSystem& p_scene_system, System::CollisionSystem& p_collision_system, OpenGL::OpenGLRenderer& p_openGL_renderer);
 
 		void draw(const DeltaTime& p_duration_since_last_draw);
+		//@return ViewInformation representing the state of the camera if editor is active, otherwise nullptr.
+		Component::ViewInformation* get_editor_view_info();
 
 		void log(const std::string& p_message);
 		void log_warning(const std::string& p_message);
 		void log_error(const std::string& p_message);
 
 	private:
+		void on_mouse_move_event(const glm::vec2 p_mouse_delta);
+		void on_mouse_scroll_event(const glm::vec2 p_mouse_scroll);
 		void on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action);
 		void on_key_event(Platform::Key p_key, Platform::Action p_action);
+
+		void set_state(State p_new_state);
 
 		void draw_entity_tree_window();
 		void draw_debug_window();

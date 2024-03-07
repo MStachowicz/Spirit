@@ -41,6 +41,9 @@ namespace UI
 		, m_scene_system{p_scene_system}
 		, m_collision_system{p_collision_system}
 		, m_openGL_renderer{p_openGL_renderer}
+		, m_state{State::Editing}
+		, m_camera{}
+		, m_view_info{m_camera.get_view_information(m_window.aspect_ratio())}
 		, m_selected_entities{}
 		, m_console{}
 		, m_windows_to_display{}
@@ -54,6 +57,8 @@ namespace UI
 	{
 		m_input.m_mouse_button_event.subscribe(this, &Editor::on_mouse_button_event);
 		m_input.m_key_event.subscribe(this,          &Editor::on_key_event);
+		m_input.m_mouse_move_event.subscribe(this,   &Editor::on_mouse_move_event);
+		m_input.m_mouse_scroll_event.subscribe(this, &Editor::on_mouse_scroll_event);
 
 		initialiseStyling();
 	}
@@ -108,6 +113,23 @@ namespace UI
 			}
 		}
 	}
+
+	void Editor::on_mouse_move_event(const glm::vec2 p_mouse_delta)
+	{
+		if (m_state == State::Editing && m_input.is_mouse_down(Platform::MouseButton::Right))
+		{
+			m_camera.mouse_look(p_mouse_delta);
+			m_view_info = m_camera.get_view_information(m_window.aspect_ratio());
+		}
+	}
+	void Editor::on_mouse_scroll_event(const glm::vec2 p_mouse_scroll)
+	{
+		if (m_state == State::Editing)
+		{
+			m_camera.mouse_scroll(p_mouse_scroll.y);
+			m_view_info = m_camera.get_view_information(m_window.aspect_ratio());
+		}
+	}
 	void Editor::on_key_event(Platform::Key p_key, Platform::Action p_action)
 	{
 		switch (p_key)
@@ -158,18 +180,38 @@ namespace UI
 			}
 			case Platform::Key::Space:
 			{
+				// Toggle playing and editing mode
 				if (p_action == Platform::Action::Release)
-				{
-					if (m_input.cursor_captured())
-						m_input.set_cursor_mode(Platform::CursorMode::Normal);
-					else if (!m_input.cursor_over_UI()) // We are editing. If we click on non-UI re-capture mouse
-						m_input.set_cursor_mode(Platform::CursorMode::Captured);
-				}
+					set_state(m_state == State::Editing ? State::Playing : State::Editing);
+
 				break;
 			}
 			case Platform::Key::F11: m_window.toggle_fullscreen(); break;
 			default: break;
 		}
+	}
+
+	void Editor::set_state(State p_new_state)
+	{
+		if (m_state == p_new_state)
+			return;
+
+		if (p_new_state == State::Editing)
+			m_input.set_cursor_mode(Platform::CursorMode::Normal);
+		else
+			m_input.set_cursor_mode(Platform::CursorMode::Captured);
+
+		m_state = p_new_state;
+	}
+	Component::ViewInformation* Editor::get_editor_view_info()
+	{
+		if (m_state == State::Editing)
+		{
+			m_view_info = m_camera.get_view_information(m_window.aspect_ratio());
+			return &m_view_info;
+		}
+		else
+			return nullptr;
 	}
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
@@ -230,6 +272,9 @@ namespace UI
 			ImGui::End();
 		}
 		entity_creation_popup();
+
+		if (m_state == State::Editing)
+			m_camera.draw_UI();
 
 		{// Manipulators
 			ImGuizmo::SetOrthographic(false);

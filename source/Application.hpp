@@ -125,7 +125,7 @@ private:
 
 			if (duration_since_last_render_tick >= renderTimestep)
 			{
-				m_scene_system.get_current_scene().update(m_window.aspect_ratio(), nullptr);
+				m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
 
 				// Rendering is only relevant if the data changed in the physics update.
 				// Not neccessary to decrement duration_since_last_render_tick as in physics update above as repeated draws will be identical with no data changes.
