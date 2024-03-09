@@ -2,7 +2,7 @@
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
 
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/Collider.hpp"
 #include "Component/Input.hpp"
 #include "Component/Label.hpp"
@@ -60,7 +60,7 @@ namespace System
 			}
 			else
 			{
-				m_entities.foreach([&](Component::Camera& p_camera, Component::Transform& p_transform)
+				m_entities.foreach([&](Component::FirstPersonCamera& p_camera, Component::Transform& p_transform)
 				{
 					if (p_camera.m_primary)
 					{
@@ -78,7 +78,7 @@ namespace System
 	{
 		Component::Transform camera_transform;
 		camera_transform.m_position = {0.f, 7.f, 12.5f};
-		auto camera = Component::Camera(glm::vec3(0.f, -0.5f, 0.5f), true);
+		auto camera = Component::FirstPersonCamera(glm::vec3(0.f, -0.5f, 0.5f), true);
 		camera.look_at(glm::vec3(0.f), camera_transform.m_position);
 
 		m_scene.m_entities.add_entity(

@@ -1,5 +1,5 @@
 #include "Component/Input.hpp"
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/RigidBody.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
@@ -11,9 +11,9 @@ namespace Component
 {
 	InputFunction Input::Camera_Move_Look = [](const DeltaTime& p_delta_time, const ECS::Entity& p_entity, ECS::Storage& p_storage, Platform::Input& p_input)
 	{
-		if (p_storage.has_components<Component::Camera>(p_entity))
+		if (p_storage.has_components<Component::FirstPersonCamera>(p_entity))
 		{
-			auto& p_camera = p_storage.get_component<Component::Camera>(p_entity);
+			auto& p_camera = p_storage.get_component<Component::FirstPersonCamera>(p_entity);
 			if (p_camera.m_primary)
 			{
 				const auto mouse_offset = p_input.cursor_delta();

@@ -1,7 +1,7 @@
 #include "InputSystem.hpp"
 #include "SceneSystem.hpp"
 
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/Input.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"

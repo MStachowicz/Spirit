@@ -13,9 +13,9 @@ namespace Component
 
 	// Free moving FPS camera. Functions using Pitch and Yaw to determine the View transformation.
 	// Depends on an external source for its position e.g. Component::Transform::m_position.
-	class Camera
+	class FirstPersonCamera
 	{
-		static inline const auto Starting_Direction = glm::vec3(0.0f, 0.0f, -1.0f); // Forward direction when Camera::Pitch and Camera::Yaw are equal to 0.
+		static inline const auto Starting_Direction = glm::vec3(0.0f, 0.0f, -1.0f); // Forward direction when  Pitch and Yaw are equal to 0.
 		static inline const auto Pitch_Limit        = glm::radians(89.f);
 		static inline const auto Yaw_constraint     = glm::radians(180.f);
 
@@ -39,10 +39,10 @@ namespace Component
 		// If multiple Cameras are primary, the first one encountered is used.
 		bool m_primary;
 
-		// Construct a camera facing p_view_direction. By default camera faces {0,0,-1}.
+		// Construct a FirstPersonCamera facing p_view_direction. By default camera faces {0,0,-1}.
 		//@param p_view_direction Direction the Camera will be facing after construction.
-		//@param p_make_primary Make the Camera primary making rendering use it for View transformation.
-		Camera(const glm::vec3& p_view_direction = Starting_Direction, bool p_make_primary = false);
+		//@param p_make_primary Make the camera primary making rendering use it for View transformation.
+		FirstPersonCamera(const glm::vec3& p_view_direction = Starting_Direction, bool p_make_primary = false);
 
 		// Process mouse scrollwheel p_offset applying a zoom on the camera.
 		void scroll(float p_offset);

@@ -2,7 +2,7 @@
 #include "Visualisers.hpp"
 
 #include "ECS/Storage.hpp"
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/Collider.hpp"
 #include "Component/Label.hpp"
 #include "Component/Lights.hpp"
@@ -335,8 +335,8 @@ namespace UI
 						scene.get_component<Component::SpotLight&>(p_entity).draw_UI();
 					if (scene.has_components<Component::PointLight>(p_entity))
 						scene.get_component<Component::PointLight&>(p_entity).draw_UI();
-					if (scene.has_components<Component::Camera>(p_entity))
-						scene.get_component<Component::Camera>(p_entity).draw_UI();
+					if (scene.has_components<Component::FirstPersonCamera>(p_entity))
+						scene.get_component<Component::FirstPersonCamera>(p_entity).draw_UI();
 					if (scene.has_components<Component::ParticleEmitter>(p_entity))
 						scene.get_component<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
 					if (scene.has_components<Component::Terrain>(p_entity))

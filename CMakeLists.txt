@@ -101,8 +101,8 @@ target_compile_options(ECS PRIVATE ${WARNING_COMPILE_FLAGS})
 
 # Component -------------------------------------------------------------------------------------------------------------------------------
 add_library(Component
-source/Component/Camera.cpp
-source/Component/Camera.hpp
+source/Component/FirstPersonCamera.cpp
+source/Component/FirstPersonCamera.hpp
 source/Component/Collider.cpp
 source/Component/Collider.hpp
 source/Component/Input.cpp

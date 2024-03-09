@@ -2,7 +2,7 @@
 #include "CollisionSystem.hpp"
 #include "SceneSystem.hpp"
 
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/Collider.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/RigidBody.hpp"

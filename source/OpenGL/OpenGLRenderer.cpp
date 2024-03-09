@@ -6,7 +6,7 @@
 #include "Component/Lights.hpp"
 #include "Component/Texture.hpp"
 #include "Component/Collider.hpp"
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/Transform.hpp"
 #include "Component/Terrain.hpp"

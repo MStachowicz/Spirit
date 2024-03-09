@@ -1,11 +1,11 @@
-#include "Camera.hpp"
+#include "FirstPersonCamera.hpp"
 #include "RigidBody.hpp"
 
 #include "imgui.h"
 
 namespace Component
 {
-	glm::vec2 Camera::get_pitch_yaw(const glm::vec3& p_direction)
+	glm::vec2 FirstPersonCamera::get_pitch_yaw(const glm::vec3& p_direction)
 	{
 		// https://math.stackexchange.com/questions/470112/calculate-camera-pitch-yaw-to-face-point
 		float yaw   = -std::atan2(p_direction.z, p_direction.x) - glm::radians(90.f);
@@ -25,7 +25,7 @@ namespace Component
 		// return {-glm::asin(p_direction.y), glm::asin(p_direction.x / glm::sqrt(1.f - std::pow(p_direction.y, 2)))};
 	}
 
-	Camera::Camera(const glm::vec3& p_view_direction /* = glm::vec3(0.f, 0.f, -1.f)*/, bool p_make_primary /* = false*/)
+	FirstPersonCamera::FirstPersonCamera(const glm::vec3& p_view_direction /* = glm::vec3(0.f, 0.f, -1.f)*/, bool p_make_primary /* = false*/)
 		: m_FOV{45.f}
 		, m_near{0.01f}
 		, m_far{150.f}
@@ -37,16 +37,14 @@ namespace Component
 		, m_primary{p_make_primary}
 	{}
 
-	void Camera::scroll(float p_offset)
+	void FirstPersonCamera::scroll(float p_offset)
 	{
 		m_FOV -= p_offset;
-		if (m_FOV < 1.0f)
-			m_FOV = 1.0f;
-		if (m_FOV > 45.0f)
-			m_FOV = 45.0f;
+		if (m_FOV < 1.0f)  m_FOV = 1.0f;
+		if (m_FOV > 45.0f) m_FOV = 45.0f;
 	}
 
-	void Camera::mouse_look(const glm::vec2& p_offset)
+	void FirstPersonCamera::mouse_look(const glm::vec2& p_offset)
 	{
 		m_yaw += glm::radians(-p_offset.x * m_look_sensitivity);
 		if (m_yaw > Yaw_constraint)
@@ -61,7 +59,7 @@ namespace Component
 			m_pitch = -Pitch_Limit;
 	}
 
-	void Camera::move(const DeltaTime& p_delta_time, Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body)
+	void FirstPersonCamera::move(const DeltaTime& p_delta_time, Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body)
 	{
 		// #TODO add Shift modifier = half speed.
 		float adjusted_speed = m_move_speed * p_delta_time.count();
@@ -86,7 +84,7 @@ namespace Component
 		}
 	}
 
-	void Camera::look_at(const glm::vec3& p_point, glm::vec3& p_current_position)
+	void FirstPersonCamera::look_at(const glm::vec3& p_point, glm::vec3& p_current_position)
 	{
 		if (p_point != p_current_position)
 		{
@@ -97,7 +95,7 @@ namespace Component
 		}
 	}
 
-	glm::vec3 Camera::up() const
+	glm::vec3 FirstPersonCamera::up() const
 	{
 		const float cos_pitch = glm::cos(m_pitch);
 		const float sin_pitch = glm::sin(m_pitch);
@@ -105,13 +103,13 @@ namespace Component
 		const float sin_yaw   = glm::sin(m_yaw);
 		return {sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch};
 	}
-	glm::vec3 Camera::right() const
+	glm::vec3 FirstPersonCamera::right() const
 	{
 		const float cos_yaw = glm::cos(m_yaw);
 		const float sin_yaw = glm::sin(m_yaw);
 		return {cos_yaw, 0, -sin_yaw}; // No roll in FPS camera, right.y is always 0
 	}
-	glm::vec3 Camera::forward() const
+	glm::vec3 FirstPersonCamera::forward() const
 	{
 		const float cos_pitch = glm::cos(m_pitch);
 		const float sin_pitch = glm::sin(m_pitch);
@@ -119,7 +117,7 @@ namespace Component
 		const float sin_yaw   = glm::sin(m_yaw);
 		return glm::normalize(glm::vec3{-sin_yaw * cos_pitch, sin_pitch, -cos_pitch * cos_yaw});
 	}
-	Geometry::Frustrum Camera::frustrum(const float p_aspect_ratio, const glm::vec3& p_eye_position) const
+	Geometry::Frustrum FirstPersonCamera::frustrum(const float p_aspect_ratio, const glm::vec3& p_eye_position) const
 	{
 		const float cos_pitch = glm::cos(m_pitch);
 		const float sin_pitch = glm::sin(m_pitch);
@@ -139,7 +137,7 @@ namespace Component
 
 		return Geometry::Frustrum(projection(p_aspect_ratio) * view);
 	}
-	ViewInformation Camera::view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const
+	ViewInformation FirstPersonCamera::view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const
 	{
 		ViewInformation view_info;
 		view_info.m_view_position = p_eye_position;
@@ -147,11 +145,11 @@ namespace Component
 		view_info.m_projection    = projection(p_aspect_ratio);
 		return view_info;
 	}
-	glm::mat4 Camera::projection(const float p_aspect_ratio) const
+	glm::mat4 FirstPersonCamera::projection(const float p_aspect_ratio) const
 	{
 		return glm::perspective(glm::radians(m_FOV), p_aspect_ratio, m_near, m_far);
 	}
-	glm::mat4 Camera::view(const glm::vec3& p_eye_position) const
+	glm::mat4 FirstPersonCamera::view(const glm::vec3& p_eye_position) const
 	{
 		// Compute the axes of the view matrix. This is derived from the concatenation of a rotation about the X axis followed by a rotation
 		// about the Y axis. Then we build the view matrix by taking advantage of the fact that the final column of the matrix is just the
@@ -174,7 +172,7 @@ namespace Component
 			glm::vec4(-glm::dot(xaxis, p_eye_position), -glm::dot(yaxis, p_eye_position), -glm::dot(zaxis, p_eye_position), 1.f)};
 	}
 
-	void Camera::draw_UI(Component::Transform* p_transform/*= nullptr*/)
+	void FirstPersonCamera::draw_UI(Component::Transform* p_transform/*= nullptr*/)
 	{
 		if (ImGui::TreeNode("FPS Camera"))
 		{

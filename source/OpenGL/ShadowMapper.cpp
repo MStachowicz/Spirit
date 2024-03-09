@@ -1,7 +1,7 @@
 #include "ShadowMapper.hpp"
 #include "DrawCall.hpp"
 
-#include "Component/Camera.hpp"
+#include "Component/FirstPersonCamera.hpp"
 #include "Component/Lights.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/Transform.hpp"
