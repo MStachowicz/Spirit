@@ -51,5 +51,7 @@ namespace Platform
 		static int get_window_title_bar_height();
 		// Get the max resolution of the primary monitor.
 		static glm::ivec2 get_max_resolution();
+
+		bool m_show_menu_bar;
 	};
 }

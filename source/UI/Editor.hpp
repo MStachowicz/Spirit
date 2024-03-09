@@ -70,6 +70,7 @@ namespace UI
 		std::vector<ECS::Entity> m_selected_entities;
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed
+		bool m_dragging;              // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
 
 		bool m_debug_GJK;
 		std::optional<ECS::Entity> m_debug_GJK_entity_1;
@@ -124,7 +125,7 @@ namespace UI
 		void on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action);
 		void on_key_event(Platform::Key p_key, Platform::Action p_action);
 
-		void set_state(State p_new_state);
+		void set_state(State p_new_state, bool p_force = false);
 
 		void draw_entity_tree_window();
 		void draw_debug_window();

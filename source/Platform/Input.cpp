@@ -5,6 +5,8 @@
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 
+#include <algorithm>
+
 namespace Platform
 {
 	Input::Input() noexcept
@@ -35,6 +37,10 @@ namespace Platform
 	bool Input::is_mouse_down(MouseButton p_button) const
 	{
 		return m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(p_button)];
+	}
+	bool Input::is_any_mouse_down() const
+	{
+		return std::any_of(m_mouse_buttons_pressed.begin(), m_mouse_buttons_pressed.end(), [](bool p_button) { return p_button; });
 	}
 	glm::vec2 Input::cursor_delta() const
 	{

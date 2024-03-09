@@ -77,6 +77,8 @@ namespace Platform
 
 		bool is_key_down(Key p_key) const;
 		bool is_mouse_down(MouseButton p_button) const;
+		bool is_any_mouse_down() const;
+
 		// Returns the most recent cursor position change (change since the last Input update call).
 		glm::vec2 cursor_delta() const;
 		// Returns the cursor position relative to the upper left corner of the window.

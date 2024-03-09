@@ -47,6 +47,7 @@ namespace UI
 		, m_selected_entities{}
 		, m_console{}
 		, m_windows_to_display{}
+		, m_dragging{false}
 		, m_debug_GJK{false}
 		, m_debug_GJK_entity_1{}
 		, m_debug_GJK_entity_2{}
@@ -60,16 +61,15 @@ namespace UI
 		m_input.m_mouse_move_event.subscribe(this,   &Editor::on_mouse_move_event);
 		m_input.m_mouse_scroll_event.subscribe(this, &Editor::on_mouse_scroll_event);
 
+		set_state(m_state, true); // Set the initial state.
 		initialiseStyling();
 	}
 
 	void Editor::on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action)
 	{
-		if (p_button == Platform::MouseButton::Right && p_action == Platform::Action::Release)
-			m_windows_to_display.add_entity_popup = true;
-
-		if (m_input.cursor_captured())
+		if (m_state != State::Editing)
 			return;
+
 		if (!m_input.cursor_over_UI())
 		{
 			switch (p_button)
@@ -107,11 +107,22 @@ namespace UI
 					}
 					break;
 				}
+				case Platform::MouseButton::Right:
+				{
+					// If the user was not dragging, open the entity creation popup.
+					if (p_action == Platform::Action::Release && !m_dragging)
+						m_windows_to_display.add_entity_popup = true;
+
+					break;
+				}
 				case Platform::MouseButton::Middle: break;
-				case Platform::MouseButton::Right:  break;
 				default: break;
 			}
 		}
+
+		// We update the m_dragging flag here so above usages of m_dragging act a frame behind avoiding additional need for m_dragging ended state.
+		if (p_action == Platform::Action::Release && m_dragging && !m_input.is_any_mouse_down())
+			m_dragging = false;
 	}
 
 	void Editor::on_mouse_move_event(const glm::vec2 p_mouse_delta)
@@ -121,6 +132,9 @@ namespace UI
 			m_camera.mouse_look(p_mouse_delta);
 			m_view_info = m_camera.view_information(m_window.aspect_ratio());
 		}
+
+		if (!m_dragging && m_input.is_any_mouse_down())
+			m_dragging = true;
 	}
 	void Editor::on_mouse_scroll_event(const glm::vec2 p_mouse_scroll)
 	{
@@ -191,15 +205,21 @@ namespace UI
 		}
 	}
 
-	void Editor::set_state(State p_new_state)
+	void Editor::set_state(State p_new_state, bool p_force /*= false*/)
 	{
-		if (m_state == p_new_state)
+		if (m_state == p_new_state && !p_force)
 			return;
 
 		if (p_new_state == State::Editing)
+		{
 			m_input.set_cursor_mode(Platform::CursorMode::Normal);
+			m_window.m_show_menu_bar = true;
+		}
 		else
+		{
 			m_input.set_cursor_mode(Platform::CursorMode::Captured);
+			m_window.m_show_menu_bar = false;
+		}
 
 		m_state = p_new_state;
 	}
@@ -216,6 +236,9 @@ namespace UI
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
 	{
+		if (m_state != State::Editing)
+			return;
+
 		m_duration_between_draws.push_back(p_duration_since_last_draw);
 
 		if (ImGui::BeginMenuBar())

@@ -30,6 +30,7 @@ namespace Platform
 		, m_close_requested{false}
 		, m_handle{nullptr}
 		, m_input{p_input_state}
+		, m_show_menu_bar{false}
 	{
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 		glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
@@ -169,9 +170,14 @@ namespace Platform
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-			ImGui::Begin("Dockspace window", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar
-			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
-			| ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
+			auto imgui_window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar
+				| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+				| ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+			if (m_show_menu_bar) imgui_window_flags |= ImGuiWindowFlags_MenuBar;
+
+			ImGui::Begin("Dockspace window", nullptr, imgui_window_flags);
+
 			ImGui::DockSpace(ImGui::GetID("Dockspace window"), ImVec2(0.f, 0.f), ImGuiDockNodeFlags_None
 			| ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
