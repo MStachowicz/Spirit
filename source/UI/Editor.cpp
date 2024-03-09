@@ -43,7 +43,7 @@ namespace UI
 		, m_openGL_renderer{p_openGL_renderer}
 		, m_state{State::Editing}
 		, m_camera{}
-		, m_view_info{m_camera.get_view_information(m_window.aspect_ratio())}
+		, m_view_info{m_camera.view_information(m_window.aspect_ratio())}
 		, m_selected_entities{}
 		, m_console{}
 		, m_windows_to_display{}
@@ -119,7 +119,7 @@ namespace UI
 		if (m_state == State::Editing && m_input.is_mouse_down(Platform::MouseButton::Right))
 		{
 			m_camera.mouse_look(p_mouse_delta);
-			m_view_info = m_camera.get_view_information(m_window.aspect_ratio());
+			m_view_info = m_camera.view_information(m_window.aspect_ratio());
 		}
 	}
 	void Editor::on_mouse_scroll_event(const glm::vec2 p_mouse_scroll)
@@ -127,7 +127,7 @@ namespace UI
 		if (m_state == State::Editing)
 		{
 			m_camera.mouse_scroll(p_mouse_scroll.y);
-			m_view_info = m_camera.get_view_information(m_window.aspect_ratio());
+			m_view_info = m_camera.view_information(m_window.aspect_ratio());
 		}
 	}
 	void Editor::on_key_event(Platform::Key p_key, Platform::Action p_action)
@@ -207,7 +207,7 @@ namespace UI
 	{
 		if (m_state == State::Editing)
 		{
-			m_view_info = m_camera.get_view_information(m_window.aspect_ratio());
+			m_view_info = m_camera.view_information(m_window.aspect_ratio());
 			return &m_view_info;
 		}
 		else

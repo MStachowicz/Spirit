@@ -14,7 +14,7 @@ namespace Component
 		float m_near;
 		float m_far;
 
-		float m_mouse_move_sensitivity;
+		float m_look_sensitivity;
 		float m_zoom_sensitivity;
 
 		float m_distance; // Distance from the target.
@@ -24,16 +24,16 @@ namespace Component
 	public:
 		TwoAxisCamera();
 
-		glm::vec3 get_right() const;
-		glm::vec3 get_up() const;
-		glm::vec3 get_forward() const;
-		glm::vec3 get_position() const;
+		glm::vec3 right() const;
+		glm::vec3 up() const;
+		glm::vec3 forward() const;
+		glm::vec3 position() const;
 
-		glm::mat4 get_view() const;
-		ViewInformation get_view_information(const float& p_aspect_ratio) const;
+		glm::mat4 view() const;
+		ViewInformation view_information(const float& p_aspect_ratio) const;
 
 		// Process mouse p_offset to apply a change to the view direction of the camera.
-		//@param p_offset XY offset to apply in raw input data. The offset angle to apply is calculated later.
+		//@param p_offset XY offset to apply in raw input data.
 		void mouse_look(const glm::vec2& p_offset);
 		void mouse_scroll(float p_offset);
 

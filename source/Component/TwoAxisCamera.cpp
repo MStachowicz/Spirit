@@ -2,97 +2,80 @@
 #include "Utility/Logger.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/constants.hpp"
 #include "glm/gtx/rotate_vector.hpp"
 #include "imgui.h"
 
 namespace Component
 {
-	constexpr float Yaw_Constraint       = glm::radians(180.f);
-	constexpr float Pitch_Constraint     = glm::radians(89.f);
-	constexpr float Zoom_Near_Constraint = 0.1f;
-
 	TwoAxisCamera::TwoAxisCamera()
 		: m_FOV{90.f}
 		, m_near{0.001f}
 		, m_far{100.f}
-		, m_mouse_move_sensitivity{0.035f}
+		, m_look_sensitivity{0.5f}
 		, m_zoom_sensitivity{1.f}
 		, m_distance{10.f}
 		, m_pitch{0.f}
 		, m_yaw{0.f}
 	{}
 
-	glm::vec3 TwoAxisCamera::get_right() const
+	glm::vec3 TwoAxisCamera::up() const
 	{
-		// The right vector is the cross product of the world up vector and the camera's forward vector
-		return glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), get_forward()));
+		auto up = glm::vec3(0.f, 1.f, 0.f);
+		up = glm::rotate(up, m_pitch, glm::vec3(1.f, 0.f, 0.f));
+		up = glm::rotate(up, m_yaw,   glm::vec3(0.f, 1.f, 0.f));
+		return up;
 	}
-
-	glm::vec3 TwoAxisCamera::get_up() const
+	glm::vec3 TwoAxisCamera::right() const
 	{
-		// The up vector is the cross product of the camera's forward vector and its right vector
-		return glm::normalize(glm::cross(get_forward(), get_right()));
+		auto right = glm::vec3(1.f, 0.f, 0.f);
+		right = glm::rotate(right, m_pitch, glm::vec3(1.f, 0.f, 0.f));
+		right = glm::rotate(right, m_yaw,   glm::vec3(0.f, 1.f, 0.f));
+		return right;
 	}
-	glm::vec3 TwoAxisCamera::get_forward() const
+	glm::vec3 TwoAxisCamera::forward() const
 	{
-		glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
-		// Rotate the forward vector by the pitch and yaw angles
-		forward = glm::rotateY(forward, m_yaw);
-		forward = glm::rotateX(forward, m_pitch);
+		auto forward = glm::vec3(0.0f, 0.0f, -1.0f);
+		forward = glm::rotate(forward, m_pitch, glm::vec3(1.f, 0.f, 0.f));
+		forward = glm::rotate(forward, m_yaw,   glm::vec3(0.f, 1.f, 0.f));
 		return forward;
 	}
-	glm::vec3 TwoAxisCamera::get_position() const
+	glm::vec3 TwoAxisCamera::position() const
 	{
-		// The camera's position is its distance from the origin along the negative z-axis,
-		// rotated by the pitch and yaw angles
 		glm::vec3 position = glm::vec3(0.0f, 0.0f, -m_distance);
-		position = glm::rotateY(position, m_yaw);
-		position = glm::rotateX(position, m_pitch);
+		position = glm::rotate(position, m_pitch, glm::vec3(1.f, 0.f, 0.f));
+		position = glm::rotate(position, m_yaw,   glm::vec3(0.f, 1.f, 0.f));
 		return position;
 	}
 
-	ViewInformation TwoAxisCamera::get_view_information(const float& p_aspect_ratio) const
+	ViewInformation TwoAxisCamera::view_information(const float& p_aspect_ratio) const
 	{
 		ViewInformation view_info;
-		view_info.m_view_position = get_position();
-		view_info.m_view          = get_view();
+		view_info.m_view_position = position();
+		view_info.m_view          = view();
 		view_info.m_projection    = glm::perspective(glm::radians(m_FOV), p_aspect_ratio, m_near, m_far);
 		return view_info;
 	}
 
-	glm::mat4 TwoAxisCamera::get_view() const
+	glm::mat4 TwoAxisCamera::view() const
 	{
-		glm::mat4 view      = glm::mat4(1.0f);
-		glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, m_distance);
-
-		// Rotate the camera position by the pitch and yaw angles
-		cameraPos = glm::rotateY(cameraPos, m_yaw);
-		cameraPos = glm::rotateX(cameraPos, m_pitch);
-
-		// Create the view matrix
-		view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		return view;
+		return glm::lookAt(position(), glm::vec3{0.f}, up());
 	}
 
-	// Function to update the camera's rotation based on mouse movement
 	void TwoAxisCamera::mouse_look(const glm::vec2& p_offset)
 	{
-		m_yaw += glm::radians(-p_offset.x * m_mouse_move_sensitivity);
-		if (m_yaw > Yaw_Constraint)
-			m_yaw -= glm::radians(360.f);
-		else if (m_yaw < -Yaw_Constraint)
-			m_yaw += glm::radians(360.f);
+		m_yaw   += glm::radians(-p_offset.x * m_look_sensitivity);
+		m_pitch += glm::radians(-p_offset.y  * m_look_sensitivity);
 
-		m_pitch += glm::radians(p_offset.y * m_mouse_move_sensitivity);
-		if (m_pitch > Pitch_Constraint)
-			m_pitch = Pitch_Constraint;
-		if (m_pitch < -Pitch_Constraint)
-			m_pitch = -Pitch_Constraint;
+		// The constraint is applied to the pitch angle to prevent the camera from flipping upside down
+		constexpr float pitch_constraint = glm::radians(90.f) - 0.01f;
+		if      (m_pitch >  pitch_constraint)  m_pitch =  pitch_constraint;
+		else if (m_pitch < -pitch_constraint)  m_pitch = -pitch_constraint;
 	}
 
 	void TwoAxisCamera::mouse_scroll(float p_offset)
 	{
+		constexpr float Zoom_Near_Constraint = 0.1f;
+
 		m_distance -= p_offset * m_zoom_sensitivity;
 		if (m_distance < Zoom_Near_Constraint)
 			m_distance = Zoom_Near_Constraint;
@@ -101,12 +84,27 @@ namespace Component
 	void TwoAxisCamera::draw_UI()
 	{
 		ImGui::Begin("Camera options");
-		ImGui::Slider("FOV",  m_FOV, 1.f, 90.f);
+		ImGui::Slider("FOV",  m_FOV, 1.f, 90.f, "%.3f°");
 		ImGui::Slider("Near", m_near, 0.001f, 10.f);
 		ImGui::Slider("Far",  m_far, 1.f, 1000.f);
-		ImGui::Slider("Look sensitivity", m_mouse_move_sensitivity, 0.01f, 10.f);
+		ImGui::Slider("Look sensitivity", m_look_sensitivity, 0.01f, 10.f);
 		ImGui::Slider("Move speed", m_zoom_sensitivity, 0.1f, 10.f);
-		ImGui::Text("View", get_view());
+
+		// For displaying in UI we convert the angles to degrees and back again after.
+		auto yaw_deg   = glm::degrees(m_yaw);
+		auto pitch_deg = glm::degrees(m_pitch);
+		ImGui::Slider("Yaw",   yaw_deg,   -360.f, 360.f, "%.3f°");
+		ImGui::Slider("Pitch", pitch_deg, -360.f, 360.f, "%.3f°");
+		m_yaw   = glm::radians(yaw_deg);
+		m_pitch = glm::radians(pitch_deg);
+
+		ImGui::SeparatorText("Info");
+		ImGui::Text("Right", right());
+		ImGui::Text("Up", up());
+		ImGui::Text("Forward", forward());
+		ImGui::Separator();
+		ImGui::Text("View", view());
+
 		ImGui::End();
 	}
 }
