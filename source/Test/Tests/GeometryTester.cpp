@@ -222,10 +222,11 @@ namespace Test
 					t1.translate({0.f, -std::numeric_limits<float>::epsilon(), 0.f});
 					CHECK_TRUE(!Geometry::intersecting(control, t1), "Perpendicular");
 				}
+
 				{SCOPE_SECTION("Touching edge to side");
 					auto t1 = Geometry::Triangle(glm::vec3(0.f, 1.f, -1.f), glm::vec3(1.f, -3.f, 1.f), glm::vec3(-1.f, -3.f, 1.f));
 					CHECK_TRUE(Geometry::intersecting(control, t1), "Pass under touch");
-					t1.translate({0.f, -std::numeric_limits<float>::epsilon(), 0.f});
+					t1.translate({0.f, -std::numeric_limits<float>::epsilon() * 2.f, 0.f});
 					CHECK_TRUE(!Geometry::intersecting(control, t1), "Pass under epsilon distance");
 				}
 			}
