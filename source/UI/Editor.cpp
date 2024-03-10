@@ -127,10 +127,18 @@ namespace UI
 
 	void Editor::on_mouse_move_event(const glm::vec2 p_mouse_delta)
 	{
-		if (m_state == State::Editing && m_input.is_mouse_down(Platform::MouseButton::Right))
+		if (m_state == State::Editing)
 		{
-			m_camera.mouse_look(p_mouse_delta);
-			m_view_info = m_camera.view_information(m_window.aspect_ratio());
+			if (m_input.is_mouse_down(Platform::MouseButton::Right))
+			{
+				m_camera.mouse_look(p_mouse_delta);
+				m_view_info = m_camera.view_information(m_window.aspect_ratio());
+			}
+			else if (m_input.is_mouse_down(Platform::MouseButton::Middle))
+			{
+				m_camera.pan(p_mouse_delta);
+				m_view_info = m_camera.view_information(m_window.aspect_ratio());
+			}
 		}
 
 		if (!m_dragging && m_input.is_any_mouse_down())
@@ -140,7 +148,7 @@ namespace UI
 	{
 		if (m_state == State::Editing)
 		{
-			m_camera.mouse_scroll(p_mouse_scroll.y);
+			m_camera.zoom(p_mouse_scroll.y);
 			m_view_info = m_camera.view_information(m_window.aspect_ratio());
 		}
 	}
