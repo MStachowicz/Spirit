@@ -34,6 +34,10 @@ namespace Platform
 	{
 		return m_keys_pressed[static_cast<std::underlying_type_t<Key>>(p_key)];
 	}
+	bool Input::is_modifier_down(Modifier p_modifier) const
+	{
+		return m_modifiers_pressed[static_cast<std::underlying_type_t<Modifier>>(p_modifier)];
+	}
 	bool Input::is_mouse_down(MouseButton p_button) const
 	{
 		return m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(p_button)];
@@ -86,25 +90,40 @@ namespace Platform
 	{
 		(void)p_scancode; (void)p_mode; // Unused parameters, required signature for GLFW callbacks, cant be deleted
 
-		if (p_action == GLFW_PRESS)
-			m_keys_pressed[static_cast<std::underlying_type_t<Key>>(glfw_to_key(p_key))] = true;
-		else if (p_action == GLFW_RELEASE)
-			m_keys_pressed[static_cast<std::underlying_type_t<Key>>(glfw_to_key(p_key))] = false;
-		//else if (p_action == GLFW_REPEAT)
+		Platform::Modifier modifier = glfw_to_modifier(p_key);
+		if (modifier != Modifier::Unknown)
+		{
+			if (p_action == GLFW_PRESS)
+				m_modifiers_pressed[static_cast<std::underlying_type_t<Modifier>>(modifier)] = true;
+			else if (p_action == GLFW_RELEASE)
+				m_modifiers_pressed[static_cast<std::underlying_type_t<Modifier>>(modifier)] = false;
 
-		m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
+			return;
+		}
+
+		Platform::Key key = glfw_to_key(p_key);
+		if (key != Key::Unknown)
+		{
+			if (p_action == GLFW_PRESS)
+				m_keys_pressed[static_cast<std::underlying_type_t<Key>>(key)] = true;
+			else if (p_action == GLFW_RELEASE)
+				m_keys_pressed[static_cast<std::underlying_type_t<Key>>(key)] = false;
+
+			m_key_event.dispatch(glfw_to_key(p_key), glfw_to_action(p_action));
+		}
 	}
 	void Input::glfw_mouse_press(int p_button, int p_action, int p_modifiers)
 	{ (void)p_modifiers; // Unused parameter, required signature for GLFW callbacks, cant be deleted
 
+		Platform::MouseButton button = glfw_to_mouse_button(p_button);
+
+		if (button == MouseButton::Unknown)
+			return;
+
 		if (p_action == GLFW_PRESS)
-		{
-			m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(glfw_to_mouse_button(p_button))] = true;
-		}
+			m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(button)] = true;
 		else if (p_action == GLFW_RELEASE)
-		{
-			m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(glfw_to_mouse_button(p_button))] = false;
-		}
+			m_mouse_buttons_pressed[static_cast<std::underlying_type_t<MouseButton>>(button)] = false;
 
 		m_mouse_button_event.dispatch(glfw_to_mouse_button(p_button), glfw_to_action(p_action));
 	}
@@ -186,8 +205,23 @@ namespace Platform
 			case GLFW_KEY_DOWN:   return Key::Down_Arrow;
 			case GLFW_KEY_UNKNOWN:
 			default:
-				LOG_WARN("[INPUT] Could not convert GLFW key '{}' to Platform::Key", p_glfw_key);
 				return Key::Unknown;
+		}
+	}
+	constexpr Modifier Input::glfw_to_modifier(int p_glfw_key)
+	{
+		switch (p_glfw_key)
+		{
+			case GLFW_KEY_LEFT_SHIFT:    return Modifier::Shift;
+			case GLFW_KEY_RIGHT_SHIFT:   return Modifier::Shift;
+			case GLFW_KEY_LEFT_CONTROL:  return Modifier::Control;
+			case GLFW_KEY_RIGHT_CONTROL: return Modifier::Control;
+			case GLFW_KEY_LEFT_ALT:      return Modifier::Alt;
+			case GLFW_KEY_RIGHT_ALT:     return Modifier::Alt;
+			case GLFW_KEY_LEFT_SUPER:    return Modifier::Super;
+			case GLFW_KEY_RIGHT_SUPER:   return Modifier::Super;
+			default:
+				return Modifier::Unknown;
 		}
 	}
 	constexpr MouseButton Input::glfw_to_mouse_button(int p_glfw_mouse_button)
@@ -203,7 +237,6 @@ namespace Platform
 			case GLFW_MOUSE_BUTTON_7:      return MouseButton::Button_4;
 			case GLFW_MOUSE_BUTTON_8:      return MouseButton::Button_5;
 			default:
-				LOG_WARN("[INPUT] Could not convert GLFW mouse button '{}' to MouseButton", p_glfw_mouse_button);
 				return MouseButton::Unknown;
 		}
 	}

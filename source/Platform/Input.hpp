@@ -20,6 +20,11 @@ namespace Platform
 		Left_Arrow, Right_Arrow, Up_Arrow, Down_Arrow,
 		Unknown
 	};
+	enum class Modifier : uint8_t
+	{
+		Shift, Control, Alt, Super,
+		Unknown
+	};
 	enum class MouseButton : uint8_t
 	{
 		Left, Middle, Right,
@@ -44,9 +49,12 @@ namespace Platform
 	{
 		constexpr static auto Max_Key_Index = std::numeric_limits<std::underlying_type_t<Key>>::max();
 		constexpr static auto Max_Mouse_Index = std::numeric_limits<std::underlying_type_t<MouseButton>>::max();
+		constexpr static size_t Max_Modifier_Index = 4;
 
 		std::array<bool, Max_Key_Index> m_keys_pressed;
 		std::array<bool, Max_Mouse_Index> m_mouse_buttons_pressed;
+		std::array<bool, Max_Modifier_Index> m_modifiers_pressed;
+
 		glm::vec2 m_cursor_position; // The cursor position relative to the upper left corner of the window.
 		glm::vec2 m_cursor_delta;    // The pixels the mouse cursor moved by since the last Input::update call.
 		CursorMode m_cursor_mode;
@@ -61,6 +69,7 @@ namespace Platform
 		void glfw_mouse_scroll(double p_x_offset, double p_y_offset);
 
 		static constexpr Key glfw_to_key(int p_glfw_key);
+		static constexpr Modifier glfw_to_modifier(int p_glfw_key);
 		static constexpr MouseButton glfw_to_mouse_button(int p_glfw_mouse_button);
 		static constexpr Action glfw_to_action(int p_glfw_action);
 
@@ -76,6 +85,7 @@ namespace Platform
 		void update();
 
 		bool is_key_down(Key p_key) const;
+		bool is_modifier_down(Modifier p_modifier) const;
 		bool is_mouse_down(MouseButton p_button) const;
 		bool is_any_mouse_down() const;
 
