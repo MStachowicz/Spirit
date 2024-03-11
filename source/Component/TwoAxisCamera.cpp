@@ -17,8 +17,8 @@ namespace Component
 		, m_pan_sensitivity{0.05f}
 		, m_pitch{0.f}
 		, m_yaw{0.f}
-		, m_orbit_center{0.f, 0.f, 0.f}
 		, m_orbit_radius{10.f}
+		, m_orbit_center{0.f, 0.f, 0.f}
 	{}
 
 	glm::vec3 TwoAxisCamera::up() const
