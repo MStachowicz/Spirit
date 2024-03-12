@@ -47,6 +47,7 @@ namespace UI
 			bool Entity           = false;
 			bool FPSTimer         = true;
 			bool add_entity_popup = false;
+			bool ent_properties   = false;
 			bool Debug            = false;
 			bool ImGuiDemo        = false;
 			bool ImGuiMetrics     = false;
@@ -68,6 +69,7 @@ namespace UI
 		Component::TwoAxisCamera m_camera;      // Camera used when m_state is Editing.
 		Component::ViewInformation m_view_info; // View information for m_camera required to provide persistant memory.
 		std::vector<ECS::Entity> m_selected_entities;
+		std::optional<ECS::Entity> m_entity_to_draw_info_for; // The entity for which to draw the UI. When a new entity is selected, this is set to the new entity.
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed
 		bool m_dragging;              // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
@@ -125,9 +127,18 @@ namespace UI
 		void on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action);
 		void on_key_event(Platform::Key p_key, Platform::Action p_action);
 
+		void select_entity(ECS::Entity& p_entity);
+		void deselect_entity(ECS::Entity& p_entity);
+		void deselect_all_entity();
+
 		void set_state(State p_new_state, bool p_force = false);
 
+		// For all components of the entity, draw_component_UI.
+		void draw_entity_UI(ECS::Entity& p_entity);
+		// For all entities in the scene, draw_entity_UI.
 		void draw_entity_tree_window();
+		// If m_entity_to_draw_info_for is set, draw_entity_UI for the entity in a window.
+		void draw_entity_properties();
 		void draw_debug_window();
 		void draw_console_window();
 

@@ -45,6 +45,7 @@ namespace UI
 		, m_camera{}
 		, m_view_info{m_camera.view_information(m_window.aspect_ratio())}
 		, m_selected_entities{}
+		, m_entity_to_draw_info_for{}
 		, m_console{}
 		, m_windows_to_display{}
 		, m_dragging{false}
@@ -87,22 +88,16 @@ namespace UI
 							std::sort(entities_under_mouse.begin(), entities_under_mouse.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
 							auto entity_collided = entities_under_mouse.front().first;
 
+							// If the entity is not already selected, select it.
 							auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), entity_collided);
 							if (it == m_selected_entities.end())
-							{
-								m_selected_entities.push_back(entity_collided);
-								LOG("[EDITOR] Entity{} has been selected", entity_collided.ID);
-							}
-							else
-							{// If the entity is already selected, deselect it.
-								m_selected_entities.erase(it);
-								LOG("[EDITOR] Entity{} has been deselected", entity_collided.ID);
-							}
+								select_entity(entity_collided);
+							else// If the entity is already selected, deselect it.
+								deselect_entity(entity_collided);
 						}
 						else
 						{
-							m_selected_entities.clear();
-							LOG("[EDITOR] Deselected entities");
+							deselect_all_entity();
 						}
 					}
 					break;
@@ -213,6 +208,40 @@ namespace UI
 		}
 	}
 
+	void Editor::select_entity(ECS::Entity& p_entity)
+	{
+		// If the entity isn't already in the m_selected_entities list, add it.
+		auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), p_entity);
+		if (it == m_selected_entities.end())
+		{
+			m_selected_entities.push_back(p_entity);
+			m_entity_to_draw_info_for = p_entity;
+			LOG("[EDITOR] Entity {} has been selected", p_entity.ID);
+		}
+	}
+	void Editor::deselect_entity(ECS::Entity& p_entity)
+	{
+		// If the entity is in the m_selected_entities list, remove it.
+		auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), p_entity);
+		{
+			m_selected_entities.erase(it);
+			if (m_entity_to_draw_info_for == p_entity)
+				m_entity_to_draw_info_for.reset();
+
+			LOG("[EDITOR] Entity {} has been deselected", p_entity.ID);
+		}
+	}
+	void Editor::deselect_all_entity()
+	{
+		if (!m_selected_entities.empty())
+		{
+			m_selected_entities.clear();
+			m_entity_to_draw_info_for.reset();
+
+			LOG("[EDITOR] Deselected all entities");
+		}
+	}
+
 	void Editor::set_state(State p_new_state, bool p_force /*= false*/)
 	{
 		if (m_state == p_new_state && !p_force)
@@ -302,6 +331,8 @@ namespace UI
 			ImGui::ShowStyleEditor();
 			ImGui::End();
 		}
+		draw_entity_properties();
+
 		entity_creation_popup();
 
 		if (m_state == State::Editing)
@@ -338,6 +369,41 @@ namespace UI
 
 		m_draw_count++;
 	}
+	void Editor::draw_entity_UI(ECS::Entity& p_entity)
+	{
+		auto& scene = m_scene_system.get_current_scene_entities();
+
+		if (scene.has_components<Component::Transform>(p_entity))
+			scene.get_component<Component::Transform&>(p_entity).draw_UI();
+		if (scene.has_components<Component::Collider>(p_entity))
+			scene.get_component<Component::Collider&>(p_entity).draw_UI();
+		if (scene.has_components<Component::RigidBody>(p_entity))
+			scene.get_component<Component::RigidBody&>(p_entity).draw_UI();
+		if (scene.has_components<Component::DirectionalLight>(p_entity))
+			scene.get_component<Component::DirectionalLight&>(p_entity).draw_UI();
+		if (scene.has_components<Component::SpotLight>(p_entity))
+			scene.get_component<Component::SpotLight&>(p_entity).draw_UI();
+		if (scene.has_components<Component::PointLight>(p_entity))
+			scene.get_component<Component::PointLight&>(p_entity).draw_UI();
+		if (scene.has_components<Component::FirstPersonCamera>(p_entity))
+			scene.get_component<Component::FirstPersonCamera>(p_entity).draw_UI();
+		if (scene.has_components<Component::ParticleEmitter>(p_entity))
+			scene.get_component<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
+		if (scene.has_components<Component::Terrain>(p_entity))
+			scene.get_component<Component::Terrain>(p_entity).draw_UI(m_texture_system);
+		if (scene.has_components<Component::Mesh>(p_entity))
+			scene.get_component<Component::Mesh>(p_entity).draw_UI();
+		if (scene.has_components<Component::Texture>(p_entity))
+			scene.get_component<Component::Texture>(p_entity).draw_UI(m_texture_system);
+
+		ImGui::SeparatorText("Quick options");
+		if (ImGui::Button("Delete entity"))
+		{
+			// If the entity was selected, remove it from the selected entities list.
+			deselect_entity(p_entity);
+			scene.delete_entity(p_entity);
+		}
+	}
 	void Editor::draw_entity_tree_window()
 	{
 		if (ImGui::Begin("Entities", &m_windows_to_display.Entity))
@@ -354,32 +420,7 @@ namespace UI
 
 				if (ImGui::TreeNode(title.c_str()))
 				{
-					if (scene.has_components<Component::Transform>(p_entity))
-						scene.get_component<Component::Transform&>(p_entity).draw_UI();
-					if (scene.has_components<Component::Collider>(p_entity))
-						scene.get_component<Component::Collider&>(p_entity).draw_UI();
-					if (scene.has_components<Component::RigidBody>(p_entity))
-						scene.get_component<Component::RigidBody&>(p_entity).draw_UI();
-					if (scene.has_components<Component::DirectionalLight>(p_entity))
-						scene.get_component<Component::DirectionalLight&>(p_entity).draw_UI();
-					if (scene.has_components<Component::SpotLight>(p_entity))
-						scene.get_component<Component::SpotLight&>(p_entity).draw_UI();
-					if (scene.has_components<Component::PointLight>(p_entity))
-						scene.get_component<Component::PointLight&>(p_entity).draw_UI();
-					if (scene.has_components<Component::FirstPersonCamera>(p_entity))
-						scene.get_component<Component::FirstPersonCamera>(p_entity).draw_UI();
-					if (scene.has_components<Component::ParticleEmitter>(p_entity))
-						scene.get_component<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
-					if (scene.has_components<Component::Terrain>(p_entity))
-						scene.get_component<Component::Terrain>(p_entity).draw_UI(m_texture_system);
-					if (scene.has_components<Component::Mesh>(p_entity))
-						scene.get_component<Component::Mesh>(p_entity).draw_UI();
-					if (scene.has_components<Component::Texture>(p_entity))
-						scene.get_component<Component::Texture>(p_entity).draw_UI(m_texture_system);
-
-					ImGui::SeparatorText("Quick options");
-					if (ImGui::Button("Delete entity"))
-						scene.delete_entity(p_entity);
+					draw_entity_UI(p_entity);
 
 					ImGui::Separator();
 					ImGui::TreePop();
@@ -387,6 +428,33 @@ namespace UI
 			});
 		}
 		ImGui::End();
+	}
+	void Editor::draw_entity_properties()
+	{
+		// If we have an entity to draw info for, draw the UI for it.
+		m_windows_to_display.ent_properties = m_entity_to_draw_info_for.has_value();
+
+		if (m_entity_to_draw_info_for)
+		{
+			auto& ent   = *m_entity_to_draw_info_for;
+			auto& scene = m_scene_system.get_current_scene_entities();
+
+			std::string title = "";
+			if (scene.has_components<Component::Label>(ent))
+			{
+				auto label = scene.get_component<Component::Label&>(ent);
+				title = label.mName;
+			}
+			else
+				title = "Entity " + std::to_string(ent.ID);
+
+			ImGui::Begin(title.c_str(), &m_windows_to_display.ent_properties);
+			draw_entity_UI(ent);
+			ImGui::End();
+
+			if (!m_windows_to_display.ent_properties)
+				m_entity_to_draw_info_for.reset(); // If the window is closed, reset the entity to draw info for.
+		}
 	}
 	void Editor::draw_console_window()
 	{
