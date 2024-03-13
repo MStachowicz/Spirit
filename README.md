@@ -1,12 +1,13 @@
-# Spirit
-Kids see ghosts sometimes.
+[![Build](https://github.com/MStachowicz/Spirit/actions/workflows/build.yml/badge.svg)](https://github.com/MStachowicz/Spirit/actions/workflows/build.yml)
+
+# Spirit 👻
+Spirit is a 3D game engine targetting Linux and Windows. This is a hobby project under <sup>~~slow~~</sup>active development with the intention to provide an environment as close to raw code for making games.
+
 ## Requirements
 [Git](https://git-scm.com/downloads) (Submodules)\
 [CMake 3.22](https://cmake.org/download/)\
 C++ 20 [compliant compiler](https://en.cppreference.com/w/cpp/compiler_support)
-GCC   13
-CLANG 14
-MSVC  16.10
+<sub>(GCC 13 | CLANG 14 | MSVC 16.10)<sub>
 
 ## Setup
 1. Clone repository with submodules.\
