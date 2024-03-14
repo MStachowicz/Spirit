@@ -46,6 +46,7 @@ namespace UI
 		, m_view_info{m_camera.view_information(m_window.aspect_ratio())}
 		, m_selected_entities{}
 		, m_entity_to_draw_info_for{}
+		, m_cursor_intersection{}
 		, m_console{}
 		, m_windows_to_display{}
 		, m_dragging{false}
@@ -106,7 +107,12 @@ namespace UI
 				{
 					// If the user was not dragging, open the entity creation popup.
 					if (p_action == Platform::Action::Release && !m_dragging)
-						m_windows_to_display.add_entity_popup = true;
+					{
+						auto cursor_ray  = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), m_view_info.m_view_position, m_view_info.m_projection, m_view_info.m_view);
+						auto floor_plane = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
+						if (m_cursor_intersection = Geometry::get_intersection(cursor_ray, floor_plane))
+							m_windows_to_display.add_entity_popup = true;
+					}
 
 					break;
 				}
@@ -549,54 +555,34 @@ namespace UI
 		ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y), ImGuiCond_Appearing);
 		if (ImGui::BeginPopup("Create entity"))
 		{
+			ASSERT(m_cursor_intersection.has_value(), "Cursor intersection should have a value when the entity creation popup is open.");
+
 			if (ImGui::BeginMenu("Add"))
 			{
 				if (ImGui::BeginMenu("Shape"))
 				{
 					if (ImGui::Button("Cube"))
 					{
-						const auto& view_info = m_scene_system.get_current_scene_view_info();
-						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
-						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
-
-						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
-						{
-							m_scene_system.get_current_scene_entities().add_entity(
-							    Component::Label{"Cube"},
-							    Component::RigidBody{},
-							    Component::Transform{intersection.value()},
-							    Component::Mesh{m_mesh_system.m_cube},
-							    Component::Collider{});
-						}
+						m_scene_system.get_current_scene_entities().add_entity(
+							Component::Label{"Cube"},
+							Component::RigidBody{},
+							Component::Transform{*m_cursor_intersection},
+							Component::Mesh{m_mesh_system.m_cube},
+							Component::Collider{});
 					}
 					else if (ImGui::Button("Light"))
 					{
-						const auto& view_info = m_scene_system.get_current_scene_view_info();
-						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
-						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
-
-						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
-						{
-							m_scene_system.get_current_scene_entities().add_entity(
-							    Component::Label{"Light"},
-							    Component::Transform{intersection.value()},
-							    Component::PointLight{intersection.value()});
-						}
+						m_scene_system.get_current_scene_entities().add_entity(
+							Component::Label{"Light"},
+							Component::Transform{*m_cursor_intersection},
+							Component::PointLight{*m_cursor_intersection});
 					}
 					else if (ImGui::Button("Terrain"))
 					{
-						const auto& view_info = m_scene_system.get_current_scene_view_info();
-						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
-						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
-
-						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
-						{
-							m_scene_system.get_current_scene_entities().add_entity(
-								Component::Label{"Terrain"},
-								Component::Terrain{10, 10});
-						}
+						m_scene_system.get_current_scene_entities().add_entity(
+							Component::Label{"Terrain"},
+							Component::Terrain{*m_cursor_intersection, 10, 10});
 					}
-
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenu();

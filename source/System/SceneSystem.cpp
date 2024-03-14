@@ -192,7 +192,7 @@ namespace System
 			m_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 		}
 		{ // Terrain
-			m_scene.m_entities.add_entity(Component::Label{"Terrain"}, Component::Terrain{100, 100});
+			m_scene.m_entities.add_entity(Component::Label{"Terrain"}, Component::Terrain{glm::vec3(0.f), 100, 100});
 		}
 	}
 

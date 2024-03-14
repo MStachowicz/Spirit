@@ -6,8 +6,8 @@
 
 #include "imgui.h"
 
-Component::Terrain::Terrain(int p_size_x, int p_size_z) noexcept
-	: m_position{glm::vec3(0.f)}
+Component::Terrain::Terrain(const glm::vec3& p_position, int p_size_x, int p_size_z) noexcept
+	: m_position{p_position}
 	, m_size_x{p_size_x}
 	, m_size_z{p_size_z}
 	, m_scale_factor{1.f}

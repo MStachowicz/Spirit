@@ -70,6 +70,9 @@ namespace UI
 		Component::ViewInformation m_view_info; // View information for m_camera required to provide persistant memory.
 		std::vector<ECS::Entity> m_selected_entities;
 		std::optional<ECS::Entity> m_entity_to_draw_info_for; // The entity for which to draw the UI. When a new entity is selected, this is set to the new entity.
+		// The last intersection of the cursor with the scene.
+		// Sometimes we need the cursor intersection earlier in the action (e.g. add_entity_popup should interesect at the point of right click not menu selection.
+		std::optional<glm::vec3> m_cursor_intersection;
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed
 		bool m_dragging;              // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
