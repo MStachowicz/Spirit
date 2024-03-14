@@ -569,7 +569,7 @@ namespace UI
 							    Component::Collider{});
 						}
 					}
-					if (ImGui::Button("Light"))
+					else if (ImGui::Button("Light"))
 					{
 						const auto& view_info = m_scene_system.get_current_scene_view_info();
 						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
@@ -581,6 +581,19 @@ namespace UI
 							    Component::Label{"Light"},
 							    Component::Transform{intersection.value()},
 							    Component::PointLight{intersection.value()});
+						}
+					}
+					else if (ImGui::Button("Terrain"))
+					{
+						const auto& view_info = m_scene_system.get_current_scene_view_info();
+						auto cursor_ray       = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+						auto floor_plane      = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
+
+						if (auto intersection = Geometry::get_intersection(cursor_ray, floor_plane))
+						{
+							m_scene_system.get_current_scene_entities().add_entity(
+								Component::Label{"Terrain"},
+								Component::Terrain{10, 10});
 						}
 					}
 
