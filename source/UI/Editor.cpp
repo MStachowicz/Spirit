@@ -110,7 +110,7 @@ namespace UI
 					{
 						auto cursor_ray  = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), m_view_info.m_view_position, m_view_info.m_projection, m_view_info.m_view);
 						auto floor_plane = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
-						if (m_cursor_intersection = Geometry::get_intersection(cursor_ray, floor_plane))
+						if ((m_cursor_intersection = Geometry::get_intersection(cursor_ray, floor_plane)))
 							m_windows_to_display.add_entity_popup = true;
 					}
 
