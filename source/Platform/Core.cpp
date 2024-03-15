@@ -79,4 +79,53 @@ namespace Platform
 			LOG("[DEINIT] Uninitialised GLFW");
 		}
 	}
+
+#ifdef _WIN32
+	#include <Windows.h>
+
+	bool Core::is_dark_mode()
+	{
+		HKEY key;
+		DWORD value;
+		DWORD size = sizeof(DWORD);
+		if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_QUERY_VALUE, &key) == ERROR_SUCCESS)
+		{
+			if (RegQueryValueExW(key, L"AppsUseLightTheme", NULL, NULL, (LPBYTE)&value, &size) == ERROR_SUCCESS)
+				return value == 0;
+
+			RegCloseKey(key);
+		}
+
+		return true; // Default to dark mode if unable to read the registry value
+	}
+#else
+	bool Core::is_dark_mode()
+	{
+		return true; // Default to dark mode if no platform specific implementation
+	}
+#endif
+
+
+	Core::Theme::Theme()
+	{
+		dark_mode    = Core::is_dark_mode();
+		background   = dark_mode ? glm::vec4(0.1f, 0.1f, 0.1f, 1.f) : glm::vec4(0.9f, 0.9f, 0.9f, 1.f);
+		accent       = glm::vec4(0.2f, 0.6f, 1.0f, 1.f);
+		general_text = dark_mode ? glm::vec4(0.9f, 0.9f, 0.9f, 1.f) : glm::vec4(0.1f, 0.1f, 0.1f, 1.f);
+		warning_text = glm::vec4(1.0f, 0.6f, 0.0f, 1.f);
+		error_text   = glm::vec4(1.0f, 0.0f, 0.0f, 1.f);
+		success_text = dark_mode ? glm::vec4(0.0f, 1.0f, 0.0f, 1.f) : glm::vec4(0.f, 0.765f, 0.133f, 1.f);
+	}
+	void Core::Theme::draw_theme_editor_UI()
+	{
+		ImGui::Begin("Theme editor");
+		ImGui::Checkbox("Dark mode",    &dark_mode);
+		ImGui::ColorEdit4("Background", &background.x);
+		ImGui::ColorEdit4("Accent",     &accent.x);
+		ImGui::ColorEdit4("General",    &general_text.x);
+		ImGui::ColorEdit4("Warning",    &warning_text.x);
+		ImGui::ColorEdit4("Error",      &error_text.x);
+		ImGui::ColorEdit4("Success",    &success_text.x);
+		ImGui::End();
+	}
 }
