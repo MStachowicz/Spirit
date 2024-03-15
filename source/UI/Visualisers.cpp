@@ -13,6 +13,8 @@
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Intersect.hpp"
 
+#include "Platform/Core.hpp"
+
 #include "imgui.h"
 
 namespace UI
@@ -328,8 +330,8 @@ namespace UI
 					{
 						draw_simplex_debug(simplex);
 
-						if (*intersecting) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The two entities are intersecting.");
-						else               ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "The two entities are not intersecting.");
+						if (*intersecting) ImGui::TextColored(Platform::Core::s_theme.success_text, "The two entities are intersecting.");
+						else               ImGui::TextColored(Platform::Core::s_theme.error_text,   "The two entities are not intersecting.");
 
 						auto str = std::format("Took {} steps to converge on the result.", step_count);
 						ImGui::Text("%s", str.c_str());

@@ -286,27 +286,37 @@ namespace UI
 
 		if (ImGui::BeginMenuBar())
 		{
+			if (ImGui::BeginMenu("Edit"))
+			{
+				ImGui::MenuItem("Entity tree", NULL, &m_windows_to_display.Entity);
+				ImGui::EndMenu();
+			}
 			if (ImGui::BeginMenu("View"))
 			{
-				ImGui::MenuItem("Entity hierarchy", NULL, &m_windows_to_display.Entity);
-				ImGui::MenuItem("Console",          NULL, &m_windows_to_display.Console);
-
-				if (ImGui::BeginMenu("Debug"))
+				if (ImGui::BeginMenu("Editor"))
 				{
-					ImGui::MenuItem("Debug options", NULL, &m_windows_to_display.Debug);
-					ImGui::MenuItem("FPS Timer",     NULL, &m_windows_to_display.FPSTimer);
+					ImGui::MenuItem("Camera",             NULL, &m_windows_to_display.editor_camera);
+					ImGui::MenuItem("Console",            NULL, &m_windows_to_display.Console);
+					ImGui::Separator();
+					ImGui::MenuItem("FPS Timer",          NULL, &m_windows_to_display.FPSTimer);
+					ImGui::Separator();
+					ImGui::MenuItem("Theme",              NULL, &m_windows_to_display.theme_editor);
+					ImGui::MenuItem("ImGui style editor", NULL, &m_windows_to_display.ImGuiStyleEditor);
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("ImGui"))
 				{
-					ImGui::MenuItem("Demo",             NULL, &m_windows_to_display.ImGuiDemo);
-					ImGui::MenuItem("Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
-					ImGui::MenuItem("Stack",            NULL, &m_windows_to_display.ImGuiStack);
-					ImGui::MenuItem("About",            NULL, &m_windows_to_display.ImGuiAbout);
-					ImGui::MenuItem("Style Editor",     NULL, &m_windows_to_display.ImGuiStyleEditor);
-
+					ImGui::MenuItem("Demo",  NULL, &m_windows_to_display.ImGuiDemo);
+					ImGui::MenuItem("Stack", NULL, &m_windows_to_display.ImGuiStack);
+					ImGui::MenuItem("About", NULL, &m_windows_to_display.ImGuiAbout);
 					ImGui::EndMenu();
 				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Debug"))
+			{
+				ImGui::MenuItem("Debug options",          NULL, &m_windows_to_display.Debug);
+				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
 				ImGui::EndMenu();
 			}
 			if (m_windows_to_display.FPSTimer)
@@ -316,9 +326,9 @@ namespace UI
 				ImGui::SameLine((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(fps_str.c_str()).x - ImGui::GetStyle().ItemSpacing.x) / 2.f);
 
 				glm::vec4 colour;
-				if      (fps > 60.f) colour = glm::vec4(0.f, 255.f, 0.f, 255.f);
-				else if (fps > 30.f) colour = glm::vec4(255.f, 255.f, 0.f, 255.f);
-				else                 colour = glm::vec4(255.f, 0.f, 0.f, 255.f);
+				if      (fps > 60.f) colour = Platform::Core::s_theme.success_text;
+				else if (fps > 30.f) colour = Platform::Core::s_theme.warning_text;
+				else                 colour = Platform::Core::s_theme.error_text;
 
 				ImGui::TextColored(colour, "%s", fps_str.c_str());
 			}
@@ -331,18 +341,22 @@ namespace UI
 		if (m_windows_to_display.ImGuiMetrics)  ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
 		if (m_windows_to_display.ImGuiStack)    ImGui::ShowStackToolWindow(&m_windows_to_display.ImGuiStack);
 		if (m_windows_to_display.ImGuiAbout)    ImGui::ShowAboutWindow(&m_windows_to_display.ImGuiAbout);
+		if (m_windows_to_display.theme_editor)  Platform::Core::s_theme.draw_theme_editor_UI();
 		if (m_windows_to_display.ImGuiStyleEditor)
 		{
 			ImGui::Begin("Dear ImGui Style Editor", &m_windows_to_display.ImGuiStyleEditor);
 			ImGui::ShowStyleEditor();
 			ImGui::End();
 		}
-		draw_entity_properties();
-
-		entity_creation_popup();
-
-		if (m_state == State::Editing)
+		if (m_windows_to_display.editor_camera)
+		{
+			ImGui::Begin("Editor Camera", &m_windows_to_display.editor_camera, ImGuiWindowFlags_AlwaysAutoResize);
 			m_camera.draw_UI();
+			ImGui::End();
+		}
+
+		draw_entity_properties();
+		entity_creation_popup();
 
 		{// Manipulators
 			ImGuizmo::SetOrthographic(false);
@@ -511,7 +525,7 @@ namespace UI
 						if (m_selected_entities.size() != 2)
 						{
 							ImGui::SameLine();
-							ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Select 2 entities to debug GJK");
+							ImGui::TextColored(Platform::Core::s_theme.error_text, "Select 2 entities to debug GJK");
 							ImGui::EndDisabled();
 						}
 					}
@@ -593,19 +607,19 @@ namespace UI
 
 	void Editor::log(const std::string& p_message)
 	{
-		m_console.add_log({p_message});
+		m_console.add_log({p_message, Platform::Core::s_theme.general_text});
 	}
 	void Editor::log_warning(const std::string& p_message)
 	{
-		m_console.add_log({p_message, glm::vec3(1.f, 1.f, 0.f)});
+		m_console.add_log({p_message, Platform::Core::s_theme.warning_text});
 	}
 	void Editor::log_error(const std::string& p_message)
 	{
-		m_console.add_log({p_message, glm::vec3(1.f, 0.f, 0.f)});
+		m_console.add_log({p_message, Platform::Core::s_theme.error_text});
 	}
 	void Editor::initialiseStyling()
 	{
-		ImGui::StyleColorsDark();
+		Platform::Core::s_theme.dark_mode ? ImGui::StyleColorsDark() : ImGui::StyleColorsLight();
 
 		// Round out the UI and make more compact
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -641,7 +655,7 @@ namespace UI
 		style.SelectableTextAlign      = ImVec2(0.5f, 0.5f);
 		style.DisplaySafeAreaPadding   = ImVec2(0.f, 0.f);
 
-		auto theme_grey = ImVec4(0.174f, 0.174f, 0.174f, 1.000f);
-		style.Colors[ImGuiCol_MenuBarBg] = theme_grey;
+		//auto theme_grey = ImVec4(0.174f, 0.174f, 0.174f, 1.000f);
+		//style.Colors[ImGuiCol_MenuBarBg] = theme_grey;
 	}
 } // namespace UI

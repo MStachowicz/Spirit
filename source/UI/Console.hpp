@@ -18,7 +18,11 @@ namespace UI
 			std::string m_message;
 			glm::vec3 m_colour;
 
-			Message(const std::string& p_message, const glm::vec3& p_colour = glm::vec3(1.f, 1.f, 1.f));
+			Message(const std::string& p_message, const glm::vec3& p_colour)
+				: m_message{p_message}
+				, m_colour{p_colour}
+			{}
+			Message(const std::string& p_message);
 		};
 
 	private:

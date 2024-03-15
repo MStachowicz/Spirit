@@ -1,4 +1,5 @@
 #include "Console.hpp"
+#include "Platform/Core.hpp"
 
 #include "imgui.h"
 
@@ -7,9 +8,9 @@
 
 namespace UI
 {
-	Console::Message::Message(const std::string& p_message, const glm::vec3& p_colour/*= glm::vec3(1.f, 1.f, 1.f)*/)
+	Console::Message::Message(const std::string& p_message)
 		: m_message{p_message}
-		, m_colour{p_colour}
+		, m_colour{Platform::Core::s_theme.general_text}
 	{}
 
 	Console::Console()
@@ -141,7 +142,7 @@ namespace UI
 			add_log(historyStr);
 		}
 		else
-			add_log({std::format("Unknown command: '{}'\n", p_command), glm::vec3(1.f, 0.f, 0.f)});
+			add_log({std::format("Unknown command: '{}'\n", p_command), Platform::Core::s_theme.error_text});
 
 		// On command input, we scroll to bottom even if m_auto_scroll==false
 		m_scroll_to_bottom = true;

@@ -88,7 +88,6 @@ namespace Component
 
 	void TwoAxisCamera::draw_UI()
 	{
-		ImGui::Begin("Camera options");
 		ImGui::Slider("FOV",  m_FOV,  1.f,    90.f, "%.3f°");
 		ImGui::Slider("Near", m_near, 0.001f, 10.f);
 		ImGui::Slider("Far",  m_far,  1.f,    1000.f);
@@ -113,7 +112,5 @@ namespace Component
 
 		ImGui::Separator();
 		ImGui::Text("View", view());
-
-		ImGui::End();
 	}
 }

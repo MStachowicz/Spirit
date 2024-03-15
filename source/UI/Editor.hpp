@@ -53,6 +53,8 @@ namespace UI
 			bool ImGuiMetrics     = false;
 			bool ImGuiStack       = false;
 			bool ImGuiAbout       = false;
+			bool theme_editor     = false;
+			bool editor_camera    = false;
 			bool ImGuiStyleEditor = false;
 			bool Console          = true;
 		};

@@ -54,6 +54,7 @@ namespace OpenGL
 		m_screen_framebuffer.attachColourBuffer(windowSize.x, windowSize.y);
 		m_screen_framebuffer.attachDepthBuffer(windowSize.x, windowSize.y);
 		set_viewport(0, 0, windowSize.x, windowSize.y);
+		set_clear_colour(Platform::Core::s_theme.background);
 		LOG("[OPENGL] Constructed new OpenGLRenderer instance");
 	}
 
