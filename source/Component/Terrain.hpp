@@ -19,7 +19,7 @@ namespace Component
 		TextureRef m_texture;
 		Data::Mesh m_mesh;
 
-		Terrain(int p_size_x, int p_size_z) noexcept;
+		Terrain(const glm::vec3& p_position, int p_size_x, int p_size_z) noexcept;
 		void draw_UI(System::TextureSystem& p_texture_system);
 	};
 } // namespace Component
