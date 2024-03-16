@@ -128,6 +128,9 @@ namespace UI
 
 	void Editor::on_mouse_move_event(const glm::vec2 p_mouse_delta)
 	{
+		if (m_input.cursor_over_UI())
+			return;
+
 		if (m_state == State::Editing)
 		{
 			if (m_input.is_mouse_down(Platform::MouseButton::Right))
@@ -147,6 +150,9 @@ namespace UI
 	}
 	void Editor::on_mouse_scroll_event(const glm::vec2 p_mouse_scroll)
 	{
+		if (m_input.cursor_over_UI())
+			return;
+
 		if (m_state == State::Editing)
 		{
 			m_camera.zoom(p_mouse_scroll.y);
