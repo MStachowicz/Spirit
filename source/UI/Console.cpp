@@ -24,9 +24,8 @@ namespace UI
 	void Console::draw(const char* title, bool* p_open)
 	{
 		static ImGuiTextFilter m_filter; // Declared statically to avoid having to include ImGui in the header.
-		ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowDockID(0, ImGuiCond_FirstUseEver); // Dock to the bottom of the view.
 
+		ImGui::SetNextWindowDockID(4, ImGuiCond_Once);
 		if (ImGui::Begin(title, p_open))
 		{
 			bool copy_to_clipboard = false;

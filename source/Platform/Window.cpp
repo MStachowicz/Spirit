@@ -13,6 +13,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "ImGuizmo.h"
 
 #include <iostream>
@@ -161,32 +162,54 @@ namespace Platform
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 
-		{ // At the start of an ImGui frame, push a window the size of viewport to allow docking other ImGui windows to.
-			ImGui::SetNextWindowSize(size());
-			ImGui::SetNextWindowPos(ImVec2(0, 0));
-			ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+		// At the start of an ImGui frame, push a window the size of viewport to allow docking other ImGui windows to.
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowViewport(viewport->ID);
 
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-			auto imgui_window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar
-				| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
-				| ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus;
+		auto imgui_window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+			| ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-			if (m_show_menu_bar) imgui_window_flags |= ImGuiWindowFlags_MenuBar;
+		if (m_show_menu_bar) imgui_window_flags |= ImGuiWindowFlags_MenuBar;
 
-			ImGui::Begin("Dockspace window", nullptr, imgui_window_flags);
+		ImGui::Begin("root_dock", nullptr, imgui_window_flags);
+		ImGui::PopStyleVar(3);
 
-			ImGui::DockSpace(ImGui::GetID("Dockspace window"), ImVec2(0.f, 0.f), ImGuiDockNodeFlags_None
-			| ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
-			ImGui::PopStyleVar(3);
+		ImGuiID root_dock_ID = ImGui::GetID("root_dock");
+		ImGui::DockSpace(root_dock_ID, ImVec2(0.f, 0.f), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+
+		static bool first_time = true;
+		if (first_time)
+		{
+			first_time = false;
+			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+
+			// Clear the previous layout and add a root node the size of the viewport.
+			ImGui::DockBuilderRemoveNode(root_dock_ID);
+			ImGui::DockBuilderAddNode(root_dock_ID, dockspace_flags | ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_KeepAliveOnly);
+			ImGui::DockBuilderSetNodeSize(root_dock_ID, viewport->Size);
+
+			// Split the dockspace into 4 nodes by splitting root_dock_ID horizontally and then splitting the right node vertically.
+			ImGuiID dock_id_left, dock_id_right;
+			ImGui::DockBuilderSplitNode(root_dock_ID, ImGuiDir_Left, 0.2f, &dock_id_left, &dock_id_right);
+			ImGuiID dock_id_down, dock_id_up;
+			ImGui::DockBuilderSplitNode(dock_id_right, ImGuiDir_Down, 0.15f, &dock_id_down, &dock_id_up);
+			ImGui::DockBuilderFinish(root_dock_ID);
+
+			ASSERT_THROW(dock_id_left == 1 && dock_id_right == 2 && dock_id_up == 3 && dock_id_down == 4,
+				"Dock direction IDs are not as expected. We use these hard coded numbers for the layout of the editor with SetNextWindowDockID()! Can create a mapping if the order changes.");
 		}
 	}
 	void Window::end_ImGui_frame()
 	{
-		ImGui::End();
+		ImGui::End(); // root_dock
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}

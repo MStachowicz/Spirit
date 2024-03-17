@@ -432,6 +432,7 @@ namespace UI
 	}
 	void Editor::draw_entity_tree_window()
 	{
+		ImGui::SetNextWindowDockID(1, ImGuiCond_Once);
 		if (ImGui::Begin("Entities", &m_windows_to_display.Entity))
 		{
 			auto& scene = m_scene_system.get_current_scene_entities();
