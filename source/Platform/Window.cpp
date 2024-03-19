@@ -87,6 +87,9 @@ namespace Platform
 
 	void Window::set_size(glm::ivec2 p_new_size)
 	{
+		if (p_new_size.x <= 0 || p_new_size.y <= 0) // When the window is minimised the size can be 0. Ignore and keep original size data.
+			return;
+
 		ImGuiIO& io = ImGui::GetIO();
 		io.FontGlobalScale = std::round(ImGui::GetMainViewport()->DpiScale);
 
@@ -100,7 +103,7 @@ namespace Platform
 		{
 			m_size_windowed = p_new_size;
 			m_aspect_ratio  = static_cast<float>(m_size_windowed.x) / static_cast<float>(m_size_windowed.y);
-			io.DisplaySize    = ImVec2(static_cast<float>(m_size_windowed.x), static_cast<float>(m_size_windowed.y));
+			io.DisplaySize  = ImVec2(static_cast<float>(m_size_windowed.x), static_cast<float>(m_size_windowed.y));
 		}
 
 		//mWindowResizeEvent.dispatch(new_size.x, new_size.y);
