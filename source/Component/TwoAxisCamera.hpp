@@ -9,7 +9,7 @@ namespace Component
 {
 	class TwoAxisCamera
 	{
-	public:
+	private:
 		float m_FOV; // Field of view in degrees.
 		float m_near;
 		float m_far;
@@ -23,6 +23,9 @@ namespace Component
 		float m_orbit_radius;     // Controls the radial distance between the camera and the point it is orbiting.
 		glm::vec3 m_orbit_center; // The world space position serving as the orbit center or target point for the camera.
 
+		bool m_is_orthographic;
+		float m_ortho_size;
+		float m_ortho_distance_multipler; // Used to scale the distance of the orthographic camera.
 	public:
 		TwoAxisCamera();
 
@@ -33,6 +36,9 @@ namespace Component
 
 		glm::mat4 view() const;
 		ViewInformation view_information(const float& p_aspect_ratio) const;
+		// Set the camera to orthographic or perspective projection.
+		void set_orthographic(bool p_orthographic);
+		void toggle_orthographic() { set_orthographic(!m_is_orthographic); }
 
 		// Process mouse p_offset to apply a change to the view direction of the camera.
 		//@param p_offset XY offset to apply in raw input data.

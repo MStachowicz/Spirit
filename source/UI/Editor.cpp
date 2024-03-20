@@ -201,6 +201,12 @@ namespace UI
 				}
 				break;
 			}
+			case Platform::Key::P:
+			{
+				if (p_action == Platform::Action::Release && m_state == State::Editing)
+					m_camera.toggle_orthographic();
+				break;
+			}
 			case Platform::Key::Escape:
 			{
 				if (p_action == Platform::Action::Release)
