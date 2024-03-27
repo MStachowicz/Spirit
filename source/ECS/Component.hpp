@@ -35,10 +35,10 @@ namespace ECS
 		void (*MoveAssign)(void* p_destination_address, void* p_source_address);
 		// placement-new move-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
 		void (*MoveConstruct)(void* p_destination_address, void* p_source_address);
-		// Serialise the object into p_file.
-		void (*Serialise)(void* p_address, std::ofstream& p_file);
-		// Deserialise the object into p_file.
-		void (*Deserialise)(void* p_address, std::ifstream& p_file);
+		// // Serialise the object into p_file.
+		// void (*Serialise)(void* p_address, std::ofstream& p_file);
+		// // Deserialise the object into p_file.
+		// void (*Deserialise)(void* p_address, std::ifstream& p_file);
 	};
 
 	class Component
@@ -111,16 +111,16 @@ namespace ECS
 			using Type = std::decay_t<ComponentType>;
 			new (p_destination_address) Type(std::move(*static_cast<Type*>(p_source_address)));
 		}}
-		, Serialise{[](void* p_address, std::ofstream& p_file)
-		{
-			using Type = std::decay_t<ComponentType>;
-			Type::serialise(*static_cast<Type*>(p_address), p_file);
-		}}
-		, Deserialise{[](void* p_address, std::ifstream& p_file)
-		{
-			using Type                     = std::decay_t<ComponentType>;
-			*static_cast<Type*>(p_address) = Type::deserialise(p_file);
-		}}
+		// , Serialise{[](void* p_address, std::ofstream& p_file)
+		// {
+		// 	using Type = std::decay_t<ComponentType>;
+		// 	Type::serialise(*static_cast<Type*>(p_address), p_file);
+		// }}
+		// , Deserialise{[](void* p_address, std::ifstream& p_file)
+		// {
+		// 	using Type                     = std::decay_t<ComponentType>;
+		// 	*static_cast<Type*>(p_address) = Type::deserialise(p_file);
+		// }}
 	{}
 
 } // namespace ECS
