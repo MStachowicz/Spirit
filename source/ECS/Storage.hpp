@@ -4,158 +4,22 @@
 
 #include <algorithm>
 #include <array>
-#include <bitset>
 #include <iostream>
 #include <optional>
-#include <typeindex>
-#include <typeinfo>
 #include <utility>
 #include <vector>
 
+#include "Entity.hpp"
+#include "Component.hpp"
 #include "Meta.hpp"
 
 namespace ECS
 {
-	constexpr size_t Max_Component_Count = 32;
 	constexpr size_t Archetype_Start_Capacity = 32;
 
-	using EntityID            = size_t;
 	using ArchetypeID         = size_t;
 	using ArchetypeInstanceID = size_t; // Per ArchetypeID ID per component archetype instance.
 	using BufferPosition      = size_t; // Used to index into archetype m_data.
-	using ComponentID         = size_t; // Unique identifier for any type passed into ECSStorage.
-	using ComponentBitset     = std::bitset<Max_Component_Count>;
-
-	class Entity
-	{
-	public:
-		EntityID ID;
-
-		Entity(size_t i) : ID(i) {}
-
-		operator EntityID () const { return ID; } // Implicitly convert an Entity to an EntityID.
-	};
-	// MemberFuncs wraps pointers to special member functions of classes.
-	// These are neccessary as they need to be accessed after type erasure within the Archetype after construction e.g. erase(Index), reserve(Capacity).
-	// By virtue of type erasure, there is no type safety or runtime check to assert the pointers given to the special functions correspond to the type they were constructed with.
-	// This is a modified version of https://herbsutter.com/2016/09/25/to-store-a-destructor/
-	struct MemberFuncs
-	{
-		MemberFuncs()
-			: Destruct(nullptr)
-			, MoveAssign(nullptr)
-			, MoveConstruct(nullptr)
-		{}
-
-		template <typename T>
-		MemberFuncs(Meta::PackArg<T>)
-			: Destruct{
-				  [](void* p_address)
-				  {
-					  using Type = std::decay_t<T>;
-					  static_cast<Type*>(p_address)->~Type();
-				  }}
-			, MoveAssign{[](void* p_destination_address, void* p_source_address)
-						 {
-							 using Type                                 = std::decay_t<T>;
-							 *static_cast<Type*>(p_destination_address) = std::move(*static_cast<Type*>(p_source_address));
-						 }}
-			, MoveConstruct{[](void* p_destination_address, void* p_source_address)
-							{
-								using Type = std::decay_t<T>;
-								new (p_destination_address) Type(std::move(*static_cast<Type*>(p_source_address)));
-							}}
-		{}
-
-		// Call the destructor of the object at p_address_to_destroy.
-		void (*Destruct)(void* p_address_to_destroy);
-		// move-assign the object pointed to by p_source_address into the memory pointed to by p_destination_address.
-		void (*MoveAssign)(void* p_destination_address, void* p_source_address);
-		// placement-new move-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
-		void (*MoveConstruct)(void* p_destination_address, void* p_source_address);
-	};
-
-	struct ComponentInfo
-	{
-		ComponentID ID    = 0;
-		size_t size       = 0;
-		size_t align      = 0;
-		MemberFuncs funcs = {};
-	};
-
-	struct ComponentLayout
-	{
-		BufferPosition offset = 0; // The number of bytes from the start of an Archetype instance to this Component
-		ComponentInfo info    = {};
-	};
-
-	// ComponentHelper stores an array of ComponentInfos retrievable by ComponentType or ComponentID.
-	// When Storage comes across a request to add_entity all the ComponentTypes are processed into the array so their data can be retrieved later.
-	// Archetype uses type-erasure storing just the ComponentIDs which it can later use to retrieve ComponentInfo without the Type using get(ComponentID).
-	// Calling a set<ComponentType>() before get<ComponentType>() is required. This is preferred to setting at every get to maximise speed of get. In the context of ECS, we know a ComponentType needs potential setting only when constructing an Archetype.
-	class ComponentHelper
-	{
-	   static inline std::array<std::optional<ComponentInfo>, Max_Component_Count> Infos = {};
-
-	   static inline ComponentID counter = 0;
-	   template <typename ComponentType>
-	   static inline ComponentID perComponentTypeID = counter++;
-
-	public:
-		template <typename ComponentType>
-		static ComponentID get_ID()
-		{
-			using DecayedComponentType = std::decay_t<ComponentType>;
-			return perComponentTypeID<DecayedComponentType>;
-		}
-		// Generates a bitset out of all the ComponentTypes. Skips over Entity params.
-		template <typename... ComponentTypes>
-		static inline ComponentBitset get_component_bitset()
-		{
-			ComponentBitset componentBitset;
-
-			auto setComponentBit = [&componentBitset]<typename ComponentType>()
-			{
-				if constexpr (!std::is_same_v<Entity, std::decay_t<ComponentType>>) // Ignore any Entity params supplied.
-					componentBitset.set(get_ID<ComponentType>());
-			};
-			(setComponentBit.template operator()<ComponentTypes>(), ...);
-
-			return componentBitset;
-		}
-
-		// Set the ComponentInfo for ComponentType if it isnt set already.
-		//@return The unique ID of the ComponentType.
-		template <typename ComponentType>
-		static inline ComponentID set_info()
-		{
-			auto ID = get_ID<ComponentType>();
-			if (!Infos[ID].has_value())
-			{
-				using DecayedComponentType = std::decay_t<ComponentType>;
-				Infos[ID]                  = std::make_optional<ComponentInfo>(ID, sizeof(DecayedComponentType), alignof(DecayedComponentType), Meta::PackArg<DecayedComponentType>());
-				LOG("ComponentInfo set for {} ({}): ID: {}, size: {}, alignment: {}", typeid(ComponentType).name(), typeid(DecayedComponentType).name(), Infos[ID]->ID, Infos[ID]->size, Infos[ID]->align);
-			}
-			return ID;
-		}
-		template <typename... ComponentTypes>
-		static inline void set_infos()
-		{
-			(set_info<ComponentTypes>(), ...);
-		}
-
-		template <typename ComponentType>
-		static inline ComponentInfo get_info()
-		{
-			ASSERT(Infos[get_ID<ComponentType>()].has_value(), "Info for ComponentID {} is not set. Did you forget to call set_info for this ComponentType.", get_ID<ComponentType>());
-			return Infos[get_ID<ComponentType>()].value();
-		}
-		static inline ComponentInfo get_info(const ComponentID& p_ID)
-		{
-			ASSERT(Infos[p_ID].has_value(), "Info for ComponentID {} is not set. Did you forget to call set_info for this ComponentType.", p_ID);
-			return Infos[p_ID].value();
-		}
-	};
 
 	// Returns the next higher power of 2 after p_val
 	inline size_t next_greater_power_of_2(const size_t& p_val)
@@ -176,6 +40,13 @@ namespace ECS
 			return ((p_min / p_multiple) + 1) * p_multiple;
 	}
 
+	// Describes the layout of a ComponentType in an Archetype instance.
+	struct ComponentLayout
+	{
+		BufferPosition offset = 0;  // The number of bytes from the start of an Archetype instance to this Component
+		ComponentData  type_info; // The ComponentData for this ComponentType.
+	};
+
 	// Returns the stride for a list of ComponentLayouts.
 	inline size_t get_stride(const std::vector<ComponentLayout>& p_component_layouts)
 	{
@@ -184,8 +55,8 @@ namespace ECS
 
 		for (const auto& component : p_component_layouts)
 		{
-			max_position = std::max(max_position, component.offset + component.info.size);
-			max_allign = std::max(max_allign, component.info.align);
+			max_position = std::max(max_position, component.offset + component.type_info.size);
+			max_allign   = std::max(max_allign, component.type_info.align);
 		}
 
 		return next_multiple(max_allign, max_position);
@@ -209,15 +80,15 @@ namespace ECS
 			const auto component_label = running_char++;
 
 			if (!component_list.empty()) component_list += ", ";
-			component_list += std::format("\nID: {} ({}) size: {} align: {}", std::to_string(component.info.ID), component_label, component.info.size, component.info.align);
+			component_list += std::format("\nID: {} ({}) size: {} align: {}", std::to_string(component.type_info.ID), component_label, component.type_info.size, component.type_info.align);
 
-			const auto component_end_position = component.offset + component.info.size;
+			const auto component_end_position = component.offset + component.type_info.size;
 			const size_t padding_size         = i + 1 == p_component_layouts.size() ? stride - component_end_position : p_component_layouts[i + 1].offset - component_end_position;
 
 			std::string comp_mem_layout = "";
-			comp_mem_layout.reserve(component.info.size + padding_size);
+			comp_mem_layout.reserve(component.type_info.size + padding_size);
 
-			for (size_t j = 0; j < component.info.size; j++)
+			for (size_t j = 0; j < component.type_info.size; j++)
 				comp_mem_layout += component_label;
 			for (size_t j = 0; j < padding_size; j++)
 				comp_mem_layout += padding_symbol;
@@ -230,13 +101,13 @@ namespace ECS
 
 	// Generates a vector of ComponentLayouts from a paramater pack of ComponentTypes. Skips over Entity params.
 	// This function sets out the order and allignment of the Components within the Archetype buffer.
-	// The order of components is not guaranteed to remain the same.
+	// The order of components is not guaranteed to remain the same as it appears in the bitset ID order.
 	inline std::vector<ComponentLayout> get_components_layout(const ComponentBitset& p_component_bitset)
 	{
 		// There are a few assumptions we make setting the layout.
-		// 1. alignof each component is always a power of 2 (guaranteed by standard alignas(3) does not compile)
+		// 1. alignof each component is always a power of 2 (guaranteed by standard - alignas(3) does not compile)
 		// 2. We make no promise to store the types in the same order specified by parameter pack - we can pack more efficiently.
-		// 3. Each ComponentType is at an offset position which is a multiple of its alignof.
+		// 3. Every ComponentType is at an offset position which is a multiple of its alignof.
 
 		// Of all the ComponentTypes, this is the largest alignof value.
 		size_t max_allignof = 0;
@@ -247,8 +118,7 @@ namespace ECS
 		{
 			if (p_component_bitset[i])
 			{
-				ASSERT(i != ComponentHelper::get_ID<Entity>(), "Entity should never be a part of the ComponentBitset");
-				const auto info = ComponentHelper::get_info(i);
+				const auto& info = Component::get_info(i);
 				max_allignof = std::max(max_allignof, info.align);
 				component_layouts.push_back({0, info});
 			}
@@ -256,10 +126,10 @@ namespace ECS
 
 		size_t worst_placement_size = 0;
 		for (const auto& component : component_layouts)
-			worst_placement_size += next_multiple(max_allignof, component.info.size);
+			worst_placement_size += next_multiple(max_allignof, component.type_info.size);
 
 		// TODO Sort by size (+ align if size is equal) descending
-		std::sort(component_layouts.begin(), component_layouts.end(), [](const auto& a, const auto& b) -> bool { return a.info.size > b.info.size; });
+		std::sort(component_layouts.begin(), component_layouts.end(), [](const auto& a, const auto& b) -> bool { return a.type_info.size > b.type_info.size; });
 
 		// Unused fragment of the buffer.
 		struct empty_block
@@ -277,21 +147,21 @@ namespace ECS
 		{
 			for (size_t j = 0; j < empty_blocks.size(); j++)
 			{
-				if (empty_blocks[j].size >= component_layouts[i].info.size) // If the block is big enough for the type
+				if (empty_blocks[j].size >= component_layouts[i].type_info.size) // If the block is big enough for the type
 				{
-					const auto next_align_pos = next_multiple(component_layouts[i].info.align, empty_blocks[j].start);
+					const auto next_align_pos = next_multiple(component_layouts[i].type_info.align, empty_blocks[j].start);
 					const auto block_end      = empty_blocks[j].start + empty_blocks[j].size;
 
 					if (next_align_pos < block_end) // If the next alignment is before the end of the block
 					{
 						// If the remaining size of the block with alignment accounted for is large enough for this type
 						const auto size_remaining = block_end - next_align_pos;
-						if (size_remaining >= component_layouts[i].info.size)
+						if (size_remaining >= component_layouts[i].type_info.size)
 						{ // The remaining size in the block is enough, we can fit this type into the empty_block
 							component_layouts[i].offset = next_align_pos;
 
 							{ // With the type offset assigned, the empty_block needs to be split/removed
-								const auto type_end = component_layouts[i].offset + component_layouts[i].info.size;
+								const auto type_end = component_layouts[i].offset + component_layouts[i].type_info.size;
 
 								// Front block
 								if (component_layouts[i].offset > empty_blocks[j].start)
@@ -307,7 +177,7 @@ namespace ECS
 					}
 				}
 			}
-			ASSERT(component_layouts[i].offset != 0 || i == 0, "Failed to set the position of ComponentID {} in the buffer.", component_layouts[i].info.ID);
+			ASSERT(component_layouts[i].offset != 0 || i == 0, "Failed to set the position of ComponentID {} in the buffer.", component_layouts[i].type_info.ID);
 		}
 
 		std::sort(component_layouts.begin(), component_layouts.end(), [](const auto& a, const auto& b) -> bool { return a.offset < b.offset; });
@@ -315,7 +185,7 @@ namespace ECS
 	}
 
 	// A container of Entity objects and the components they own.
-	// Every unique combination of components makes an Archetype which is a contiguouse store of all the ComponentTypes.
+	// Every unique combination of components makes an Archetype which is a contiguous store of all the ComponentTypes.
 	// Storage is interfaced using Entity as a key.
 	class Storage
 	{
@@ -336,7 +206,7 @@ namespace ECS
 			// Construct an Archetype from a template list of ComponentTypes.
 			template<typename... ComponentTypes>
 			Archetype(Meta::PackArgs<ComponentTypes...>) noexcept
-				: m_bitset{ComponentHelper::get_component_bitset<ComponentTypes...>()}
+				: m_bitset{Component::get_component_bitset<ComponentTypes...>()}
 				, m_components{get_components_layout(m_bitset)}
 				, m_entities{}
 				, m_instance_size{get_stride(m_components)}
@@ -409,31 +279,32 @@ namespace ECS
 			Archetype(const Archetype& p_other)            = delete;
 			Archetype& operator=(const Archetype& p_other) = delete;
 
+			// Search the m_components vector for the p_component_ID and return its ComponentLayout.
+			// Non-template version (when we know the ComponentID but not the Type).
+			const ComponentLayout& get_component_layout(ComponentID p_component_ID) const
+			{
+				// Linear search for the ComponentLayout with the matching ComponentID.
+				auto it = std::find_if(m_components.begin(), m_components.end(), [&p_component_ID](const auto& p_component_layout)
+					{ return p_component_layout.type_info.ID == p_component_ID; });
+
+				ASSERT_THROW(it != m_components.end(), "Requested a ComponentLayout for a ComponentType not present in this archetype.");
+				return *it;
+			}
+
 			// Search the m_components vector for the ComponentType and return its ComponentLayout.
 			template <typename ComponentType>
 			const ComponentLayout& get_component_layout() const
 			{
-				const auto component_ID = ComponentHelper::get_ID<ComponentType>();
-				return get_component_layout(component_ID);
-			}
-
-			// Search the m_components vector for the p_component_ID and return its ComponentLayout. Non-template version (when we know the ComponentID but not the Type).
-			const ComponentLayout& get_component_layout(const ComponentID p_component_ID) const
-			{
-				auto it = std::find_if(m_components.begin(), m_components.end(), [&p_component_ID](const auto& p_component_layout)
-					{ return p_component_layout.info.ID == p_component_ID; });
-
-				ASSERT_THROW(it != m_components.end(), "Requested a ComponentLayout for a ComponentType not present in this archetype.");
-				return *it;
+				return get_component_layout(Component::get_ID<ComponentType>());
 			}
 
 			// Get the byte offset of ComponentType from the start of any ArchetypeInstanceID.
 			template <typename ComponentType>
 			BufferPosition get_component_offset() const
 			{
-				const auto& layout = get_component_layout<ComponentType>();
-				return layout.offset;
+				return get_component_layout<ComponentType>().offset;
 			}
+
 			// Get the byte position of ComponentType at ArchetypeInstanceID.
 			template <typename ComponentType>
 			BufferPosition get_component_position(const ArchetypeInstanceID& p_instance_index) const
@@ -497,7 +368,7 @@ namespace ECS
 					{
 						const auto last_instance_comp_start_position = last_instance_start_position + m_components[comp].offset;
 						const auto last_instance_comp_address = &m_data[last_instance_comp_start_position];
-						m_components[comp].info.funcs.Destruct(last_instance_comp_address);
+						m_components[comp].type_info.Destruct(last_instance_comp_address);
 					}
 				}
 				else
@@ -515,8 +386,8 @@ namespace ECS
 						const auto erase_instance_comp_start_position = erase_instance_start_position + m_components[comp].offset;
 						const auto erase_instance_comp_address = &m_data[erase_instance_comp_start_position];
 
-						m_components[comp].info.funcs.MoveAssign(erase_instance_comp_address, last_instance_comp_address);
-						m_components[comp].info.funcs.Destruct(last_instance_comp_address);
+						m_components[comp].type_info.MoveAssign(erase_instance_comp_address, last_instance_comp_address);
+						m_components[comp].type_info.Destruct(last_instance_comp_address);
 					}
 
 					// Move the end_entity into the erased index and update the p_entity_to_archetype_ID bookeeping.
@@ -549,8 +420,8 @@ namespace ECS
 					{
 						auto comp_data_position = instance_start + m_components[comp].offset;
 
-						m_components[comp].info.funcs.MoveConstruct(&new_data[comp_data_position], &m_data[comp_data_position]);
-						m_components[comp].info.funcs.Destruct(&m_data[comp_data_position]);
+						m_components[comp].type_info.MoveConstruct(&new_data[comp_data_position], &m_data[comp_data_position]);
+						m_components[comp].type_info.Destruct(&m_data[comp_data_position]);
 					}
 				}
 
@@ -569,7 +440,7 @@ namespace ECS
 					for (auto& comp : m_components)
 					{
 						const auto comp_address = &m_data[instance_start + comp.offset];
-						comp.info.funcs.Destruct(comp_address);
+						comp.type_info.Destruct(comp_address);
 					}
 				}
 
@@ -593,7 +464,7 @@ namespace ECS
 
 			static ComponentBitset get_bitset()
 			{
-				return ECS::ComponentHelper::get_component_bitset<FunctionArgs...>();
+				return ECS::Component::get_component_bitset<FunctionArgs...>();
 			}
 			// Does this function take only one parameter of type Entity.
 			constexpr static bool is_entity_function()
@@ -694,12 +565,11 @@ namespace ECS
 		{
 			static_assert(Meta::is_unique<ComponentTypes...>, "add_entity non-unique list of components given.");
 
-			const ComponentBitset bitset = ComponentHelper::get_component_bitset<ComponentTypes...>();
+			const ComponentBitset bitset = Component::get_component_bitset<ComponentTypes...>();
 			auto archetype_ID = get_matching_archetype(bitset);
 
 			if (!archetype_ID)
 			{// No matching archetype was found we add a new one for this ComponentBitset.
-				ComponentHelper::set_infos<ComponentTypes...>();
 				m_archetypes.push_back(Archetype(Meta::PackArgs<ComponentTypes...>()));
 				archetype_ID = m_archetypes.size() - 1;
 			}
@@ -783,8 +653,7 @@ namespace ECS
 		void add_component(const Entity& p_entity, ComponentType&& p_component)
 		{
 			const auto& [from_archetype_ID, from_archetype_index] = *m_entity_to_archetype_ID[p_entity.ID];
-			// Ensure the ComponentType is registered. AddComponent could be first encounter of this ComponentType.
-			const auto add_component_ID = ComponentHelper::set_info<ComponentType>();
+			const auto add_component_ID = Component::get_ID<ComponentType>();
 
 			if (m_archetypes[from_archetype_ID].m_bitset[add_component_ID]) // p_entity already own this ComponentType, do nothing.
 				return;
@@ -802,7 +671,7 @@ namespace ECS
 			}
 
 			// We now know from_archetype and to_archetype this Entity will be traversing.
-			// Move-construct the p_entity components from_archetype that into to_archetype and destruct the from_archetype components.
+			// Move-construct the p_entity components from_archetype into to_archetype and destruct the from_archetype components.
 			// Updates Archetype::m_entities containers and Storage::m_entity_to_archetype_ID according to placement changes caused by inheriting p_entity and required erase.
 			{
 				auto& from_archetype = m_archetypes[from_archetype_ID];
@@ -820,8 +689,8 @@ namespace ECS
 					for (auto& comp : from_archetype.m_components)
 					{
 						const auto from_comp_address = &from_archetype.m_data[from_instance_start + comp.offset];
-						const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.get_component_layout(comp.info.ID).offset];
-						comp.info.funcs.MoveConstruct(to_comp_address, from_comp_address);
+						const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.get_component_layout(comp.type_info.ID).offset];
+						comp.type_info.MoveConstruct(to_comp_address, from_comp_address);
 						// from_archetype.erase handles calling the destructors.
 					}
 
@@ -846,7 +715,7 @@ namespace ECS
 				return;
 
 			const auto& [from_archetype_ID, from_archetype_index] = *m_entity_to_archetype_ID[p_entity.ID];
-			const auto delete_component_ID = ComponentHelper::get_ID<ComponentType>();
+			const auto delete_component_ID = Component::get_ID<ComponentType>();
 			if (!m_archetypes[from_archetype_ID].m_bitset[delete_component_ID]) // p_entity doesnt own this ComponentType already, do nothing.
 				return;
 			else if (m_archetypes[from_archetype_ID].m_components.size() == 1) // from_archetype is a single component delete_component == erase.
@@ -886,10 +755,10 @@ namespace ECS
 					{
 						const auto from_comp_address = &from_archetype.m_data[from_instance_start + comp.offset];
 
-						if (comp.info.ID != delete_component_ID)
+						if (comp.type_info.ID != delete_component_ID)
 						{
-							const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.get_component_layout(comp.info.ID).offset];
-							comp.info.funcs.MoveConstruct(to_comp_address, from_comp_address);
+							const auto to_comp_address = &to_archetype.m_data[to_end_instance_start + to_archetype.get_component_layout(comp.type_info.ID).offset];
+							comp.type_info.MoveConstruct(to_comp_address, from_comp_address);
 							// from_archetype.erase handles calling the destructors.
 						}
 					}
@@ -914,7 +783,7 @@ namespace ECS
 
 			if constexpr (sizeof...(ComponentTypes) > 1)
 			{// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
-				const auto requested_bitset = ComponentHelper::get_component_bitset<ComponentTypes...>();
+				const auto requested_bitset = Component::get_component_bitset<ComponentTypes...>();
 				const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
 				const auto entityBitset = m_archetypes[archetype].m_bitset;
 				return (requested_bitset == entityBitset || ((requested_bitset & entityBitset) == requested_bitset));
@@ -923,7 +792,7 @@ namespace ECS
 			{// If we only have one requested ComponentType, we can skip the ComponentTypes bitset construction and test just the corresponding bit.
 				typedef typename Meta::GetNth<0, ComponentTypes...>::Type ComponentType;
 				const auto [archetype, index] = *m_entity_to_archetype_ID[p_entity.ID];
-				return m_archetypes[archetype].m_bitset.test(ComponentHelper::get_ID<ComponentType>());
+				return m_archetypes[archetype].m_bitset.test(Component::get_ID<ComponentType>());
 			}
 		}
 
@@ -934,7 +803,7 @@ namespace ECS
 			static_assert(sizeof...(ComponentTypes) != 0, "Cannot query count_components with 0 types.");
 
 			// Grab the archetype bitset the entity belongs to and check if the ComponentTypes bitset matches or is a subset of it.
-			const auto requested_bitset = ComponentHelper::get_component_bitset<ComponentTypes...>();
+			const auto requested_bitset = Component::get_component_bitset<ComponentTypes...>();
 			size_t count = 0;
 
 			for (const auto& archetype : m_archetypes)

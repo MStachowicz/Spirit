@@ -23,6 +23,8 @@ namespace Component
 	class ParticleEmitter
 	{
 	public:
+		constexpr static size_t Persistent_ID = 8;
+
 		TextureRef diffuse;              // Texture applied to all the particles.
 		glm::vec3 emit_position;         // Position particles emit from.
 		glm::vec3 emit_velocity_min;     // Minimum starting velocity in m/s.
