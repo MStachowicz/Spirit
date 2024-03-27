@@ -1,6 +1,8 @@
 #include "ECSTester.hpp"
 #include "MemoryCorrectnessItem.hpp"
 
+#include "ECS/Entity.hpp"
+#include "ECS/Component.hpp"
 #include "ECS/Storage.hpp"
 #include "Utility/Logger.hpp"
 
@@ -15,13 +17,82 @@ DISABLE_WARNING_UNUSED_VARIABLE // Required to stop variables being destroyed be
 
 namespace Test
 {
+	struct MyDouble : public PrimitiveTypeWrapper<double>      { static constexpr ECS::ComponentID Persistent_ID = 1; };
+	struct MyFloat  : public PrimitiveTypeWrapper<float>       { static constexpr ECS::ComponentID Persistent_ID = 2; };
+	struct MyBool   : public PrimitiveTypeWrapper<bool>        { static constexpr ECS::ComponentID Persistent_ID = 3; };
+	struct MyInt    : public PrimitiveTypeWrapper<int>         { static constexpr ECS::ComponentID Persistent_ID = 4; };
+	struct MyChar   : public PrimitiveTypeWrapper<char>        { static constexpr ECS::ComponentID Persistent_ID = 5; };
+	struct MyString : public PrimitiveTypeWrapper<std::string> { static constexpr ECS::ComponentID Persistent_ID = 6; };
+	struct MySizet  : public PrimitiveTypeWrapper<size_t>      { static constexpr ECS::ComponentID Persistent_ID = 7; };
+} // namespace Test
+
+
+// Formatter for PrimitiveTypeWrapper
+namespace std
+{
+	template<>
+	struct formatter<Test::MyDouble>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MyDouble& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+	template<>
+	struct formatter<Test::MyFloat>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MyFloat& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+	template<>
+	struct formatter<Test::MyBool>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MyBool& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+	template<>
+	struct formatter<Test::MyInt>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MyInt& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+	template<>
+	struct formatter<Test::MyChar>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MyChar& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+	template<>
+	struct formatter<Test::MyString>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MyString& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+	template<>
+	struct formatter<Test::MySizet>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Test::MySizet& wrapper, format_context& ctx) const { return format_to(ctx.out(), "{}", wrapper.value); }
+	};
+} // namespace std
+
+namespace Test
+{
 	#define RUN_MEMORY_TEST(p_alive_count_expected) CHECK_EQUAL(MemoryCorrectnessItem::count_errors(), 0, "Check memory errors"); CHECK_EQUAL(MemoryCorrectnessItem::count_alive(), p_alive_count_expected, "Check alive count");
 
 	void ECSTester::run_performance_tests()
 	{}
 
 	void ECSTester::run_unit_tests()
-	{SCOPE_SECTION("ECS");
+	{
+		ECS::Component::set_info<MemoryCorrectnessItem>();
+		ECS::Component::set_info<MyDouble>();
+		ECS::Component::set_info<MyFloat>();
+		ECS::Component::set_info<MyBool>();
+		ECS::Component::set_info<MyInt>();
+		ECS::Component::set_info<MyChar>();
+		ECS::Component::set_info<MyString>();
+		ECS::Component::set_info<MySizet>();
+
+		SCOPE_SECTION("ECS");
 		{SCOPE_SECTION("count_entities")
 
 			ECS::Storage storage;
@@ -32,13 +103,13 @@ namespace Test
 
 			{SCOPE_SECTION("Add entity")
 
-				double_ent = storage.add_entity(42.0);
+				double_ent = storage.add_entity(MyDouble{42.0});
 				CHECK_EQUAL(storage.count_entities(), 1, "Add single component entity");
 
-				float_ent = storage.add_entity(13.f);
+				float_ent = storage.add_entity(MyFloat{13.f});
 				CHECK_EQUAL(storage.count_entities(), 2, "Add new archetype entity");
 
-				float_and_double_ent = storage.add_entity(13.f, 42.0);
+				float_and_double_ent = storage.add_entity(MyFloat{13.f}, MyDouble{42.0});
 				CHECK_EQUAL(storage.count_entities(), 3, "Add another entity with both component types");
 			}
 			{SCOPE_SECTION("Delete entity");
@@ -57,57 +128,57 @@ namespace Test
 		{SCOPE_SECTION("count_components")
 
 			ECS::Storage storage;
-			CHECK_EQUAL(storage.count_components<double>(), 0, "Start Empty");
+			CHECK_EQUAL(storage.count_components<MyDouble>(), 0, "Start Empty");
 			std::optional<ECS::Entity> double_ent;
 			std::optional<ECS::Entity> float_ent;
 			std::optional<ECS::Entity> float_and_double_ent;
 
 			{SCOPE_SECTION("Add component");
 
-				double_ent = storage.add_entity(42.0);
-				CHECK_EQUAL(storage.count_components<double>(), 1, "Add double ent");
-				CHECK_EQUAL(storage.count_components<float>(),  0, "Add double ent check float");
-				CHECK_EQUAL(storage.count_components<int>(),    0, "Add double ent check int");
+				double_ent = storage.add_entity(MyDouble{42.0});
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 1, "Add MyDouble ent");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  0, "Add MyDouble ent check MyFloat");
+				CHECK_EQUAL(storage.count_components<MyInt>(),    0, "Add MyDouble ent check MyInt");
 
-				float_ent = storage.add_entity(13.f);
-				CHECK_EQUAL(storage.count_components<double>(), 1, "Add float ent check double");
-				CHECK_EQUAL(storage.count_components<float>(),  1, "Add float ent check float");
-				CHECK_EQUAL(storage.count_components<int>(),    0, "Add float ent check int");
+				float_ent = storage.add_entity(MyFloat{13.f});
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 1, "Add MyFloat ent check MyDouble");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  1, "Add MyFloat ent check MyFloat");
+				CHECK_EQUAL(storage.count_components<MyInt>(),    0, "Add MyFloat ent check MyInt");
 
-				float_and_double_ent = storage.add_entity(13.f, 42.0);
-				CHECK_EQUAL(storage.count_components<double>(), 2, "Add float and double ent check double");
-				CHECK_EQUAL(storage.count_components<float>(),  2, "Add float and double ent check float");
-				CHECK_EQUAL(storage.count_components<int>(),    0, "Count type not in storage");
-				auto count_combo = storage.count_components<double, float>(); // comma in template args is not supported by CHECK_EQUAL
-				CHECK_EQUAL(count_combo, 1, "Add float and double ent check combo");
+				float_and_double_ent = storage.add_entity(MyFloat{13.f}, MyDouble{42.0});
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 2, "Add MyFloat and MyDouble ent check MyDouble");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  2, "Add MyFloat and MyDouble ent check MyFloat");
+				CHECK_EQUAL(storage.count_components<MyInt>(),    0, "Count type not in storage");
+				auto count_combo = storage.count_components<MyDouble, MyFloat>(); // comma in template args is not supported by CHECK_EQUAL
+				CHECK_EQUAL(count_combo, 1, "Add MyFloat and MyDouble ent check combo");
 			}
 
 			{SCOPE_SECTION("Delete entity")
 				storage.delete_entity(double_ent.value());
-				CHECK_EQUAL(storage.count_components<double>(), 1, "Remove double ent check double");
-				CHECK_EQUAL(storage.count_components<float>(),  2, "Remove double ent check float");
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 1, "Remove MyDouble ent check MyDouble");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  2, "Remove MyDouble ent check MyFloat");
 
-				storage.delete_component<float>(float_and_double_ent.value());
-				CHECK_EQUAL(storage.count_components<double>(), 1, "Remove float from float_and_double ent check double");
-				CHECK_EQUAL(storage.count_components<float>(),  1, "Remove float from float_and_double ent check float");
-				auto count_combo = storage.count_components<double, float>(); // comma in template args is not supported by CHECK_EQUAL
-				CHECK_EQUAL(count_combo, 0, "Remove float from float_and_double ent check combo");
+				storage.delete_component<MyFloat>(float_and_double_ent.value());
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 1, "Remove MyFloat from float_and_double ent check MyDouble");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  1, "Remove MyFloat from float_and_double ent check MyFloat");
+				auto count_combo = storage.count_components<MyDouble, MyFloat>(); // comma in template args is not supported by CHECK_EQUAL
+				CHECK_EQUAL(count_combo, 0, "Remove MyFloat from float_and_double ent check combo");
 
 				storage.delete_entity(float_and_double_ent.value());
-				CHECK_EQUAL(storage.count_components<double>(), 0, "Remove float and double ent check double");
-				CHECK_EQUAL(storage.count_components<float>(),  1, "Remove float and double ent check float");
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 0, "Remove MyFloat and MyDouble ent check MyDouble");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  1, "Remove MyFloat and MyDouble ent check MyFloat");
 
 				storage.delete_entity(float_ent.value());
-				CHECK_EQUAL(storage.count_components<double>(), 0, "Remove float ent check double");
-				CHECK_EQUAL(storage.count_components<float>(),  0, "Remove float ent check float");
+				CHECK_EQUAL(storage.count_components<MyDouble>(), 0, "Remove MyFloat ent check MyDouble");
+				CHECK_EQUAL(storage.count_components<MyFloat>(),  0, "Remove MyFloat ent check MyFloat");
 			}
 		}
 
 		{SCOPE_SECTION("add_entity");
 			{
 				ECS::Storage storage;
-				const float float_comp   = 42.f;
-				const double double_comp = 13.0;
+				const MyFloat float_comp{42.f};
+				const MyDouble double_comp{13.0};
 
 				RUN_MEMORY_TEST(0);
 
@@ -134,7 +205,7 @@ namespace Test
 					RUN_MEMORY_TEST(3);
 				}
 				{SCOPE_SECTION("New archetype");
-					storage.add_entity(1.f);
+					storage.add_entity(MyFloat{1.f});
 					RUN_MEMORY_TEST(3); // Should still be 3 alive because we didnt add another mem correctness item
 				}
 				{SCOPE_SECTION("Add by move");
@@ -154,7 +225,7 @@ namespace Test
 			{
 				ECS::Storage storage;
 
-				auto ent = storage.add_entity(1.f);
+				auto ent = storage.add_entity(MyFloat{1.f});
 				CHECK_EQUAL(storage.count_entities(), 1, "Add 1 entity");
 
 				storage.delete_entity(ent);
@@ -310,16 +381,16 @@ namespace Test
 		{SCOPE_SECTION("add_component")
 			{
 				ECS::Storage storage;
-				auto entity = storage.add_entity(42.0);
+				auto entity = storage.add_entity(MyDouble{42.0});
 
-				storage.add_component(entity, 13.f);
-				CHECK_EQUAL(storage.count_components<float>(), 1, "Add another component to existing archetype");
+				storage.add_component(entity, MyFloat{13.f});
+				CHECK_EQUAL(storage.count_components<MyFloat>(), 1, "Add another component to existing archetype");
 
-				storage.add_component(entity, true);
-				CHECK_EQUAL(storage.count_components<bool>(), 1, "Add another component to existing archetype");
+				storage.add_component(entity, MyBool{true});
+				CHECK_EQUAL(storage.count_components<MyBool>(), 1, "Add another component to existing archetype");
 
-				storage.add_component(entity, 69);
-				CHECK_EQUAL(storage.count_components<int>(), 1, "Add another component to existing archetype");
+				storage.add_component(entity, MyInt{69});
+				CHECK_EQUAL(storage.count_components<MyInt>(), 1, "Add another component to existing archetype");
 			}
 			{SCOPE_SECTION("Memory correctness");
 				{
@@ -328,29 +399,29 @@ namespace Test
 					auto comp = MemoryCorrectnessItem();
 
 					{SCOPE_SECTION("Add by copy");
-						auto entity = storage.add_entity(42.0);
+						auto entity = storage.add_entity(MyDouble{42.0});
 						storage.add_component(entity, comp);
 						RUN_MEMORY_TEST(2);
 					}
 					{SCOPE_SECTION("Add second copy");
-						auto entity = storage.add_entity(42.0);
+						auto entity = storage.add_entity(MyDouble{42.0});
 						storage.add_component(entity, comp);
 						RUN_MEMORY_TEST(3);
 					}
 					{SCOPE_SECTION("New archetype");
-						auto entity = storage.add_entity(42.0);
-						storage.add_component(entity, 1.f);
+						auto entity = storage.add_entity(MyDouble{42.0});
+						storage.add_component(entity, MyFloat{1.f});
 						RUN_MEMORY_TEST(3); // Should still be 3 alive because we didnt add another mem correctness item
 					}
 					{SCOPE_SECTION("Add by move");
-						auto entity = storage.add_entity(42.0);
+						auto entity = storage.add_entity(MyDouble{42.0});
 						storage.add_component(entity, MemoryCorrectnessItem());
 						RUN_MEMORY_TEST(4); // Should now be 4 alive because we move constructed a new one into storage
 					}
 					{SCOPE_SECTION("Add 100");
 						for (int i = 0; i < 100; i++)
 						{
-							auto entity = storage.add_entity(42.0);
+							auto entity = storage.add_entity(MyDouble{42.0});
 							storage.add_component(entity, MemoryCorrectnessItem());
 						}
 
@@ -364,45 +435,45 @@ namespace Test
 
 			{SCOPE_SECTION("const")
 				ECS::Storage storage;
-				auto entity = storage.add_entity(42.0);
-				CHECK_EQUAL(storage.get_component<double>(entity), 42.0, "single component entity");
+				auto entity = storage.add_entity(MyDouble{42.0});
+				CHECK_EQUAL(storage.get_component<MyDouble>(entity), 42.0, "single component entity");
 
 				// Signature variations
-				CHECK_EQUAL(storage.get_component<double&>(entity), 42.0, "non-const & get");
-				CHECK_EQUAL(storage.get_component<const double&>(entity), 42.0, "const & get");
+				CHECK_EQUAL(storage.get_component<MyDouble&>(entity), 42.0, "non-const & get");
+				CHECK_EQUAL(storage.get_component<const MyDouble&>(entity), 42.0, "const & get");
 
 				// std::decay doesnt work on * so the below dont compile for now.
-				// CHECK_EQUAL(storage.get_component<double*>(entity), 42.0, "single component* entity");
-				// CHECK_EQUAL(storage.get_component<const double*>(entity), 42.0, "single 'const component*' entity");
+				// CHECK_EQUAL(storage.get_component<MyDouble*>(entity), 42.0, "single component* entity");
+				// CHECK_EQUAL(storage.get_component<const MyDouble*>(entity), 42.0, "single 'const component*' entity");
 
-				{SCOPE_SECTION("double float bool entity");
+				{SCOPE_SECTION("MyDouble MyFloat MyBool entity");
 
-					auto entity = storage.add_entity(1.0, 2.f, true);
-					CHECK_EQUAL(storage.get_component<double>(entity), 1.0, "get double");
-					CHECK_EQUAL(storage.get_component<float>(entity), 2.0f, "get float");
-					CHECK_EQUAL(storage.get_component<bool>(entity),  true, "get bool");
+					auto entity = storage.add_entity(MyDouble{1.0}, MyFloat{2.f}, MyBool{true});
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity), 1.0, "get MyDouble");
+					CHECK_EQUAL(storage.get_component<MyFloat>(entity), 2.0f, "get MyFloat");
+					CHECK_EQUAL(storage.get_component<MyBool>(entity),  true, "get MyBool");
 				}
-				{SCOPE_SECTION("bool float double entity"); // Reverse order but same components/archetype as previous
+				{SCOPE_SECTION("MyBool MyFloat MyDouble entity"); // Reverse order but same components/archetype as previous
 
-					auto entity_reverse = storage.add_entity(false, 1.f, 2.0);
-					CHECK_EQUAL(storage.get_component<double>(entity_reverse), 2.0, "get double");
-					CHECK_EQUAL(storage.get_component<float>(entity_reverse), 1.0f, "get float");
-					CHECK_EQUAL(storage.get_component<bool>(entity_reverse), false, "get bool");
+					auto entity_reverse = storage.add_entity(MyBool{false}, MyFloat{1.f}, MyDouble{2.0});
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_reverse), 2.0, "get MyDouble");
+					CHECK_EQUAL(storage.get_component<MyFloat>(entity_reverse), 1.0f, "get MyFloat");
+					CHECK_EQUAL(storage.get_component<MyBool>(entity_reverse), false, "get MyBool");
 				}
-				{SCOPE_SECTION("float bool double entity"); // Different order but same components/archetype as previous 2
-					auto entity_new = storage.add_entity(13.f, true, 42.0);
-					CHECK_EQUAL(storage.get_component<double>(entity_new), 42.0, "get double");
-					CHECK_EQUAL(storage.get_component<float>(entity_new), 13.0f, "get float");
-					CHECK_EQUAL(storage.get_component<bool>(entity_new),   true, "get bool");
+				{SCOPE_SECTION("MyFloat MyBool MyDouble entity"); // Different order but same components/archetype as previous 2
+					auto entity_new = storage.add_entity(MyFloat{13.f}, MyBool{true}, MyDouble{42.0});
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_new), 42.0, "get MyDouble");
+					CHECK_EQUAL(storage.get_component<MyFloat>(entity_new), 13.0f, "get MyFloat");
+					CHECK_EQUAL(storage.get_component<MyBool>(entity_new),   true, "get MyBool");
 				}
 				{SCOPE_SECTION("char entity");
-					auto entity_new = storage.add_entity('G');
-					CHECK_EQUAL(storage.get_component<char>(entity_new), 'G', "get char");
+					auto entity_new = storage.add_entity(MyChar{'G'});
+					CHECK_EQUAL(storage.get_component<MyChar>(entity_new), 'G', "get char");
 				}
 
 				{SCOPE_SECTION("Data limits") // Setting as many bits as possible
-					constexpr double max_double = std::numeric_limits<double>::max();
-					constexpr double min_double = std::numeric_limits<double>::min();
+					constexpr MyDouble max_double{std::numeric_limits<double>::max()};
+					constexpr MyDouble min_double{std::numeric_limits<double>::min()};
 
 					auto entity_max_double_1 = storage.add_entity(max_double);
 					auto entity_min_double_1 = storage.add_entity(min_double);
@@ -413,54 +484,54 @@ namespace Test
 					auto entity_min_double_4 = storage.add_entity(min_double);
 					auto entity_max_double_4 = storage.add_entity(max_double);
 
-					CHECK_EQUAL(storage.get_component<double>(entity_max_double_1), max_double, "1");
-					CHECK_EQUAL(storage.get_component<double>(entity_max_double_2), max_double, "2");
-					CHECK_EQUAL(storage.get_component<double>(entity_max_double_3), max_double, "3");
-					CHECK_EQUAL(storage.get_component<double>(entity_max_double_4), max_double, "4");
-					CHECK_EQUAL(storage.get_component<double>(entity_min_double_1), min_double, "1");
-					CHECK_EQUAL(storage.get_component<double>(entity_min_double_2), min_double, "2");
-					CHECK_EQUAL(storage.get_component<double>(entity_min_double_3), min_double, "3");
-					CHECK_EQUAL(storage.get_component<double>(entity_min_double_4), min_double, "4");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_max_double_1), max_double, "1");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_max_double_2), max_double, "2");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_max_double_3), max_double, "3");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_max_double_4), max_double, "4");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_min_double_1), min_double, "1");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_min_double_2), min_double, "2");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_min_double_3), min_double, "3");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity_min_double_4), min_double, "4");
 				}
 			}
 			{SCOPE_SECTION("non-const")
 				ECS::Storage storage;
 
 				{SCOPE_SECTION("Get and assign");
-					auto entity  = storage.add_entity(42.0);
-					auto& comp   = storage.get_component<double>(entity);
-					comp         = 69.0;
+					auto entity  = storage.add_entity(MyDouble{42.0});
+					auto& comp   = storage.get_component<MyDouble>(entity);
+					comp.value   = 69.0;
 
-					CHECK_EQUAL(storage.get_component<double>(entity), 69.0, "Value change after assign");
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity), 69.0, "Value change after assign");
 
-					storage.get_component<double>(entity) += 10.0;
-					CHECK_EQUAL(storage.get_component<double>(entity), 79.0, "get and set one liner");
+					storage.get_component<MyDouble>(entity) += 10.0;
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity), 79.0, "get and set one liner");
 
 				}
 				{SCOPE_SECTION("Get and assign second"); // Add to the same archetype
-					auto entity = storage.add_entity(27.0);
-					storage.get_component<double>(entity) += 3.0;
-					CHECK_EQUAL(storage.get_component<double>(entity), 30.0, "get and set to same archetype");
+					auto entity = storage.add_entity(MyDouble{27.0});
+					storage.get_component<MyDouble>(entity) += 3.0;
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity), 30.0, "get and set to same archetype");
 				}
 
 				{SCOPE_SECTION("Add new archetype ent");
-					auto entity = storage.add_entity(27.0, 49.f);
-					storage.get_component<double>(entity) += 3.0;
-					CHECK_EQUAL(storage.get_component<double>(entity), 30.0, "check");
+					auto entity = storage.add_entity(MyDouble{27.0}, MyFloat{49.f});
+					storage.get_component<MyDouble>(entity) += 3.0;
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity), 30.0, "check");
 
-					storage.get_component<float>(entity) += 1.0f;
-					CHECK_EQUAL(storage.get_component<float>(entity), 50.0f, "check 2");
+					storage.get_component<MyFloat>(entity) += 1.0f;
+					CHECK_EQUAL(storage.get_component<MyFloat>(entity), 50.0f, "check 2");
 				}
-				{SCOPE_SECTION("double float int entity");
-					auto entity = storage.add_entity(1.0, 2.f, 3);
-					storage.get_component<int>(entity) += 1;
-					CHECK_EQUAL(storage.get_component<int>(entity), 4, "Edit int");
+				{SCOPE_SECTION("MyDouble MyFloat MyInt entity");
+					auto entity = storage.add_entity(MyDouble{1.0}, MyFloat{2.f}, MyInt{3});
+					storage.get_component<MyInt>(entity) += 1;
+					CHECK_EQUAL(storage.get_component<MyInt>(entity), 4, "Edit MyInt");
 
-					storage.get_component<float>(entity) += 19.0f;
-					CHECK_EQUAL(storage.get_component<float>(entity), 21.f, "Edit float");
+					storage.get_component<MyFloat>(entity) += 19.0f;
+					CHECK_EQUAL(storage.get_component<MyFloat>(entity), MyFloat{21.f}, "Edit MyFloat");
 
-					storage.get_component<double>(entity) += 13.0;
-					CHECK_EQUAL(storage.get_component<double>(entity), 14.0, "Edit double");
+					storage.get_component<MyDouble>(entity) += 13.0;
+					CHECK_EQUAL(storage.get_component<MyDouble>(entity), 14.0, "Edit MyDouble");
 				}
 			}
 			{SCOPE_SECTION("Memory correctness");
@@ -498,43 +569,43 @@ namespace Test
 		{SCOPE_SECTION("has_components")
 
 			ECS::Storage storage;
-			const auto double_float_bool_ent = storage.add_entity(1.0, 2.f, true);
-			const auto double_ent            = storage.add_entity(1.0);
+			const auto double_float_bool_ent = storage.add_entity(MyDouble{1.0}, MyFloat{2.f}, MyBool{true});
+			const auto double_ent            = storage.add_entity(MyDouble{1.0});
 
 			{
-				auto has_components = storage.has_components<double>(double_ent);
+				auto has_components = storage.has_components<MyDouble>(double_ent);
 				CHECK_EQUAL(has_components, true, "exact match single type single component");
 			}
 			{
-				bool has_components = storage.has_components<double, float, bool>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyDouble, MyFloat, MyBool>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, true, "exact match multiple types");
 			}
 			{
-				auto has_components = storage.has_components<bool, float, double>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyBool, MyFloat, MyDouble>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, true, "exact match different order multiple types");
 			}
 			{
-				auto has_components = storage.has_components<float>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyFloat>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, true, "single type match from multiple component middle");
 			}
 			{
-				auto has_components = storage.has_components<double, bool>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyDouble, MyBool>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, true, "subset match");
 			}
 			{
-				auto has_components = storage.has_components<bool, double>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyBool, MyDouble>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, true, "subset match different order");
 			}
 			{
-				auto has_components = storage.has_components<double>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyDouble>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, true, "subset match single type");
 			}
 			{
-				auto has_components = storage.has_components<std::string>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyString>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, false, "no match single type");
 			}
 			{
-				auto has_components = storage.has_components<std::string, size_t>(double_float_bool_ent);
+				auto has_components = storage.has_components<MyString, MySizet>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, false, "no match multiple types");
 			}
 		}
@@ -545,12 +616,12 @@ namespace Test
 
 				{SCOPE_SECTION("Iterate empty");
 
-					size_t count      = 0;
-					double sum_double = 0.0;
-					float sum_float   = 0.0f;
-					int sum_int       = 0;
+					size_t count = 0;
+					MyDouble sum_double{0.0};
+					MyFloat sum_float{0.0f};
+					MyInt sum_int{0};
 
-					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					storage.foreach([&](MyDouble& p_double, MyFloat& p_float, MyInt& p_int)
 					{
 						sum_double += p_double;
 						sum_float  += p_float;
@@ -564,48 +635,48 @@ namespace Test
 					CHECK_EQUAL(count, 0, "Iterate count");
 				}
 
-				storage.add_entity(13.69, 1.33f, 2);
-				storage.add_entity(13.69, 1.33f, 2);
-				storage.add_entity(13.69, 1.33f, 2);
+				storage.add_entity(MyDouble{13.69}, MyFloat{1.33f}, MyInt{2});
+				storage.add_entity(MyDouble{13.69}, MyFloat{1.33f}, MyInt{2});
+				storage.add_entity(MyDouble{13.69}, MyFloat{1.33f}, MyInt{2});
 
 				{SCOPE_SECTION("Exact match and order to archetype");
 					size_t count = 0;
-					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					storage.foreach([&](MyDouble& p_double, MyFloat& p_float, MyInt& p_int)
 					{
-						CHECK_EQUAL(p_double, 13.69, "Check double");
-						CHECK_EQUAL(p_int,        2, "Check int");
-						CHECK_EQUAL(p_float,  1.33f, "Check float");
+						CHECK_EQUAL(p_double, 13.69, "Check MyDouble");
+						CHECK_EQUAL(p_int,        2, "Check MyInt");
+						CHECK_EQUAL(p_float,  1.33f, "Check MyFloat");
 						count++;
 					});
 					CHECK_EQUAL(count, 3, "Iterate count");
 				}
 				{SCOPE_SECTION("Exact match different order to archetype");
 					size_t count = 0;
-					storage.foreach([&](float& p_float, int& p_int, double& p_double)
+					storage.foreach([&](MyFloat& p_float, MyInt& p_int, MyDouble& p_double)
 					{
-						CHECK_EQUAL(p_double, 13.69, "Check double");
-						CHECK_EQUAL(p_int,        2, "Check int");
-						CHECK_EQUAL(p_float,  1.33f, "Check float");
+						CHECK_EQUAL(p_double, 13.69, "Check MyDouble");
+						CHECK_EQUAL(p_int,        2, "Check MyInt");
+						CHECK_EQUAL(p_float,  1.33f, "Check MyFloat");
 						count++;
 					});
 					CHECK_EQUAL(count, 3, "Ieration count");
 				}
 				{SCOPE_SECTION("Subset match same order to archetype");
 					size_t count = 0;
-					storage.foreach([&](double& p_double, float& p_float)
+					storage.foreach([&](MyDouble& p_double, MyFloat& p_float)
 					{
-						CHECK_EQUAL(p_double, 13.69, "Check double");
-						CHECK_EQUAL(p_float,  1.33f, "Check float");
+						CHECK_EQUAL(p_double, 13.69, "Check MyDouble");
+						CHECK_EQUAL(p_float,  1.33f, "Check MyFloat");
 						count++;
 					});
 					CHECK_EQUAL(count, 3, "Ieration count");
 				}
 				{SCOPE_SECTION("Subset match different order to archetype");
 					size_t count = 0;
-					storage.foreach([&](int& p_int, float& p_float)
+					storage.foreach([&](MyInt& p_int, MyFloat& p_float)
 					{
-						CHECK_EQUAL(p_int,       2, "Check int");
-						CHECK_EQUAL(p_float, 1.33f, "Check float");
+						CHECK_EQUAL(p_int,       2, "Check MyInt");
+						CHECK_EQUAL(p_float, 1.33f, "Check MyFloat");
 						count++;
 					});
 					CHECK_EQUAL(count, 3, "Ieration count");
@@ -613,27 +684,27 @@ namespace Test
 				{SCOPE_SECTION("Single argument match to archetype");
 					{SCOPE_SECTION("Front");
 						size_t count = 0;
-						storage.foreach([&](double& p_double)
+						storage.foreach([&](MyDouble& p_double)
 						{
-							CHECK_EQUAL(p_double, 13.69, "Check double");
+							CHECK_EQUAL(p_double, 13.69, "Check MyDouble");
 							count++;
 						});
 						CHECK_EQUAL(count, 3, "Ieration count");
 					}
 					{SCOPE_SECTION("Middle");
 						size_t count = 0;
-						storage.foreach([&](float& p_float)
+						storage.foreach([&](MyFloat& p_float)
 						{
-							CHECK_EQUAL(p_float, 1.33f, "Check float");
+							CHECK_EQUAL(p_float, 1.33f, "Check MyFloat");
 							count++;
 						});
 						CHECK_EQUAL(count, 3, "Ieration count");
 					}
 					{SCOPE_SECTION("Back");
 						size_t count = 0;
-						storage.foreach([&](int& p_int)
+						storage.foreach([&](MyInt& p_int)
 						{
-							CHECK_EQUAL(p_int, 2, "Check int");
+							CHECK_EQUAL(p_int, 2, "Check MyInt");
 							count++;
 						});
 						CHECK_EQUAL(count, 3, "Ieration count");
@@ -641,7 +712,7 @@ namespace Test
 				}
 				{SCOPE_SECTION("Exact match change data");
 					size_t count = 0;
-					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					storage.foreach([&](MyDouble& p_double, MyFloat& p_float, MyInt& p_int)
 					{
 						p_double += 1.0;
 						p_float  += 1.0f;
@@ -651,18 +722,18 @@ namespace Test
 					CHECK_EQUAL(count, 3, "Ieration count");
 				}
 				{SCOPE_SECTION("Exact match check changed data");
-					storage.foreach([&](double& p_double, float& p_float, int& p_int)
+					storage.foreach([&](MyDouble& p_double, MyFloat& p_float, MyInt& p_int)
 					{
-						CHECK_EQUAL(p_double, 14.69, "Check double");
-						CHECK_EQUAL(p_int,        3, "Check int");
-						CHECK_EQUAL(p_float,  2.33f, "Check float");
+						CHECK_EQUAL(p_double, 14.69, "Check MyDouble");
+						CHECK_EQUAL(p_int,        3, "Check MyInt");
+						CHECK_EQUAL(p_float,  2.33f, "Check MyFloat");
 					});
 				}
 				{SCOPE_SECTION("Add a new entity to a new archetype");
-					storage.add_entity(13.0);
+					storage.add_entity(MyDouble{13.0});
 					size_t count = 0;
-					double sum = 0.0;
-					storage.foreach([&](double& p_double)
+					MyDouble sum{0.0};
+					storage.foreach([&](MyDouble& p_double)
 					{
 						sum += p_double;
 						count++;
@@ -679,7 +750,7 @@ namespace Test
 
 				std::vector<ECS::Entity> entities;
 				for (int i = 0; i < 12; i++)
-					entities.push_back(storage.add_entity(1.0, 2.f, true));
+					entities.push_back(storage.add_entity(MyDouble{1.0}, MyFloat{2.f}, MyInt{1}));
 
 				{SCOPE_SECTION("Iterate Entity only")
 
@@ -692,11 +763,11 @@ namespace Test
 
 				{SCOPE_SECTION("Iterate exact match");
 					std::set<ECS::Entity> entity_set;
-					double sum_double = 0.0;
-					float sum_float   = 0.0f;
-					int sum_int       = 0;
+					MyDouble sum_double{0.0};
+					MyFloat sum_float{0.0f};
+					MyInt sum_int{0};
 
-					storage.foreach([&](ECS::Entity& p_entity, double& p_double, float& p_float, bool& p_int)
+					storage.foreach([&](ECS::Entity& p_entity, MyDouble& p_double, MyFloat& p_float, MyInt& p_int)
 					{
 						sum_double += p_double;
 						sum_float  += p_float;
@@ -710,10 +781,10 @@ namespace Test
 
 				{SCOPE_SECTION("Iterate partial match");
 					std::set<ECS::Entity> entity_set;
-					double sum_double = 0.0;
-					float sum_float   = 0.0f;
+					MyDouble sum_double{0.0};
+					MyFloat sum_float{0.0f};
 
-					storage.foreach([&](ECS::Entity& p_entity, float& p_float, double& p_double)
+					storage.foreach([&](ECS::Entity& p_entity, MyFloat& p_float, MyDouble& p_double)
 					{
 						sum_double += p_double;
 						sum_float  += p_float;
@@ -730,12 +801,12 @@ namespace Test
 					entities.clear();
 
 					{// Iterate empty after delete
-						double sum_double = 0.0;
-						float sum_float   = 0.0f;
-						int sum_int       = 0;
-						size_t count      = 0;
+						MyDouble sum_double{0.0};
+						MyFloat sum_float{0.0f};
+						MyInt sum_int{0};
+						size_t count = 0;
 
-						storage.foreach([&](ECS::Entity& p_entity, double& p_double, float& p_float, bool& p_int)
+						storage.foreach([&](ECS::Entity& p_entity, MyDouble& p_double, MyFloat& p_float, MyBool& p_int)
 						{
 							sum_double += p_double;
 							sum_float  += p_float;

@@ -37,6 +37,7 @@ namespace Test
 		std::string to_string() const;
 		std::string to_string_and_memory_status() const;
 	public:
+		constexpr static size_t Persistent_ID = 0; // Required for ECSTester
 		std::optional<int> m_member; // A faux member to emulate a resource storage of the object.
 
 		static void reset();
