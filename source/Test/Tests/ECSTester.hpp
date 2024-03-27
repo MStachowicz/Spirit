@@ -2,13 +2,27 @@
 
 #include "TestManager.hpp"
 
-namespace ECS
-{
-	class Storage;
-}
-
 namespace Test
 {
+	// Wrapper for primitive types to allow adding Persistent_IDs
+	template<typename T>
+	class PrimitiveTypeWrapper
+	{
+	public:
+		T value;
+
+		constexpr PrimitiveTypeWrapper() : value{} {}
+		constexpr PrimitiveTypeWrapper(const T& p_value) : value{p_value} {}
+		constexpr operator T() const { return value; } // Implicitly convert a PrimitiveTypeWrapper to its underlying type.
+
+		// operator +=
+		constexpr PrimitiveTypeWrapper& operator+=(const T& p_value)
+		{
+			value += p_value;
+			return *this;
+		}
+	};
+
 	class ECSTester : public TestManager
 	{
 	public:
