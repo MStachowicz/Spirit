@@ -2,7 +2,7 @@
 
 #include "UI/Console.hpp"
 #include "Component/TwoAxisCamera.hpp"
-#include "ECS/Storage.hpp"
+#include "ECS/Entity.hpp"
 
 #include <chrono>
 #include <string>

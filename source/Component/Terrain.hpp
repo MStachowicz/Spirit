@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Component/Texture.hpp"
 #include "Component/Mesh.hpp"
 
@@ -12,6 +14,8 @@ namespace Component
 		Data::Mesh generate_mesh() noexcept;
 
 	public:
+		constexpr static size_t Persistent_ID = 6;
+
 		glm::vec3 m_position;
 		int m_size_x;
 		int m_size_z;

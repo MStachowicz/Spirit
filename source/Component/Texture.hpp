@@ -38,6 +38,8 @@ namespace Component
 	class Texture
 	{
 	public:
+		constexpr static size_t Persistent_ID = 2;
+
 		TextureRef m_diffuse;
 		TextureRef m_specular;
 		float m_shininess;

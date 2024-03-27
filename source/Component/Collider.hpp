@@ -12,6 +12,8 @@ namespace Component
 	class Collider
 	{
 	public:
+		constexpr static size_t Persistent_ID = 4;
+
 		Geometry::AABB m_world_AABB;                     // The world space AABB of the entity. PhysicsSystem is responsible for updating this.
 		std::vector<Geometry::Shape> m_collision_shapes; // World-space shape for narrow-phase collision detection.
 		bool m_collided;

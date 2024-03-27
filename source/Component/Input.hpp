@@ -25,6 +25,8 @@ namespace Component
 	class Input
 	{
 	public:
+		constexpr static size_t Persistent_ID = 7;
+
 		static InputFunction Camera_Move_Look; // Basic move functionality. Depends on Entity owning Camera+Transform+RigidBody components.
 
 		Input(const InputFunction& p_input_func) noexcept

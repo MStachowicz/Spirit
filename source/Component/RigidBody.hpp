@@ -9,6 +9,8 @@ namespace Component
 	class RigidBody
 	{
 	public:
+		constexpr static size_t Persistent_ID = 3;
+
 		// Linear motion
 		// -----------------------------------------------------------------------------
 		glm::vec3 m_force;        // Linear force F in Newtons (kg m/s²), This force is applied on a PhysicsSystem tick and gets reset to 0.

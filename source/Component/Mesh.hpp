@@ -142,6 +142,8 @@ namespace Component
 	class Mesh
 	{
 	public:
+		constexpr static size_t Persistent_ID = 1;
+
 		MeshRef m_mesh;
 
 		Mesh(MeshRef& p_mesh);

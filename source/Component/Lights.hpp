@@ -12,6 +12,8 @@ namespace Component
 	class DirectionalLight
 	{
 	public:
+		constexpr static size_t Persistent_ID = 9;
+
 		static inline float PCF_bias = -0.001f;
 
 		DirectionalLight() noexcept;
@@ -35,6 +37,8 @@ namespace Component
 	class PointLight
 	{
 	public:
+		constexpr static size_t Persistent_ID = 10;
+
 		PointLight() noexcept;
 		PointLight(const glm::vec3& p_position) noexcept;
 
@@ -55,6 +59,8 @@ namespace Component
 	class SpotLight
 	{
 	public:
+		constexpr static size_t Persistent_ID = 11;
+
 		SpotLight() noexcept;
 
 		glm::vec3 m_position;

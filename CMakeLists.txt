@@ -15,6 +15,7 @@ PRIVATE source
 )
 target_link_libraries(Spirit
 PUBLIC System
+PUBLIC Component
 PUBLIC OpenGL
 PUBLIC Platform
 PUBLIC UI
@@ -85,8 +86,10 @@ endif ()
 
 # ECS -------------------------------------------------------------------------------------------------------------------------------------
 add_library(ECS
+source/ECS/Entity.hpp
 source/ECS/Storage.hpp
 source/ECS/Storage.cpp
+source/ECS/Component.hpp
 source/ECS/Meta.hpp
 )
 target_include_directories(ECS

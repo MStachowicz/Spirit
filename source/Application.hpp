@@ -21,6 +21,18 @@
 #include "Utility/Logger.hpp"
 #include "Utility/Stopwatch.hpp"
 
+#include "Component/Collider.hpp"
+#include "Component/FirstPersonCamera.hpp"
+#include "Component/Input.hpp"
+#include "Component/Label.hpp"
+#include "Component/Lights.hpp"
+#include "Component/Mesh.hpp"
+#include "Component/ParticleEmitter.hpp"
+#include "Component/RigidBody.hpp"
+#include "Component/Terrain.hpp"
+#include "Component/Texture.hpp"
+#include "Component/Transform.hpp"
+
 #include <chrono>
 
 // Application manages the ownership and calling of all the Systems.
@@ -167,6 +179,20 @@ int main(int argc, char* argv[])
 { (void)argv;
 	{
 		Utility::Stopwatch stopwatch;
+
+		ECS::Component::set_info<Component::Collider>();
+		ECS::Component::set_info<Component::FirstPersonCamera>();
+		ECS::Component::set_info<Component::Input>();
+		ECS::Component::set_info<Component::Label>();
+		ECS::Component::set_info<Component::PointLight>();
+		ECS::Component::set_info<Component::DirectionalLight>();
+		ECS::Component::set_info<Component::SpotLight>();
+		ECS::Component::set_info<Component::Mesh>();
+		ECS::Component::set_info<Component::ParticleEmitter>();
+		ECS::Component::set_info<Component::RigidBody>();
+		ECS::Component::set_info<Component::Terrain>();
+		ECS::Component::set_info<Component::Texture>();
+		ECS::Component::set_info<Component::Transform>();
 
 		// Library init order is important here
 		// GLFW <- Window/GL context <- OpenGL functions <- ImGui <- App

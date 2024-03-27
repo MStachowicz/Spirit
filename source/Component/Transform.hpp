@@ -10,6 +10,8 @@ namespace Component
 {
 	struct Transform
 	{
+		constexpr static size_t Persistent_ID = 0;
+
 		enum class MoveDirection : uint8_t { Forward, Backward, Left, Right, Up, Down };
 		static constexpr glm::vec3 Starting_Forward_Direction = glm::vec3(0.f, 0.f, -1.f);
 

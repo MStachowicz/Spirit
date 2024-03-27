@@ -20,6 +20,8 @@ namespace Component
 		static inline const auto Yaw_constraint     = glm::radians(180.f);
 
 	public:
+		constexpr static size_t Persistent_ID = 5;
+
 		// Get the pitch and yaw angles in radians to take Starting_Direction to p_direction.
 		//@param p_direction Target direction for the angles.
 		//@return vec2 where x=pitch and y=yaw in radians.
