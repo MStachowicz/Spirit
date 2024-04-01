@@ -1,6 +1,7 @@
 #include "SceneSystem.hpp"
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
+#include "SerialisationSystem.hpp"
 
 #include "Component/FirstPersonCamera.hpp"
 #include "Component/Collider.hpp"
