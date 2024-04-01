@@ -14,9 +14,9 @@
 
 namespace ECS
 {
-	constexpr size_t Max_Component_Count = 32;
-	using ComponentID     = size_t; // Unique identifier for any type passed into ECSStorage.
-	using ComponentBitset = std::bitset<Max_Component_Count>;
+	using ComponentID = uint8_t; // Unique identifier for any type passed into ECSStorage.
+	constexpr size_t Max_Component_Count = std::numeric_limits<ComponentID>::max() + 1;
+	using ComponentBitset = std::bitset<Max_Component_Count>; // Bitset to represent the presence of Components.
 
 	// Stores per ComponentType information ECS needs after type erasure.
 	class ComponentData
@@ -29,18 +29,21 @@ namespace ECS
 		ComponentID ID; // Unique ID/index of the Type. Corresponds to the index in the ComponentRegister::type_infos vector.
 		size_t size;    // sizeof of the Type
 		size_t align;   // alignof of the type
+		bool is_serialisable; // If the type is serialisable (has Serialise and Deserialise functions).
 		// Call the destructor of the object at p_address_to_destroy.
 		void (*Destruct)(void* p_address_to_destroy);
 		// move-assign the object pointed to by p_source_address into the memory pointed to by p_destination_address.
 		void (*MoveAssign)(void* p_destination_address, void* p_source_address);
 		// placement-new move-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
 		void (*MoveConstruct)(void* p_destination_address, void* p_source_address);
-		// // Serialise the object into p_file.
-		// void (*Serialise)(void* p_address, std::ofstream& p_file);
-		// // Deserialise the object into p_file.
-		// void (*Deserialise)(void* p_address, std::ifstream& p_file);
+		// Serialise the object at p_address into p_out. (Optional function)
+		void (*Serialise)(void* p_address, std::ofstream& p_out, uint16_t p_version);
+		// Deserialise the object into p_destination_address from p_in. (Optional function)
+		void (*Deserialise)(void* p_destination_address, std::ifstream& p_in, uint16_t p_version);
 	};
 
+	// API for interfacing with Component's types/data after type erasure.
+	// Acts similar to a base class by storing static data required for an ECS::ComponentType to be valid.
 	class Component
 	{
 		static inline std::array<std::optional<ComponentData>, Max_Component_Count> type_infos = {};
@@ -90,12 +93,24 @@ namespace ECS
 		}
 	};
 
+	template <typename T>
+	concept Serializable = requires(T a, std::ofstream& out, uint16_t version)
+	{
+		{ T::Serialise(a, out, version) } -> std::same_as<void>;
+	};
+	template <typename T>
+	concept Deserializable = requires(std::ifstream& in, uint16_t version)
+	{
+		{ T::Deserialise(in, version) } -> std::same_as<T>;
+	};
+
 	// Construct the ComponentData for a ComponentType.
 	template <typename ComponentType>
 	ComponentData::ComponentData(Meta::PackArg<ComponentType>)
 		: ID{Component::get_ID<ComponentType>()}
 		, size{sizeof(std::decay_t<ComponentType>)}
 		, align{alignof(std::decay_t<ComponentType>)}
+		, is_serialisable{Serializable<std::decay_t<ComponentType>> && Deserializable<std::decay_t<ComponentType>>}
 		, Destruct{[](void* p_address)
 		{
 			using Type = std::decay_t<ComponentType>;
@@ -111,16 +126,20 @@ namespace ECS
 			using Type = std::decay_t<ComponentType>;
 			new (p_destination_address) Type(std::move(*static_cast<Type*>(p_source_address)));
 		}}
-		// , Serialise{[](void* p_address, std::ofstream& p_file)
-		// {
-		// 	using Type = std::decay_t<ComponentType>;
-		// 	Type::serialise(*static_cast<Type*>(p_address), p_file);
-		// }}
-		// , Deserialise{[](void* p_address, std::ifstream& p_file)
-		// {
-		// 	using Type                     = std::decay_t<ComponentType>;
-		// 	*static_cast<Type*>(p_address) = Type::deserialise(p_file);
-		// }}
-	{}
+		, Serialise{[](void* p_address, std::ofstream& p_out, uint16_t p_version)
+		{
+			using Type = std::decay_t<ComponentType>;
+			if constexpr (Serializable<Type>)
+				Type::Serialise(*static_cast<Type*>(p_address), p_out, p_version);
+		}}
+		, Deserialise{[](void* p_destination_address, std::ifstream& p_in, uint16_t p_version)
+		{
+			using Type = std::decay_t<ComponentType>;
+			if constexpr (Deserializable<Type>)
+				new (p_destination_address) Type(Type::Deserialise(p_in, p_version));
+		}}
+	{
+		static_assert((Serializable<std::decay_t<ComponentType>> == Deserializable<std::decay_t<ComponentType>>), "Component must have both Serialise and Deserialise functions or neither. Did you forget to implement one of the functions or use the wrong function signatures?");
+	}
 
 } // namespace ECS

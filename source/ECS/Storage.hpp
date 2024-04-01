@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <utility>
@@ -118,7 +119,7 @@ namespace ECS
 		{
 			if (p_component_bitset[i])
 			{
-				const auto& info = Component::get_info(i);
+				const auto& info = Component::get_info(static_cast<ComponentID>(i));
 				max_allignof = std::max(max_allignof, info.align);
 				component_layouts.push_back({0, info});
 			}
@@ -184,6 +185,17 @@ namespace ECS
 		return component_layouts;
 	}
 
+	// Returns true if all of the ComponentTypes in the ComponentBitset are serialisable.
+	inline bool is_serialisable(const ComponentBitset& p_component_bitset)
+	{
+		for (size_t i = 0; i < p_component_bitset.size(); i++)
+		{
+			if (p_component_bitset[i] && !Component::get_info(static_cast<ComponentID>(i)).is_serialisable)
+				return false;
+		}
+		return true;
+	}
+
 	// A container of Entity objects and the components they own.
 	// Every unique combination of components makes an Archetype which is a contiguous store of all the ComponentTypes.
 	// Storage is interfaced using Entity as a key.
@@ -197,6 +209,7 @@ namespace ECS
 		{
 			ComponentBitset m_bitset;                  // The unique identifier for this archetype. Each bit corresponds to a ComponentType this archetype stores per ArchetypeInstanceID.
 			std::vector<ComponentLayout> m_components; // How the ComponentTypes are laid out in each instance of ArchetypeInstanceID.
+			bool m_is_serialisable;                    // If all of the ComponentTypes in this archetype are serialisable.
 			std::vector<Entity> m_entities;            // Entity at every ArchetypeInstanceID. Should be indexed only using ArchetypeInstanceID.
 			size_t m_instance_size;                    // Size in Bytes of each archetype instance. In other words, the stride between every ArchetypeInstanceID.
 			ArchetypeInstanceID m_next_instance_ID;    // The ArchetypeInstanceID past the end of the m_data. Equivalant to size() in a vector.
@@ -208,6 +221,7 @@ namespace ECS
 			Archetype(Meta::PackArgs<ComponentTypes...>) noexcept
 				: m_bitset{Component::get_component_bitset<ComponentTypes...>()}
 				, m_components{get_components_layout(m_bitset)}
+				, m_is_serialisable{is_serialisable(m_bitset)}
 				, m_entities{}
 				, m_instance_size{get_stride(m_components)}
 				, m_next_instance_ID{0}
@@ -222,6 +236,7 @@ namespace ECS
 			Archetype(const ComponentBitset& p_component_bitset) noexcept
 				: m_bitset{p_component_bitset}
 				, m_components{get_components_layout(m_bitset)}
+				, m_is_serialisable{is_serialisable(m_bitset)}
 				, m_entities{}
 				, m_instance_size{get_stride(m_components)}
 				, m_next_instance_ID{0}
@@ -243,6 +258,7 @@ namespace ECS
 			Archetype(Archetype&& p_other) noexcept
 				: m_bitset{std::move(p_other.m_bitset)}
 				, m_components{std::move(p_other.m_components)}
+				, m_is_serialisable{std::move(p_other.m_is_serialisable)}
 				, m_entities{std::move(p_other.m_entities)}
 				, m_instance_size{std::move(p_other.m_instance_size)}
 				, m_next_instance_ID{std::move(p_other.m_next_instance_ID)}
@@ -264,6 +280,7 @@ namespace ECS
 
 					m_bitset           = std::move(p_other.m_bitset);
 					m_components       = std::move(p_other.m_components);
+					m_is_serialisable  = std::move(p_other.m_is_serialisable);
 					m_entities         = std::move(p_other.m_entities);
 					m_instance_size    = std::move(p_other.m_instance_size);
 					m_next_instance_ID = std::move(p_other.m_next_instance_ID);
@@ -824,5 +841,10 @@ namespace ECS
 
 			return count;
 		}
+
+		// Write the state of the storage to p_file stream.
+		static void Serialise(const Storage& p_storage, std::ofstream& p_out, uint16_t p_version);
+		// Construct a Storage from the state in p_file stream.
+		static Storage Deserialise(std::ifstream& p_in, uint16_t p_version);
 	};
 } // namespace ECS

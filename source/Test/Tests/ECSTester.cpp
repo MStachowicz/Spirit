@@ -4,6 +4,8 @@
 #include "ECS/Entity.hpp"
 #include "ECS/Component.hpp"
 #include "ECS/Storage.hpp"
+#include "Utility/Config.hpp"
+#include "Utility/Serialise.hpp"
 #include "Utility/Logger.hpp"
 
 #include <set>
@@ -17,10 +19,67 @@ DISABLE_WARNING_UNUSED_VARIABLE // Required to stop variables being destroyed be
 
 namespace Test
 {
-	struct MyDouble : public PrimitiveTypeWrapper<double>      { static constexpr ECS::ComponentID Persistent_ID = 1; };
-	struct MyFloat  : public PrimitiveTypeWrapper<float>       { static constexpr ECS::ComponentID Persistent_ID = 2; };
-	struct MyBool   : public PrimitiveTypeWrapper<bool>        { static constexpr ECS::ComponentID Persistent_ID = 3; };
-	struct MyInt    : public PrimitiveTypeWrapper<int>         { static constexpr ECS::ComponentID Persistent_ID = 4; };
+	struct MyDouble : public PrimitiveTypeWrapper<double>
+	{
+		static constexpr ECS::ComponentID Persistent_ID = 1;
+
+		static void Serialise(const MyDouble& p_value, std::ofstream& p_out, uint16_t p_version)
+		{
+			Utility::write_binary(p_out, p_value.value);
+		}
+		static MyDouble Deserialise(std::ifstream& p_in, uint16_t p_version)
+		{
+			double value;
+			Utility::read_binary(p_in, value);
+			return MyDouble{value};
+		}
+	};
+	struct MyFloat : public PrimitiveTypeWrapper<float>
+	{
+		static constexpr ECS::ComponentID Persistent_ID = 2;
+
+		static void Serialise(const MyFloat& p_value, std::ofstream& p_out, uint16_t p_version)
+		{
+			Utility::write_binary(p_out, p_value.value);
+		}
+		static MyFloat Deserialise(std::ifstream& p_in, uint16_t p_version)
+		{
+			float value;
+			Utility::read_binary(p_in, value);
+			return MyFloat{value};
+		}
+	};
+	struct MyBool : public PrimitiveTypeWrapper<bool>
+	{
+		static constexpr ECS::ComponentID Persistent_ID = 3;
+
+		static void Serialise(const MyBool& p_value, std::ofstream& p_out, uint16_t p_version)
+		{
+			Utility::write_binary(p_out, p_value.value);
+		}
+		static MyBool Deserialise(std::ifstream& p_in, uint16_t p_version)
+		{
+			bool value;
+			Utility::read_binary(p_in, value);
+			return MyBool{value};
+		}
+	};
+	struct MyInt : public PrimitiveTypeWrapper<int>
+	{
+		static constexpr ECS::ComponentID Persistent_ID = 4;
+
+		static void Serialise(const MyInt& p_value, std::ofstream& p_out, uint16_t p_version)
+		{
+			Utility::write_binary(p_out, p_value.value);
+		}
+		static MyInt Deserialise(std::ifstream& p_in, uint16_t p_version)
+		{
+			int value;
+			Utility::read_binary(p_in, value);
+			return MyInt{value};
+		}
+	};
+
 	struct MyChar   : public PrimitiveTypeWrapper<char>        { static constexpr ECS::ComponentID Persistent_ID = 5; };
 	struct MyString : public PrimitiveTypeWrapper<std::string> { static constexpr ECS::ComponentID Persistent_ID = 6; };
 	struct MySizet  : public PrimitiveTypeWrapper<size_t>      { static constexpr ECS::ComponentID Persistent_ID = 7; };
@@ -817,6 +876,70 @@ namespace Test
 					}
 				}
 			}
+		}
+
+		{SCOPE_SECTION("Serialisation")
+			ECS::Storage storage_deserialised;
+			ECS::Storage storage_serialised;
+			auto entity             = storage_serialised.add_entity(MyDouble{42.0}, MyFloat{13.f}, MyBool{true}, MyInt{69});
+			auto test_ecs_save_file = Config::Scene_Save_Directory / "serialisation_test.ecs"; // TODO: Make sure this is unique.
+			std::filesystem::create_directories(test_ecs_save_file.parent_path());
+			bool serialised_successfully = true;
+
+
+			{SCOPE_SECTION("Save")
+				ASSERT_THROW(storage_serialised.count_entities() == 1, "To retrieve components after load, we reuse the same entity ID. So we need to make sure we only have 1 entity in the storage.");
+				std::ofstream ostrm;
+				ostrm.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+				try
+				{
+					ostrm.open(test_ecs_save_file, std::ios::binary);
+					ECS::Storage::Serialise(storage_serialised, ostrm, Config::Save_Version);
+					ostrm.close();
+				}
+				catch (std::ofstream::failure& e)
+				{
+					CHECK_TRUE(false, e.what());
+					serialised_successfully = false;
+				}
+			}
+
+			if (serialised_successfully)
+			{SCOPE_SECTION("Load")
+				std::ifstream istrm;
+				istrm.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+				try
+				{
+					istrm.open(test_ecs_save_file, std::ios::binary);
+					storage_deserialised = ECS::Storage::Deserialise(istrm, Config::Save_Version);
+					istrm.close();
+				}
+				catch (std::ifstream::failure& e)
+				{
+					CHECK_TRUE(false, e.what());
+					serialised_successfully = false;
+				}
+			}
+
+			CHECK_TRUE(serialised_successfully, "Serialisation success");
+
+			if (serialised_successfully) // If serialisation failed, dont bother checking the deserialised storage
+			{
+				CHECK_EQUAL(storage_serialised.count_entities(), storage_deserialised.count_entities(), "Entity count");
+				CHECK_EQUAL(storage_serialised.count_components<MyDouble>(), storage_deserialised.count_components<MyDouble>(), "MyDouble count");
+				CHECK_EQUAL(storage_serialised.count_components<MyFloat>(), storage_deserialised.count_components<MyFloat>(), "MyFloat count");
+				CHECK_EQUAL(storage_serialised.count_components<MyBool>(), storage_deserialised.count_components<MyBool>(), "MyBool count");
+				CHECK_EQUAL(storage_serialised.count_components<MyInt>(), storage_deserialised.count_components<MyInt>(), "MyInt count");
+
+				// While ECS serialisation doesnt guarantee Entity stability, we can ignore this since we only save 1 entity.
+				CHECK_EQUAL(storage_serialised.get_component<MyDouble>(entity), storage_deserialised.get_component<MyDouble>(entity), "MyDouble value");
+				CHECK_EQUAL(storage_serialised.get_component<MyFloat>(entity), storage_deserialised.get_component<MyFloat>(entity), "MyFloat value");
+				CHECK_EQUAL(storage_serialised.get_component<MyBool>(entity), storage_deserialised.get_component<MyBool>(entity), "MyBool value");
+				CHECK_EQUAL(storage_serialised.get_component<MyInt>(entity), storage_deserialised.get_component<MyInt>(entity), "MyInt value");
+			}
+
+			// Cleanup the test file
+			std::filesystem::remove(test_ecs_save_file);
 		}
 	}
 } // namespace Test

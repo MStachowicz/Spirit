@@ -8,7 +8,10 @@ using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a f
 
 namespace Config
 {
+	inline const uint16_t Save_Version = 0; // Increment this value when the save format changes to prevent loading old saves.
+
 	inline const auto Source_Directory        = std::filesystem::path("${SOURCE_DIRECTORY}");
+	inline const auto Scene_Save_Directory    = std::filesystem::path(Source_Directory / "Scenes");
 	inline const auto GLSL_Shader_Directory   = std::filesystem::path(Source_Directory / "source" / "OpenGL" / "GLSL");
 	inline const auto Texture_Directory       = std::filesystem::path(Source_Directory / "source" / "Resources" / "Textures");
 	inline const auto Model_Directory         = std::filesystem::path(Source_Directory / "source" / "Resources" / "Models");
