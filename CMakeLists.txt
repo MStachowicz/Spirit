@@ -31,6 +31,8 @@ source/Test/MemoryCorrectnessItem.hpp
 source/Test/MemoryCorrectnessItem.cpp
 source/Test/TestManager.hpp
 source/Test/TestManager.cpp
+source/Test/Tests/ComponentSerialiseTester.hpp
+source/Test/Tests/ComponentSerialiseTester.cpp
 source/Test/Tests/ECSTester.hpp
 source/Test/Tests/ECSTester.cpp
 source/Test/Tests/ResourceManagerTester.hpp

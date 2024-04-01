@@ -3,6 +3,8 @@
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
 
+#include <fstream>
+
 namespace Geometry
 {
 	class AABB;
@@ -32,6 +34,8 @@ namespace Component
 		glm::mat4 get_view_proj(const Geometry::AABB& scene_AABB);
 
 		void draw_UI();
+		static void Serialise(const DirectionalLight& p_light, std::ofstream& p_out, uint16_t p_version);
+		static DirectionalLight Deserialise(std::ifstream& p_in, uint16_t p_version);
 	};
 
 	class PointLight
@@ -54,6 +58,8 @@ namespace Component
 		float m_quadratic;
 
 		void draw_UI();
+		static void Serialise(const PointLight& p_light, std::ofstream& p_out, uint16_t p_version);
+		static PointLight Deserialise(std::ifstream& p_in, uint16_t p_version);
 	};
 
 	class SpotLight
@@ -78,5 +84,7 @@ namespace Component
 		float m_outer_cutoff;
 
 		void draw_UI();
+		static void Serialise(const SpotLight& p_light, std::ofstream& p_out, uint16_t p_version);
+		static SpotLight Deserialise(std::ifstream& p_in, uint16_t p_version);
 	};
 }

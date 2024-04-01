@@ -1,6 +1,7 @@
 #include "Lights.hpp"
 #include "Component/Transform.hpp"
 #include "Geometry/AABB.hpp"
+#include "Utility/Serialise.hpp"
 
 #include "glm/trigonometric.hpp"
 #include "imgui.h"
@@ -51,6 +52,32 @@ namespace Component
 		}
 	}
 
+	void DirectionalLight::Serialise(const DirectionalLight& p_light, std::ofstream& p_out, uint16_t p_version)
+	{ (void)p_version;
+		Utility::write_binary(p_out, p_light.m_direction);
+		Utility::write_binary(p_out, p_light.m_colour);
+		Utility::write_binary(p_out, p_light.m_ambient_intensity);
+		Utility::write_binary(p_out, p_light.m_diffuse_intensity);
+		Utility::write_binary(p_out, p_light.m_specular_intensity);
+		Utility::write_binary(p_out, p_light.m_shadow_near_plane);
+		Utility::write_binary(p_out, p_light.m_shadow_far_plane);
+		Utility::write_binary(p_out, p_light.m_ortho_size);
+	}
+
+	DirectionalLight DirectionalLight::Deserialise(std::ifstream& p_in, uint16_t p_version)
+	{ (void)p_version;
+		DirectionalLight light;
+		Utility::read_binary(p_in, light.m_direction);
+		Utility::read_binary(p_in, light.m_colour);
+		Utility::read_binary(p_in, light.m_ambient_intensity);
+		Utility::read_binary(p_in, light.m_diffuse_intensity);
+		Utility::read_binary(p_in, light.m_specular_intensity);
+		Utility::read_binary(p_in, light.m_shadow_near_plane);
+		Utility::read_binary(p_in, light.m_shadow_far_plane);
+		Utility::read_binary(p_in, light.m_ortho_size);
+		return light;
+	}
+
 	glm::mat4 DirectionalLight::get_view_proj(const Geometry::AABB& p_scene_AABB)
 	{
 		// DirectionalLight has no position, instead consider at the extents of the scene in the opposite direction its casting.
@@ -99,6 +126,31 @@ namespace Component
 		}
 	}
 
+	void PointLight::Serialise(const PointLight& p_light, std::ofstream& p_out, uint16_t p_version)
+	{ (void)p_version;
+		Utility::write_binary(p_out, p_light.m_position);
+		Utility::write_binary(p_out, p_light.m_colour);
+		Utility::write_binary(p_out, p_light.m_ambient_intensity);
+		Utility::write_binary(p_out, p_light.m_diffuse_intensity);
+		Utility::write_binary(p_out, p_light.m_specular_intensity);
+		Utility::write_binary(p_out, p_light.m_constant);
+		Utility::write_binary(p_out, p_light.m_linear);
+		Utility::write_binary(p_out, p_light.m_quadratic);
+	}
+	PointLight PointLight::Deserialise(std::ifstream& p_in, uint16_t p_version)
+	{ (void)p_version;
+		PointLight light;
+		Utility::read_binary(p_in, light.m_position);
+		Utility::read_binary(p_in, light.m_colour);
+		Utility::read_binary(p_in, light.m_ambient_intensity);
+		Utility::read_binary(p_in, light.m_diffuse_intensity);
+		Utility::read_binary(p_in, light.m_specular_intensity);
+		Utility::read_binary(p_in, light.m_constant);
+		Utility::read_binary(p_in, light.m_linear);
+		Utility::read_binary(p_in, light.m_quadratic);
+		return light;
+	}
+
 	SpotLight::SpotLight() noexcept
 		: m_position{glm::vec3(0.f, 0.f, 0.f)}
 		, m_direction{glm::vec3(0.f, 0.f, -1.f)}
@@ -131,4 +183,34 @@ namespace Component
 			ImGui::TreePop();
 		}
 	}
-}
+	void SpotLight::Serialise(const SpotLight& p_light, std::ofstream& p_out, uint16_t p_version)
+	{ (void)p_version;
+		Utility::write_binary(p_out, p_light.m_position);
+		Utility::write_binary(p_out, p_light.m_direction);
+		Utility::write_binary(p_out, p_light.m_colour);
+		Utility::write_binary(p_out, p_light.m_ambient_intensity);
+		Utility::write_binary(p_out, p_light.m_diffuse_intensity);
+		Utility::write_binary(p_out, p_light.m_specular_intensity);
+		Utility::write_binary(p_out, p_light.m_constant);
+		Utility::write_binary(p_out, p_light.m_linear);
+		Utility::write_binary(p_out, p_light.m_quadratic);
+		Utility::write_binary(p_out, p_light.m_cutoff);
+		Utility::write_binary(p_out, p_light.m_outer_cutoff);
+	}
+	SpotLight SpotLight::Deserialise(std::ifstream& p_in, uint16_t p_version)
+	{ (void)p_version;
+		SpotLight light;
+		Utility::read_binary(p_in, light.m_position);
+		Utility::read_binary(p_in, light.m_direction);
+		Utility::read_binary(p_in, light.m_colour);
+		Utility::read_binary(p_in, light.m_ambient_intensity);
+		Utility::read_binary(p_in, light.m_diffuse_intensity);
+		Utility::read_binary(p_in, light.m_specular_intensity);
+		Utility::read_binary(p_in, light.m_constant);
+		Utility::read_binary(p_in, light.m_linear);
+		Utility::read_binary(p_in, light.m_quadratic);
+		Utility::read_binary(p_in, light.m_cutoff);
+		Utility::read_binary(p_in, light.m_outer_cutoff);
+		return light;
+	}
+} // namespace Component

@@ -1,4 +1,5 @@
 #include "Test/TestManager.hpp"
+#include "Test/Tests/ComponentSerialiseTester.hpp"
 #include "Test/Tests/ECSTester.hpp"
 #include "Test/Tests/GeometryTester.hpp"
 #include "Test/Tests/ResourceManagerTester.hpp"
@@ -25,6 +26,7 @@ int main(int argc, char* argv[])
 	const char* seperator = "--------------------------------------------------\n";
 
 	std::vector<std::unique_ptr<Test::TestManager>> test_managers;
+	test_managers.emplace_back(std::make_unique<Test::ComponentSerialiseTester>());
 	test_managers.emplace_back(std::make_unique<Test::ECSTester>());
 	test_managers.emplace_back(std::make_unique<Test::GeometryTester>());
 	test_managers.emplace_back(std::make_unique<Test::ResourceManagerTester>());
@@ -40,23 +42,23 @@ int main(int argc, char* argv[])
 		Utility::Stopwatch tester_stopwatch;
 		tester->run_unit_tests();
 		printf("***************** %s SUMMARY *****************\nTOTAL TESTS: %zu\nPASSED: %zu\nFAILED: %zu\nTIME TAKEN: %fms\n%s\n\n",
-		       tester->m_name.c_str(),
-		       tester->m_unit_tests_pass_count + tester->m_unit_tests_fail_count,
-		       tester->m_unit_tests_pass_count,
-		       tester->m_unit_tests_fail_count,
-		       tester_stopwatch.duration_since_start<float, std::milli>().count(),
-		       seperator);
+			tester->m_name.c_str(),
+			tester->m_unit_tests_pass_count + tester->m_unit_tests_fail_count,
+			tester->m_unit_tests_pass_count,
+			tester->m_unit_tests_fail_count,
+			tester_stopwatch.duration_since_start<float, std::milli>().count(),
+			seperator);
 
 		unit_test_overall_pass_count += tester->m_unit_tests_pass_count;
 		unit_test_overall_fail_count += tester->m_unit_tests_fail_count;
 		unit_tests_failed_messages += tester->m_unit_tests_failed_messages;
 	}
 	printf("\n\n***************** OVERALL SUMMARY *****************\nTOTAL TESTS: %zu\nPASSED: %zu\nFAILED: %zu\nTIME TAKEN: %fms\n%s",
-	       unit_test_overall_pass_count + unit_test_overall_fail_count,
-	       unit_test_overall_pass_count,
-	       unit_test_overall_fail_count,
-	       all_unit_tests_stopwatch.duration_since_start<float, std::milli>().count(),
-	       seperator);
+		unit_test_overall_pass_count + unit_test_overall_fail_count,
+		unit_test_overall_pass_count,
+		unit_test_overall_fail_count,
+		all_unit_tests_stopwatch.duration_since_start<float, std::milli>().count(),
+		seperator);
 
 	if (unit_test_overall_fail_count > 0)
 		printf("***************** FAILED TESTS *****************\n%s", unit_tests_failed_messages.c_str());
