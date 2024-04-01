@@ -59,7 +59,7 @@ namespace Utility
 	{
 		if (!exists(p_path))
 		{
-			LOG_ERROR("File with path {} doesnt exist", p_path.string());
+			LOG_ERROR(false, "File with path {} doesnt exist", p_path.string());
 			return "";
 		}
 

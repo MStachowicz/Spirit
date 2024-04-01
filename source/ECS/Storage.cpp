@@ -37,6 +37,10 @@ namespace ECS
 		// Lambda to check if an archetype should be saved, depending on if it has entities and any serialisable components.
 		auto should_save = [](const Archetype& p_archetype) { return !p_archetype.m_entities.empty() && p_archetype.m_is_serialisable; };
 
+		// If there are any archetypes with non-serialisable components, Log a warning.
+		LOG_WARN(std::none_of(p_storage.m_archetypes.begin(), p_storage.m_archetypes.end(), [](const Archetype& p_archetype)
+			{ return !p_archetype.m_is_serialisable; }), "Some archetypes have non-serialisable components and will not be saved!");
+
 		Archetype_Count_t archetype_count = std::count_if(p_storage.m_archetypes.begin(), p_storage.m_archetypes.end(), [&](const Archetype& p_archetype)
 			{ return should_save(p_archetype); });
 

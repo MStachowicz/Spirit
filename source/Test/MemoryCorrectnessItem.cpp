@@ -19,7 +19,7 @@ namespace Test
 
 		//if (m_memory_initialisation_token == 0x2c1dd27f0d59cf3e && m_status != MemoryStatus::Deleted)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Construction in already initialized memory at {}", to_string_and_memory_status());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Construction in already initialized memory at {}", to_string_and_memory_status());
 		//	s_error_count += 1;
 		//}
 
@@ -36,12 +36,12 @@ namespace Test
 
 		//if (m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while deleting at {}", to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while deleting at {}", to_string());
 		//	s_error_count += 1;
 		//}
 		if (status() == MemoryStatus::Deleted)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Double delete detected at {}", to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Double delete detected at {}", to_string());
 			s_error_count += 1;
 		}
 
@@ -60,23 +60,23 @@ namespace Test
 
 		//if (p_other.m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while copy constructing from {}", p_other.to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while copy constructing from {}", p_other.to_string());
 		//	s_error_count += 1;
 		//}
 		if (p_other.status() == MemoryStatus::Deleted)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Copy constructing from deleted memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Copy constructing from deleted memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 		if (p_other.status() == MemoryStatus::MovedFrom)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Copy constructing from moved-from memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Copy constructing from moved-from memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 
 		//if (m_memory_initialisation_token == 0x2c1dd27f0d59cf3e && status() != MemoryStatus::Deleted)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Copy construction in already initialized memory at {}", to_string_and_memory_status());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Copy construction in already initialized memory at {}", to_string_and_memory_status());
 		//	s_error_count += 1;
 		//}
 
@@ -95,23 +95,24 @@ namespace Test
 
 		//if (p_other.m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while move constructing from {}", p_other.to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while move constructing from {}", p_other.to_string());
 		//	s_error_count += 1;
 		//}
 		if (p_other.status() == MemoryStatus::Deleted)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Move constructing from deleted memory at {}", p_other.to_string());
+
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Move constructing from deleted memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 		if (p_other.status() == MemoryStatus::MovedFrom)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Move constructing from moved-from memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Move constructing from moved-from memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 
 		//if (m_memory_initialisation_token == 0x2c1dd27f0d59cf3e && status() != MemoryStatus::Deleted)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Move construction in already initialized memory at {}", to_string_and_memory_status());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Move construction in already initialized memory at {}", to_string_and_memory_status());
 		//	s_error_count += 1;
 		//}
 
@@ -129,23 +130,23 @@ namespace Test
 
 		//if (p_other.m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while copy assigning from {}", p_other.to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while copy assigning from {}", p_other.to_string());
 		//	s_error_count += 1;
 		//}
 		if (p_other.status() == MemoryStatus::Deleted)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Copy assigning from deleted memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Copy assigning from deleted memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 		if (p_other.status() == MemoryStatus::MovedFrom)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Copy assigning from moved-from memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Copy assigning from moved-from memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 
 		//if (m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while copy assigning to {}", to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while copy assigning to {}", to_string());
 		//	s_error_count += 1;
 		//}
 
@@ -162,23 +163,23 @@ namespace Test
 
 		//if (p_other.m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while move assigning from {}", p_other.to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while move assigning from {}", p_other.to_string());
 		//	s_error_count += 1;
 		//}
 		if (p_other.status() == MemoryStatus::Deleted)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Move assigning from deleted memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Move assigning from deleted memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 		if (p_other.status() == MemoryStatus::MovedFrom)
 		{
-			LOG_ERROR("[MEMCORRECTNESS][ERROR] Move assigning from moved-from memory at {}", p_other.to_string());
+			LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Move assigning from moved-from memory at {}", p_other.to_string());
 			s_error_count += 1;
 		}
 
 		//if (m_memory_initialisation_token != 0x2c1dd27f0d59cf3e)
 		//{
-		//	LOG_ERROR("[MEMCORRECTNESS][ERROR] Use of uninitialized memory while move assigning to {}", to_string());
+		//	LOG_ERROR(false, "[MEMCORRECTNESS][ERROR] Use of uninitialized memory while move assigning to {}", to_string());
 		//	s_error_count += 1;
 		//}
 

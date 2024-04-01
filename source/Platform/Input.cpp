@@ -248,7 +248,7 @@ namespace Platform
 			case GLFW_RELEASE: return Action::Release;
 			case GLFW_REPEAT:  return Action::Repeat;
 			default:
-				LOG_ERROR("[INPUT] Could not convert GLFW action '{}' to Action", p_glfw_action);
+				LOG_ERROR(false, "[INPUT] Could not convert GLFW action '{}' to Action", p_glfw_action);
 				return Action::Unknown;
 		}
 	}

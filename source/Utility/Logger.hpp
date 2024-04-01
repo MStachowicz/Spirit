@@ -29,15 +29,15 @@ private:
 // 2. It allows __VA_ARGS__ / parameter packs to be passed as the non-terminal parameter.
 //    This is required to make the defaulted source_location::current() param to be at the end.
 #ifdef Z_DEBUG
-#define LOG(...)       Logger::log_info(std::format(__VA_ARGS__));
-#define LOG_WARN(...)  Logger::log_warning(std::format(__VA_ARGS__),                 std::source_location::current());
-#define LOG_ERROR(...) Logger::log_error(std::format(__VA_ARGS__),                   std::source_location::current());
-#define ASSERT(x, ...) if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
+#define LOG(...)                    { Logger::log_info(std::format(__VA_ARGS__));                                         }
+#define LOG_WARN(x, ...)  if (!(x)) { Logger::log_warning(std::format(__VA_ARGS__),     std::source_location::current()); }
+#define LOG_ERROR(x, ...) if (!(x)) { Logger::log_error(std::format(__VA_ARGS__),       std::source_location::current()); }
+#define ASSERT(x, ...)    if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
 #else
-#define LOG(...)       (void)0;
-#define LOG_WARN(...)  (void)0;
-#define LOG_ERROR(...) (void)0;
-#define ASSERT(x, ...) (void)0;
+#define LOG(...)          (void)0;
+#define LOG_WARN(x, ...)  (void)0;
+#define LOG_ERROR(x, ...) (void)0;
+#define ASSERT(x, ...)    (void)0;
 #endif
 
 #define ASSERT_THROW(x, ...) if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); throw std::runtime_error(std::format(__VA_ARGS__)); }

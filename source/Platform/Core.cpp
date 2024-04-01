@@ -31,7 +31,7 @@ namespace Platform
 	void Core::initialise_GLFW()
 	{
 		#ifdef Z_DEBUG
-		glfwSetErrorCallback([](int p_error, const char* p_description){ LOG_ERROR("[GLFW] Error: {}: {}", p_error, p_description); });
+		glfwSetErrorCallback([](int p_error, const char* p_description){ LOG_ERROR(false, "[GLFW] Error: {}: {}", p_error, p_description); });
 		#endif
 
 		const auto initalisedGLFW = glfwInit();
