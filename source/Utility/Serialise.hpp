@@ -10,24 +10,32 @@
 // Helpers for serialising and deserialising objects.
 namespace Utility
 {
-	// Serializable concept for types that can be written to and read from in binary.
+	// Serializable concept for keeping track of types that can be serialised into binary.
 	template <typename T>
-	concept Serializable =
+	concept Serializable_Type =
 		std::is_arithmetic_v<T>
 		|| std::is_same_v<T, glm::vec3>
 		|| std::is_same_v<T, glm::quat>
 		|| std::is_same_v<T, glm::mat4>;
 
 	// Write p_value to p_out in binary.
-	template <Serializable T>
+	template <typename T>
 	void write_binary(std::ofstream& p_out, const T& p_value)
 	{
+		static_assert(sizeof(T) > 0, "Cannot write a type of size 0");
+		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot write a reference or pointer");
+		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+
 		p_out.write(reinterpret_cast<const char*>(&p_value), sizeof(T));
 	}
 	// Read into p_value from p_in in binary.
-	template <Serializable T>
+	template <typename T>
 	void read_binary(std::ifstream& p_in, T& p_value)
 	{
+		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
+		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
+		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+
 		p_in.read(reinterpret_cast<char*>(&p_value), sizeof(T));
 	}
 } // namespace Utility
