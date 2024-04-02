@@ -386,15 +386,16 @@ namespace UI
 				if (it != m_selected_entities.rend())
 				{
 					auto& transform = m_scene_system.get_current_scene_entities().get_component<Component::Transform>(*it);
+					glm::mat4 model = transform.get_model();
 					ImGuizmo::Manipulate(
 						glm::value_ptr(m_scene_system.get_current_scene_view_info().m_view),
 						glm::value_ptr(m_scene_system.get_current_scene_view_info().m_projection),
 						ImGuizmo::OPERATION::UNIVERSAL,
 						ImGuizmo::LOCAL,
-						glm::value_ptr(transform.m_model));
+						glm::value_ptr(model));
 
 					if (ImGuizmo::IsUsing())
-						transform.set_model_matrix(transform.m_model);
+						transform.set_model(model);
 				}
 			}
 		}

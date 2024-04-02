@@ -96,7 +96,7 @@ namespace OpenGL
 					{
 						DrawCall dc;
 						dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
-						dc.set_uniform("model", p_transform.m_model);
+						dc.set_uniform("model", p_transform.get_model());
 						dc.set_uniform("shininess", texComponent.m_shininess);
 						dc.set_texture("diffuse",  texComponent.m_diffuse);
 						dc.set_texture("specular", texComponent.m_specular.has_value() ? texComponent.m_specular : m_blank_texture);
@@ -106,7 +106,7 @@ namespace OpenGL
 					{
 						DrawCall dc;
 						dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
-						dc.set_uniform("model", p_transform.m_model);
+						dc.set_uniform("model", p_transform.get_model());
 						dc.set_uniform("shininess", texComponent.m_shininess);
 
 						// Dont write transparent pixels to the depth buffer. This prevents transparent objects from culling other objects behind them.
@@ -123,7 +123,7 @@ namespace OpenGL
 
 				// Fallback to rendering using default colour and no lighting.
 				DrawCall dc;
-				dc.set_uniform("model", p_transform.m_model);
+				dc.set_uniform("model", p_transform.get_model());
 				dc.set_uniform("colour", glm::vec4(0.06f, 0.44f, 0.81f, 1.f));
 				dc.submit(m_uniform_colour_shader, mesh_comp.m_mesh);
 			}

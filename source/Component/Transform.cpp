@@ -7,31 +7,24 @@
 
 namespace Component
 {
-	void Transform::rotateEulerDegrees(const glm::vec3& p_roll_pitch_yawDegrees)
+	void Transform::rotate_euler_degrees(const glm::vec3& p_roll_pitch_yaw_degrees)
 	{
-		m_roll_pitch_yaw = p_roll_pitch_yawDegrees;
-		m_orientation    = glm::normalize(Utility::to_quaternion(glm::radians(m_roll_pitch_yaw)));
-		m_direction      = glm::normalize(m_orientation * Starting_Forward_Direction);
+		m_orientation = glm::normalize(Utility::to_quaternion(glm::radians(p_roll_pitch_yaw_degrees)));
 	}
 	void Transform::look_at(const glm::vec3& p_point)
 	{
 		if (p_point != m_position)
 		{
-			m_direction      = glm::normalize(p_point - m_position);
-			m_orientation    = Utility::get_rotation(Starting_Forward_Direction, m_direction);
-			m_roll_pitch_yaw = Utility::to_roll_pitch_yaw(m_orientation);
+			auto new_forward = glm::normalize(p_point - m_position);
+			m_orientation    = Utility::get_rotation(Starting_Forward_Direction, new_forward);
 		}
 	}
 
-	void Transform::set_model_matrix(const glm::mat4& p_model)
+	void Transform::set_model(const glm::mat4& p_model)
 	{
 		glm::vec3 skew;
 		glm::vec4 perspective;
 		glm::decompose(p_model, m_scale, m_orientation, m_position, skew, perspective);
-
-		m_roll_pitch_yaw = Utility::to_roll_pitch_yaw(m_orientation);
-		m_direction      = glm::normalize(m_orientation * Starting_Forward_Direction);
-		m_model          = p_model;
 	}
 
 	void Transform::draw_UI()
@@ -42,11 +35,12 @@ namespace Component
 			ImGui::Slider("Scale", m_scale, 0.1f, 10.f);
 
 			// Editor shows the rotation as Euler Roll, Pitch, Yaw, when set these need to be converted to quaternion orientation and unit direction.
-			if (ImGui::Slider("Roll Pitch Yaw", m_roll_pitch_yaw, -179.f, 179.f, "%.3f °"))
-				rotateEulerDegrees(m_roll_pitch_yaw);
+			glm::vec3 euler_degrees = Utility::to_roll_pitch_yaw(m_orientation);
+			if (ImGui::Slider("Roll Pitch Yaw", euler_degrees, -179.f, 179.f, "%.3f °"))
+				rotate_euler_degrees(euler_degrees);
 
 			ImGui::Separator();
-			ImGui::Text("Directon",    m_direction);
+			ImGui::Text("Directon",    forward());
 			ImGui::Text("Orientation", m_orientation);
 
 			ImGui::SeparatorText("Actions");
@@ -58,9 +52,7 @@ namespace Component
 			if (ImGui::Button("Reset"))
 			{
 				m_position       = glm::vec3(0.0f, 0.0f, 0.0f);
-				m_roll_pitch_yaw = glm::vec3(0.0f);
 				m_scale          = glm::vec3(1.0f);
-				m_direction      = Starting_Forward_Direction;
 				m_orientation    = glm::identity<glm::quat>();
 			}
 			ImGui::TreePop();

@@ -277,8 +277,8 @@ namespace UI
 					for (auto& vertex_1 : entity_1_mesh->m_mesh->vertex_positions)
 						for (auto& vertex_2 : entity_2_mesh->m_mesh->vertex_positions)
 						{
-							auto vertex_1_world_space = glm::vec3(entity_1_transform->m_model * glm::vec4(vertex_1, 1.f));
-							auto vertex_2_world_space = glm::vec3(entity_2_transform->m_model * glm::vec4(vertex_2, 1.f));
+							auto vertex_1_world_space = glm::vec3(entity_1_transform->get_model() * glm::vec4(vertex_1, 1.f));
+							auto vertex_2_world_space = glm::vec3(entity_2_transform->get_model() * glm::vec4(vertex_2, 1.f));
 							OpenGL::DebugRenderer::add(Geometry::Sphere(vertex_1_world_space - vertex_2_world_space, cloud_points_size), glm::vec4(1.f, 1.f, 1.f, 1.f), 0);
 						}
 				}
@@ -286,8 +286,8 @@ namespace UI
 				// Start direction is the vector between the two entities. Improvement would be to use the previous GJK result as the starting direction.
 				glm::vec3 direction = glm::normalize(entity_2_transform->m_position - entity_1_transform->m_position);
 				GJK::Simplex simplex = {GJK::support_point(direction,
-				                                           entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->m_model, entity_1_transform->m_orientation,
-				                                           entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->m_model, entity_2_transform->m_orientation)};
+				                                           entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->get_model(), entity_1_transform->m_orientation,
+				                                           entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->get_model(), entity_2_transform->m_orientation)};
 				direction = -simplex[0]; // AO, search in the direction of the origin. Reversed direction to point towards the origin.
 
 				std::optional<bool> intersecting;
@@ -299,8 +299,8 @@ namespace UI
 					while (true) // Main GJK loop. Converge on a simplex that encloses the origin.
 					{
 						auto new_support_point = GJK::support_point(direction,
-						                                            entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->m_model, entity_1_transform->m_orientation,
-						                                            entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->m_model, entity_2_transform->m_orientation);
+						                                            entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->get_model(), entity_1_transform->m_orientation,
+						                                            entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->get_model(), entity_2_transform->m_orientation);
 
 						if (glm::dot(new_support_point, direction) <= 0.f)
 						{// If the new support point is not past the origin then its impossible to enclose the origin.
@@ -339,11 +339,11 @@ namespace UI
 						if (*intersecting)
 						{
 							auto cp = GJK::EPA(simplex,
-											entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->m_model, entity_1_transform->m_orientation,
-											entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->m_model, entity_2_transform->m_orientation);
+											entity_1_mesh->m_mesh->vertex_positions, entity_1_transform->get_model(), entity_1_transform->m_orientation,
+											entity_2_mesh->m_mesh->vertex_positions, entity_2_transform->get_model(), entity_2_transform->m_orientation);
 
-							cp.A = glm::vec3(entity_1_transform->m_model * glm::vec4(cp.A, 1.f));
-							cp.B = glm::vec3(entity_2_transform->m_model * glm::vec4(cp.B, 1.f));
+							cp.A = glm::vec3(entity_1_transform->get_model() * glm::vec4(cp.A, 1.f));
+							cp.B = glm::vec3(entity_2_transform->get_model() * glm::vec4(cp.B, 1.f));
 
 							OpenGL::DebugRenderer::add(Geometry::Sphere(cp.A, result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
 							OpenGL::DebugRenderer::add(Geometry::Sphere(cp.B, result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);

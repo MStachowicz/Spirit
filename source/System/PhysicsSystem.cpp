@@ -64,17 +64,7 @@ namespace System
 				// Integrate spin to find the new orientation
 				transform.m_orientation += spin;
 				transform.m_orientation = glm::normalize(transform.m_orientation);
-				// Recalculate the direction and rotation mat
-				transform.m_direction = glm::normalize(transform.m_orientation * Component::Transform::Starting_Forward_Direction);
-				transform.m_roll_pitch_yaw = glm::degrees(Utility::to_roll_pitch_yaw(transform.m_orientation));
 			}
-
-			const auto rotationMatrix = glm::mat4_cast(transform.m_orientation);
-
-			transform.m_model = glm::translate(glm::identity<glm::mat4>(), transform.m_position);
-			transform.m_model *= rotationMatrix;
-			transform.m_model = glm::scale(transform.m_model, transform.m_scale);
-
 
 			// Update the collider to match the new world-space position
 			if (scene.has_components<Component::Collider>(entity) && scene.has_components<Component::Mesh>(entity))
@@ -83,7 +73,7 @@ namespace System
 				auto& mesh     = scene.get_component<Component::Mesh>(entity);
 
 				// Update the collider's world-space AABB
-				collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, rotationMatrix, transform.m_scale);
+				collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
 
 				collider.m_collision_shapes.clear();
 				for (const auto& shape : mesh.m_mesh->collision_shapes) // No std::visit here because some shapes require the scale.
@@ -91,7 +81,7 @@ namespace System
 					if (shape.is<Geometry::Cone>())
 					{
 						auto cone = shape.get<Geometry::Cone>();
-						cone.transform(transform.m_model, transform.m_scale);
+						cone.transform(transform.get_model(), transform.m_scale);
 						collider.m_collision_shapes.emplace_back(cone);
 					}
 					else if (shape.is<Geometry::Cuboid>())
@@ -103,25 +93,25 @@ namespace System
 					else if (shape.is<Geometry::Cylinder>())
 					{
 						auto cylinder = shape.get<Geometry::Cylinder>();
-						cylinder.transform(transform.m_model, transform.m_scale);
+						cylinder.transform(transform.get_model(), transform.m_scale);
 						collider.m_collision_shapes.emplace_back(cylinder);
 					}
 					else if (shape.is<Geometry::Quad>())
 					{
 						auto quad = shape.get<Geometry::Quad>();
-						quad.transform(transform.m_model);
+						quad.transform(transform.get_model());
 						collider.m_collision_shapes.emplace_back(quad);
 					}
 					else if (shape.is<Geometry::Sphere>())
 					{
 						auto sphere = shape.get<Geometry::Sphere>();
-						sphere.transform(transform.m_model, transform.m_scale);
+						sphere.transform(transform.get_model(), transform.m_scale);
 						collider.m_collision_shapes.emplace_back(sphere);
 					}
 					else if (shape.is<Geometry::Triangle>())
 					{
 						auto triangle = shape.get<Geometry::Triangle>();
-						triangle.transform(transform.m_model);
+						triangle.transform(transform.get_model());
 						collider.m_collision_shapes.emplace_back(triangle);
 					}
 					else

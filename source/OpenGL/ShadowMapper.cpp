@@ -44,7 +44,7 @@ namespace OpenGL
 					DrawCall dc;
 					dc.m_cull_face_enabled = false;
 					dc.set_uniform("light_space_mat", p_light.get_view_proj(p_scene.m_bound));
-					dc.set_uniform("model", p_transform.m_model);
+					dc.set_uniform("model", p_transform.get_model());
 					dc.submit(m_shadow_depth_shader, p_mesh.m_mesh);
 				});
 			});
