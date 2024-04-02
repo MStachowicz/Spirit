@@ -1,6 +1,7 @@
 #include "ComponentSerialiseTester.hpp"
 
 #include "Component/Lights.hpp"
+#include "Component/Transform.hpp"
 #include "Utility/Logger.hpp"
 
 #include <fstream>
@@ -122,6 +123,21 @@ namespace Test
 				CHECK_EQUAL(serialised_light.m_quadratic, deserialised_light.m_quadratic, "Quadratic");
 				CHECK_EQUAL(serialised_light.m_cutoff, deserialised_light.m_cutoff, "Cutoff");
 				CHECK_EQUAL(serialised_light.m_outer_cutoff, deserialised_light.m_outer_cutoff, "Outer cutoff");
+			}
+		}
+
+		{SCOPE_SECTION("Transform");
+			Component::Transform serialised_transform;
+			serialised_transform.m_position       = glm::vec3(0.5f, 0.1f, 0.4f);
+			serialised_transform.m_scale          = glm::vec3(2.4f, 2.3f, 5.0f);
+			serialised_transform.m_orientation    = glm::quat(3.8f, 2.5f, 4.4f, 0.5f);
+
+			Component::Transform deserialised_transform;
+			if (test_serialisation(serialised_transform, deserialised_transform))
+			{
+				CHECK_EQUAL(serialised_transform.m_position, deserialised_transform.m_position, "Position");
+				CHECK_EQUAL(serialised_transform.m_scale, deserialised_transform.m_scale, "Scale");
+				CHECK_EQUAL(serialised_transform.m_orientation, deserialised_transform.m_orientation, "Orientation");
 			}
 		}
 	}

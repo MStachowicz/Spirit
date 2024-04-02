@@ -1,5 +1,6 @@
 #include "Transform.hpp"
 #include "Utility/Utility.hpp"
+#include "Utility/Serialise.hpp"
 
 #include "imgui.h"
 #include "glm/gtx/euler_angles.hpp"
@@ -57,5 +58,19 @@ namespace Component
 			}
 			ImGui::TreePop();
 		}
+	}
+	void Transform::Serialise(const Transform& p_transform, std::ofstream& p_out, uint16_t p_version)
+	{ (void) p_version;
+		Utility::write_binary(p_out, p_transform.m_position);
+		Utility::write_binary(p_out, p_transform.m_scale);
+		Utility::write_binary(p_out, p_transform.m_orientation);
+	}
+	Transform Transform::Deserialise(std::ifstream& p_in, uint16_t p_version)
+	{ (void) p_version;
+		Transform transform;
+		Utility::read_binary(p_in, transform.m_position);
+		Utility::read_binary(p_in, transform.m_scale);
+		Utility::read_binary(p_in, transform.m_orientation);
+		return transform;
 	}
 } // namespace Component

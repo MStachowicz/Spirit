@@ -5,6 +5,7 @@
 #include "glm/vec3.hpp"
 
 #include <array>
+#include <fstream>
 
 namespace Component
 {
@@ -41,5 +42,7 @@ namespace Component
 		std::array<glm::vec3, 3> get_local_axes() const { return {right(), up(), forward()}; };
 
 		void draw_UI();
+		static void Serialise(const Transform& p_transform, std::ofstream& p_out, uint16_t p_version);
+		static Transform Deserialise(std::ifstream& p_in, uint16_t p_version);
 	};
 }

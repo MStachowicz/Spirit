@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "glm/gtc/quaternion.hpp"
 #include "Geometry/Triangle.hpp"
 
 #include <string>
@@ -16,6 +17,12 @@ namespace std
 	{
 		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 		auto format(const glm::vec3& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {}, {})", v.x, v.y, v.z); }
+	};
+	template<>
+	struct formatter<glm::quat>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+	auto format(const glm::quat& q, format_context& ctx) const { return format_to(ctx.out(), "({}, {}, {}, {})", q.w, q.x, q.y, q.z); }
 	};
 	template<>
 	struct formatter<Geometry::Triangle>
