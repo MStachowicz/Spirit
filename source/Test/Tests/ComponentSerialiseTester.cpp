@@ -3,6 +3,7 @@
 #include "Component/Lights.hpp"
 #include "Component/Transform.hpp"
 #include "Utility/Logger.hpp"
+#include "Utility/Serialise.hpp"
 
 #include <fstream>
 
@@ -27,7 +28,39 @@ namespace Test
 			p_deserialised = ComponentType::Deserialise(in, 0);
 			in.close();
 		}
-		catch (std::ofstream::failure& e)
+		catch (std::exception& e)
+		{
+			CHECK_TRUE(false, e.what());
+			std::remove("test.bin");
+			return false;
+		}
+
+		std::remove("test.bin");
+		return true;
+	}
+
+	// Helper function to test the serialisation and deserialisation of a value.
+	//@param p_to_serialise The value to write to a binary file.
+	//@param test_name The name of the test.
+	//@return True if the serialisation and deserialisation was successful, false otherwise.
+	template <typename T>
+	bool ComponentSerialiseTester::test_serialisation_utility(const T& p_to_serialise, T& p_deserialised)
+	{
+		try
+		{
+			// Write the value to a binary file.
+			std::ofstream out("test.bin", std::ios::binary);
+			out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+			Utility::write_binary(out, p_to_serialise);
+			out.close();
+
+			// Read the value back from the binary file.
+			std::ifstream in("test.bin", std::ios::binary);
+			in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+			Utility::read_binary(in, p_deserialised);
+			in.close();
+		}
+		catch (std::exception& e)
 		{
 			CHECK_TRUE(false, e.what());
 			std::remove("test.bin");
@@ -40,6 +73,22 @@ namespace Test
 
 	void ComponentSerialiseTester::run_unit_tests()
 	{
+		{SCOPE_SECTION("Utility::Serialise")
+
+			{SCOPE_SECTION("Float");
+				float out_float = 3.14f;
+				float in_float  = 0.f;
+				if (test_serialisation_utility(out_float, in_float))
+					CHECK_EQUAL(out_float, in_float, "Float equality");
+			}
+			{SCOPE_SECTION("String");
+				std::string out_string = "Hello, world!";
+				std::string in_string  = "";
+				if (test_serialisation_utility(out_string, in_string))
+					CHECK_EQUAL(out_string, in_string, "String equality");
+			}
+		}
+
 		SCOPE_SECTION("Component serialise");
 
 		{SCOPE_SECTION("Directional light");

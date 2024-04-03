@@ -38,4 +38,21 @@ namespace Utility
 
 		p_in.read(reinterpret_cast<char*>(&p_value), sizeof(T));
 	}
+	template <>
+	void write_binary<std::string>(std::ofstream& p_out, const std::string& p_value)
+	{
+		// Write the size of the string first then write the string data
+		std::size_t size = p_value.size();
+		p_out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+		p_out.write(p_value.data(), p_value.size());
+	}
+	template <>
+	void read_binary<std::string>(std::ifstream& p_in, std::string& p_value)
+	{
+		// Read the size of the string first then read the string data
+		std::size_t size;
+		p_in.read(reinterpret_cast<char*>(&size), sizeof(size));
+		p_value.resize(size);
+		p_in.read(p_value.data(), size);
+	}
 } // namespace Utility
