@@ -87,6 +87,34 @@ namespace Test
 				if (test_serialisation_utility(out_string, in_string))
 					CHECK_EQUAL(out_string, in_string, "String equality");
 			}
+			{SCOPE_SECTION("Vector<int>"); // vector of integers (POD type).
+				std::vector<int> out_vector = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+				std::vector<int> in_vector  = {};
+				if (test_serialisation_utility(out_vector, in_vector))
+				{
+					CHECK_EQUAL(out_vector.size(), in_vector.size(), "Vector<int> size");
+
+					if (out_vector.size() == in_vector.size())
+					{
+						for (size_t i = 0; i < out_vector.size(); ++i)
+							CHECK_EQUAL(out_vector[i], in_vector[i], "Vector<int> element");
+					}
+				}
+			}
+			{SCOPE_SECTION("Vector<glm::vec3>"); // vector of glm::vec3 (POD type).
+				std::vector<glm::vec3> out_vector = { glm::vec3(1.0f, 2.0f, 3.0f), glm::vec3(4.0f, 5.0f, 6.0f), glm::vec3(7.0f, 8.0f, 9.0f) };
+				std::vector<glm::vec3> in_vector  = {};
+				if (test_serialisation_utility(out_vector, in_vector))
+				{
+					CHECK_EQUAL(out_vector.size(), in_vector.size(), "Vector<glm::vec3> size");
+
+					if (out_vector.size() == in_vector.size())
+					{
+						for (size_t i = 0; i < out_vector.size(); ++i)
+							CHECK_EQUAL(out_vector[i], in_vector[i], "Vector<glm::vec3> element");
+					}
+				}
+			}
 		}
 
 		SCOPE_SECTION("Component serialise");

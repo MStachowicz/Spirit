@@ -6,6 +6,8 @@
 
 #include <fstream>
 #include <type_traits>
+#include <vector>
+#include <string>
 
 // Helpers for serialising and deserialising objects.
 namespace Utility
@@ -54,5 +56,54 @@ namespace Utility
 		p_in.read(reinterpret_cast<char*>(&size), sizeof(size));
 		p_value.resize(size);
 		p_in.read(p_value.data(), size);
+	}
+	// Write a vector to p_out in binary.
+	template <typename T>
+	void write_binary(std::ofstream& p_out, const std::vector<T>& p_vector)
+	{
+		static_assert(sizeof(T) > 0, "Cannot write a type of size 0");
+		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot write a reference or pointer");
+		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+
+		// Write the size of the vector first
+		size_t size = p_vector.size();
+		p_out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+		// If the type is trivially copyable, we can write the entire vector in one go.
+		if constexpr (std::is_trivially_copyable_v<T>)
+		{
+			if (!p_vector.empty())
+				p_out.write(reinterpret_cast<const char*>(p_vector.data()), sizeof(T) * p_vector.size());
+		}
+		else // Otherwise, write each element individually
+		{
+			for (const T& element : p_vector)
+				write_binary(p_out, element);
+		}
+	}
+	// Read into a vector from p_in in binary.
+	template <typename T>
+	void read_binary(std::ifstream& p_in, std::vector<T>& p_vector)
+	{
+		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
+		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
+		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+
+		// Read the size of the vector first
+		size_t size;
+		p_in.read(reinterpret_cast<char*>(&size), sizeof(size));
+		p_vector.resize(size);
+
+		// If the type is trivially copyable, we can read the entire vector in one go.
+		if constexpr (std::is_trivially_copyable_v<T>)
+		{
+			if (size > 0)
+				p_in.read(reinterpret_cast<char*>(p_vector.data()), sizeof(T) * size);
+		}
+		else // Otherwise, read each element individually
+		{
+			for (T& element : p_vector)
+				read_binary(p_in, element);
+		}
 	}
 } // namespace Utility
