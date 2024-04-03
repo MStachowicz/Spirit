@@ -115,6 +115,20 @@ namespace Test
 					}
 				}
 			}
+			{SCOPE_SECTION("vector<std::string>") // Test a vector of non-POD types.
+				std::vector<std::string> out_vector = { "Hello", "World", "!" };
+				std::vector<std::string> in_vector  = {};
+				if (test_serialisation_utility(out_vector, in_vector))
+				{
+					CHECK_EQUAL(out_vector.size(), in_vector.size(), "Vector<std::string> size");
+
+					if (out_vector.size() == in_vector.size())
+					{
+						for (size_t i = 0; i < out_vector.size(); ++i)
+							CHECK_EQUAL(out_vector[i], in_vector[i], "Vector<std::string> element");
+					}
+				}
+			}
 		}
 
 		SCOPE_SECTION("Component serialise");

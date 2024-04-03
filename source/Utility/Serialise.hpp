@@ -18,7 +18,8 @@ namespace Utility
 		std::is_arithmetic_v<T>
 		|| std::is_same_v<T, glm::vec3>
 		|| std::is_same_v<T, glm::quat>
-		|| std::is_same_v<T, glm::mat4>;
+		|| std::is_same_v<T, glm::mat4>
+		|| std::is_same_v<T, std::string>;
 
 	// Write p_value to p_out in binary.
 	template <typename T>
@@ -61,24 +62,26 @@ namespace Utility
 	template <typename T>
 	void write_binary(std::ofstream& p_out, const std::vector<T>& p_vector)
 	{
-		static_assert(sizeof(T) > 0, "Cannot write a type of size 0");
-		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot write a reference or pointer");
-		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
+		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
+		static_assert(std::is_trivially_copyable_v<T> || Serializable_Type<T>, "Type must be trivially copyable or supported by the serialisation system");
+		static_assert(std::is_default_constructible_v<T>, "Type must be default constructible for vector::resize");
 
 		// Write the size of the vector first
 		size_t size = p_vector.size();
 		p_out.write(reinterpret_cast<const char*>(&size), sizeof(size));
 
-		// If the type is trivially copyable, we can write the entire vector in one go.
-		if constexpr (std::is_trivially_copyable_v<T>)
+		if (size > 0)
 		{
-			if (!p_vector.empty())
-				p_out.write(reinterpret_cast<const char*>(p_vector.data()), sizeof(T) * p_vector.size());
-		}
-		else // Otherwise, write each element individually
-		{
-			for (const T& element : p_vector)
-				write_binary(p_out, element);
+			if constexpr (std::is_trivially_copyable_v<T>)
+			{// If the type is trivially copyable, we can write the data directly in one go.
+				p_out.write(reinterpret_cast<const char*>(p_vector.data()), sizeof(T) * size);
+			}
+			else
+			{// Otherwise, write each element individually.
+				for (const T& element : p_vector)
+					write_binary(p_out, element);
+			}
 		}
 	}
 	// Read into a vector from p_in in binary.
@@ -87,23 +90,26 @@ namespace Utility
 	{
 		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
 		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
-		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+		static_assert(std::is_trivially_copyable_v<T> || Serializable_Type<T>, "Type must be trivially copyable or supported by the serialisation system");
+		static_assert(std::is_default_constructible_v<T>, "Type must be default constructible for vector::resize");
 
 		// Read the size of the vector first
 		size_t size;
 		p_in.read(reinterpret_cast<char*>(&size), sizeof(size));
-		p_vector.resize(size);
 
-		// If the type is trivially copyable, we can read the entire vector in one go.
-		if constexpr (std::is_trivially_copyable_v<T>)
+		if (size > 0)
 		{
-			if (size > 0)
+			p_vector.resize(size);
+
+			if constexpr (std::is_trivially_copyable_v<T>)
+			{// If the type is trivially copyable, we can read the data directly in one go.
 				p_in.read(reinterpret_cast<char*>(p_vector.data()), sizeof(T) * size);
-		}
-		else // Otherwise, read each element individually
-		{
-			for (T& element : p_vector)
-				read_binary(p_in, element);
+			}
+			else
+			{// Otherwise, read each element individually.
+				for (T& element : p_vector)
+					read_binary(p_in, element);
+			}
 		}
 	}
 } // namespace Utility
