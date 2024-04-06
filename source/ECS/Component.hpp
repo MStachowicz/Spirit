@@ -36,6 +36,8 @@ namespace ECS
 		void (*MoveAssign)(void* p_destination_address, void* p_source_address);
 		// placement-new move-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
 		void (*MoveConstruct)(void* p_destination_address, void* p_source_address);
+		// placement-new copy-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
+		void (*CopyConstruct)(void* p_destination_address, const void* p_source_address);
 		// Serialise the object at p_address into p_out. (Optional function)
 		void (*Serialise)(void* p_address, std::ofstream& p_out, uint16_t p_version);
 		// Deserialise the object into p_destination_address from p_in. (Optional function)
@@ -125,6 +127,11 @@ namespace ECS
 		{
 			using Type = std::decay_t<ComponentType>;
 			new (p_destination_address) Type(std::move(*static_cast<Type*>(p_source_address)));
+		}}
+		, CopyConstruct{[](void* p_destination_address, const void* p_source_address)
+		{
+			using Type = std::decay_t<ComponentType>;
+			new (p_destination_address) Type(*static_cast<const Type*>(p_source_address));
 		}}
 		, Serialise{[](void* p_address, std::ofstream& p_out, uint16_t p_version)
 		{

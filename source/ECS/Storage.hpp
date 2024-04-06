@@ -291,10 +291,73 @@ namespace ECS
 				LOG("[ECS][Archetype] Move assigning {} from {}", (void*)(this), (void*)(&p_other));
 				return *this;
 			}
+			// Copy-construct
+			Archetype(const Archetype& p_other)
+				: m_bitset{p_other.m_bitset}
+				, m_components{p_other.m_components}
+				, m_is_serialisable{p_other.m_is_serialisable}
+				, m_entities{p_other.m_entities}
+				, m_instance_size{p_other.m_instance_size}
+				, m_next_instance_ID{p_other.m_next_instance_ID}
+				, m_capacity{p_other.m_capacity}
+				, m_data{(std::byte*)malloc(m_instance_size * m_capacity)}
+			{
+				// Copy construct all the components from p_other into this.
+				if (p_other.m_data != nullptr)
+				{
+					for (ArchetypeInstanceID instance = 0; instance < m_next_instance_ID; instance++)
+					{
+						const auto instance_start = m_instance_size * instance;
 
-			// No copying archetypes
-			Archetype(const Archetype& p_other)            = delete;
-			Archetype& operator=(const Archetype& p_other) = delete;
+						for (const auto& comp : m_components)
+						{
+							const auto address_offset = instance_start + comp.offset;
+							comp.type_info.CopyConstruct(&m_data[address_offset], &p_other.m_data[address_offset]);
+						}
+					}
+				}
+
+				LOG("[ECS][Archetype] Copy constructed {} from {}", (void*)(this), (void*)(&p_other));
+			}
+			// Copy-assign
+			Archetype& operator=(const Archetype& p_other)
+			{
+				if (this != &p_other)
+				{
+					if (m_data != nullptr)
+					{
+						clear();
+						free(m_data);
+					}
+
+					m_bitset           = p_other.m_bitset;
+					m_components       = p_other.m_components;
+					m_is_serialisable  = p_other.m_is_serialisable;
+					m_entities         = p_other.m_entities;
+					m_instance_size    = p_other.m_instance_size;
+					m_next_instance_ID = p_other.m_next_instance_ID;
+					m_capacity         = p_other.m_capacity;
+					m_data             = (std::byte*)malloc(m_instance_size * m_capacity);
+
+					// Copy construct all the components from p_other into this.
+					if (p_other.m_data != nullptr)
+					{
+						for (ArchetypeInstanceID instance = 0; instance < m_next_instance_ID; instance++)
+						{
+							const auto instance_start = m_instance_size * instance;
+
+							for (const auto& comp : m_components)
+							{
+								const auto address_offset = instance_start + comp.offset;
+								comp.type_info.CopyConstruct(&m_data[address_offset], &p_other.m_data[address_offset]);
+							}
+						}
+					}
+				}
+
+				LOG("[ECS][Archetype] Copy assigned {} from {}", (void*)(this), (void*)(&p_other));
+				return *this;
+			}
 
 			// Search the m_components vector for the p_component_ID and return its ComponentLayout.
 			// Non-template version (when we know the ComponentID but not the Type).
@@ -450,7 +513,7 @@ namespace ECS
 			// Size is 0 after clear.
 			void clear()
 			{
-				for (size_t instance = 0; instance < m_next_instance_ID; instance++)
+				for (ArchetypeInstanceID instance = 0; instance < m_next_instance_ID; instance++)
 				{
 					const auto instance_start = m_instance_size * instance;
 

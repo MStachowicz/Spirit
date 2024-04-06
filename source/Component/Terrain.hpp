@@ -24,6 +24,11 @@ namespace Component
 		Data::Mesh m_mesh;
 
 		Terrain(const glm::vec3& p_position, int p_size_x, int p_size_z) noexcept;
+		// Copy constructor has to be implemented because Data::Mesh GL members are not copyable.
+		Terrain(const Terrain& p_other) noexcept;
+		// Copy assignment operator has to be implemented because Data::Mesh GL members are not copyable.
+		Terrain& operator=(const Terrain& p_other) noexcept;
+
 		void draw_UI(System::TextureSystem& p_texture_system);
 	};
 } // namespace Component

@@ -15,6 +15,25 @@ Component::Terrain::Terrain(const glm::vec3& p_position, int p_size_x, int p_siz
 	, m_mesh{generate_mesh()}
 {}
 
+Component::Terrain::Terrain(const Terrain& p_other) noexcept
+	: m_position{p_other.m_position}
+	, m_size_x{p_other.m_size_x}
+	, m_size_z{p_other.m_size_z}
+	, m_scale_factor{p_other.m_scale_factor}
+	, m_texture{p_other.m_texture}
+	, m_mesh{generate_mesh()} // TODO: Implement a Data::Mesh copy.
+{}
+Component::Terrain& Component::Terrain::operator=(const Terrain& p_other) noexcept
+{
+	m_position     = p_other.m_position;
+	m_size_x       = p_other.m_size_x;
+	m_size_z       = p_other.m_size_z;
+	m_scale_factor = p_other.m_scale_factor;
+	m_texture      = p_other.m_texture;
+	m_mesh         = generate_mesh(); // TODO: Implement a Data::Mesh copy.
+	return *this;
+}
+
 float compute_height(float p_x, float p_z, float p_scale_factor, const siv::PerlinNoise& perlin)
 {
 	return static_cast<float>(perlin.noise2D(p_x * p_scale_factor, p_z * p_scale_factor));
