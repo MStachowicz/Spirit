@@ -4,6 +4,8 @@
 #include "Geometry/AABB.hpp"
 #include "Component/ViewInformation.hpp"
 
+#include <memory>
+
 namespace Component
 {
 	class Camera;
@@ -29,20 +31,26 @@ namespace System
 	{
 		TextureSystem& m_texture_system;
 		MeshSystem& m_mesh_system;
-		Scene m_scene;
+
+		std::vector<std::unique_ptr<Scene>> m_scenes;
+		size_t m_current_scene_index;
 
 	public:
 		SceneSystem(TextureSystem& p_texture_system, MeshSystem& p_mesh_system);
 
-		Scene& get_current_scene()                                      { return m_scene; }
-		ECS::Storage& get_current_scene_entities()                      { return m_scene.m_entities; }
-		const Component::ViewInformation& get_current_scene_view_info() { return m_scene.m_view_information; }
+		Scene& get_current_scene()                                      { return *m_scenes[m_current_scene_index]; }
+		const Scene& get_current_scene() const                          { return *m_scenes[m_current_scene_index]; }
+		void set_current_scene(const Scene& p_scene);
+
+		Scene& add_scene()                                              { return *m_scenes.emplace_back(std::make_unique<Scene>()); }
+		ECS::Storage& get_current_scene_entities()                      { return m_scenes[m_current_scene_index]->m_entities; }
+		const Component::ViewInformation& get_current_scene_view_info() { return m_scenes[m_current_scene_index]->m_view_information; }
 
 	private:
-		void add_default_camera();
-		void constructBouncingBallScene();
-		void constructBoxScene();
-		void construct_2_sphere_scene();
-		void primitives_scene();
+		void add_default_camera(Scene& p_scene);
+		void constructBouncingBallScene(Scene& p_scene);
+		void constructBoxScene(Scene& p_scene);
+		void construct_2_sphere_scene(Scene& p_scene);
+		void primitives_scene(Scene& p_scene);
 	};
 } // namespace System

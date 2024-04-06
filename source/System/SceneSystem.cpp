@@ -24,13 +24,21 @@ namespace System
 	SceneSystem::SceneSystem(System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system)
 		: m_texture_system(p_texture_system)
 		, m_mesh_system(p_mesh_system)
-		, m_scene{}
+		, m_scenes{}
+		, m_current_scene_index{0}
 	{
-		add_default_camera();
-		construct_2_sphere_scene();
-		//primitives_scene();
-		//constructBoxScene();
-		//constructBouncingBallScene();
+		auto& scene = add_scene();
+		set_current_scene(scene);
+		add_default_camera(scene);
+		construct_2_sphere_scene(scene);
+	}
+
+	void SceneSystem::set_current_scene(const Scene& p_scene)
+	{
+		// To set the current scene, find the matching scene pointer in the m_scenes vector and set the m_current_scene_index to the index of the scene.
+		auto it = std::find_if(m_scenes.begin(), m_scenes.end(), [&](const std::unique_ptr<System::Scene>& scene) { return scene.get() == &p_scene; });
+		ASSERT_THROW(it != m_scenes.end(), "Scene not found in SceneSystem. Call add_scene() to add the scene to the SceneSystem before calling set_current_scene.");
+		m_current_scene_index = std::distance(m_scenes.begin(), it);
 	}
 
 	void Scene::update(float aspect_ratio, Component::ViewInformation* view_info_override /*= nullptr*/)
@@ -74,14 +82,14 @@ namespace System
 		}
 	}
 
-	void SceneSystem::add_default_camera()
+	void SceneSystem::add_default_camera(Scene& p_scene)
 	{
 		Component::Transform camera_transform;
 		camera_transform.m_position = {0.f, 7.f, 12.5f};
 		auto camera = Component::FirstPersonCamera(glm::vec3(0.f, -0.5f, 0.5f), true);
 		camera.look_at(glm::vec3(0.f), camera_transform.m_position);
 
-		m_scene.m_entities.add_entity(
+		p_scene.m_entities.add_entity(
 			camera_transform,
 			camera,
 			Component::Label("Camera"),
@@ -90,13 +98,13 @@ namespace System
 	}
 
 	// Lines up all the available primitive meshes along the x axis with the camera facing them.
-	void SceneSystem::primitives_scene()
+	void SceneSystem::primitives_scene(Scene& p_scene)
 	{
 		{ // Plane/quad
 			auto transform    = Component::Transform{glm::vec3(0.f, 0.f, 0.f)};
 			transform.m_scale  = glm::vec3(10.f, 1.f, 10.f);
 
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Floor"},
 				Component::RigidBody{},
 				Component::Texture{m_texture_system.getTexture(Config::Texture_Directory / "wood_floor.png")},
@@ -119,7 +127,7 @@ namespace System
 			texture.m_diffuse  = m_texture_system.getTexture(Config::Texture_Directory / "metalContainerDiffuse.png");
 			texture.m_specular = m_texture_system.getTexture(Config::Texture_Directory / "metalContainerSpecular.png");
 
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Cube"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
@@ -129,7 +137,7 @@ namespace System
 			running_x += increment;
 		}
 		{ // Cone
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Cone"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
@@ -139,7 +147,7 @@ namespace System
 		}
 		{ // Cylinder
 
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Cylinder"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
@@ -148,7 +156,7 @@ namespace System
 			running_x += increment;
 		}
 		{ // quad
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Plane"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
@@ -157,7 +165,7 @@ namespace System
 			running_x += increment;
 		}
 		{ // Sphere
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Sphere"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
@@ -166,15 +174,15 @@ namespace System
 			running_x += increment;
 		}
 		{ // Lights
-			m_scene.m_entities.add_entity(Component::Label{"Directional light 1"}, Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.f, 0.5f});
+			p_scene.m_entities.add_entity(Component::Label{"Directional light 1"}, Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.f, 0.5f});
 
-			m_scene.m_entities.add_entity(Component::Label{"Point light 1"}, Component::PointLight{glm::vec3(6.f, 3.2f, -4.5f)});
+			p_scene.m_entities.add_entity(Component::Label{"Point light 1"}, Component::PointLight{glm::vec3(6.f, 3.2f, -4.5f)});
 
 			{ // Red point light in-front of the box.
 				auto point_light      = Component::PointLight{};
 				point_light.m_position = glm::vec3(-8.f, start_y, 1.f);
 				point_light.m_colour   = glm::vec3(1.f, 0.f, 0.f);
-				m_scene.m_entities.add_entity(Component::Label{"Point light 2"}, point_light);
+				p_scene.m_entities.add_entity(Component::Label{"Point light 2"}, point_light);
 			}
 			{ // Spotlight over the box pointing down onto it.
 				auto spotlight              = Component::SpotLight{};
@@ -182,21 +190,21 @@ namespace System
 				spotlight.m_colour           = glm::vec3(0.f, 0.f, 1.f);
 				spotlight.m_direction        = glm::vec3(0.f, -.1f, 0.f);
 				spotlight.m_diffuse_intensity = 3.f;
-				m_scene.m_entities.add_entity(Component::Label{"Spotlight 1"}, spotlight);
+				p_scene.m_entities.add_entity(Component::Label{"Spotlight 1"}, spotlight);
 			}
 		}
 
 		{ // Particle
 			auto particle_emitter = Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")};
 			particle_emitter.sort_by_distance_to_camera = true;
-			m_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
+			p_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 		}
 		{ // Terrain
-			m_scene.m_entities.add_entity(Component::Label{"Terrain"}, Component::Terrain{glm::vec3(0.f), 100, 100});
+			p_scene.m_entities.add_entity(Component::Label{"Terrain"}, Component::Terrain{glm::vec3(0.f), 100, 100});
 		}
 	}
 
-	void SceneSystem::constructBoxScene()
+	void SceneSystem::constructBoxScene(Scene& p_scene)
 	{
 		const auto containerDiffuse  = Config::Texture_Directory / "metalContainerDiffuse.png";
 		const auto containerSpecular = Config::Texture_Directory / "metalContainerSpecular.png";
@@ -208,7 +216,7 @@ namespace System
 				texture.m_diffuse = m_texture_system.getTexture(containerDiffuse);
 				texture.m_specular = m_texture_system.getTexture(containerSpecular);
 
-				m_scene.m_entities.add_entity(
+				p_scene.m_entities.add_entity(
 					Component::Label("Cube " + std::to_string((i / 2) + 1)),
 					Component::Mesh(m_mesh_system.m_cube),
 					Component::Transform{glm::vec3(i, 0.f, 0.f)},
@@ -235,7 +243,7 @@ namespace System
 					Component::PointLight pointLight;
 					pointLight.m_position = pointLightPositions[i];
 					pointLight.m_colour   = pointLightColours[i];
-					m_scene.m_entities.add_entity(Component::Label("Point light " + std::to_string(i)), pointLight);
+					p_scene.m_entities.add_entity(Component::Label("Point light " + std::to_string(i)), pointLight);
 				}
 			}
 			{// Directional light
@@ -243,26 +251,26 @@ namespace System
 				directionalLight.m_direction = glm::vec3(-0.2f, -1.0f, -0.3f);
 				directionalLight.m_ambient_intensity = 0.7f;
 				directionalLight.m_diffuse_intensity = 0.3f;
-				m_scene.m_entities.add_entity(Component::Label("Directional light"), directionalLight);
+				p_scene.m_entities.add_entity(Component::Label("Directional light"), directionalLight);
 			}
 			{// Spotlight
 				Component::Label name = Component::Label("Spot light");
-				m_scene.m_entities.add_entity(Component::SpotLight(), name);
+				p_scene.m_entities.add_entity(Component::SpotLight(), name);
 			}
 		}
 	}
-	void SceneSystem::construct_2_sphere_scene()
+	void SceneSystem::construct_2_sphere_scene(Scene& p_scene)
 	{
 		auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
 		mb.add_icosphere(glm::vec3(0.f), 1.f, 1);
 		auto icosphere_mesh = mb.get_mesh();
 		auto icosphere_meshref = m_mesh_system.insert(std::move(icosphere_mesh));
 
-		m_scene.m_entities.add_entity(
+		p_scene.m_entities.add_entity(
 			Component::Label{"Directional light 1"},
 			Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.3f, 0.5f});
 
-		m_scene.m_entities.add_entity(
+		p_scene.m_entities.add_entity(
 			Component::Label{"Sphere 1"},
 			Component::RigidBody{},
 			Component::Transform{glm::vec3(2.f, 0.f, 0.f)},
@@ -270,7 +278,7 @@ namespace System
 			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 0.6f)}, // Grey
 			Component::Collider{});
 
-		m_scene.m_entities.add_entity(
+		p_scene.m_entities.add_entity(
 			Component::Label{"Sphere 2"},
 			Component::RigidBody{},
 			Component::Transform{glm::vec3(5.f, 0.f, 0.f)},
@@ -278,7 +286,7 @@ namespace System
 			Component::Texture{glm::vec4(1.f, 0.647f, 0.f, 0.6f)}, // Orange
 			Component::Collider{});
 	}
-	void SceneSystem::constructBouncingBallScene()
+	void SceneSystem::constructBouncingBallScene(Scene& p_scene)
 	{
 		const auto containerDiffuse  = Config::Texture_Directory / "metalContainerDiffuse.png";
 		const auto containerSpecular = Config::Texture_Directory / "metalContainerSpecular.png";
@@ -296,13 +304,13 @@ namespace System
 
 			Component::RigidBody rigidBody;
 			rigidBody.m_mass = 1.f;
-			m_scene.m_entities.add_entity(mesh, transform, Component::Collider(), rigidBody, name);
+			p_scene.m_entities.add_entity(mesh, transform, Component::Collider(), rigidBody, name);
 		}
 		{ // Floor
 			auto transform     = Component::Transform{glm::vec3(0.f, 0.f, 0.f)};
 			transform.m_scale  = glm::vec3(10.f, 1.f, 10.f);
 
-			m_scene.m_entities.add_entity(
+			p_scene.m_entities.add_entity(
 				Component::Label{"Floor"},
 				Component::RigidBody{},
 				Component::Texture{m_texture_system.getTexture(Config::Texture_Directory / "wood_floor.png")},
@@ -328,16 +336,16 @@ namespace System
 					Component::PointLight pointLight;
 					pointLight.m_position = pointLightPositions[i];
 					pointLight.m_colour   = pointLightColours[i];
-					m_scene.m_entities.add_entity(Component::Label("Point light " + std::to_string(i)), pointLight);
+					p_scene.m_entities.add_entity(Component::Label("Point light " + std::to_string(i)), pointLight);
 				}
 			}
 			{// Directional light
 				Component::DirectionalLight directionalLight;
 				directionalLight.m_direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-				m_scene.m_entities.add_entity(Component::Label("Directional light"), directionalLight);
+				p_scene.m_entities.add_entity(Component::Label("Directional light"), directionalLight);
 			}
 			{// Spotlight
-				m_scene.m_entities.add_entity(Component::Label("Spot light"), Component::SpotLight());
+				p_scene.m_entities.add_entity(Component::Label("Spot light"), Component::SpotLight());
 			}
 		}
 	}
