@@ -635,18 +635,33 @@ namespace UI
 							Component::Mesh{m_mesh_system.m_cube},
 							Component::Collider{});
 					}
-					else if (ImGui::Button("Light"))
+					else if (ImGui::Button("Terrain"))
+					{
+						m_scene_system.get_current_scene_entities().add_entity(
+							Component::Label{"Terrain"},
+							Component::Terrain{*m_cursor_intersection, 10, 10});
+					}
+					ImGui::EndMenu();
+				}
+				if (ImGui::BeginMenu("Light"))
+				{
+					if (ImGui::Button("Point light"))
 					{
 						m_scene_system.get_current_scene_entities().add_entity(
 							Component::Label{"Light"},
 							Component::Transform{*m_cursor_intersection},
 							Component::PointLight{*m_cursor_intersection});
 					}
-					else if (ImGui::Button("Terrain"))
+					ImGui::EndMenu();
+				}
+				if (ImGui::BeginMenu("Particle"))
+				{
+					if (ImGui::Button("Smoke"))
 					{
 						m_scene_system.get_current_scene_entities().add_entity(
-							Component::Label{"Terrain"},
-							Component::Terrain{*m_cursor_intersection, 10, 10});
+							Component::Label{"Particle Emitter"},
+							Component::Transform{*m_cursor_intersection},
+							Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")});
 					}
 					ImGui::EndMenu();
 				}
