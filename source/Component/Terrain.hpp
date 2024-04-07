@@ -28,6 +28,8 @@ namespace Component
 		Terrain(const Terrain& p_other) noexcept;
 		// Copy assignment operator has to be implemented because Data::Mesh GL members are not copyable.
 		Terrain& operator=(const Terrain& p_other) noexcept;
+		Terrain(Terrain&& p_other) noexcept            = default;
+		Terrain& operator=(Terrain&& p_other) noexcept = default;
 
 		void draw_UI(System::TextureSystem& p_texture_system);
 	};
