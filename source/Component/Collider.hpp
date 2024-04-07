@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Geometry/AABB.hpp"
-#include "Geometry/Shape.hpp"
-
-#include <vector>
 
 namespace Component
 {
@@ -14,8 +11,7 @@ namespace Component
 	public:
 		constexpr static size_t Persistent_ID = 4;
 
-		Geometry::AABB m_world_AABB;                     // The world space AABB of the entity. PhysicsSystem is responsible for updating this.
-		std::vector<Geometry::Shape> m_collision_shapes; // World-space shape for narrow-phase collision detection.
+		Geometry::AABB m_world_AABB; // The world space AABB of the entity. PhysicsSystem is responsible for updating this.
 		bool m_collided;
 
 		// Constructs a collider from an object space AABB and initial world space transformation info.

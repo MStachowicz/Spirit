@@ -19,7 +19,6 @@
 #include "Geometry/Point.hpp"
 #include "Geometry/Quad.hpp"
 #include "Geometry/Ray.hpp"
-#include "Geometry/Shape.hpp"
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Triangle.hpp"
 
@@ -110,39 +109,6 @@ namespace OpenGL
 					dc.submit(*m_bound_shader, *m_AABB_filled_mesh);
 				}
 			});
-		}
-
-		if (opt.m_show_collision_shapes)
-		{
-			auto collision_shapes_mb = Utility::MeshBuilder<Data::PositionVertex, PrimitiveMode::Triangles>();
-
-			scene.foreach([&](Component::Collider& p_collider)
-			{
-					for (const auto& shape : p_collider.m_collision_shapes)
-					{
-						if (shape.is<Geometry::Cone>())          collision_shapes_mb.add_cone(shape.get<Geometry::Cone>(), m_debug_options.m_segments);
-						else if (shape.is<Geometry::Cuboid>())   collision_shapes_mb.add_cuboid(shape.get<Geometry::Cuboid>());
-						else if (shape.is<Geometry::Cylinder>()) collision_shapes_mb.add_cylinder(shape.get<Geometry::Cylinder>(), m_debug_options.m_segments);
-						else if (shape.is<Geometry::Quad>())     collision_shapes_mb.add_quad(shape.get<Geometry::Quad>());
-						else if (shape.is<Geometry::Sphere>())   collision_shapes_mb.add_sphere(shape.get<Geometry::Sphere>(), m_debug_options.m_subdivisions);
-						else if (shape.is<Geometry::Triangle>()) collision_shapes_mb.add_triangle(shape.get<Geometry::Triangle>());
-						else ASSERT_THROW(false, "[DEBUG RENDERER] Unknown shape type for showing collision shape.");
-				}
-			});
-
-			if (!collision_shapes_mb.empty())
-			{
-				auto collision_shapes_mesh = collision_shapes_mb.get_mesh();
-
-				DrawCall dc;
-				dc.m_cull_face_enabled      = false;
-				dc.m_polygon_offset_enabled = true;
-				dc.m_polygon_offset_factor  = opt.m_position_offset_factor;
-				dc.m_polygon_offset_units   = opt.m_position_offset_units;
-				dc.set_uniform("model", glm::identity<glm::mat4>());
-				dc.set_uniform("colour", glm::vec4(opt.m_bounding_box_colour, 0.2f));
-				dc.submit(*m_bound_shader, collision_shapes_mesh);
-			}
 		}
 
 		if (opt.m_show_light_positions)

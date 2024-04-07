@@ -40,7 +40,6 @@ namespace System
 	public:
 		CollisionSystem(SceneSystem& p_scene_system) noexcept;
 
-		// Returns the collision shape of p_entity in world space.
 		std::optional<ContactPoint> get_collision(const ECS::Entity& p_entity, const ECS::Entity* p_collided_entity = nullptr) const;
 
 		// Does this ray collide with any entities.

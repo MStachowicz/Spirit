@@ -584,13 +584,11 @@ namespace UI
 					ImGui::Checkbox("Show orientations",        &debug_options.m_show_orientations);
 					ImGui::Checkbox("Show bounding box",        &debug_options.m_show_bounding_box);
 					ImGui::Checkbox("Fill bounding box",        &debug_options.m_fill_bounding_box);
-					ImGui::Checkbox("Show collision shapes",    &debug_options.m_show_collision_shapes);
 
-					bool showing_collision_shapes = debug_options.m_show_bounding_box || debug_options.m_show_collision_shapes;
-					if (!showing_collision_shapes) ImGui::BeginDisabled();
+					if (!debug_options.m_show_bounding_box) ImGui::BeginDisabled();
 					ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
 					ImGui::ColorEdit3("Bounding box collided colour", &debug_options.m_bounding_box_collided_colour[0]);
-					if (!showing_collision_shapes) ImGui::EndDisabled();
+					if (!debug_options.m_show_bounding_box) ImGui::EndDisabled();
 
 					ImGui::Slider("Position offset factor",            debug_options.m_position_offset_factor, -10.f, 10.f);
 					ImGui::Slider("Position offset units",             debug_options.m_position_offset_units, -10.f, 10.f);

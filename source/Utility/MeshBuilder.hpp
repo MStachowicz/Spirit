@@ -3,8 +3,15 @@
 #include "Utility.hpp"
 
 #include "Component/Mesh.hpp"
-#include "Geometry/Shape.hpp"
 #include "Geometry/LineSegment.hpp"
+#include "Geometry/Quad.hpp"
+#include "Geometry/Cone.hpp"
+#include "Geometry/Cuboid.hpp"
+#include "Geometry/Cylinder.hpp"
+#include "Geometry/Sphere.hpp"
+#include "Geometry/Triangle.hpp"
+#include "Geometry/AABB.hpp"
+
 #include "OpenGL/GLState.hpp"
 
 #include "glm/vec2.hpp"
@@ -26,13 +33,11 @@ namespace Utility
 	{
 		std::vector<VertexType> data;
 		glm::vec4 current_colour;
-		std::vector<Geometry::Shape> shapes;
 
 	public:
 		MeshBuilder() noexcept
 			: data{}
 			, current_colour{glm::vec4{1.f}}
-			, shapes{}
 		{}
 		void reserve(size_t size)
 		{
@@ -41,7 +46,6 @@ namespace Utility
 		void clear()
 		{
 			data.clear();
-			shapes.clear();
 		}
 		bool empty() const
 		{
@@ -59,15 +63,13 @@ namespace Utility
 		}
 		[[nodiscard]] Data::Mesh get_mesh()
 		{
-			return Data::Mesh{data, primitive_mode, shapes, build_collision_shape};
+			return Data::Mesh{data, primitive_mode};
 		}
 
 	private:
 		// Helpers for MeshBuilder::add_ functions. These perform the actual adding of vertices to the data vector.
-		// Impl versions do not add to the shapes vector. Only the publicly accessible versions do.
-		// This allows add_ functions to use the impl versions without adding extra shapes to the shapes vetor.
 
-		// Add a vertex to the mesh. _impl version (doesn't add to shapes vector).
+		// Add a vertex to the mesh.
 		template <typename Vertex>
 		void add_vertex_impl(Vertex&& v)
 		{
@@ -81,7 +83,7 @@ namespace Utility
 
 			data.emplace_back(std::forward<Vertex>(v));
 		}
-		// Add a line to the mesh. _impl version (doesn't add to shapes vector).
+		// Add a line to the mesh.
 		template <typename Vertex, typename Vertex2>
 		void add_line_impl(Vertex&& v1, Vertex2&& v2)
 		{
@@ -110,7 +112,7 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_line for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		// Add triangle to the mesh. _impl version (doesn't add to shapes vector).
+		// Add triangle to the mesh.
 		template <typename Vertex, typename Vertex2, typename Vertex3>
 		void add_triangle_impl(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
 		{
@@ -152,7 +154,7 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_triangle for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		// Add triangle to the mesh with a pre-defined normal. _impl version (doesn't add to shapes vector).
+		// Add triangle to the mesh with a pre-defined normal.
 		template <typename Vertex, typename Vertex2, typename Vertex3>
 		void add_triangle_impl(Vertex&& v1, Vertex2&& v2, Vertex3&& v3, const glm::vec3& normal)
 		{
@@ -179,7 +181,7 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_triangle for this combo of VertexType params."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		// Add a quad to the mesh. _impl version (doesn't add to shapes vector).
+		// Add a quad to the mesh.
 		void add_quad_impl(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
@@ -227,7 +229,7 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_quad for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 		}
-		// Add a circle to the mesh. _impl version (doesn't add to shapes vector).
+		// Add a circle to the mesh.
 		void add_circle_impl(const glm::vec3& center, float radius, size_t segments, const glm::vec3& normal = {0.f, 1.f, 0.f})
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles)
@@ -272,8 +274,6 @@ namespace Utility
 		void add_line(Vertex&& v1, Vertex2&& v2)
 		{
 			add_line_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2));
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::LineSegment{v1.position, v2.position});
 		}
 		void add_line(const Geometry::LineSegment& line)
 		{
@@ -283,15 +283,11 @@ namespace Utility
 		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3)
 		{
 			add_triangle_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3));
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Triangle{v1.position, v2.position, v3.position});
 		}
 		template <typename Vertex, typename Vertex2, typename Vertex3>
 		void add_triangle(Vertex&& v1, Vertex2&& v2, Vertex3&& v3, const glm::vec3& normal)
 		{
 			add_triangle_impl(std::forward<Vertex>(v1), std::forward<Vertex2>(v2), std::forward<Vertex3>(v3), normal);
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Triangle{v1.position, v2.position, v3.position});
 		}
 		void add_triangle(const Geometry::Triangle& triangle)
 		{
@@ -301,8 +297,6 @@ namespace Utility
 		{
 			add_quad_impl(top_left, top_right, bottom_left, bottom_right);
 
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Quad{top_left, top_right, bottom_left, bottom_right});
 		}
 		void add_quad(const Geometry::Quad& quad)
 		{
@@ -341,8 +335,6 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cone for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Cone{base, top, radius});
 		}
 		void add_cone(const Geometry::Cone& cone, size_t segments = 16)
 		{
@@ -418,8 +410,6 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cylinder for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Cylinder{base, top, radius});
 		}
 		void add_cylinder(const Geometry::Cylinder& cylinder, size_t segments = 16)
 		{
@@ -490,8 +480,6 @@ namespace Utility
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_icosphere for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
 			// A low subdivision icosphere only approximates a sphere. While we add a sphere here, below a certain subdivision level we could push just the faces.
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(Geometry::Sphere{center, radius});
 		}
 		void add_sphere(const Geometry::Sphere sphere, size_t subdivisions)
 		{
@@ -512,8 +500,6 @@ namespace Utility
 			else
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cuboid for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			if constexpr (build_collision_shape)
-				shapes.emplace_back(cuboid);
 		}
 
 	private: // Helpers for MeshBuilder::add_ functions

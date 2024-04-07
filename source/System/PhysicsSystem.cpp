@@ -78,49 +78,6 @@ namespace System
 
 				// Update the collider's world-space AABB
 				collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
-
-				collider.m_collision_shapes.clear();
-				for (const auto& shape : mesh.m_mesh->collision_shapes) // No std::visit here because some shapes require the scale.
-				{
-					if (shape.is<Geometry::Cone>())
-					{
-						auto cone = shape.get<Geometry::Cone>();
-						cone.transform(transform.get_model(), transform.m_scale);
-						collider.m_collision_shapes.emplace_back(cone);
-					}
-					else if (shape.is<Geometry::Cuboid>())
-					{
-						auto cuboid = shape.get<Geometry::Cuboid>();
-						cuboid.transform(transform.m_position, transform.m_orientation, transform.m_scale);
-						collider.m_collision_shapes.emplace_back(cuboid);
-					}
-					else if (shape.is<Geometry::Cylinder>())
-					{
-						auto cylinder = shape.get<Geometry::Cylinder>();
-						cylinder.transform(transform.get_model(), transform.m_scale);
-						collider.m_collision_shapes.emplace_back(cylinder);
-					}
-					else if (shape.is<Geometry::Quad>())
-					{
-						auto quad = shape.get<Geometry::Quad>();
-						quad.transform(transform.get_model());
-						collider.m_collision_shapes.emplace_back(quad);
-					}
-					else if (shape.is<Geometry::Sphere>())
-					{
-						auto sphere = shape.get<Geometry::Sphere>();
-						sphere.transform(transform.get_model(), transform.m_scale);
-						collider.m_collision_shapes.emplace_back(sphere);
-					}
-					else if (shape.is<Geometry::Triangle>())
-					{
-						auto triangle = shape.get<Geometry::Triangle>();
-						triangle.transform(transform.get_model());
-						collider.m_collision_shapes.emplace_back(triangle);
-					}
-					else
-						ASSERT_THROW(false, "[DEBUG RENDERER] Unknown shape type for showing collision shape.");
-				}
 			}
 
 			// After moving and updating the Collider, check for collisions and respond
