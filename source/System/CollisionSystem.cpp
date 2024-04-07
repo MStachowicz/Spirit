@@ -16,6 +16,19 @@ namespace System
 		: m_scene_system{p_scene_system}
 	{}
 
+	void CollisionSystem::update()
+	{
+		m_scene_system.get_current_scene_entities().foreach([&](Component::Collider& p_collider)
+		{
+			p_collider.m_collided = false;
+		});
+
+		m_scene_system.get_current_scene_entities().foreach([&](Component::Transform& transform, Component::Collider& collider, Component::Mesh& mesh)
+		{
+			collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+		});
+	}
+
 	std::optional<ContactPoint> CollisionSystem::get_collision(const ECS::Entity& p_entity, const ECS::Entity* p_collided_entity) const
 	{
 		auto& scene = m_scene_system.get_current_scene_entities();

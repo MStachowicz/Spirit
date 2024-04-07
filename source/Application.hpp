@@ -133,6 +133,7 @@ private:
 				duration_since_last_physics_tick -= physicsTimestep;
 				physics_time                     += physicsTimestep;
 				m_physics_system.integrate(physicsTimestep); // PhysicsSystem::Integrate takes a floating point rep duration, conversion here is troublesome.
+				m_collision_system.update();
 			}
 
 			if (duration_since_last_render_tick >= renderTimestep)

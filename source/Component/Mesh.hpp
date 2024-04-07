@@ -59,6 +59,9 @@ namespace Data
 					(void*)offsetof(VertexType,
 					position));
 				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Position3D));
+
+				for (const auto& vertex : vertex_data)
+					AABB.unite(vertex.position);
 			}
 
 			if constexpr (has_normal_member<VertexType>)

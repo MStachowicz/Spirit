@@ -3,11 +3,10 @@
 #include "SceneSystem.hpp"
 
 #include "Component/FirstPersonCamera.hpp"
-#include "Component/Collider.hpp"
-#include "Component/Mesh.hpp"
 #include "Component/RigidBody.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
+
 #include "Geometry/Geometry.hpp"
 #include "Utility/Utility.hpp"
 
@@ -70,17 +69,6 @@ namespace System
 				transform.m_orientation = glm::normalize(transform.m_orientation);
 			}
 
-			// Update the collider to match the new world-space position
-			if (scene.has_components<Component::Collider>(entity) && scene.has_components<Component::Mesh>(entity))
-			{
-				auto& collider = scene.get_component<Component::Collider>(entity);
-				auto& mesh     = scene.get_component<Component::Mesh>(entity);
-
-				// Update the collider's world-space AABB
-				collider.m_world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
-			}
-
-			// After moving and updating the Collider, check for collisions and respond
 			ECS::Entity collided_entity = ECS::Entity(0);
 			if (auto collision = m_collision_system.get_collision(entity, &collided_entity))
 			{
