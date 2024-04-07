@@ -23,7 +23,9 @@ namespace System
 	class TextureSystem;
 	class MeshSystem;
 	class SceneSystem;
+	class Scene;
 	class CollisionSystem;
+	class PhysicsSystem;
 }
 namespace OpenGL
 {
@@ -65,9 +67,11 @@ namespace UI
 		System::MeshSystem&      m_mesh_system;
 		System::SceneSystem&     m_scene_system;
 		System::CollisionSystem& m_collision_system;
+		System::PhysicsSystem&   m_physics_system;
 		OpenGL::OpenGLRenderer&  m_openGL_renderer;
 
 		State m_state;                          // The current state of the editor.
+		System::Scene* m_scene_before_play;     // The scene being edited before play was pressed.
 		Component::TwoAxisCamera m_camera;      // Camera used when m_state is Editing.
 		Component::ViewInformation m_view_info; // View information for m_camera required to provide persistant memory.
 		std::vector<ECS::Entity> m_selected_entities;
@@ -116,7 +120,13 @@ namespace UI
 			return 1.f / std::chrono::duration_cast<std::chrono::duration<Rep>>(avg_time_per_frame).count();
 		}
 
-		Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system, System::SceneSystem& p_scene_system, System::CollisionSystem& p_collision_system, OpenGL::OpenGLRenderer& p_openGL_renderer);
+		Editor(Platform::Input& p_input, Platform::Window& p_window
+			, System::TextureSystem& p_texture_system
+			, System::MeshSystem& p_mesh_system
+			, System::SceneSystem& p_scene_system
+			, System::CollisionSystem& p_collision_system
+			, System::PhysicsSystem& p_physics_system
+			, OpenGL::OpenGLRenderer& p_openGL_renderer);
 
 		void draw(const DeltaTime& p_duration_since_last_draw);
 		//@return ViewInformation representing the state of the camera if editor is active, otherwise nullptr.

@@ -29,7 +29,7 @@ namespace Component
 		bool m_apply_gravity;
 		// Position and orientation are stored in Component::Transform.
 
-		RigidBody();
+		RigidBody(bool p_apply_gravity = true) noexcept;
 		// Apply a linear p_force (kg m/s²) on the body. Force is applied on a PhysicsSystem::update tick.
 		void apply_linear_force(const glm::vec3& p_force);
 		void draw_UI();

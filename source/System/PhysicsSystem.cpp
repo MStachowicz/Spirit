@@ -17,6 +17,7 @@ namespace System
 		: m_update_count{0}
 		, m_restitution{0.8f}
 		, m_apply_collision_response{true}
+		, m_bool_apply_kinematic{true}
 		, m_scene_system{scene_system}
 		, m_collision_system{collision_system}
 		, m_total_simulation_time{DeltaTime::zero()}
@@ -27,6 +28,9 @@ namespace System
 	{
 		m_update_count++;
 		m_total_simulation_time += p_delta_time;
+
+		if (!m_bool_apply_kinematic)
+			return;
 
 		auto& scene = m_scene_system.get_current_scene_entities();
 		scene.foreach([this, &p_delta_time, &scene](ECS::Entity& entity, Component::RigidBody& rigid_body, Component::Transform& transform)

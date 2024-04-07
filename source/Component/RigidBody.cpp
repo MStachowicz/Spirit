@@ -5,7 +5,7 @@
 
 namespace Component
 {
-	RigidBody::RigidBody()
+	RigidBody::RigidBody(bool p_apply_gravity/*= true*/) noexcept
 		: m_force{0.f, 0.f, 0.f}
 		, m_momentum{0.f, 0.f, 0.f}
 		, m_acceleration{0.f, 0.f, 0.f}
@@ -15,7 +15,7 @@ namespace Component
 		, m_angular_velocity{0.f, 0.f, 0.f}
 		, m_inertia_tensor{glm::identity<glm::mat3>()}
 		, m_mass{1}
-		, m_apply_gravity{false}
+		, m_apply_gravity{p_apply_gravity}
 	{}
 
 	void RigidBody::apply_linear_force(const glm::vec3& p_force)

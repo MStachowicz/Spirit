@@ -12,6 +12,7 @@
 #include "Component/Texture.hpp"
 #include "Component/Transform.hpp"
 #include "System/CollisionSystem.hpp"
+#include "System/PhysicsSystem.hpp"
 #include "System/MeshSystem.hpp"
 #include "System/SceneSystem.hpp"
 #include "System/TextureSystem.hpp"
@@ -33,15 +34,23 @@
 
 namespace UI
 {
-	Editor::Editor(Platform::Input& p_input, Platform::Window& p_window, System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system, System::SceneSystem& p_scene_system, System::CollisionSystem& p_collision_system, OpenGL::OpenGLRenderer& p_openGL_renderer)
+	Editor::Editor(Platform::Input& p_input, Platform::Window& p_window
+		, System::TextureSystem& p_texture_system
+		, System::MeshSystem& p_mesh_system
+		, System::SceneSystem& p_scene_system
+		, System::CollisionSystem& p_collision_system
+		, System::PhysicsSystem& p_physics_system
+		, OpenGL::OpenGLRenderer& p_openGL_renderer)
 		: m_input{p_input}
 		, m_window{p_window}
 		, m_texture_system{p_texture_system}
 		, m_mesh_system{p_mesh_system}
 		, m_scene_system{p_scene_system}
 		, m_collision_system{p_collision_system}
+		, m_physics_system{p_physics_system}
 		, m_openGL_renderer{p_openGL_renderer}
 		, m_state{State::Editing}
+		, m_scene_before_play{nullptr}
 		, m_camera{}
 		, m_view_info{m_camera.view_information(m_window.aspect_ratio())}
 		, m_selected_entities{}
@@ -265,15 +274,34 @@ namespace UI
 		if (m_state == p_new_state && !p_force)
 			return;
 
-		if (p_new_state == State::Editing)
+		switch (p_new_state)
 		{
-			m_input.set_cursor_mode(Platform::CursorMode::Normal);
-			m_window.m_show_menu_bar = true;
-		}
-		else
-		{
-			m_input.set_cursor_mode(Platform::CursorMode::Captured);
-			m_window.m_show_menu_bar = false;
+			case State::Editing:
+			{
+				m_input.set_cursor_mode(Platform::CursorMode::Normal);
+				m_window.m_show_menu_bar = true;
+				m_physics_system.m_bool_apply_kinematic = false;
+				if (m_scene_before_play)
+					m_scene_system.set_current_scene(*m_scene_before_play);
+
+				break;
+			}
+			case State::Playing:
+			{
+				m_input.set_cursor_mode(Platform::CursorMode::Captured);
+				m_window.m_show_menu_bar = false;
+				deselect_all_entity();
+
+				// Create a new scene and copy the current scene into it.
+				// This is so that the current scene can be restored when the user stops playing.
+				m_scene_before_play = &m_scene_system.get_current_scene();
+				auto& play_scene    = m_scene_system.add_scene();
+				play_scene          = m_scene_system.get_current_scene();
+				m_scene_system.set_current_scene(play_scene);
+				m_physics_system.m_bool_apply_kinematic = true;
+				break;
+			}
+			default: break;
 		}
 
 		m_state = p_new_state;
@@ -293,8 +321,17 @@ namespace UI
 	{
 		if (m_state != State::Editing)
 			return;
-
 		m_duration_between_draws.push_back(p_duration_since_last_draw);
+
+		{// Draw a play button in the middle top of the screen.
+			const auto button_size = ImVec2(50.f, 50.f);
+			const auto button_pos  = ImVec2((m_window.size().x - button_size.x) / 2.f, button_size.y / 2.f);
+			ImGui::SetNextWindowPos(button_pos);
+			ImGui::Begin("Play", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+			if (ImGui::Button("Play"))
+				set_state(State::Playing);
+			ImGui::End();
+		}
 
 		if (ImGui::BeginMenuBar())
 		{

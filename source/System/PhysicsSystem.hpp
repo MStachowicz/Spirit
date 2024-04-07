@@ -20,6 +20,8 @@ namespace System
 		size_t m_update_count;
 		float m_restitution;             // Coefficient of restitution applied in collision response.
 		bool m_apply_collision_response; // Whether to apply collision response or not.
+		bool m_bool_apply_kinematic;     // Whether to apply kinematic equations or not.
+
 	private:
 		SceneSystem& m_scene_system;
 		CollisionSystem& m_collision_system;

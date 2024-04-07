@@ -94,7 +94,7 @@ namespace System
 			camera_transform,
 			camera,
 			Component::Label("Camera"),
-			Component::RigidBody(),
+			Component::RigidBody(false),
 			Component::Input(Component::Input::Camera_Move_Look));
 	}
 
