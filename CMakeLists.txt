@@ -48,10 +48,10 @@ PRIVATE source
 target_link_libraries(Test
 PUBLIC Utility
 PRIVATE ECS
+PRIVATE OpenGL
 PRIVATE Geometry
 PRIVATE GLM
 PRIVATE ImGui
-PRIVATE OpenGL
 )
 target_compile_options(Test PRIVATE ${WARNING_COMPILE_FLAGS})
 # Test end --------------------------------------------------------------------------------------------------------------------------------
