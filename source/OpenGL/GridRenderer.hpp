@@ -1,9 +1,13 @@
+#pragma once
+
 #include "Shader.hpp"
 
 #include "Component/Mesh.hpp"
 
 namespace OpenGL
 {
+	class FBO;
+
 	class GridRenderer
 	{
 		static Data::Mesh make_grid_mesh();
@@ -15,6 +19,6 @@ namespace OpenGL
 
 	public:
 		GridRenderer() noexcept;
-		void draw();
+		void draw(const FBO& target_FBO);
 	};
 }

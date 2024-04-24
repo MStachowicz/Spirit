@@ -1,14 +1,28 @@
 #pragma once
 
 #include "glm/fwd.hpp"
-#include <string>
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
 
-using GLint      = int;
-using GLuint     = unsigned int;
-using GLboolean  = unsigned char;
-using GLenum     = unsigned int; // Usually replaced by the enums in OpenGL namespace.
-using GLsizei    = int;
-using GLfloat    = float;
+#include <optional>
+#include <string>
+#include <vector>
+
+//using GLboolean  = unsigned char; // Our wrapper replaces GLboolean with bool.
+using GLbyte   = signed char;
+using GLubyte  = unsigned char;
+using GLshort  = signed short;
+using GLushort = unsigned short;
+using GLint    = int;
+using GLuint   = unsigned int;
+using GLenum   = unsigned int;   // Our wrapper replaces GLenum with strongly typed enums. (except for texture setup)
+using GLfixed  = int32_t;
+using GLfloat  = float;
+using GLhalf   = unsigned short;
+using GLdouble = double;
+using GLsizei  = int;
+using GLHandle = GLuint; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
 
 #if defined(_WIN64)
 using GLsizeiptr = signed long long int;
@@ -18,14 +32,206 @@ using GLsizeiptr = signed long int;
 using GLintptr   = signed long int;
 #endif
 
-using GLHandle   = unsigned int; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
-//using GLdouble = double; // Unused
-
-// Define wrappers to strongly type GLenum types.
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// STRONGLY TYPED ENUM WRAPPERS
 namespace OpenGL
 {
 	constexpr inline static bool LogGLTypeEvents = false;
 
+	enum class BufferType : uint8_t
+	{
+		ArrayBuffer,             // Vertex attributes
+		AtomicCounterBuffer,     // Atomic counter storage
+		CopyReadBuffer,          // Buffer copy source
+		CopyWriteBuffer,         // Buffer copy destination
+		DispatchIndirectBuffer,  // Indirect compute dispatch commands
+		DrawIndirectBuffer,      // Indirect command arguments
+		ElementArrayBuffer,      // Vertex array indices
+		PixelPackBuffer,         // Pixel read target
+		PixelUnpackBuffer,       // Texture data source
+		QueryBuffer,             // Query result buffer
+		ShaderStorageBuffer,     // Read-write storage for shaders
+		TextureBuffer,           // Texture data buffer
+		TransformFeedbackBuffer, // Transform feedback buffer
+		UniformBuffer            // Uniform block storage
+	};
+	enum class BufferDataType : uint8_t
+	{
+		Byte,          // GL_Byte aka GLbyte,
+		UnsignedByte,  // GL_UNSIGNED_BYTE aka GLubyte,
+		Short,         // GL_SHORT aka GLshort,
+		UnsignedShort, // GL_UNSIGNED_SHORT aka GLushort,
+		Int,           // GL_INT aka GLint,
+		UnsignedInt,   // GL_UNSIGNED_INT aka GLuint,
+		Fixed,         // GL_FIXED aka GLfixed,
+		Float,         // GL_FLOAT aka GLfloat,
+		HalfFloat,     // GL_HALF_FLOAT aka GLhalf,
+		Double         // GL_DOUBLE aka GLdouble
+	};
+	// Specifies the intended usage of the buffer's data store.
+	enum class BufferStorageFlag : uint8_t
+	{
+		// The contents of the data store may be updated after creation through calls to glBufferSubData.
+		// If this bit is not set, the buffer content may not be directly updated by the client.
+		// The p_data argument may be used to specify the initial content of the buffer's data store regardless of the presence of the DynamicStorageBit.
+		// Regardless of the presence of this bit, buffers may always be updated with server-side calls such as glCopyBufferSubData and glClearBufferSubData.
+		DynamicStorageBit,
+		// The data store may be mapped by the client for read access and a pointer in the client's address space obtained that may be read from.
+		MapReadBit,
+		// The data store may be mapped by the client for write access and a pointer in the client's address space obtained that may be written through.
+		MapWriteBit,
+		// The client may request that the server read from or write to the buffer while it is mapped.
+		// The client's pointer to the data store remains valid so long as the data store is mapped, even during execution of drawing or dispatch commands.
+		MapPersistentBit,
+		// Shared access to buffers that are simultaneously mapped for client access and are used by the server will be coherent, so long as that mapping is performed using glMapBufferRange.
+		// That is, data written to the store by either the client or server will be immediately visible to the other with no further action taken by the application.
+		// In particular,
+		// If MapCoherentBit is not set and the client performs a write followed by a call to the glMemoryBarrier command with the GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT set, then in subsequent commands the server will see the writes.
+		// If MapCoherentBit is set and the client performs a write, then in subsequent commands the server will see the writes.
+		// If MapCoherentBit is not set and the server performs a write, the application must call glMemoryBarrier with the GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT set and then call glFenceSync with GL_SYNC_GPU_COMMANDS_COMPLETE (or glFinish). Then the CPU will see the writes after the sync is complete.
+		// If MapCoherentBit is set and the server does a write, the app must call glFenceSync with GL_SYNC_GPU_COMMANDS_COMPLETE (or glFinish). Then the CPU will see the writes after the sync is complete.
+		MapCoherentBit,
+		// When all other criteria for the buffer storage allocation are met, this bit may be used by an implementation to determine whether to use storage that is local to the server or to the client to serve as the backing store for the buffer.
+		ClientStorageBit
+	};
+	struct BufferStorageBitfield
+	{
+		BufferStorageBitfield(std::initializer_list<BufferStorageFlag> flags);
+		GLuint bitfield = 0;
+	};
+
+
+	enum class TextureMagFunc : uint8_t
+	{
+		Nearest, // Nearest neighbour interpolation.
+		Linear   // Linear interpolation.
+	};
+	enum class WrappingMode : uint8_t
+	{
+		Repeat,           // Default mode, coordinates wrap around the texture. For example, the texture coordinate (1.1, 1.2) is same as (0.1, 0.2).
+		MirroredRepeat,   // Coordinates wrap around the texture, but the texture is flipped at every integer junction.
+		ClampToEdge,      // Coordinates are clamped to the edge of the texture. Any texture coordinates outside the range [0, 1] will be clamped to the nearest value.
+		ClampToBorder,    // Coordinates are clamped to the border colour.
+		MirrorClampToEdge // Coordinates are mirrored and then clamped to the edge of the texture.
+	};
+	// Specifies the format of the pixel data.
+	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexSubImage2D.xhtml
+	enum class TextureFormat : uint8_t
+	{
+		R,
+		RG,
+		RGB,
+		BGR,
+		RGBA,
+		BGRA,
+		DepthComponent,
+		StencilIndex
+	};
+	// Specifies the sized internal format to be used to store texture image data on the GPU.
+	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexStorage2D.xhtml
+	enum class TextureInternalFormat : uint8_t
+	{
+		// TYPE             BASE-INTERNAL-FORMAT    RED,GREEN,BLUE           SHARED BITS
+		R8,                 // GL_RED               8
+		R8_SNORM,           // GL_RED               s8
+		R16,                // GL_RED               16
+		R16_SNORM,          // GL_RED               s16
+		RG8,                // GL_RG                8, 8
+		RG8_SNORM,          // GL_RG                s8, s8
+		RG16,               // GL_RG                16, 16
+		RG16_SNORM,         // GL_RG                s16, s16
+		R3_G3_B2,           // GL_RGB               3, 3, 2
+		RGB4,               // GL_RGB               4, 4, 4
+		RGB5,               // GL_RGB               5, 5, 5
+		RGB8,               // GL_RGB               8, 8, 8
+		RGB8_SNORM,         // GL_RGB               s8, s8, s8
+		RGB10,              // GL_RGB               10, 10, 10
+		RGB12,              // GL_RGB               12, 12, 12
+		RGB16_SNORM,        // GL_RGB               16, 16, 16
+		RGBA2,              // GL_RGB               2, 2, 2, 2
+		RGBA4,              // GL_RGB               4, 4, 4, 4
+		RGB5_A1,            // GL_RGBA              5, 5, 5, 1
+		RGBA8,              // GL_RGBA              8, 8, 8, 8
+		RGBA8_SNORM,        // GL_RGBA              s8, s8, s8, s8
+		RGB10_A2,           // GL_RGBA              10, 10, 10, 2
+		RGB10_A2UI,         // GL_RGBA              ui10, ui10, ui10 ,ui2
+		RGBA12,             // GL_RGBA              12, 12, 12, 12
+		RGBA16,             // GL_RGBA              16, 16, 16, 16
+		SRGB8,              // GL_RGB               8, 8, 8
+		SRGB8_ALPHA8,       // GL_RGBA              8, 8, 8, 8
+		R16F,               // GL_RED               f16
+		RG16F,              // GL_RG                f16, f16
+		RGB16F,             // GL_RGB               f16, f16, f16
+		RGBA16F,            // GL_RGBA              f16, f16, f16, f16
+		R32F,               // GL_RED               f32
+		RG32F,              // GL_RG                f32, f32
+		RGB32F,             // GL_RGB               f32, f32, f32
+		RGBA32F,            // GL_RGBA              f32, f32, f32, f32
+		R11F_G11F_B10F,     // GL_RGB               f11, f11, f10
+		RGB9_E5,            // GL_RGB               9, 9, 9,                 5
+		R8I,                // GL_RED               i8
+		R8UI,               // GL_RED               ui8
+		R16I,               // GL_RED               i16
+		R16UI,              // GL_RED               ui16
+		R32I,               // GL_RED               i32
+		R32UI,              // GL_RED               ui32
+		RG8I,               // GL_RG                i8, i8
+		RG8UI,              // GL_RG                ui8, ui8
+		RG16I,              // GL_RG                i16, i16
+		RG16UI,             // GL_RG                ui16, ui16
+		RG32I,              // GL_RG                i32, i32
+		RG32UI,             // GL_RG                ui32, ui32
+		RGB8I,              // GL_RGB               i8, i8, i8
+		RGB8UI,             // GL_RGB               ui8, ui8, ui8
+		RGB16I,             // GL_RGB               i16, i16, i16
+		RGB16UI,            // GL_RGB               ui16, ui16, ui16
+		RGB32I,             // GL_RGB               i32, i32, i32
+		RGB32UI,            // GL_RGB               ui32, ui32, ui32
+		RGBA8I,             // GL_RGBA              i8, i8, i8, i8
+		RGBA8UI,            // GL_RGBA              ui8, ui8, ui8, ui8
+		RGBA16I,            // GL_RGBA              i16, i16, i16, i16
+		RGBA16UI,           // GL_RGBA              ui16, ui16, ui16, ui16
+		RGBA32I,            // GL_RGBA              i32, i32, i32, i32
+		RGBA32UI,           // GL_RGBA              ui32, ui32, ui32, ui32
+		DEPTH_COMPONENT32F, // GL_DEPTH_COMPONENT32F
+		DEPTH_COMPONENT24,  // GL_DEPTH_COMPONENT24
+		DEPTH_COMPONENT16,  // GL_DEPTH_COMPONENT16
+		DEPTH32F_STENCIL8,  // GL_DEPTH32F_STENCIL8
+		DEPTH24_STENCIL8,   // GL_DEPTH24_STENCIL8
+		STENCIL_INDEX8,     // GL_STENCIL_INDEX8
+	};
+	// The data type of the pixel data.
+	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexSubImage2D.xhtml
+	enum class TextureDataType : uint8_t
+	{
+		UNSIGNED_BYTE,              // GL_UNSIGNED_BYTE
+		BYTE,                       // GL_BYTE
+		UNSIGNED_SHORT,             // GL_UNSIGNED_SHORT
+		SHORT,                      // GL_SHORT
+		UNSIGNED_INT,               // GL_UNSIGNED_INT
+		INT,                        // GL_INT
+		FLOAT,                      // GL_FLOAT
+		UNSIGNED_BYTE_3_3_2,        // GL_UNSIGNED_BYTE_3_3_2
+		UNSIGNED_BYTE_2_3_3_REV,    // GL_UNSIGNED_BYTE_2_3_3_REV
+		UNSIGNED_SHORT_5_6_5,       // GL_UNSIGNED_SHORT_5_6_5
+		UNSIGNED_SHORT_5_6_5_REV,   // GL_UNSIGNED_SHORT_5_6_5_REV
+		UNSIGNED_SHORT_4_4_4_4,     // GL_UNSIGNED_SHORT_4_4_4_4
+		UNSIGNED_SHORT_4_4_4_4_REV, // GL_UNSIGNED_SHORT_4_4_4_4_REV
+		UNSIGNED_SHORT_5_5_5_1,     // GL_UNSIGNED_SHORT_5_5_5_1
+		UNSIGNED_SHORT_1_5_5_5_REV, // GL_UNSIGNED_SHORT_1_5_5_5_REV
+		UNSIGNED_INT_8_8_8_8,       // GL_UNSIGNED_INT_8_8_8_8
+		UNSIGNED_INT_8_8_8_8_REV,   // GL_UNSIGNED_INT_8_8_8_8_REV
+		UNSIGNED_INT_10_10_10_2,    // GL_UNSIGNED_INT_10_10_10_2
+		UNSIGNED_INT_2_10_10_10_REV // GL_UNSIGNED_INT_2_10_10_10_REV
+	};
+
+
+	enum class ShaderProgramType : uint8_t
+	{
+		Vertex,
+		Geometry,
+		Fragment
+	};
 	enum class ShaderDataType : uint8_t
 	{
 		Float, Vec2, Vec3, Vec4,
@@ -63,233 +269,8 @@ namespace OpenGL
 		Usampler2DRect,
 		Unknown
 	};
-	enum class BufferType : uint8_t
-	{
-		ArrayBuffer,             // Vertex attributes
-		AtomicCounterBuffer,     // Atomic counter storage
-		CopyReadBuffer,          // Buffer copy source
-		CopyWriteBuffer,         // Buffer copy destination
-		DispatchIndirectBuffer,  // Indirect compute dispatch commands
-		DrawIndirectBuffer,      // Indirect command arguments
-		ElementArrayBuffer,      // Vertex array indices
-		PixelPackBuffer,         // Pixel read target
-		PixelUnpackBuffer,       // Texture data source
-		QueryBuffer,             // Query result buffer
-		ShaderStorageBuffer,     // Read-write storage for shaders
-		TextureBuffer,           // Texture data buffer
-		TransformFeedbackBuffer, // Transform feedback buffer
-		UniformBuffer            // Uniform block storage
-	};
-	enum class GLSLVariableType : uint8_t
-	{
-		Uniform,      // 'loose' uniform variables not part of any interface blocks. These are owned by a shader program and can be directly set without buffer backing.
-		UniformBlock, // UniformBlockVariable found inside a UniformBlock. Has to be backed by a UBO to be set. These can be global or exclusive to the shader depending on the UniformBlock layout definition.
-		BufferBlock   // ShaderStorageBlockVariable found inside a ShaderStorageBlock. Has to be backed by a SSBO to be set. These can be global or exclusive to the shader depending on the ShaderStorageBlock layout definition.
-	};
-	// Usage can be broken down into two parts:
-	// 1. The frequency of access (modification and usage). The frequency of access may be one of these:
-	//  1.a.    STREAM:  Modified once and used at most a few times.
-	//  1.b.    STATIC:  Modified once and used many times.
-	//  1.c.    DYNAMIC: Modified repeatedly and used many times.
-	// 2. The nature of that access. Can be one of these:
-	//  2.a.    DRAW: Modified by the application, and used as the source for GL drawing and image specification commands.
-	//  2.b.    READ: Modified by reading data from the GL, and used to return that data when queried by the application.
-	//  2.c.    COPY: Modified by reading data from the GL, and used as the source for GL drawing and image specification commands.
-	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
-	enum class BufferUsage : uint8_t
-	{
-		StreamDraw,
-		StreamRead,
-		StreamCopy,
-		StaticDraw,
-		StaticRead,
-		StaticCopy,
-		DynamicDraw,
-		DynamicRead,
-		DynamicCopy
-	};
-	enum class TextureType : uint8_t
-	{
-		Texture_1D,                   // Images in this texture all are 1-dimensional. They have width, but no height or depth.
-		Texture_2D,                   // Images in this texture all are 2-dimensional. They have width and height, but no depth.
-		Texture_3D,                   // Images in this texture all are 3-dimensional. They have width, height, and depth.
-		Texture_rectangle,            // The image in this texture (only one image. No mipmapping) is 2-dimensional. Texture coordinates used for these textures are not normalized.
-		Texture_buffer,               // The image in this texture (only one image. No mipmapping) is 1-dimensional. The storage for this data comes from a Buffer Object.
-		Texture_cube_map,             // There are exactly 6 distinct sets of 2D images, each image being of the same size and must be of a square size. These images act as 6 faces of a cube.
-		Texture_1D_array,             // Images in this texture all are 1-dimensional. However, it contains multiple sets of 1-dimensional images, all within one texture. The array length is part of the texture's size.
-		Texture_2D_array,             // Images in this texture all are 2-dimensional. However, it contains multiple sets of 2-dimensional images, all within one texture. The array length is part of the texture's size.
-		Texture_cube_map_array,       // Images in this texture are all cube maps. It contains multiple sets of cube maps, all within one texture. The array length * 6 (number of cube faces) is part of the texture size.
-		Texture_2D_multisample,       // The image in this texture (only one image. No mipmapping) is 2-dimensional. Each pixel in these images contains multiple samples instead of just one value.
-		Texture_2D_multisample_array, // Combines 2D array and 2D multisample types. No mipmapping.
-	};
-	// An Image Format describes the way that the images in Textures and Renderbuffers store their data.
-	// There are three basic kinds of image formats:
-	// color
-	// depth
-	// depth/stencil.
-	// Unless otherwise specified all formats can be used for textures and renderbuffers equally AND can be multisampled equally.
-	// e.g. GL_RGBA32F is a floating-point format where each component is a 32-bit IEEE floating-point value.
-	enum class ImageFormat : uint8_t
-	{
-		R8,             // Bit layout per component: 8     (internal format = GL_RED)
-		R8_SNORM,       // Bit layout per component: s8    (internal format = GL_RED)
-		R16,            // Bit layout per component: 16    (internal format = GL_RED)
-		R16_SNORM,      // Bit layout per component: s16   (internal format = GL_RED)
-		RG8,            // Bit layout per component: 8, 8  (internal format = GL_RG)
-		RG8_SNORM,      // Bit layout per component: s8, s8    (internal format = GL_RG)
-		RG16,           // Bit layout per component: 16, 16    (internal format = GL_RG)
-		RG16_SNORM,     // Bit layout per component: s16, s16  (internal format = GL_RG)
-		R3_G3_B2,       // Bit layout per component: 3, 3, 2   (internal format = GL_RGB)
-		RGB4,           // Bit layout per component: 4, 4, 4   (internal format = GL_RGB)
-		RGB5,           // Bit layout per component: 5, 5, 5   (internal format = GL_RGB)
-		RGB8,           // Bit layout per component: 8, 8, 8   (internal format = GL_RGB)
-		RGB8_SNORM,     // Bit layout per component: s8, s8, s8    (internal format = GL_RGB)
-		RGB10,          // Bit layout per component: 10, 10, 10    (internal format = GL_RGB)
-		RGB12,          // Bit layout per component: 12, 12, 12    (internal format = GL_RGB)
-		RGB16_SNORM,    // Bit layout per component: 16, 16, 16    (internal format = GL_RGB)
-		RGBA2,          // Bit layout per component: 2, 2, 2, 2    (internal format = GL_RGB)
-		RGBA4,          // Bit layout per component: 4, 4, 4, 4    (internal format = GL_RGB)
-		RGB5_A1,        // Bit layout per component: 5, 5, 5, 1    (internal format = GL_RGBA)
-		RGBA8,          // Bit layout per component: 8, 8, 8, 8    (internal format = GL_RGBA)
-		RGBA8_SNORM,    // Bit layout per component: s8, s8, s8, s8    (internal format = GL_RGBA)
-		RGB10_A2,       // Bit layout per component: 10, 10, 10, 2     (internal format = GL_RGBA)
-		RGB10_A2UI,     // Bit layout per component: ui10, ui10,ui10, ui2  (internal format = GL_RGBA)
-		RGBA12,         // Bit layout per component: 12, 12, 12, 12    (internal format = GL_RGBA)
-		RGBA16,         // Bit layout per component: 16, 16, 16, 16    (internal format = GL_RGBA)
-		SRGB8,          // Bit layout per component: 8, 8, 8   (internal format = GL_RGB)
-		SRGB8_ALPHA8,   // Bit layout per component: 8, 8, 8, 8    (internal format = GL_RGBA)
-		R16F,           // Bit layout per component: f16   (internal format = GL_RED)
-		RG16F,          // Bit layout per component: f16,  f16     (internal format = GL_RG)
-		RGB16F,         // Bit layout per component: f16, f16, f16     (internal format = GL_RGB)
-		RGBA16F,        // Bit layout per component: f16, f16, f16, f16    (internal format = GL_RGBA)
-		R32F,           // Bit layout per component: f32,  (internal format = GL_RED)
-		RG32F,          // Bit layout per component: f32, f32,     (internal format = GL_RG)
-		RGB32F,         // Bit layout per component: f32, f32, f32     (internal format = GL_RGB)
-		RGBA32F,        // Bit layout per component: f32, f32, f32, f32    (internal format = GL_RGBA)
-		R11F_G11F_B10F, // Bit layout per component: f11, f11, f10     (internal format = GL_RGB)
-		RGB9_E5,        // Bit layout per component: 9, 9, 9,   RGB 9,9,9 + 5 shared bits  (internal format = GL_RGB)
-		R8I,            // Bit layout per component: i8,   (internal format = GL_RED)
-		R8UI,           // Bit layout per component: ui8,  (internal format = GL_RED)
-		R16I,           // Bit layout per component: i16,  (internal format = GL_RED)
-		R16UI,          // Bit layout per component: ui16,     (internal format = GL_RED)
-		R32I,           // Bit layout per component: i32,  (internal format = GL_RED)
-		R32UI,          // Bit layout per component: ui32,     (internal format = GL_RED)
-		RG8I,           // Bit layout per component: i8, i8,   (internal format = GL_RG)
-		RG8UI,          // Bit layout per component: ui8, ui8,     (internal format = GL_RG)
-		RG16I,          // Bit layout per component: i16, i16,     (internal format = GL_RG)
-		RG16UI,         // Bit layout per component: ui16, ui16,   (internal format = GL_RG)
-		RG32I,          // Bit layout per component: i32, i32,     (internal format = GL_RG)
-		RG32UI,         // Bit layout per component: ui32, ui32,   (internal format = GL_RG)
-		RGB8I,          // Bit layout per component: i8, i8, i8    (internal format = GL_RGB)
-		RGB8UI,         // Bit layout per component: ui8, ui8, ui8     (internal format = GL_RGB)
-		RGB16I,         // Bit layout per component: i16, i16, i16     (internal format = GL_RGB)
-		RGB16UI,        // Bit layout per component: ui16, ui16, ui16  (internal format = GL_RGB)
-		RGB32I,         // Bit layout per component: i32, i32, i32     (internal format = GL_RGB)
-		RGB32UI,        // Bit layout per component: ui32, ui32, ui32  (internal format = GL_RGB)
-		RGBA8I,         // Bit layout per component: i8, i8, i8, i8    (internal format = GL_RGBA)
-		RGBA8UI,        // Bit layout per component: ui8, ui8, ui8, ui8    (internal format = GL_RGBA)
-		RGBA16I,        // Bit layout per component: i16, i16, i16, i16    (internal format = GL_RGBA)
-		RGBA16UI,       // Bit layout per component: ui16, ui16, ui16, ui16    (internal format = GL_RGBA)
-		RGBA32I,        // Bit layout per component: i32, i32, i32, i32    (internal format = GL_RGBA)
-		RGBA32UI,       // Bit layout per component: ui32, ui32, ui32, ui32    (internal format = GL_RGBA)
-		depth_component_32F, // Bit layout per component: f32
-		depth_component_24,  // Bit layout per component: 24
-		depth_component_16,  // Bit layout per component: 16
-		depth_32F_stencil_8, // Bit layout per component: f32, 8
-		depth_24_stencil_8,  // Bit layout per component: 24, 8
-		stencil_index_8      // Bit layout per component: 8
-	};
-	enum class PixelDataFormat : uint8_t
-	{
-		RED,
-		RG,
-		RGB,
-		BGR,
-		RGBA,
-		DEPTH_COMPONENT,
-		STENCIL_INDEX
-	};
-	enum class PixelDataType : uint8_t
-	{
-		UNSIGNED_BYTE,
-		BYTE,
-		UNSIGNED_SHORT,
-		SHORT,
-		UNSIGNED_INT,
-		INT,
-		FLOAT,
-		UNSIGNED_BYTE_3_3_2,
-		UNSIGNED_BYTE_2_3_3_REV,
-		UNSIGNED_SHORT_5_6_5,
-		UNSIGNED_SHORT_5_6_5_REV,
-		UNSIGNED_SHORT_4_4_4_4,
-		UNSIGNED_SHORT_4_4_4_4_REV,
-		UNSIGNED_SHORT_5_5_5_1,
-		UNSIGNED_SHORT_1_5_5_5_REV,
-		UNSIGNED_INT_8_8_8_8,
-		UNSIGNED_INT_8_8_8_8_REV,
-		UNSIGNED_INT_10_10_10_2,
-		UNSIGNED_INT_2_10_10_10_REV
-	};
-	enum class ShaderProgramType : uint8_t
-	{
-		Vertex,
-		Geometry,
-		Fragment
-	};
-	enum class ShaderResourceType : uint8_t
-	{
-		Uniform,
-		UniformBlock,
-		ShaderStorageBlock,
-		BufferVariable,
-		Buffer,
-		ProgramInput,
-		ProgramOutput,
-		AtomicCounterBuffer,
-		//AtomicCounterShader,
-		VertexSubroutineUniform,
-		FragmentSubroutineUniform,
-		GeometrySubroutineUniform,
-		ComputeSubroutineUniform,
-		TessControlSubroutineUniform,
-		TessEvaluationSubroutineUniform,
-		TransformFeedbackBuffer,
-		TransformFeedbackVarying
-	};
-	enum class ShaderResourceProperty : uint8_t
-	{
-		NameLength,
-		Type,
-		ArraySize,
-		Offset,
-		BlockIndex,
-		ArrayStride,
-		MatrixStride,
-		IsRowMajor,
-		AtomicCounterBufferIndex,
-		TextureBuffer,
-		BufferBinding,
-		BufferDataSize,
-		NumActiveVariables,
-		ActiveVariables,
-		ReferencedByVertexShader,
-		ReferencedByTessControlShader,
-		ReferencedByTessEvaluationShader,
-		ReferencedByGeometryShader,
-		ReferencedByFragmentShader,
-		ReferencedByComputeShader,
-		NumCompatibleSubroutines,
-		CompatibleSubroutines,
-		TopLevelArraySize,
-		TopLevelArrayStride,
-		Location,
-		LocationIndex,
-		IsPerPatch,
-		LocationComponent,
-		TransformFeedbackBufferIndex,
-		TransformFeedbackBufferStride
-	};
+
+
 	enum class DepthTestType : uint8_t
 	{
 		Always,
@@ -353,121 +334,130 @@ namespace OpenGL
 		TrianglesAdjacency,
 		Patches,
 	};
-	enum class FramebufferTarget : uint8_t
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// STATE FUNCTIONS
+namespace OpenGL
+{
+	// OpenGL::State encapsulates the state of the OpenGL context.
+	// State prevents excess gl function calls by only allowing them to be called if there is a required state change.
+	class State
 	{
-		DrawFramebuffer,
-		ReadFramebuffer,
-		Framebuffer
-	};
-	enum class ErrorType : uint8_t
-	{
-		InvalidEnum,
-		InvalidValue,
-		InvalidOperation,
-		InvalidFramebufferOperation,
-		OutOfMemory,
-		StackUnderflow,
-		StackOverflow
-	};
-	enum class Function : uint8_t
-	{
-		Viewport,
-		DrawElements,
-		DrawArrays,
-		DrawElementsInstanced,
-		DrawArraysInstanced,
-		BindFramebuffer,
-		create_shader,
-		shader_source,
-		compile_shader,
-		create_program,
-		attach_shader,
-		link_program,
-		delete_shader,
-		use_program,
-		BindBuffer,
-		DeleteBuffer,
-		BufferData,
-		buffer_sub_data,
-		bind_buffer_range,
-		uniform_block_binding,
-		shader_storage_block_binding,
-		copy_buffer_sub_data
-	};
+		bool write_to_depth_buffer;
+		bool depth_test_enabled;
+		DepthTestType depth_test_type;
+
+		bool polygon_offset_enabled;
+		GLfloat polygon_offset_factor;
+		GLfloat polygon_offset_units;
+
+		bool blending_enabled;
+		BlendFactorType source_factor;
+		BlendFactorType destination_factor;
+
+		bool cull_face_enabled;
+		CullFaceType cull_face_type;
+		FrontFaceOrientation front_face_orientation;
+
+		PolygonMode polygon_mode;
+
+		//glm::vec4 clear_colour;
+		glm::ivec2 viewport_position;
+		glm::ivec2 viewport_size;
+
+		GLHandle current_bound_shader_program;
+		GLHandle current_bound_VAO;
+		GLHandle current_bound_FBO;
+
+		// Buffers are bound to specific binding points per target.
+		// We dont know the number of binding points at compile time hence these are vectors.
+		// State will resize these on construction and they are never resized after that point.
+
+		std::vector<std::optional<GLHandle>> current_bound_SSBO;    // Per binding point the current bound SSBO.
+		std::vector<std::optional<GLHandle>> current_bound_UBO;     // Per binding point the current bound UBO.
+		std::vector<std::optional<GLHandle>> current_bound_texture; // Per binding point the current bound texture unit.
+
+	public:
+		State();
+
+		void bind_VAO(GLHandle p_VAO);
+		void unbind_VAO();
+
+		void bind_FBO(GLHandle p_FBO);
+		void unbind_FBO();
+
+		void bind_shader_storage_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
+		void bind_uniform_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
+		void unbind_buffer(GLHandle p_buffer);
+
+		void bind_texture_unit(GLuint p_texture_unit, GLHandle p_texture);
+		void unbind_texture_unit(GLHandle p_texture);
 
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// GENERAL STATE FUNCTIONS
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	void set_depth_test(bool p_depth_test);
-	void set_depth_test_type(DepthTestType p_type);
-	void set_polygon_offset(bool p_polygon_offset);
-	// Set the scale and units used to calculate depth values.
-	// polygon_offset is useful for rendering hidden-line images, for applying decals to surfaces, and for rendering solids with highlighted edges.
-	//@param p_polygon_offset_factor Specifies a scale factor that is used to create a variable depth offset for each polygon.
-	//@param p_polygon_offset_units Is multiplied by an implementation-specific value to create a constant depth offset.
-	void set_polygon_offset_factor(GLfloat p_polygon_offset_factor, GLfloat p_polygon_offset_units);
-	// Specifies if objects with alpha values <1 should be blended using function set with set_blend_func().
-	void set_blending(bool p_blend);
-	// Specifies how the RGBA factors of source and destination are blended to give the final pixel colour when encountering transparent objects.
-	void set_blend_func(BlendFactorType p_source_factor, BlendFactorType p_destination_factor);
-	// Specifies if facets specified by set_front_face_orientation are candidates for culling.
-	void set_cull_face(bool p_cull);
-	// Specifies which facets are candidates for culling.
-	void set_cull_face_type(CullFaceType p_cull_face_type);
-	// The orientation of front-facing polygons. Used to mark facets for culling.
-	void set_front_face_orientation(FrontFaceOrientation p_front_face_orientation);
-	// The red, green, blue, and alpha values to clear the color buffers. Values are clamped to the range 0-1.
-	void set_clear_colour(const glm::vec4& p_colour);
-	// Set the viewport.
-	// When a GL context is first attached to a window, width and height are set to the dimensions of that window.
-	// The affine transformation of x and y from normalized device coordinates to window coordinates.
-	//@param p_x The lower left x corner of the viewport rectangle, in pixels. The initial value is 0.
-	//@param p_y The lower left y corner of the viewport rectangle, in pixels. The initial value is 0.
-	//@param p_width The width of the viewport.
-	//@param p_height The height of the viewport.
-	void set_viewport(GLint p_x, GLint p_y, GLsizei p_width, GLsizei p_height);
-	// Controls the interpretation of polygons for rasterization.
-	// p_polygon_mode: Specifies how polygons will be rasterized.
-	// Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
-	void set_polygon_mode(PolygonMode p_polygon_mode);
+		// Installs a program object as part of current rendering state
+		// While a program object is in use, applications are free to modify attached shader objects, compile attached shader objects, attach additional shader objects, and detach or delete shader objects.
+		// None of these operations will affect the executables that are part of the current state.
+		// However, relinking the program object that is currently in use will install the program object as part of the current rendering state if the link operation was successful (glLinkProgram).
+		// If the program object currently in use is relinked unsuccessfully, its link status will be set to GL_FALSE, but the executables and associated state will remain part of the current state until a subsequent call to glUseProgram removes it from use.
+		// After it is removed from use, it cannot be made part of current state until it has been successfully relinked.
+		void use_program(GLHandle p_shader_program);
+		// Deletes a program object and frees the memory.
+		// Invalidates the p_shader_program associated with the program object.
+		// This command effectively undoes the effects of a call to create_program.
+		// If a program object is in use as part of current rendering state, it will be flagged for deletion, but it will not be deleted until it is no longer part of current state for any rendering context.
+		// If a program object to be deleted has shader objects attached to it, those shader objects will be automatically detached but not deleted unless they have already been flagged for deletion by a previous call to delete_shader.
+		// To determine whether a program object has been flagged for deletion, call glGetProgram with arguments program and GL_DELETE_STATUS.
+		//@param p_shader_program Shader program object to be deleted. A value of 0 will be silently ignored.
+		void delete_program(GLHandle p_shader_program);
+
+
+
+		void set_depth_write(bool p_write_to_depth_buffer);
+		void set_depth_test(bool p_depth_test);
+		void set_depth_test_type(DepthTestType p_type);
+		void set_polygon_offset(bool p_polygon_offset);
+		// Set the scale and units used to calculate depth values.
+		// polygon_offset is useful for rendering hidden-line images, for applying decals to surfaces, and for rendering solids with highlighted edges.
+		//@param p_polygon_offset_factor Specifies a scale factor that is used to create a variable depth offset for each polygon.
+		//@param p_polygon_offset_units Is multiplied by an implementation-specific value to create a constant depth offset.
+		void set_polygon_offset_factor(GLfloat p_polygon_offset_factor, GLfloat p_polygon_offset_units);
+		// Specifies if objects with alpha values <1 should be blended using function set with set_blend_func().
+		void set_blending(bool p_blend);
+		// Specifies how the RGBA factors of source and destination are blended to give the final pixel colour when encountering transparent objects.
+		void set_blend_func(BlendFactorType p_source_factor, BlendFactorType p_destination_factor);
+		// Specifies if facets specified by set_front_face_orientation are candidates for culling.
+		void set_cull_face(bool p_cull);
+		// Specifies which facets are candidates for culling.
+		void set_cull_face_type(CullFaceType p_cull_face_type);
+		// The orientation of front-facing polygons. Used to mark facets for culling.
+		void set_front_face_orientation(FrontFaceOrientation p_front_face_orientation);
+		// Set the viewport.
+		// When a GL context is first attached to a window, width and height are set to the dimensions of that window.
+		// The affine transformation of x and y from normalized device coordinates to window coordinates.
+		//@param p_x The lower left x corner of the viewport rectangle, in pixels. The initial value is 0.
+		//@param p_y The lower left y corner of the viewport rectangle, in pixels. The initial value is 0.
+		//@param p_width The width of the viewport.
+		//@param p_height The height of the viewport.
+		void set_viewport(GLint p_x, GLint p_y, GLsizei p_width, GLsizei p_height);
+		// Controls the interpretation of polygons for rasterization.
+		// p_polygon_mode: Specifies how polygons will be rasterized.
+		// Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
+		void set_polygon_mode(PolygonMode p_polygon_mode);
+	};
+	inline static State& Get_State()
+	{
+		// State accessor allows us to delay instantiation of the state until the
+		// OpenGL context is initialised in Core::initialise_OpenGL.
+		static State instance;
+		return instance;
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// TEXTURE FUNCTIONS
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// Selects active texture unit
-	// The number of texture units is implementation dependent, but must be at least 80. texture must be one of GL_TEXTUREi, where i ranges from zero to the value of GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS minus one.
-	// The initial value is GL_TEXTURE0.
-	//@param p_texture Specifies which texture unit to make active.
-	void active_texture(GLenum p_texture);
-
-	// Simultaneously specify storage for all levels of a three-dimensional array.
-	//@param p_target Specifies the target to which the texture object is bound for glTexStorage3D. Must be one of GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_CUBE_MAP_ARRAY, GL_PROXY_TEXTURE_3D, GL_PROXY_TEXTURE_2D_ARRAY or GL_PROXY_TEXTURE_CUBE_MAP_ARRAY.
-	//@param p_texture Specifies the texture object name for glTextureStorage3D. The effective target of texture must be one of the valid non-proxy target values above.
-	//@param p_levels Specify the number of texture levels.
-	//@param p_internal_format Specifies the sized internal format to be used to store texture image data.
-	//@param p_width Specifies the width of the texture, in texels.
-	//@param p_height Specifies the height of the texture, in texels.
-	//@param p_depth Specifies the depth of the texture, in texels.
-	//@link https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexStorage3D.xhtml
-	void tex_storage_3D(TextureType p_target, GLsizei p_levels, ImageFormat p_internal_format, GLsizei p_width, GLsizei p_height, GLsizei p_depth);
-
-	// Specify a three-dimensional texture sub-image
-	//@param p_target Specifies the target to which the texture is bound for glTexSubImage3D. Must be TextureType::texture_3D or TextureType::texture_2D_array.
-	//@param p_level Specifies the level-of-detail number. Level 0 is the base image level. Level n is the nth mipmap reduction image.
-	//@param p_xoffset Specifies a texel offset in the x direction within the texture array.
-	//@param p_yoffset Specifies a texel offset in the y direction within the texture array.
-	//@param p_zoffset Specifies a texel offset in the z direction within the texture array.
-	//@param p_width Specifies the width of the texture subimage.
-	//@param p_height Specifies the height of the texture subimage.
-	//@param p_depth Specifies the depth of the texture subimage.
-	//@param p_format Specifies the format of the pixel data. The following values are accepted: GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_DEPTH_COMPONENT, and GL_STENCIL_INDEX.
-	//@param type Specifies the data type of the pixel data. The following values are accepted: GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2, GL_UNSIGNED_BYTE_2_3_3_REV, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_5_6_5_REV, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_4_4_4_4_REV, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_1_5_5_5_REV, GL_UNSIGNED_INT_8_8_8_8, GL_UNSIGNED_INT_8_8_8_8_REV, GL_UNSIGNED_INT_10_10_10_2, and GL_UNSIGNED_INT_2_10_10_10_REV.
-	//@param p_pixels Specifies a pointer to the image data in memory.
-	//@link https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexSubImage3D.xhtml
-	void tex_sub_image_3D(TextureType p_target, GLint p_level, GLint p_xoffset, GLint p_yoffset, GLint p_zoffset, GLsizei p_width, GLsizei p_height, GLsizei p_depth, PixelDataFormat p_format, PixelDataType p_type, const void * p_pixels);
-
+namespace OpenGL
+{
 	// The max width and height of a 1D or 2D texture the GPU supports
 	//@returns The single max for the width, height (1:1).
 	GLint max_texture_size();
@@ -487,11 +477,12 @@ namespace OpenGL
 	GLint max_combined_texture_image_units();
 	// Max number of array levels for ArrayTexture objects.
 	GLint max_array_texture_layers();
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// DRAW FUNCTIONS
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+namespace OpenGL
+{
 	// Render primitives from array data.
 	// draw_arrays specifies multiple geometric primitives with very few subroutine calls. Instead of calling a GL procedure to pass each individual vertex, normal, texture coordinate, edge flag, or color, you can prespecify separate arrays of vertices, normals, and colors and use them to construct a sequence of primitives with a single call to glDrawArrays.
 	// When draw_arrays is called, it uses p_array_size sequential elements from each enabled array to construct a sequence of geometric primitives, beginning with element first. p_primitive_mode specifies what kind of primitives are constructed and how the array elements construct those primitives.
@@ -513,31 +504,17 @@ namespace OpenGL
 	// draw_elements_instanced behaves identically to draw_elements except that p_instance_count of the set of elements are executed and the value of the internal counter instanceID advances for each iteration.
 	// instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
 	void draw_elements_instanced(PrimitiveMode p_primitive_mode, GLsizei p_elements_size, GLsizei p_instance_count);
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// SHADER FUNCTIONS
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+namespace OpenGL
+{
 	// Creates an empty program object and returns a non-zero value by which it can be referenced.
 	// A program object is an object to which shader objects can be attached. This provides a mechanism to specify the shader objects that will be linked to create a program.
 	// It also provides a means for checking the compatibility of the shaders that will be used to create a program (for instance, checking the compatibility between a vertex shader and a fragment shader).
 	// When no longer needed as part of a program object, shader objects can be detached.
 	GLHandle create_program();
-	// Deletes a program object and frees the memory.
-	// Invalidates the p_shader_program associated with the program object.
-	// This command effectively undoes the effects of a call to create_program.
-	// If a program object is in use as part of current rendering state, it will be flagged for deletion, but it will not be deleted until it is no longer part of current state for any rendering context.
-	// If a program object to be deleted has shader objects attached to it, those shader objects will be automatically detached but not deleted unless they have already been flagged for deletion by a previous call to delete_shader.
-	// To determine whether a program object has been flagged for deletion, call glGetProgram with arguments program and GL_DELETE_STATUS.
-	//@param p_shader_program Shader program object to be deleted. A value of 0 will be silently ignored.
-	void delete_program(GLHandle p_shader_program);
-	// Installs a program object as part of current rendering state
-	// While a program object is in use, applications are free to modify attached shader objects, compile attached shader objects, attach additional shader objects, and detach or delete shader objects.
-	// None of these operations will affect the executables that are part of the current state.
-	// However, relinking the program object that is currently in use will install the program object as part of the current rendering state if the link operation was successful (glLinkProgram).
-	// If the program object currently in use is relinked unsuccessfully, its link status will be set to GL_FALSE, but the executables and associated state will remain part of the current state until a subsequent call to glUseProgram removes it from use.
-	// After it is removed from use, it cannot be made part of current state until it has been successfully relinked.
-	void use_program(GLHandle p_shader_program);
 	// Attaches a shader object to a program object
 	// Shaders that are to be linked together in a program object must first be attached to that program object.
 	// All operations that can be performed on a shader object are valid whether or not the shader object is attached to a program object.
@@ -601,17 +578,24 @@ namespace OpenGL
 	// Any uniform blocks optimised away will not be counted. p_shader_program must be linked before calling get_shader_storage_block_count.
 	//@param p_shader_program Shader program to query.
 	GLint get_shader_storage_block_count(GLHandle p_shader_program);
+
 	// Get the number of UniformBlock/UBO binding points available.
-	GLint get_max_uniform_binding_points();
+	GLint get_max_uniform_buffer_bindings();
 	// Get the number of ShaderStorageBlock/SSBO binding points available.
-	GLint get_max_shader_storage_binding_points();
+	GLint get_max_shader_storage_buffer_bindings();
 	// Get the max size in bytes a UniformBlock can have.
 	GLint get_max_uniform_block_size();
 	// Get the max size in bytes a ShaderStorageBlock can have (only pertains to the fixed-size portion of the block, size can exceed this ignoring variable sized arrays).
 	GLint get_max_shader_storage_block_size();
-	// Returns the shader program object that is currently active, or 0 if no program object is active.
-	GLHandle get_current_shader_program();
+	// Get the max number of texture units available for binding.
+	//GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
+	GLint get_max_combined_texture_image_units();
+}
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DATA/BUFFER FUNCTIONS
+namespace OpenGL
+{
 	// Assign a binding point to an active uniform block.
 	// Each of a program's active uniform blocks has a corresponding uniform buffer binding point.
 	// If successful, specifies that p_shader_program will use the data store of the buffer object bound to p_uniform_block_binding to extract the values of the uniforms in the uniform block identified by p_uniform_block_index.
@@ -626,61 +610,45 @@ namespace OpenGL
 	//@param p_storage_block_index Index storage block within the program. Must be an active shader storage block index in program
 	//@param p_storage_block_binding Index storage block binding to associate with the specified storage block. Must be less than the value of GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS.
 	void shader_storage_block_binding(GLHandle p_shader_program, GLuint p_storage_block_index, GLuint p_storage_block_binding);
+	// Bind the buffer named p_buffer to the vertex buffer binding point p_binding_index of the vertex array object p_VAO.
+	// Does not modify the currently bound vertex array object, but does modify the state of the VAO by binding the buffer to the specified binding point.
+	// If p_buffer is zero, then any buffer currently bound to the specified binding point is unbound.
+	//@param p_VAO Specifies the name of the vertex array object to bind the buffer to.
+	//@param p_binding_index Specifies the index of the vertex buffer binding point to which to bind the buffer. Must be less than GL_MAX_VERTEX_ATTRIB_BINDINGS.
+	//@param p_buffer Specifies the name of a buffer to bind to the vertex buffer binding point.
+	//@param p_offset Specifies the offset of the first element of the buffer in basic machine units.
+	//@param p_stride Specifies the distance between elements within the buffer in basic machine units.
+	void vertex_array_vertex_buffer(GLHandle p_VAO, GLuint p_binding_index, GLHandle p_buffer, GLintptr p_offset, GLsizei p_stride);
+	// Binds a buffer object p_buffer to the element array buffer bind point of a vertex array object p_VAO.
+	// If p_buffer is zero, any existing element array buffer binding to p_VAO is removed.
+	//@param p_VAO Specifies the name of the vertex array object to bind the buffer to.
+	//@param p_buffer Specifies the name of an index buffer to bind to the element array buffer bind point.
+	void vertex_array_element_buffer(GLHandle p_VAO, GLHandle p_buffer);
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// DATA/BUFFER FUNCTIONS
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// Enables the generic vertex attribute array specified by p_index.
-	// If enabled, the values in the generic vertex attribute array will be accessed and used for rendering when calls are made to vertex array commands such as draw_arrays, draw_elements.
-	// By default, all client-side capabilities are disabled, including all generic vertex attribute arrays.
-	//@param p_index The generic vertex attribute to be enabled.
-	void enable_vertex_attrib_array(GLuint p_index);
-	// Disables the generic vertex attribute array specified by p_index.
-	// If disabled, the values in the generic vertex attribute array won't be accessed and used for rendering when calls are made to vertex array commands such as draw_arrays, draw_elements.
-	// By default, all client-side capabilities are disabled, including all generic vertex attribute arrays.
-	//@param p_index Index of the generic vertex attribute to be disabled.
-	void disable_vertex_attrib_array(GLuint p_index);
-	// Specify the location and data format of the array of generic vertex attributes at index p_index to use when rendering.
-	//@param p_index Index of the generic vertex attribute to be modified.
-	//@param p_size Number of components per attribute and must be 1, 2, 3, 4, or GL_BGRA.
-	//@param p_type Data type of each component,
-	//@param p_normalized Indicates that values stored in an integer format are to be mapped to the range [-1,1] (for signed values) or [0,1] (for unsigned values) when they are accessed
-	// and converted to floating point. Otherwise, values will be converted to floats directly without normalization.
-	//@param p_stride Byte stride from one attribute to the next, allowing vertices and attributes to be packed into a single array or stored in separate arrays.
-	//@param p_pointer Offset of the first component of the first generic vertex attribute in the array in the data store of the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
-	void vertex_attrib_pointer(GLuint p_index, GLint p_size, ShaderDataType p_type, GLboolean p_normalized, GLsizei p_stride, const void* p_pointer);
-	// Creates and initializes a buffer object's data store. The Buffer currently bound to target is used.
-	// While creating the new storage, any pre-existing data store is deleted. The new data store is created with the specified size in bytes and usage.
-	// When replacing the entire data store, consider using buffer_sub_data rather than completely recreating the data store with buffer_data. This avoids the cost of reallocating the data store.
-	// If p_data is not NULL, the data store is initialized with data from this pointer. In its initial state, the new data store is not mapped, it has a NULL mapped pointer, and its mapped access is GL_READ_WRITE.
-	// It does not, however, constrain the actual usage of the data store.
-	// If p_data is NULL, a data store of the specified size is still created, but its contents remain uninitialized and thus undefined.
-	// Clients must align data elements consistently with the requirements of the client platform, with an additional base-level requirement: an offset within a buffer to a datum comprising N bytes be a multiple of N.
-	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml
-	//@param p_target Target to which the buffer object being buffered to is bound.
+	// Creates and initializes a buffer object's immutable data store
+	//@param p_buffer Name of the buffer object to create and initialize.
 	//@param p_size Size in bytes of the buffer object's new data store.
-	//@param p_data Pointer to data that will be copied into the data store for initialization, or NULL if no data is to be copied.
-	//@param p_usage Hint to the GL implementation on how a buffer will be accessed. This enables OpenGL to make more intelligent decisions that may impact buffer performance.
-	void buffer_data(BufferType p_target, GLsizeiptr p_size, const void* p_data, BufferUsage p_usage);
+	//@param p_data Pointer to data that will be copied into the data store for initialization, or nullptr if no data is to be copied.
+	//@param p_flags Bitwise combination of flags that specify the intended usage of the buffer's data store.
+	void named_buffer_storage(GLHandle p_buffer, GLsizeiptr p_size, const void* p_data, BufferStorageBitfield p_flags);
 	// Update a subset of a Buffer object's data store.
-	// Redefines some or all of the data store for the buffer object currently bound to p_target.
-	// Data starting at byte offset p_offset and extending for p_size bytes is copied to the data store from the memory pointed to by p_data.
+	// Redefines some or all of the data store for the buffer object p_buffer.
+	// Data starting at byte p_offset and extending for p_size bytes is copied to the data store from the memory pointed to by p_data.
 	// An error is thrown if offset and size together define a range beyond the bounds of the buffer object's data store.
-	//@param p_target Target to which the buffer object being buffered to is bound.
+	//@param p_buffer Name of the buffer object to update.
 	//@param p_offset Offset into the buffer object's data store where data replacement will begin, measured in bytes.
 	//@param p_size Size in bytes of the data store region being replaced.
 	//@param p_data Pointer to the new data that will be copied into the data store.
-	void buffer_sub_data(BufferType p_target, GLintptr p_offset, GLsizeiptr p_size, const void* p_data);
+	void named_buffer_sub_data(GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size, const void* p_data);
 	// Copy all or part of the data store of a buffer object to the data store of another buffer object.
 	// Copy part of the data store attached to p_source_target to the data store attached to p_destination_target.
 	// The number of basic machine units indicated by p_size is copied from the p_source_target at p_source_offset to p_destination_target at p_destination_offset.
-	//@param p_source_target Target to which the source buffer object is bound.
-	//@param p_destination_target Target to which the destination buffer object is bound.
-	//@param p_source_offset Offset, in basic machine units, within the data store of p_source_target at which data will be read.
-	//@param p_destination_offset Offset, in basic machine units, within the data store of p_destination_target at which data will be written.
+	//@param p_source_buffer Name of the buffer object from which data will be copied.
+	//@param p_destination_buffer Name of the buffer object to which data will be copied.
+	//@param p_source_offset Offset, in basic machine units, from the start of p_source_target at which data will be read.
+	//@param p_destination_offset Offset, in basic machine units, from the start of p_destination_target at which data will be written.
 	//@param p_size Size, in basic machine units, of the data to be copied from the p_source_offset to p_destination_target.
-	void copy_buffer_sub_data(BufferType p_source_target, BufferType p_destination_target, GLintptr p_source_offset, GLintptr p_destination_offset, GLsizeiptr p_size);
+	void copy_named_buffer_sub_data(GLHandle p_source_buffer, GLHandle p_destination_buffer, GLintptr p_source_offset, GLintptr p_destination_offset, GLsizeiptr p_size);
 	// Bind a range within a buffer object to an indexed buffer target.
 	// Binds the range of the p_buffer represented by p_offset and p_size, to the binding point at p_index of the array of targets specified by p_target.
 	// Each p_target represents an indexed array of buffer binding points, as well as a single general binding point that can be used by other buffer manipulation functions such as bind_buffer or map_buffer.
@@ -694,129 +662,23 @@ namespace OpenGL
 	void bind_buffer_range(BufferType p_target, GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
 }
 
-// Remainder are conversion functions for GLEnum wrappers to
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// CONVERSION FUNCS
 namespace OpenGL
 {
-	const char* get_name(Function p_function);
-	const char* get_name(ShaderProgramType p_shader_program_type);
-	const char* get_name(ShaderDataType p_data_type);
-	const char* get_name(GLSLVariableType p_variable_type);
-	const char* get_name(BufferType p_buffer_type);
-	const char* get_name(BufferUsage p_buffer_usage);
-	const char* get_name(ShaderResourceType p_resource_type);
-	const char* get_name(ShaderResourceProperty p_shader_resource_property);
-	const char* get_name(DepthTestType p_depth_test_type);
-	const char* get_name(BlendFactorType p_blend_factor_type);
-	const char* get_name(CullFaceType p_cull_faces_type);
-	const char* get_name(FrontFaceOrientation p_front_face_orientation);
-	const char* get_name(PolygonMode p_polygon_mode);
-	const char* get_name(PrimitiveMode p_primitive_mode);
-	const char* get_name(FramebufferTarget p_framebuffer_target);
-	const char* get_name(ErrorType p_error_type);
+	GLenum convert(BufferType p_buffer_type);
+	GLenum convert(BufferDataType p_data_type);
+	GLenum convert(BufferStorageFlag p_flag);
 
 	// Convert a GLEnum value to the ShaderDataType wrapper.
-	ShaderDataType convert(int p_data_type);
-	// Assert the OpenGL p_type and type T match up. Used to runtime assert the ShaderDataType of variables matches the templated set functions.
-	template <typename T>
-	constexpr bool assert_type(ShaderDataType p_type)
-	{
-		switch (p_type)
-		{
-			case ShaderDataType::Float:                return std::is_same_v<T, float>;
-			case ShaderDataType::Double:               return std::is_same_v<T, double>;
-			case ShaderDataType::Int:                  return std::is_same_v<T, int>;
-			case ShaderDataType::UnsignedInt:          return std::is_same_v<T, unsigned int>;
-			case ShaderDataType::Bool:                 return std::is_same_v<T, bool>;
-			case ShaderDataType::Sampler2D:            return std::is_same_v<T, int>; // Setting texture sampler types uses int to set their bound texture unit. The actual texture being sampled is set by calling glActiveTexture followed by glBindTexture.
-			case ShaderDataType::SamplerCube:          return false;
-			case ShaderDataType::Vec2:                 return std::is_same_v<T, glm::vec2>;
-			case ShaderDataType::Vec3:                 return std::is_same_v<T, glm::vec3>;
-			case ShaderDataType::Vec4:                 return std::is_same_v<T, glm::vec4>;
-			case ShaderDataType::DVec2:                return std::is_same_v<T, glm::dvec2>;
-			case ShaderDataType::DVec3:                return std::is_same_v<T, glm::dvec3>;
-			case ShaderDataType::DVec4:                return std::is_same_v<T, glm::dvec4>;
-			case ShaderDataType::IVec2:                return std::is_same_v<T, glm::ivec2>;
-			case ShaderDataType::IVec3:                return std::is_same_v<T, glm::ivec3>;
-			case ShaderDataType::IVec4:                return std::is_same_v<T, glm::ivec4>;
-			case ShaderDataType::UVec2:                return std::is_same_v<T, glm::uvec2>;
-			case ShaderDataType::UVec3:                return std::is_same_v<T, glm::uvec3>;
-			case ShaderDataType::UVec4:                return std::is_same_v<T, glm::uvec4>;
-			case ShaderDataType::BVec2:                return std::is_same_v<T, glm::bvec2>;
-			case ShaderDataType::BVec3:                return std::is_same_v<T, glm::bvec3>;
-			case ShaderDataType::BVec4:                return std::is_same_v<T, glm::bvec4>;
-			case ShaderDataType::Mat2:                 return std::is_same_v<T, glm::mat2>;
-			case ShaderDataType::Mat3:                 return std::is_same_v<T, glm::mat3>;
-			case ShaderDataType::Mat4:                 return std::is_same_v<T, glm::mat4>;
-			case ShaderDataType::Mat2x3:               return std::is_same_v<T, glm::mat2x3>;
-			case ShaderDataType::Mat2x4:               return std::is_same_v<T, glm::mat2x4>;
-			case ShaderDataType::Mat3x2:               return std::is_same_v<T, glm::mat3x2>;
-			case ShaderDataType::Mat3x4:               return std::is_same_v<T, glm::mat3x4>;
-			case ShaderDataType::Mat4x2:               return std::is_same_v<T, glm::mat4x2>;
-			case ShaderDataType::Mat4x3:               return std::is_same_v<T, glm::mat4x3>;
-			case ShaderDataType::Dmat2:                return std::is_same_v<T, glm::dmat2>;
-			case ShaderDataType::Dmat3:                return std::is_same_v<T, glm::dmat3>;
-			case ShaderDataType::Dmat4:                return std::is_same_v<T, glm::dmat4>;
-			case ShaderDataType::Dmat2x3:              return std::is_same_v<T, glm::dmat2x3>;
-			case ShaderDataType::Dmat2x4:              return std::is_same_v<T, glm::dmat2x4>;
-			case ShaderDataType::Dmat3x2:              return std::is_same_v<T, glm::dmat3x2>;
-			case ShaderDataType::Dmat3x4:              return std::is_same_v<T, glm::dmat3x4>;
-			case ShaderDataType::Dmat4x2:              return std::is_same_v<T, glm::dmat4x2>;
-			case ShaderDataType::Dmat4x3:              return std::is_same_v<T, glm::dmat4x3>;
-			case ShaderDataType::Sampler1D:            return false; // Remaining types have not been implemented.
-			case ShaderDataType::Sampler3D:            return false;
-			case ShaderDataType::Sampler1DShadow:      return false;
-			case ShaderDataType::Sampler2DShadow:      return false;
-			case ShaderDataType::Sampler1DArray:       return false;
-			case ShaderDataType::Sampler2DArray:       return false;
-			case ShaderDataType::Sampler1DArrayShadow: return false;
-			case ShaderDataType::Sampler2DArrayShadow: return false;
-			case ShaderDataType::Sampler2DMS:          return false;
-			case ShaderDataType::Sampler2DMSArray:     return false;
-			case ShaderDataType::SamplerCubeShadow:    return false;
-			case ShaderDataType::SamplerBuffer:        return false;
-			case ShaderDataType::Sampler2DRect:        return false;
-			case ShaderDataType::Sampler2DRectShadow:  return false;
-			case ShaderDataType::Isampler1D:           return false;
-			case ShaderDataType::Isampler2D:           return false;
-			case ShaderDataType::Isampler3D:           return false;
-			case ShaderDataType::IsamplerCube:         return false;
-			case ShaderDataType::Isampler1DArray:      return false;
-			case ShaderDataType::Isampler2DArray:      return false;
-			case ShaderDataType::Isampler2DMS:         return false;
-			case ShaderDataType::Isampler2DMSArray:    return false;
-			case ShaderDataType::IsamplerBuffer:       return false;
-			case ShaderDataType::Isampler2DRect:       return false;
-			case ShaderDataType::Usampler1D:           return false;
-			case ShaderDataType::Usampler2D:           return false;
-			case ShaderDataType::Usampler3D:           return false;
-			case ShaderDataType::UsamplerCube:         return false;
-			case ShaderDataType::Usampler2DArray:      return false;
-			case ShaderDataType::Usampler2DMS:         return false;
-			case ShaderDataType::Usampler2DMSArray:    return false;
-			case ShaderDataType::UsamplerBuffer:       return false;
-			case ShaderDataType::Usampler2DRect:       return false;
-			case ShaderDataType::Unknown:              return false;
-			default:                             return false;
-		}
-	}
+	ShaderDataType convert(GLenum p_data_type);
+	GLenum convert(ShaderDataType p_data_type);
+	GLenum convert(ShaderProgramType p_shader_program_type);
 
-
-	int convert(ShaderProgramType p_shader_program_type);
-	int convert(ShaderDataType p_data_type);
-	int convert(GLSLVariableType p_variable_type);
-	int convert(BufferType p_buffer_type);
-	int convert(BufferUsage p_buffer_usage);
-	int convert(TextureType p_texture_type);
-	int convert(ImageFormat p_image_format);
-	int convert(PixelDataFormat p_pixel_format);
-	int convert(PixelDataType p_pixel_data_type);
-	int convert(ShaderResourceType p_resource_type);
-	int convert(ShaderResourceProperty p_shader_resource_property);
-	int convert(DepthTestType p_depth_test_type);
-	int convert(BlendFactorType p_blend_factor_type);
-	int convert(CullFaceType p_cull_faces_type);
-	int convert(FrontFaceOrientation p_front_face_orientation);
-	int convert(PolygonMode p_polygon_mode);
-	int convert(PrimitiveMode p_primitive_mode);
-	int convert(FramebufferTarget p_framebuffer_target);
+	GLenum convert(DepthTestType p_depth_test_type);
+	GLenum convert(BlendFactorType p_blend_factor_type);
+	GLenum convert(CullFaceType p_cull_faces_type);
+	GLenum convert(FrontFaceOrientation p_front_face_orientation);
+	GLenum convert(PolygonMode p_polygon_mode);
+	GLenum convert(PrimitiveMode p_primitive_mode);
 }

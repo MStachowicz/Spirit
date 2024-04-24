@@ -62,7 +62,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(OPENGL_VERSION_MAJOR  4)
-set(OPENGL_VERSION_MINOR  3)
+set(OPENGL_VERSION_MINOR  6)
 set(OPENGL_VERSION_STRING "${OPENGL_VERSION_MAJOR}.${OPENGL_VERSION_MINOR}")
 set(GLSL_VERSION_STRING   "#version ${OPENGL_VERSION_MAJOR}${OPENGL_VERSION_MINOR}0")
 
@@ -205,8 +205,8 @@ source/Geometry/LineSegment.hpp
 source/Geometry/Plane.cpp
 source/Geometry/Plane.hpp
 source/Geometry/Point.hpp
-source/Geometry/Quad.cpp
 source/Geometry/Quad.hpp
+source/Geometry/Quad.cpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Sphere.cpp

@@ -30,6 +30,9 @@ namespace System
 
 namespace OpenGL
 {
+	class Buffer;
+	class FBO;
+
 	// Immediate mode debug rendering. All members implemented statically to allow ease of use anywhere.
 	// Push new debug geometry using add functions.
 	// All geometry is cleared at the start of every frame and drawn at the end.
@@ -72,7 +75,7 @@ namespace OpenGL
 		static void init();
 		static void deinit();
 		static void clear();
-		static void render(System::SceneSystem& p_scene);
+		static void render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const FBO& p_target_FBO);
 
 		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
 		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);

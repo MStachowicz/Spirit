@@ -25,7 +25,9 @@ namespace Utility
 		// Flip textures here to account for this.
 		stbi_set_flip_vertically_on_load(false);
 
-		m_data = (std::byte*)(stbi_load(m_filepath.string().c_str(), &m_width, &m_height, &m_number_of_channels, 0));
+		int components = 0;
+		m_data = (std::byte*)(stbi_load(m_filepath.string().c_str(), &m_width, &m_height, &components, 0));
+		m_number_of_channels = static_cast<uint8_t>(components);
 		ASSERT(m_data != nullptr, "Failed to load texture at path '{}'", m_filepath.string());
 	}
 	Image::~Image() noexcept

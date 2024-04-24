@@ -2,101 +2,72 @@
 
 #include "Component/Vertex.hpp"
 #include "Geometry/AABB.hpp"
-#include "Geometry/Triangle.hpp"
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
 
 #include <vector>
-#include <algorithm>
 
 namespace Data
 {
 	class Mesh
 	{
 		OpenGL::VAO VAO;
-		OpenGL::VBO VBO;
-		GLsizei draw_size;
-		OpenGL::PrimitiveMode primitive_mode;
+		OpenGL::Buffer vert_buffer; // VBO for vertex data.
 
 	public:
-		std::vector<glm::vec3> vertex_positions;       // Unique vertex positions for collision detection.
-		Geometry::AABB AABB;                           // Object-space AABB for broad-phase collision detection.
-
-		void draw()
-		{
-			VAO.bind();
-			OpenGL::draw_arrays(primitive_mode, 0, draw_size);
-		}
-		void draw_instanced(GLsizei p_instance_count)
-		{
-			VAO.bind();
-			OpenGL::draw_arrays_instanced(primitive_mode, 0, draw_size, p_instance_count);
-		}
+		std::vector<glm::vec3> vertex_positions; // Unique vertex positions for collision detection.
+		Geometry::AABB AABB;                     // Object-space AABB for broad-phase collision detection.
 
 		template <typename VertexType>
 		requires is_valid_mesh_vert<VertexType>
-		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode) noexcept
+		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
 			: VAO{}
-			, VBO{}
-			, draw_size{(GLsizei)vertex_data.size()}
-			, primitive_mode{primitive_mode}
-			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder like shapes.
-			, AABB{} // TODO: Feed AABB out of the MeshBuilder like shapes.
+			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
+			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder directly.
+			, AABB{} // TODO: Feed AABB out of the MeshBuilder directly.
 		{
 			static_assert(has_position_member<VertexType>, "VertexType must have a position member");
+			ASSERT_THROW(!vertex_data.empty(), "Vertex data is empty");
 
-			VAO.bind();
-			VBO.bind();
-			OpenGL::buffer_data(OpenGL::BufferType::ArrayBuffer, vertex_data.size() * sizeof(VertexType), vertex_data.data(), OpenGL::BufferUsage::StaticDraw);
+			constexpr GLint vertex_buffer_binding_point = 0;
 
-			{// Position data
-				OpenGL::vertex_attrib_pointer(
-					get_index(VertexAttribute::Position3D),
-					get_component_count(VertexAttribute::Position3D),
-					OpenGL::ShaderDataType::Float,
-					false,
-					sizeof(VertexType),
-					(void*)offsetof(VertexType,
-					position));
-				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Position3D));
-
-				for (const auto& vertex : vertex_data)
-					AABB.unite(vertex.position);
-			}
-
-			if constexpr (has_normal_member<VertexType>)
+			if constexpr (std::is_same_v<VertexType, Data::Vertex>)
 			{
-				OpenGL::vertex_attrib_pointer(
-					get_index(VertexAttribute::Normal3D),
-					get_component_count(VertexAttribute::Normal3D),
-					OpenGL::ShaderDataType::Float,
-					false,
-					sizeof(VertexType),
-					(void*)offsetof(VertexType, normal));
-				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::Normal3D));
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
+					{1, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, normal),   vertex_buffer_binding_point, false},
+					{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false},
+					{3, 2, OpenGL::BufferDataType::Float, offsetof(VertexType, uv),       vertex_buffer_binding_point, false}
+				});
 			}
-			if constexpr (has_colour_member<VertexType>)
+			else if constexpr (std::is_same_v<VertexType, Data::ColourVertex>)
 			{
-				OpenGL::vertex_attrib_pointer(
-					get_index(VertexAttribute::ColourRGBA),
-					get_component_count(VertexAttribute::ColourRGBA),
-					OpenGL::ShaderDataType::Float,
-					false,
-					sizeof(VertexType),
-					(void*)offsetof(VertexType, colour));
-				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::ColourRGBA));
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
+					{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false}
+				});
 			}
-			if constexpr (has_UV_member<VertexType>)
+			else if constexpr (std::is_same_v<VertexType, Data::TextureVertex>)
 			{
-				OpenGL::vertex_attrib_pointer(
-					get_index(VertexAttribute::TextureCoordinate2D),
-					get_component_count(VertexAttribute::TextureCoordinate2D),
-					OpenGL::ShaderDataType::Float,
-					false,
-					sizeof(VertexType),
-					(void*)offsetof(VertexType, uv));
-				OpenGL::enable_vertex_attrib_array(get_index(VertexAttribute::TextureCoordinate2D));
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
+					{3, 2, OpenGL::BufferDataType::Float, offsetof(VertexType, uv),       vertex_buffer_binding_point, false}
+				});
 			}
+			else if constexpr (std::is_same_v<VertexType, Data::PositionVertex>)
+			{
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false}
+				});
+			}
+			else
+				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
+
+			vert_buffer.upload_data(vertex_data);
+			VAO.attach_buffer(vert_buffer, 0, 0);
+
+			for (const auto& vertex : vertex_data)
+				AABB.unite(vertex.position);
 		}
 
 		Mesh(const Mesh&)            = delete;
@@ -104,12 +75,10 @@ namespace Data
 		Mesh(Mesh&&)                 = default;
 		Mesh& operator=(Mesh&&)      = default;
 
-		GLsizei size() const noexcept { return draw_size; }
-		bool empty()   const noexcept { return draw_size == 0; }
+		const OpenGL::VAO& get_VAO() const { return VAO; }
+		bool empty() const { return VAO.draw_count() > 0; }
 	};
 }
-
-
 
 
 using MeshManager = Utility::ResourceManager<Data::Mesh>;

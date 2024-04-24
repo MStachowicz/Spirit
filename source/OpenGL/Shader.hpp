@@ -1,89 +1,113 @@
 #pragma once
 
 #include "GLState.hpp"
-#include "Types.hpp"
-
-#include "Utility/Logger.hpp"
 
 #include <string>
 #include <vector>
-#include <string_view>
-#include <optional>
-#include <algorithm>
 
 namespace OpenGL
 {
+	// Variable is a struct that stores the data of a variable within a shader.
+	// Variables can be contained withing InterfaceBlocks or be loose uniforms.
+	struct Variable
+	{
+		enum class Type : uint8_t
+		{
+			Attribute,         // Attribute variables are used to pass per-vertex data to the vertex shader.
+			Uniform,           // Loose uniform variables are used to pass data to the shader.
+			UniformBlock,      // UniformBlock variables are used for UBOs.
+			ShaderStorageBlock // ShaderStorageBlock variables are used for SSBOs.
+		};
+		Variable(GLHandle p_shader_program, GLuint p_uniform_index, Type p_type);
+
+		std::string m_identifier; // The identifier used for the variable in the GLSL shader.
+		ShaderDataType m_type;
+		Type m_variable_type; // Whether the variable is an attribute, uniform, uniform block or shader storage block.
+
+		GLint m_offset;        // The byte offset relative to the base of the buffer range.
+		GLint m_array_size;    // For array variables the number of active array elements. 0 if not an array.
+		GLint m_array_stride;  // Byte different between consecutive elements in an array type. 0 if not an array.
+		GLint m_matrix_stride; // Stride between columns of a column-major matrix or rows of a row-major matrix. For non-matrix or array of matrices, 0. For UniformBlock variables -1.
+		GLint m_is_row_major;  // whether an active variable is a row-major matrix. For non-matrix variables 0.
+
+		// Loose uniform variable data.
+		GLint m_location; // For variables defined with layout qualifier this is the specified location. For non-loose uniform -1.
+
+		// ShaderStorageBlock variable data.
+
+		// Number of active array elements of the top-level shader storage block member.
+		// If the top-level block member is not an array, the value is 1.
+		// If it is an array with no declared size, the value is 0, assignable size can be found calling array_size().
+		GLint m_top_level_array_size;
+		// Stride between array elements of the top-level shader storage block member.
+		// For arrays, the value written is the difference, in basic machine units, between the offsets of the active variable for consecutive elements in the top-level array.
+		// For top-level block members not declared as an array, value is 0.
+		GLint m_top_level_array_stride;
+	};
+
+	// InterfaceBlocks are GLSL interface blocks which group variables.
+	// Blocks declared with the GLSL shared keyword can be used with any program that defines a block with the same elements in the same order.
+	// Matching blocks in different shader stages will, when linked into the same program, be presented as a single interface block.
+	struct InterfaceBlock
+	{
+		enum class Type : uint8_t
+		{
+			UniformBlock,      // UniformBlock is used for UBOs.
+			ShaderStorageBlock // ShaderStorageBlock is used for SSBOs.
+		};
+		InterfaceBlock(GLHandle p_shader_program, GLuint p_block_index, Type p_type);
+
+		std::string m_identifier; // Identifier of the block in m_parent_shader_program.
+		std::vector<Variable> m_variables; // All the variables this block defines.
+		GLuint m_block_index; // Index of the block in its m_parent_shader_program.
+		Type m_type;
+		// Minimum total buffer object size in basic machine units, required to hold all active variables associated with the block.
+		// If the final member the block is array with no declared size (ShaderStorageBlock only), the m_data_size assumes the array was declared as an array with one element.
+		GLsizei m_data_size;
+		GLuint m_binding_point; // The binding point for the block (in GLSL: layout(binding = x)). UBOs or SSBOs can be bound to the same binding point to use their data.
+	};
+
 	// Handles the loading of GLSL shaders from file.
 	// Provides set_uniform for setting the GLSL uniform variables.
 	// m_vertex_attributes stores the VertexAttributes the shader depends on.
 	class Shader
 	{
-		static inline const size_t maxTextureUnits = 2; // The limit on the number of texture units available in the shaders
+		friend class DrawCall; // DrawCall needs to set the uniforms of the shader before draw.
 
 		std::string m_name;
 		GLHandle m_handle;
+		std::vector<InterfaceBlock> m_uniform_blocks;
+		std::vector<InterfaceBlock> m_shader_storage_blocks;
+		std::vector<Variable> m_uniforms;
 
-		std::vector<VertexAttribute> m_vertex_attributes;        // List vertex attributes shader program depends on.
-		std::vector<UniformBlock> m_uniform_blocks;              // Interface blocks containing UniformBlockVariables. Settings these is global if the block is marked 'shared'.
-		std::vector<ShaderStorageBlock> m_shader_storage_blocks; // Interface blocks containing ShaderStorageBlockVariables. Settings these is global if the block is marked 'shared'.
-		std::vector<UniformBlockVariable> m_uniforms;            // Loose uniforms, setting these is per shader program.
+		// Uniform set functions are used only by the DrawCall class hence are private.
+		void set_uniform(const char* p_identifier, bool p_value) const;
+		void set_uniform(const char* p_identifier, int p_value) const;
+		void set_uniform(const char* p_identifier, float p_value) const;
+		void set_uniform(const char* p_identifier, const glm::vec2& p_value) const;
+		void set_uniform(const char* p_identifier, const glm::vec3& p_value) const;
+		void set_uniform(const char* p_identifier, const glm::vec4& p_value) const;
+		void set_uniform(const char* p_identifier, const glm::mat2& p_value) const;
+		void set_uniform(const char* p_identifier, const glm::mat3& p_value) const;
+		void set_uniform(const char* p_identifier, const glm::mat4& p_value) const;
 
-		// Search source code for any per-vertex attributes a Mesh will require to be drawn by this shader.
-		void scanForAttributes(const std::string& p_source_code);
-		// Implementations to set the uniform variables belonging to this shader.
-		// The client facing set_uniform is templated and calls one of these.
-		void set_uniform(GLint p_location, bool p_value);
-		void set_uniform(GLint p_location, int p_value);
-		void set_uniform(GLint p_location, float p_value);
-		void set_uniform(GLint p_location, const glm::vec2& p_value);
-		void set_uniform(GLint p_location, const glm::vec3& p_value);
-		void set_uniform(GLint p_location, const glm::vec4& p_value);
-		void set_uniform(GLint p_location, const glm::mat2& p_value);
-		void set_uniform(GLint p_location, const glm::mat3& p_value);
-		void set_uniform(GLint p_location, const glm::mat4& p_value);
+		void bind_sampler_2D(const char* p_identifier, GLuint p_texture_binding);
+		void bind_uniform_block(const char* p_identifier, GLuint p_uniform_block_binding);
+		void bind_shader_storage_block(const char* p_identifier, GLuint p_storage_block_binding);
 
 	public:
-
 		Shader(const char* p_name);
-		void use() const; // Set this shader as the currently active one in OpenGL state.
+		// Get the index of the attribute with the given identifier.
+		GLuint get_attribute_index(const char* attribute_identifier) const;
 
-		// Get the SSBO backing the shader storage block with p_storage_block_identifier.
-		//@param p_storage_block_identifier Identifier of the block who's buffer backing is to be returned.
-		//@returns The buffer backing for the shader storage block or nullopt if the block isn't found or isn't backed by one.
-		Utility::ResourceRef<SSBO> get_SSBO_backing(const std::string& p_storage_block_identifier);
+		const Variable& get_uniform_variable(const char* p_identifier) const;
 
-		// Set the data for a loose-uniform in this shader program. Call Shader::use() before set_uniform.
-		template<typename T>
-		inline void set_uniform(const std::string_view& p_name, const T& p_data)
-		{
-			ASSERT(get_current_shader_program() == m_handle, "Calling set uniform without calling Shader::use() first", p_name, m_name);
+		const InterfaceBlock& get_uniform_block(const char* p_identifier) const;
+		InterfaceBlock& get_uniform_block(const char* p_identifier);
+		const Variable& get_uniform_block_variable(const char* p_block_identifier, const char* p_variable_identifier) const;
 
-			auto it = std::find_if(m_uniforms.begin(), m_uniforms.end(), [&p_name](const auto& p_variable){ return p_variable.m_name == p_name; });
-			ASSERT(it != m_uniforms.end(),     "[OPENGL][SHADER] Could not find uniform variable '{}' in {} shader", p_name, m_name);
-			ASSERT(assert_type<T>(it->m_type), "[OPENGL][SHADER] set uniform data type missmatch!");
-			set_uniform(it->m_location, p_data);
-		}
-
-		// Set the value for a variable in a UniformBlock. If the UniformBlock is shared this sets the variable in all Shader programs using the block.
-		template<typename T>
-		static inline void set_block_uniform(const char* p_name, const T& p_data)
-		{
-			UniformBlock::uniform_block_binding_points.for_each([&p_name, &p_data](UBO& p_UBO)
-			{
-				for (const auto& variable : p_UBO.m_variables)
-				{
-					if (variable.m_name == p_name)
-					{
-						ASSERT(assert_type<T>(variable.m_type), "[OPENGL][SHADER] set uniform block data type missmatch!");
-
-						p_UBO.bind();
-						buffer_sub_data(BufferType::UniformBuffer, variable.m_offset, sizeof(T), &p_data);
-						return;
-					}
-				}
-
-				ASSERT(false, "[OPENGL][SHADER] Could not find UniformBlock variable '{}' in any shader buffer backings", p_name);
-			});
-		}
+		const InterfaceBlock& get_shader_storage_block(const char* p_identifier) const;
+		InterfaceBlock& get_shader_storage_block(const char* p_identifier);
+		const Variable& get_shader_storage_block_variable(const char* p_block_identifier, const char* p_variable_identifier) const;
 	};
 } // namespace OpenGL

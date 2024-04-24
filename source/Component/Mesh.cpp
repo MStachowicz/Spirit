@@ -13,7 +13,7 @@ namespace Component
 		if (ImGui::TreeNode("Mesh"))
 		{
 			if (m_mesh)
-				ImGui::Text("Draw size: %d", m_mesh->size());
+				ImGui::Text("Draw size: %d", m_mesh->get_VAO().draw_count());
 			else
 				ImGui::Text("Mesh is null");
 

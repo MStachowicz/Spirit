@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 
 layout (location = 0) in vec3 VertexPosition;
 
@@ -13,7 +13,7 @@ out vec3 TexCoords;
 // This requires the skybox to be rendered with GL_LEQUAL depth testing because of the above.
 void main()
 {
-    TexCoords = VertexPosition;
-    vec4 pos = projection * viewNoTranslation * vec4(VertexPosition, 1.0);
-    gl_Position = pos.xyww;
+	TexCoords = VertexPosition;
+	vec4 pos = projection * viewNoTranslation * vec4(VertexPosition, 1.0);
+	gl_Position = pos.xyww;
 }

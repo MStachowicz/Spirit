@@ -79,6 +79,10 @@ namespace ImGui
 	{
 		Text("%s: [%d, %d]", p_label, p_ivec2[0], p_ivec2[1]);
 	}
+	inline void Text(const char* p_label, const glm::uvec2& p_uvec2)
+	{
+		Text("%s: [%u, %u]", p_label, p_uvec2[0], p_uvec2[1]);
+	}
 	inline void Text(const char* p_label, const glm::ivec3& p_ivec3)
 	{
 		Text("%s: [%d, %d, %d]", p_label, p_ivec3[0], p_ivec3[1], p_ivec3[2]);

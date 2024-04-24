@@ -85,9 +85,9 @@ namespace Platform
 		LOG("[WINDOW] Closed window");
 	}
 
-	void Window::set_size(glm::ivec2 p_new_size)
+	void Window::set_size(glm::uvec2 p_new_size)
 	{
-		if (p_new_size.x <= 0 || p_new_size.y <= 0) // When the window is minimised the size can be 0. Ignore and keep original size data.
+		if (p_new_size.x == 0 || p_new_size.y == 0) // When the window is minimised the size can be 0. Ignore and keep original size data.
 			return;
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -110,7 +110,7 @@ namespace Platform
 
 		LOG("[WINDOW] Resized to {}x{} aspect: {}", size().x, size().y, aspect_ratio());
 	}
-	void Window::set_position(glm::ivec2 p_new_position)
+	void Window::set_position(glm::uvec2 p_new_position)
 	{
 		if (m_fullscreen)
 			m_position_fullscreen = p_new_position;
@@ -227,9 +227,9 @@ namespace Platform
 #endif
 	}
 
-	glm::ivec2 Window::get_max_resolution()
+	glm::uvec2 Window::get_max_resolution()
 	{
 		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-		return {mode->width, mode->height};
+		return {static_cast<unsigned int>(mode->width), static_cast<unsigned int>(mode->height)};
 	}
 } // namespace Platform

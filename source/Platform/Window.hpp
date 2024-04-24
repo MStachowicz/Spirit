@@ -11,10 +11,10 @@ namespace Platform
 	class Window
 	{
 		friend class Core; // Core::initialise_imgui requires access to m_handle.
-		glm::ivec2 m_size_fullscreen;     // the most up-to-date size of the window in fullscreen.
-		glm::ivec2 m_position_fullscreen; // the most up-to-date position of the window in fullscreen.
-		glm::ivec2 m_size_windowed;       // the most up-to-date size of the window in windowed.
-		glm::ivec2 m_position_windowed;   // the most up-to-date position of the window in windowed.
+		glm::uvec2 m_size_fullscreen;     // the most up-to-date size of the window in fullscreen.
+		glm::uvec2 m_position_fullscreen; // the most up-to-date position of the window in fullscreen.
+		glm::uvec2 m_size_windowed;       // the most up-to-date size of the window in windowed.
+		glm::uvec2 m_position_windowed;   // the most up-to-date position of the window in windowed.
 
 		bool m_fullscreen;
 		float m_aspect_ratio;
@@ -33,11 +33,11 @@ namespace Platform
 		void set_VSync(bool p_enabled);
 		bool get_VSync() const { return m_VSync; };
 
-		glm::ivec2 size() const { return m_fullscreen ? m_size_fullscreen : m_size_windowed; };
-		void set_size(glm::ivec2 p_new_size);
+		glm::uvec2 size() const { return m_fullscreen ? m_size_fullscreen : m_size_windowed; };
+		void set_size(glm::uvec2 p_new_size);
 
-		glm::ivec2 position() const { return m_fullscreen ? m_position_fullscreen : m_position_windowed; };
-		void set_position(glm::ivec2 p_new_position);
+		glm::uvec2 position() const { return m_fullscreen ? m_position_fullscreen : m_position_windowed; };
+		void set_position(glm::uvec2 p_new_position);
 
 		void toggle_fullscreen();
 		void swap_buffers();
@@ -50,7 +50,7 @@ namespace Platform
 		// Returns the hight of the window title bar in pixels.
 		static int get_window_title_bar_height();
 		// Get the max resolution of the primary monitor.
-		static glm::ivec2 get_max_resolution();
+		static glm::uvec2 get_max_resolution();
 
 		bool m_show_menu_bar;
 	};

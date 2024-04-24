@@ -9,25 +9,19 @@ namespace System
 {
 	class Scene;
 }
-namespace Platform
-{
-	class Window;
-}
 namespace OpenGL
 {
 	class ShadowMapper
 	{
 		FBO m_depth_map_FBO;
 		Shader m_shadow_depth_shader;
-		glm::uvec2 m_resolution;
-
-		Platform::Window& m_window;
 
 	public:
-		ShadowMapper(Platform::Window& p_window) noexcept;
+		ShadowMapper(const glm::uvec2& p_resolution) noexcept;
 
+		// Renders the scene from the perspective of the light source to fill a depth texture map.
 		void shadow_pass(System::Scene& p_scene);
-		const Texture& get_depth_map() const { return m_depth_map_FBO.m_depth_map.value(); };
+		const Texture& get_depth_map() const { return m_depth_map_FBO.depth_attachment(); };
 
 		void draw_UI();
 	};

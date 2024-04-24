@@ -10,12 +10,11 @@
 #include "UI/Editor.hpp"
 
 #include "Platform/Core.hpp"
-#include "Platform/Window.hpp"
 #include "Platform/Input.hpp"
+#include "Platform/Window.hpp"
 
-#include "OpenGL/OpenGLRenderer.hpp"
 #include "OpenGL/DebugRenderer.hpp"
-#include "OpenGL/GridRenderer.hpp"
+#include "OpenGL/OpenGLRenderer.hpp"
 
 #include "Utility/File.hpp"
 #include "Utility/Logger.hpp"
@@ -53,7 +52,6 @@ private:
 	System::SceneSystem m_scene_system;
 
 	OpenGL::OpenGLRenderer m_openGL_renderer;
-	OpenGL::GridRenderer m_grid_renderer;
 
 	System::CollisionSystem m_collision_system;
 	System::PhysicsSystem m_physics_system;
@@ -145,10 +143,8 @@ private:
 				m_window.start_ImGui_frame();
 				m_openGL_renderer.start_frame();
 
-				m_grid_renderer.draw();
 				m_openGL_renderer.draw(duration_since_last_render_tick);
 				m_editor.draw(duration_since_last_render_tick);
-				OpenGL::DebugRenderer::render(m_scene_system);
 
 				m_openGL_renderer.end_frame();
 				m_window.end_ImGui_frame();
@@ -215,7 +211,7 @@ int main(int argc, char* argv[])
 		app.simulation_loop();
 	} // Window and input must go out of scope and destroy their resources before Core::cleanup
 
-	Platform::Core::cleanup();
 	OpenGL::DebugRenderer::deinit();
+	Platform::Core::cleanup();
 	return EXIT_SUCCESS;
 }

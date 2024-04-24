@@ -2,6 +2,8 @@
 
 #include "ResourceManager.hpp"
 
+#include <glm/vec2.hpp>
+
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -21,7 +23,7 @@ namespace Utility
 		std::filesystem::path m_filepath;
 		int m_width;  // Width in pixels
 		int m_height; // Height in pixels
-		int m_number_of_channels; // RGBA
+		uint8_t m_number_of_channels; // Number of channels in the image. 4 = RGBA, 3 = RGB, 2 = RG, 1 = R
 
 		Image(const std::filesystem::path& p_path) noexcept;
 		~Image() noexcept;
@@ -34,6 +36,8 @@ namespace Utility
 		std::byte* get_data() const { return m_data; }
 		// Return a display-friendly name for this image.
 		std::string name() const { return m_filepath.stem().string(); };
+
+		glm::uvec2 resolution() const { return {m_width, m_height}; }
 	};
 
 	// File access helper.

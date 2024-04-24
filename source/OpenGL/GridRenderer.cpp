@@ -67,18 +67,24 @@ namespace OpenGL
 		, m_origin_arrows{make_origin_arrows_mesh()}
 	{}
 
-	void GridRenderer::draw()
+	void GridRenderer::draw(const FBO& target_FBO)
 	{
 		{
 			DrawCall dc;
-			dc.m_cull_face_enabled = false;
-			dc.submit(m_grid_shader, m_grid);
+			dc.m_cull_face_enabled     = false;
+			dc.m_depth_test_type       = DepthTestType::Less;
+			dc.m_depth_test_enabled    = true;
+			dc.m_write_to_depth_buffer = true;
+			dc.submit(m_grid_shader, m_grid.get_VAO(), target_FBO);
 		}
 		if (OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows)
 		{
 			DrawCall dc;
-			dc.m_cull_face_enabled = false;
-			dc.submit(m_grid_shader, m_origin_arrows);
+			dc.m_cull_face_enabled     = false;
+			dc.m_depth_test_type       = DepthTestType::Less;
+			dc.m_depth_test_enabled    = true;
+			dc.m_write_to_depth_buffer = true;
+			dc.submit(m_grid_shader, m_origin_arrows.get_VAO(), target_FBO);
 		}
 	}
 }

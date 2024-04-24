@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GridRenderer.hpp"
 #include "ParticleRenderer.hpp"
 #include "PhongRenderer.hpp"
 #include "Shader.hpp"
@@ -39,10 +40,11 @@ namespace OpenGL
 		};
 
 		Platform::Window& m_window;
-		FBO m_screen_framebuffer;
+		FBO m_screen_framebuffer; // Framebuffer the scene is rendered to. We then render this texture to the screen allowing for post-processing.
 		System::SceneSystem& m_scene_system;
 		System::MeshSystem& m_mesh_system;
 
+		Buffer m_view_properties_buffer; // Contains the view and projection matrices shared across all shaders.
 		Shader m_uniform_colour_shader;
 		Shader m_colour_shader;
 		Shader m_texture_shader;
@@ -51,10 +53,12 @@ namespace OpenGL
 
 		PhongRenderer m_phong_renderer;
 		ParticleRenderer m_particle_renderer;
+		GridRenderer m_grid_renderer;
 		ShadowMapper m_shadow_mapper;
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;
 		Data::Mesh m_screen_quad;
+
 
 	public:
 		PostProcessingOptions m_post_processing_options;

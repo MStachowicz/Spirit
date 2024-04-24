@@ -49,7 +49,59 @@ namespace Platform
 	{ // Load OpenGL functions
 		int version = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		ASSERT_THROW(version != 0, "[INIT] Failed to initialise GLAD OpenGL");
-		LOG("[INIT] Initialised OpenGL {}", (const char*)glGetString(GL_VERSION));
+		LOG("[INIT] Initialised OpenGL\nVersion:  {}\nVendor:   {}\nRenderer: {}", (const char*)glGetString(GL_VERSION), (const char*)glGetString(GL_VENDOR), (const char*)glGetString(GL_RENDERER));
+
+		{// Set OpenGL debug callback
+			static const std::unordered_map<GLenum, const char*> error_source_map {
+				{GL_DEBUG_SOURCE_API,              "SOURCE_API"},
+				{GL_DEBUG_SOURCE_WINDOW_SYSTEM,    "WINDOW_SYSTEM"},
+				{GL_DEBUG_SOURCE_SHADER_COMPILER,  "SHADER_COMPILER"},
+				{GL_DEBUG_SOURCE_THIRD_PARTY,      "THIRD_PARTY"},
+				{GL_DEBUG_SOURCE_APPLICATION,      "APPLICATION"},
+				{GL_DEBUG_SOURCE_OTHER,            "OTHER"}};
+			static const std::unordered_map<GLenum, const char*> severity_map {
+				{GL_DEBUG_SEVERITY_HIGH,           "HIGH"},
+				{GL_DEBUG_SEVERITY_MEDIUM,         "MEDIUM"},
+				{GL_DEBUG_SEVERITY_LOW,            "LOW"},
+				{GL_DEBUG_SEVERITY_NOTIFICATION,   "NOTIFICATION"}};
+			static const std::unordered_map<GLenum, const char*> error_type_map {
+				{GL_DEBUG_TYPE_ERROR,              "ERROR"},
+				{GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR,"DEPRECATED_BEHAVIOR"},
+				{GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR, "UNDEFINED_BEHAVIOR"},
+				{GL_DEBUG_TYPE_PORTABILITY,        "PORTABILITY"},
+				{GL_DEBUG_TYPE_PERFORMANCE,        "PERFORMANCE"},
+				{GL_DEBUG_TYPE_OTHER,              "OTHER"},
+				{GL_DEBUG_TYPE_MARKER,             "MARKER"}};
+
+			auto GL_error_callback = [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param)
+			{ (void)id; (void)length; (void)user_param;
+				auto src = error_source_map.at(source);
+				auto sv  = severity_map.at(severity);
+				auto tp  = error_type_map.at(type);
+
+				if (severity == GL_DEBUG_SEVERITY_HIGH)
+				{
+					ASSERT_THROW(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+				}
+				else if (severity == GL_DEBUG_SEVERITY_MEDIUM)
+				{
+					ASSERT_THROW(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+				}
+				else if (severity == GL_DEBUG_SEVERITY_LOW)
+				{
+					LOG_WARN(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+				}
+				else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+				{
+					LOG_WARN(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+				}
+			};
+
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(GL_error_callback, 0);
+			glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, false);
+		}
 	}
 
 	void Core::initialise_ImGui(const Window& p_window)
@@ -61,7 +113,8 @@ namespace Platform
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
 		ImGui_ImplGlfw_InitForOpenGL(p_window.m_handle, true);
 		ImGui_ImplOpenGL3_Init(Config::GLSL_Version_String);
-		io.DisplaySize = p_window.size();
+		glm::uvec2 size = p_window.size();
+		io.DisplaySize = ImVec2(static_cast<float>(size.x), static_cast<float>(size.y));
 
 		LOG("[INIT] Initialised ImGui");
 	}

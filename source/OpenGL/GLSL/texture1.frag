@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 
 in vec2 TexCoord;
 out vec4 Colour;
@@ -9,5 +9,5 @@ void main()
 {
 	Colour = texture(texture0, TexCoord);
 	if(Colour.a < 0.1)
-        discard;
+		discard;
 }
