@@ -64,7 +64,7 @@ namespace Data
 				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
 			vert_buffer.upload_data(vertex_data);
-			VAO.attach_buffer(vert_buffer, 0, 0);
+			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
 
 			for (const auto& vertex : vertex_data)
 				AABB.unite(vertex.position);

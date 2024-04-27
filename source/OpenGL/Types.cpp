@@ -46,6 +46,8 @@ namespace OpenGL
 	}
 	void Buffer::resize(GLsizeiptr p_size)
 	{
+		ASSERT(is_immutable() == false, "Cannot resize an immutable buffer");
+
 		named_buffer_storage(m_handle, p_size, nullptr, m_flags);
 		m_size = p_size;
 	}
@@ -54,6 +56,12 @@ namespace OpenGL
 		m_size   = 0;
 		m_stride = 0;
 		named_buffer_storage(m_handle, 0, nullptr, m_flags);
+	}
+	bool Buffer::is_immutable() const
+	{
+		GLint is_immutable = 0;
+		glGetNamedBufferParameteriv(m_handle, GL_BUFFER_IMMUTABLE_STORAGE, &is_immutable);
+		return is_immutable == GL_TRUE;
 	}
 
 	VAO::VAO()
@@ -94,7 +102,7 @@ namespace OpenGL
 				glDeleteVertexArrays(1, &m_handle);
 
 			// Copy the data pointer from the source object.
-			m_handle                = p_other.m_handle;
+			m_handle              = p_other.m_handle;
 			m_draw_count          = p_other.m_draw_count;
 			m_draw_primitive_mode = p_other.m_draw_primitive_mode;
 			m_is_indexed          = p_other.m_is_indexed;
@@ -105,9 +113,9 @@ namespace OpenGL
 		if constexpr (LogGLTypeEvents) LOG("VAO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
 		return *this;
 	}
-	void VAO::attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point)
+	void VAO::attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point, GLsizei p_stride)
 	{
-		vertex_array_vertex_buffer(m_handle, p_vertex_buffer_binding_point, p_vertex_buffer.m_handle, p_vertex_buffer_offset, p_vertex_buffer.stride());
+		vertex_array_vertex_buffer(m_handle, p_vertex_buffer_binding_point, p_vertex_buffer.m_handle, p_vertex_buffer_offset, p_stride);
 		if (!m_is_indexed)
 			m_draw_count = p_vertex_buffer.count();
 	}
@@ -129,7 +137,12 @@ namespace OpenGL
 			// Specify the binding index of the vertex buffer for the attribute.
 			glVertexArrayAttribBinding(m_handle, attribute.index, attribute.vertex_buffer_binding_point);
 			// Set the format of the attribute.
-			glVertexArrayAttribFormat(m_handle, attribute.index, attribute.size, convert(attribute.type), attribute.normalized ? GL_TRUE : GL_FALSE, attribute.relative_offset);
+			if (attribute.type == BufferDataType::Int || attribute.type == BufferDataType::UnsignedInt)
+				glVertexArrayAttribIFormat(m_handle, attribute.index, attribute.size, convert(attribute.type), attribute.relative_offset);
+			else if (attribute.type == BufferDataType::Double)
+				glVertexArrayAttribLFormat(m_handle, attribute.index, attribute.size, convert(attribute.type), attribute.relative_offset);
+			else
+				glVertexArrayAttribFormat(m_handle, attribute.index, attribute.size, convert(attribute.type), attribute.normalized ? GL_TRUE : GL_FALSE, attribute.relative_offset);
 		}
 	}
 

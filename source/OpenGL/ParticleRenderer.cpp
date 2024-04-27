@@ -3,13 +3,49 @@
 #include "DrawCall.hpp"
 
 #include "System/SceneSystem.hpp"
+#include "Component/ParticleEmitter.hpp"
 
 #include "glm/gtx/norm.hpp"
 
+#include <array>
 #include <random>
 
 namespace OpenGL
 {
+	struct Vert
+	{
+		glm::vec3 pos;
+		glm::vec2 tex;
+	};
+	constexpr std::array<Vert, 4> vertices = {
+		Vert{glm::vec3( 1.0f,  1.0f, 0.0f), glm::vec2(1.0f, 0.0f)}, // top right
+		Vert{glm::vec3( 1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // bottom right
+		Vert{glm::vec3(-1.0f,  1.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // top left
+		Vert{glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // bottom left
+	};
+	constexpr std::array<GLuint, 6> indices = {
+		0, 1, 2, // first triangle
+		2, 3, 1  // second triangle
+	};
+
+	struct Particle
+	{
+		glm::vec4 position;
+		glm::vec4 velocity;
+	};
+	struct Particles
+	{
+		GLuint number_of_particles;
+		std::vector<Particle> particles;
+	};
+	using CountType                                    = decltype(Particles::number_of_particles);
+	constexpr GLsizeiptr offset_to_number_of_particles = static_cast<GLsizeiptr>(offsetof(Particles, number_of_particles));
+	constexpr GLsizeiptr offset_to_particles_array     = static_cast<GLsizeiptr>(offsetof(Particles, particles));
+	constexpr GLsizeiptr particle_position_offset      = static_cast<GLsizeiptr>(offsetof(Particle, position));
+	constexpr GLsizeiptr particle_velocity_offset      = static_cast<GLsizeiptr>(offsetof(Particle, velocity));
+	constexpr GLsizeiptr particle_stride               = sizeof(Particle);
+
+
 	ParticleRenderer::ParticleRenderer()
 		: m_particle_shader{"particle"}
 		, m_quad_VAO{}
@@ -17,17 +53,15 @@ namespace OpenGL
 		, m_quad_EBO{{OpenGL::BufferStorageFlag::DynamicStorageBit}} // TODO: Can we use non-dynamic storage for this?
 		, m_particle_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
 	{
-		// Prepare the quad VAO for rendering.
-		m_quad_VBO.upload_data(quad_vertices);
-		m_quad_EBO.upload_data(quad_indices);
-
 		constexpr GLuint vertex_buffer_binding_point = 0;
-		m_quad_VAO.set_vertex_attrib_pointers(PrimitiveMode::Triangles, {
-			VertexAttributeMeta{m_particle_shader.get_attribute_index("VertexPosition"), 3, BufferDataType::Float, 0, vertex_buffer_binding_point, false},
-			VertexAttributeMeta{m_particle_shader.get_attribute_index("VertexTexCoord"), 2, BufferDataType::Float, 3 * sizeof(float), vertex_buffer_binding_point, false}
-		});
-		m_quad_VAO.attach_buffer(m_quad_VBO, 0, vertex_buffer_binding_point);
+		m_quad_VBO.upload_data(vertices);
+		m_quad_EBO.upload_data(indices);
+		m_quad_VAO.attach_buffer(m_quad_VBO, 0, vertex_buffer_binding_point, sizeof(Vert));
 		m_quad_VAO.attach_element_buffer(m_quad_EBO);
+		m_quad_VAO.set_vertex_attrib_pointers(PrimitiveMode::Triangles, {{
+				VertexAttributeMeta{m_particle_shader.get_attribute_index("VertexPosition"), 3, BufferDataType::Float, offsetof(Vert, pos), vertex_buffer_binding_point, false},
+				VertexAttributeMeta{m_particle_shader.get_attribute_index("VertexTexCoord"), 2, BufferDataType::Float, offsetof(Vert, tex), vertex_buffer_binding_point, false}
+			}});
 	}
 
 	void ParticleRenderer::update(const DeltaTime& p_delta_time, System::Scene& p_scene, const glm::vec3& p_camera_position, const Buffer& p_view_properties, const FBO& p_target_FBO)
@@ -72,6 +106,7 @@ namespace OpenGL
 					}
 				}
 			}
+
 			{// Update particle lifetimes and positions.
 				// When the lifetime of a particle is below zero, remove it from the vector.
 				// Otherwise, integrate its position by the velocity.
@@ -88,6 +123,7 @@ namespace OpenGL
 					}
 				}
 			}
+
 			if (p_emitter.sort_by_distance_to_camera)
 			{
 				const auto camera_position = glm::vec4(p_camera_position, 0.f);
@@ -101,45 +137,36 @@ namespace OpenGL
 			}
 
 			{// Upload the particle data to the SSBO in particle_shader
-				// TODO: set these by querying the SSBO using GL introspection.
-				GLsizeiptr particle_count_offset  = 0;
-				GLint particle_count_size         = 16; // Size of the uint number_of_particles variable.
-				GLint particle_array_start_offset = 16; // Starts after number_of_particles + padding.
-				GLint particle_position_offset    = 0;  // Offset from the start of an index to the position var.
-				GLint particle_velocity_offset    = 16; // Offset from the start of an index to the velocity var.
-				GLintptr particle_stride          = 32; // Size of one particle
+				// Ensure the p_emitter.particles vector fits inside GLSizei
+				ASSERT_THROW(p_emitter.particles.size() <= std::numeric_limits<GLsizei>::max(), "ParticleEmitter particle count too large for draw_elements_instanced");
 
-				auto particle_count = p_emitter.particles.size();
-				const GLsizeiptr required_size = particle_count_size + particle_count * particle_stride;
+				auto particle_count = static_cast<CountType>(p_emitter.particles.size());
+				const GLsizeiptr required_size = offset_to_particles_array + (particle_count * particle_stride);
 
 				// Resize the buffer to accomodate at least the directional_light_count
 				if (required_size > m_particle_buffer.size())
 				{
 					LOG("[OPENGL][PARTICLE RENDERER] ParticleEmitter particle count changed ({}), resized the particles buffer to {}B", particle_count, required_size);
-					auto grow_size = required_size - m_particle_buffer.size();
+					m_particle_buffer = Buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
 					m_particle_buffer.resize(required_size);
-
-					if (particle_count_offset > particle_array_start_offset)
-					{ // The var is after the variable sized array, update its offset by the growth of the variable-sized-array.
-						particle_count_offset += grow_size;
-					}
 				}
 
-				// Set the count
-				auto uint_particle_count = static_cast<unsigned int>(particle_count);
-				m_particle_buffer.buffer_sub_data(particle_count_offset, uint_particle_count);
-
+				// Write the particle data to the buffer
+				m_particle_buffer.buffer_sub_data(offset_to_number_of_particles, particle_count);
 				for (size_t i = 0; i < p_emitter.particles.size(); i++)
 				{
-					m_particle_buffer.buffer_sub_data(particle_array_start_offset + particle_position_offset + (particle_stride * i), p_emitter.particles[i].position);
-					m_particle_buffer.buffer_sub_data(particle_array_start_offset + particle_velocity_offset + (particle_stride * i), p_emitter.particles[i].velocity);
+					m_particle_buffer.buffer_sub_data(offset_to_particles_array + particle_position_offset + (particle_stride * i), p_emitter.particles[i].position);
+					m_particle_buffer.buffer_sub_data(offset_to_particles_array + particle_velocity_offset + (particle_stride * i), p_emitter.particles[i].velocity);
 				}
 			}
-			{ // Draw the particles
-				// Ensure the p_emitter.particles vector fits inside GLSizei
-				ASSERT_THROW(p_emitter.particles.size() <= std::numeric_limits<GLsizei>::max(), "ParticleEmitter particle count too large for draw_elements_instanced");
 
+			{ // Draw the particles
 				DrawCall dc;
+				dc.m_cull_face_enabled  = false;
+				dc.m_blending_enabled   = true;
+				// Additive blending.
+				dc.m_source_factor      = BlendFactorType::SourceAlpha;
+				dc.m_destination_factor = BlendFactorType::One;
 				dc.set_texture("diffuse", p_emitter.diffuse->m_GL_texture);
 				dc.set_SSBO("ParticlesBuffer", m_particle_buffer);
 				dc.set_UBO("ViewProperties", p_view_properties);

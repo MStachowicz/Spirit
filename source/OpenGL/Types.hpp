@@ -88,6 +88,7 @@ namespace OpenGL
 		GLsizeiptr size() const { return m_size; }
 		GLsizei stride()  const { return m_stride; }
 		GLsizei count()   const { return m_count; }
+		bool is_immutable() const;
 	};
 	// Meta struct to hold information about a vertex attribute.
 	// Every attribute in a VAO must have a corresponding VertexAttributeMeta which describes how and where to interpret the data.
@@ -127,7 +128,8 @@ namespace OpenGL
 		//@param p_vertex_buffer The vertex buffer object (VBO) to attach to the VAO for reading vertex attribute data.
 		//@param p_vertex_buffer_offset The offset in bytes from the start of the p_vertex_buffer to the start of the vertex data.
 		//@param p_vertex_buffer_binding_point The vertex buffer binding point of the VAO to bind the buffer to.
-		void attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point);
+		//@param p_stride The stride in bytes between consecutive vertices in the buffer.
+		void attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point, GLsizei p_stride);
 		// Binds p_element_buffer to the VAO. Does not modify the global GL state.
 		//@param p_element_buffer The element buffer object (EBO) to attach to the VAO for reading index data of the attached vertex_buffer.
 		void attach_element_buffer(Buffer& p_element_buffer);
