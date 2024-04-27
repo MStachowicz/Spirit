@@ -27,7 +27,7 @@ namespace Platform
 		, m_position_windowed{0, get_window_title_bar_height()} // Offset starting position by height of title bar.
 		, m_fullscreen{false}
 		, m_aspect_ratio{m_fullscreen ? static_cast<float>(m_size_fullscreen.x) / static_cast<float>(m_size_fullscreen.y) : static_cast<float>(m_size_windowed.x) / static_cast<float>(m_size_windowed.y)}
-		, m_VSync{false}
+		, m_VSync{true}
 		, m_close_requested{false}
 		, m_handle{nullptr}
 		, m_input{p_input_state}
