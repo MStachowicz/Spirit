@@ -61,8 +61,11 @@ namespace OpenGL
 		glCullFace(convert(cull_face_type));
 		glFrontFace(convert(front_face_orientation));
 		glPolygonMode(GL_FRONT_AND_BACK, convert(polygon_mode));
-		//glClearColor(clear_colour[0], clear_colour[1], clear_colour[2], clear_colour[3]);
 		glViewport(viewport_position.x, viewport_position.y, viewport_size.x, viewport_size.y);
+
+		glUseProgram(current_bound_shader_program);
+		glBindVertexArray(current_bound_VAO);
+		glBindFramebuffer(GL_FRAMEBUFFER, current_bound_FBO);
 	}
 	void State::bind_VAO(GLHandle p_VAO)
 	{

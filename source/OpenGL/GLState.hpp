@@ -379,8 +379,6 @@ namespace OpenGL
 		std::vector<std::optional<GLHandle>> current_bound_texture; // Per binding point the current bound texture unit.
 
 	public:
-		State();
-
 		void bind_VAO(GLHandle p_VAO);
 		void unbind_VAO();
 
@@ -444,14 +442,21 @@ namespace OpenGL
 		// p_polygon_mode: Specifies how polygons will be rasterized.
 		// Affects only the final rasterization of polygons - a polygon's vertices are lit and the polygon is clipped/culled before these modes are applied.
 		void set_polygon_mode(PolygonMode p_polygon_mode);
+
+
+		State(State const&)          = delete;
+		void operator=(State const&) = delete;
+		static State& Get()
+		{
+			// State accessor allows us to delay instantiation of the state until the
+			// OpenGL context is initialised in Core::initialise_OpenGL.
+			static State instance;
+			return instance;
+		}
+
+	private:
+		State(); // Private constructor to prevent instantiation outside Get().
 	};
-	inline static State& Get_State()
-	{
-		// State accessor allows us to delay instantiation of the state until the
-		// OpenGL context is initialised in Core::initialise_OpenGL.
-		static State instance;
-		return instance;
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

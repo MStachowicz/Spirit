@@ -77,30 +77,30 @@ namespace OpenGL
 
 	void DrawCall::pre_draw_call(Shader& p_shader, const VAO& p_VAO, const GLHandle& p_FBO_handle, const glm::uvec2& p_resolution) const
 	{
-		Get_State().bind_FBO(p_FBO_handle);
-		Get_State().set_viewport(0, 0, p_resolution.x, p_resolution.y);
+		State::Get().bind_FBO(p_FBO_handle);
+		State::Get().set_viewport(0, 0, p_resolution.x, p_resolution.y);
 
-		Get_State().set_depth_write(m_write_to_depth_buffer);
-		Get_State().set_depth_test(m_depth_test_enabled);
-		Get_State().set_depth_test_type(m_depth_test_type);
+		State::Get().set_depth_write(m_write_to_depth_buffer);
+		State::Get().set_depth_test(m_depth_test_enabled);
+		State::Get().set_depth_test_type(m_depth_test_type);
 
-		Get_State().set_polygon_offset(m_polygon_offset_enabled);
+		State::Get().set_polygon_offset(m_polygon_offset_enabled);
 		if (m_polygon_offset_enabled)
-			Get_State().set_polygon_offset_factor(m_polygon_offset_factor, m_polygon_offset_units);
+			State::Get().set_polygon_offset_factor(m_polygon_offset_factor, m_polygon_offset_units);
 
-		Get_State().set_blending(m_blending_enabled);
+		State::Get().set_blending(m_blending_enabled);
 		if (m_blending_enabled)
-			Get_State().set_blend_func(m_source_factor, m_destination_factor);
+			State::Get().set_blend_func(m_source_factor, m_destination_factor);
 
-		Get_State().set_cull_face(m_cull_face_enabled);
+		State::Get().set_cull_face(m_cull_face_enabled);
 		if (m_cull_face_enabled)
-			Get_State().set_cull_face_type(m_cull_face_type);
+			State::Get().set_cull_face_type(m_cull_face_type);
 
-		Get_State().set_front_face_orientation(m_front_face_orientation);
-		Get_State().set_polygon_mode(m_polygon_mode);
+		State::Get().set_front_face_orientation(m_front_face_orientation);
+		State::Get().set_polygon_mode(m_polygon_mode);
 
-		Get_State().use_program(p_shader.m_handle);
-		Get_State().bind_VAO(p_VAO.m_handle);
+		State::Get().use_program(p_shader.m_handle);
+		State::Get().bind_VAO(p_VAO.m_handle);
 
 		for (GLuint i = 0; i < m_uniform_count; ++i)
 			std::visit([&](auto&& arg) { p_shader.set_uniform(m_uniforms[i].m_identifier, arg); }, m_uniforms[i].m_data);
@@ -110,19 +110,19 @@ namespace OpenGL
 			// Set uniform sampler2D to the texture unit index.
 			// Then bind the texture to the same texture unit.
 			p_shader.bind_sampler_2D(m_textures[i].m_identifier, i);
-			Get_State().bind_texture_unit(i, m_textures[i].m_handle);
+			State::Get().bind_texture_unit(i, m_textures[i].m_handle);
 		}
 		for (GLuint i = 0; i < m_SSBO_count; ++i)
 		{
 			// Bind the Shader storage block of the shader and the SSBO to the same binding point.
 			p_shader.bind_shader_storage_block(m_SSBOs[i].m_identifier, i);
-			Get_State().bind_shader_storage_buffer(i, m_SSBOs[i].m_handle, m_SSBOs[i].m_offset, m_SSBOs[i].m_size);
+			State::Get().bind_shader_storage_buffer(i, m_SSBOs[i].m_handle, m_SSBOs[i].m_offset, m_SSBOs[i].m_size);
 		}
 		for (GLuint i = 0; i < m_UBO_count; ++i)
 		{
 			// Bind the Uniform block of the shader and the UBO to the same binding point.
 			p_shader.bind_uniform_block(m_UBOs[i].m_identifier, i);
-			Get_State().bind_uniform_buffer(i, m_UBOs[i].m_handle, m_UBOs[i].m_offset, m_UBOs[i].m_size);
+			State::Get().bind_uniform_buffer(i, m_UBOs[i].m_handle, m_UBOs[i].m_offset, m_UBOs[i].m_size);
 		}
 	}
 

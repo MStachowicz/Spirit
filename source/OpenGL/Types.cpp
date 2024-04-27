@@ -447,7 +447,7 @@ namespace OpenGL
 		{
 			constexpr GLfloat depth   = 1.0f; // Farthest depth value, range [0, 1]
 			constexpr GLint stencil   = 0;
-			Get_State().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
+			State::Get().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
 			glClearNamedFramebufferfi(m_handle, GL_DEPTH_STENCIL, 0, depth, stencil);
 		}
 		else
@@ -455,7 +455,7 @@ namespace OpenGL
 			if (m_depth_attachment)
 			{
 				constexpr GLfloat depth   = 1.0f; // Farthest depth value, range [0, 1]
-				Get_State().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
+				State::Get().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
 				glClearNamedFramebufferfv(m_handle, GL_DEPTH, 0, &depth);
 			}
 			if (m_stencil_attachment)
@@ -467,7 +467,7 @@ namespace OpenGL
 	}
 	void FBO::clear_default_framebuffer(const glm::vec4& p_clear_colour)
 	{
-		Get_State().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
+		State::Get().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
 		constexpr GLint drawbuffer    = 0;
 		constexpr GLfloat clear_depth = 1.0f; // Clear depth to farthest (1.0)
 		constexpr GLint clear_stencil = 0;    // Clear stencil to 0
