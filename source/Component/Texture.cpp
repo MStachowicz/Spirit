@@ -19,18 +19,29 @@ namespace Data
 			default: throw std::runtime_error("Invalid number of channels for texture format.");
 		}
 	}
+	OpenGL::TextureInternalFormat internal_format_from_channels(const uint8_t p_channels)
+	{
+		switch (p_channels)
+		{
+			case 1: return OpenGL::TextureInternalFormat::R8;
+			case 2: return OpenGL::TextureInternalFormat::RG8;
+			case 3: return OpenGL::TextureInternalFormat::RGB8;
+			case 4: return OpenGL::TextureInternalFormat::RGBA8;
+			default: throw std::runtime_error("Invalid number of channels for texture internal format.");
+		}
+	}
 
 	Texture::Texture(const std::filesystem::path& p_filepath) noexcept
 		: m_image_ref{Utility::File::s_image_files.get_or_create([&p_filepath](const Utility::Image& p_image){ return p_image.m_filepath == p_filepath; }, p_filepath)}
 		, m_GL_texture{
-		                   m_image_ref->resolution(),
-		                   OpenGL::TextureMagFunc::Linear,
-		                   OpenGL::WrappingMode::Repeat,
-		                   OpenGL::TextureInternalFormat::RGB32F,
-		                   format_from_channels(m_image_ref->m_number_of_channels),
-		                   OpenGL::TextureDataType::UNSIGNED_BYTE,
-		                   true,
-		                   m_image_ref->get_data()}
+		                m_image_ref->resolution(),
+		                OpenGL::TextureMagFunc::Linear,
+		                OpenGL::WrappingMode::Repeat,
+		                internal_format_from_channels(m_image_ref->m_number_of_channels),
+		                format_from_channels(m_image_ref->m_number_of_channels),
+		                OpenGL::TextureDataType::UNSIGNED_BYTE,
+		                true,
+		                m_image_ref->get_data()}
 	{
 		LOG("Data::Texture '{}' loaded", m_image_ref->m_filepath.string());
 	}
