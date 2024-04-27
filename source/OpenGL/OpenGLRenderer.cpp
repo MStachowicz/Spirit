@@ -179,12 +179,7 @@ namespace OpenGL
 	{
 		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_screen_framebuffer);
 
-		// Draw the colour output to the from m_screen_framebuffer texture to the default FBO
-		// Unbind after completing draw to ensure all subsequent actions apply to the default FBO and not mScreenFrameBuffer.
-		// Disable depth testing to not cull the screen quad the screen texture will be applied onto.
-		auto clear_colour = Platform::Core::s_theme.background;
-		clear_colour.a    = 1.f;
-		FBO::clear_default_framebuffer(clear_colour);
+		// Draw the colour output from m_screen_framebuffer colour texture to the default FBO as a fullscreen quad.
 
 		DrawCall dc;
 		dc.m_depth_test_enabled    = false;
