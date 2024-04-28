@@ -5,32 +5,27 @@
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
 
 //using GLboolean  = unsigned char; // Our wrapper replaces GLboolean with bool.
-using GLbyte   = signed char;
-using GLubyte  = unsigned char;
-using GLshort  = signed short;
-using GLushort = unsigned short;
-using GLint    = int;
-using GLuint   = unsigned int;
-using GLenum   = unsigned int;   // Our wrapper replaces GLenum with strongly typed enums. (except for texture setup)
-using GLfixed  = int32_t;
-using GLfloat  = float;
-using GLhalf   = unsigned short;
-using GLdouble = double;
-using GLsizei  = int;
-using GLHandle = GLuint; // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
-
-#if defined(_WIN64)
-using GLsizeiptr = signed long long int;
-using GLintptr   = signed long long int;
-#else
-using GLsizeiptr = signed long int;
-using GLintptr   = signed long int;
-#endif
+using GLbyte     = signed char;
+using GLubyte    = unsigned char;
+using GLshort    = signed short;
+using GLushort   = unsigned short;
+using GLint      = int;
+using GLuint     = unsigned int;
+using GLHandle   = GLuint;       // A GLHandle is an ID used by OpenGL to point to memory owned by this OpenGL context on the GPU.
+using GLenum     = unsigned int; // Our wrapper replaces GLenum with strongly typed enums. (except for texture setup)
+using GLfixed    = int32_t;
+using GLfloat    = float;
+using GLhalf     = unsigned short;
+using GLdouble   = double;
+using GLsizei    = int;
+using GLsizeiptr = std::ptrdiff_t;
+using GLintptr   = std::ptrdiff_t;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// STRONGLY TYPED ENUM WRAPPERS

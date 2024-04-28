@@ -241,6 +241,7 @@ namespace OpenGL
 	}
 	void Shader::set_uniform(const char* p_identifier, const glm::vec4& p_value) const
 	{
+
 		auto location = get_uniform_variable(p_identifier).m_location;
 		glUniform4fv(location, 1, glm::value_ptr(p_value));
 	}

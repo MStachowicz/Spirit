@@ -66,19 +66,26 @@ namespace OpenGL
 		template<typename T>
 		void buffer_sub_data(GLintptr p_offset, const T& p_data)
 		{
+			// assert T is not a pointer or reference type.
+			static_assert(!std::is_pointer_v<T>, "T must not be a pointer type.");
+			static_assert(!std::is_reference_v<T>, "T must not be a reference type.");
+			static_assert(std::is_standard_layout_v<T>, "T must be a standard layout type.");
+			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(T)), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
+
 			named_buffer_sub_data(m_handle, p_offset, sizeof(T), &p_data);
 		}
 		// Mat4 specialisation of buffer_sub_data
 		void buffer_sub_data(GLintptr p_offset, const glm::mat4& p_data)
 		{
+			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(glm::mat4)), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
 			named_buffer_sub_data(m_handle, p_offset, sizeof(glm::mat4), &p_data[0][0]);
 		}
 		// Bool specialisation of buffer_sub_data
 		void buffer_sub_data(GLintptr p_offset, bool p_data)
 		{
 			// GLSL bools are 4 bytes in size.
-			int gl_bool = p_data;
-			named_buffer_sub_data(m_handle, p_offset, sizeof(int), &gl_bool);
+			GLint gl_bool = p_data;
+			buffer_sub_data(p_offset, gl_bool);
 		}
 
 		// Resizes the buffer object's data store. All existing data is lost.

@@ -73,7 +73,7 @@ namespace System
 				{
 					if (p_camera.m_primary)
 					{
-						m_view_information.m_view_position = p_transform.m_position;
+						m_view_information.m_view_position = {p_transform.m_position, 1.f};
 						m_view_information.m_view          = p_camera.view(p_transform.m_position);// glm::lookAt(p_transform.m_position, p_transform.m_position + p_transform.m_direction, camera_up);
 						m_view_information.m_projection    = glm::perspective(glm::radians(p_camera.m_FOV), aspect_ratio, p_camera.m_near, p_camera.m_far);
 						return;

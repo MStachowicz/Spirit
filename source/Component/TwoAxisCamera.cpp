@@ -61,7 +61,7 @@ namespace Component
 	ViewInformation TwoAxisCamera::view_information(const float& p_aspect_ratio) const
 	{
 		ViewInformation view_info;
-		view_info.m_view_position = position();
+		view_info.m_view_position = {position(), 1.f};
 		view_info.m_view          = view();
 
 		if (m_is_orthographic)

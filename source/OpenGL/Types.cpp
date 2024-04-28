@@ -37,7 +37,7 @@ namespace OpenGL
 				glDeleteBuffers(1, &m_handle);
 
 			// Copy the data pointer from the source object.
-			m_handle   = std::exchange(p_other.m_handle, 0);
+			m_handle = std::exchange(p_other.m_handle, 0);
 			m_size   = std::exchange(p_other.m_size, 0);
 			m_stride = std::exchange(p_other.m_stride, 0);
 			m_flags  = p_other.m_flags;

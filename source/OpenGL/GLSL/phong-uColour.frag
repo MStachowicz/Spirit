@@ -1,8 +1,6 @@
 #version 460 core
 
-uniform vec3 view_position;
 uniform float shininess;
-
 uniform sampler2D shadow_map;
 uniform float PCF_bias;
 uniform vec4 uColour;
@@ -73,6 +71,7 @@ in VS_OUT {
 	vec3 position;
 	vec3 normal;
 	vec4 position_light_space;
+	vec4 camera_position;
 } fs_in;
 out vec4 Colour;
 
@@ -81,7 +80,7 @@ void main()
 	Colour = vec4(0.0, 0.0, 0.0, 1.0);
 
 	vec3 frag_normal    = normalize(fs_in.normal);
-	vec3 view_direction = normalize(view_position - fs_in.position);
+	vec3 view_direction = normalize(vec3(fs_in.camera_position) - fs_in.position);
 
 	for (uint i = 0; i < number_of_point_lights; i++)
 	{

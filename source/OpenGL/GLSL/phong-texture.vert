@@ -11,6 +11,7 @@ layout(shared) uniform ViewProperties
 {
 	mat4 view;
 	mat4 projection;
+	vec4 camera_position; // w component unused
 } viewProperties;
 
 out VS_OUT {
@@ -18,6 +19,7 @@ out VS_OUT {
 	vec3 normal;
 	vec2 tex_coord;
 	vec4 position_light_space;
+	vec4 camera_position;
 } vs_out;
 
 void main()
@@ -26,5 +28,6 @@ void main()
 	vs_out.normal               = mat3(transpose(inverse(model))) * VertexNormal;
 	vs_out.tex_coord            = VertexTexCoord;
 	vs_out.position_light_space = light_proj_view * vec4(vs_out.position, 1.0);
+	vs_out.camera_position      = viewProperties.camera_position;
 	gl_Position                 = viewProperties.projection * viewProperties.view * model * vec4(VertexPosition, 1.0);
 }

@@ -7,6 +7,7 @@ layout(shared) uniform ViewProperties
 {
 	mat4 view;
 	mat4 projection;
+	vec4 camera_position; // w component unused
 } viewProperties;
 
 out vec4 FragmentColour;

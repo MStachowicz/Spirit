@@ -48,18 +48,37 @@ namespace OpenGL
 		, m_screen_quad{make_screen_quad_mesh()}
 		, m_post_processing_options{}
 	{
-		m_view_properties_buffer.resize(sizeof(glm::mat4) * 2);
-		m_view_properties_buffer.buffer_sub_data(0, m_scene_system.get_current_scene_view_info().m_view);
-		m_view_properties_buffer.buffer_sub_data(sizeof(glm::mat4), m_scene_system.get_current_scene_view_info().m_projection);
+		#ifdef Z_DEBUG // Ensure the uniform block layout matches the Component::ViewInformation struct layout for direct memory copy.
+		{
+			auto view_properties_block = m_colour_shader.get_uniform_block("ViewProperties");
+			ASSERT(view_properties_block.m_data_size == sizeof(Component::ViewInformation), "ViewProperties block size mismatch. Has the shader or the Component::ViewInformation struct changed?");
+			ASSERT(view_properties_block.m_variables.size() == 3, "ViewProperties block variable count mismatch. Has the shader or the Component::ViewInformation struct changed?");
+
+			ASSERT(view_properties_block.m_variables[0].m_identifier == "ViewProperties.view"
+				&& view_properties_block.m_variables[0].m_offset     == offsetof(Component::ViewInformation, m_view)
+				&& view_properties_block.m_variables[0].m_type       == ShaderDataType::Mat4
+				, "ViewProperties.view block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
+
+			ASSERT(view_properties_block.m_variables[1].m_identifier == "ViewProperties.projection"
+				&& view_properties_block.m_variables[1].m_offset     == offsetof(Component::ViewInformation, m_projection)
+				&& view_properties_block.m_variables[1].m_type       == ShaderDataType::Mat4
+				, "ViewProperties.projection block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
+
+			ASSERT(view_properties_block.m_variables[2].m_identifier == "ViewProperties.camera_position"
+				&& view_properties_block.m_variables[2].m_offset     == offsetof(Component::ViewInformation, m_view_position)
+				&& view_properties_block.m_variables[2].m_type       == ShaderDataType::Vec4
+				, "ViewProperties.view_position block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
+		}
+		#endif
+		m_view_properties_buffer.resize(sizeof(Component::ViewInformation));
+		m_view_properties_buffer.buffer_sub_data(0, m_scene_system.get_current_scene_view_info());
 
 		LOG("[OPENGL] Constructed new OpenGLRenderer instance");
 	}
 
 	void OpenGLRenderer::start_frame()
 	{
-		// Set global shader uniforms.
-		m_view_properties_buffer.buffer_sub_data(0, m_scene_system.get_current_scene_view_info().m_view);
-		m_view_properties_buffer.buffer_sub_data(sizeof(glm::mat4), m_scene_system.get_current_scene_view_info().m_projection);
+		m_view_properties_buffer.buffer_sub_data(0, m_scene_system.get_current_scene_view_info());
 
 		m_shadow_mapper.shadow_pass(m_scene_system.get_current_scene());
 
@@ -106,7 +125,6 @@ namespace OpenGL
 					DrawCall dc;
 					dc.set_uniform("model", p_transform.get_model());
 					dc.set_uniform("light_proj_view", get_first_light_proj_view());
-					dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
 					dc.set_uniform("shininess", texComponent.m_shininess);
 					dc.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
 
@@ -155,7 +173,6 @@ namespace OpenGL
 				DrawCall dc;
 				dc.set_uniform("model", glm::translate(glm::identity<glm::mat4>(), p_terrain.m_position));
 				dc.set_uniform("light_proj_view", get_first_light_proj_view());
-				dc.set_uniform("view_position", m_scene_system.get_current_scene_view_info().m_view_position);
 				dc.set_uniform("shininess", 64.f);
 				dc.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
 

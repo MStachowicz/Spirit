@@ -140,7 +140,7 @@ namespace Component
 	ViewInformation FirstPersonCamera::view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const
 	{
 		ViewInformation view_info;
-		view_info.m_view_position = p_eye_position;
+		view_info.m_view_position = {p_eye_position, 1.f};
 		view_info.m_view          = view(p_eye_position);
 		view_info.m_projection    = projection(p_aspect_ratio);
 		return view_info;
