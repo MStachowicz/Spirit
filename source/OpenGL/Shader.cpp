@@ -213,6 +213,14 @@ namespace OpenGL
 		}
 		ASSERT(m_variables.size() == (size_t)active_variables_count, "Failed to retrieve all the UniformBlockVariables of block '{}'", m_identifier);
 	}
+	const Variable& InterfaceBlock::get_variable(const char* p_identifier) const
+	{
+		auto it = std::find_if(m_variables.begin(), m_variables.end(), [p_identifier](const auto& variable)
+			{ return variable.m_identifier == p_identifier; });
+
+		ASSERT(it != m_variables.end(), "Variable '{}' not found in InterfaceBlock '{}'", p_identifier, m_identifier);
+		return *it;
+	}
 
 	void Shader::set_uniform(const char* p_identifier, bool p_value) const
 	{
@@ -318,15 +326,6 @@ namespace OpenGL
 		ASSERT_THROW(it != m_uniform_blocks.end(), "UniformBlock '{}' not found in shader '{}'", p_identifier, m_name);
 		return *it;
 	}
-	const Variable& Shader::get_uniform_block_variable(const char* p_block_identifier, const char* p_variable_identifier) const
-	{
-		const InterfaceBlock& block = get_uniform_block(p_block_identifier);
-		auto it = std::find_if(block.m_variables.begin(), block.m_variables.end(), [p_variable_identifier](const auto& variable)
-			{ return variable.m_identifier == p_variable_identifier; });
-
-		ASSERT_THROW(it != block.m_variables.end(), "UniformBlockVariable '{}' not found in UniformBlock '{}' in shader '{}'", p_variable_identifier, p_block_identifier, m_name);
-		return *it;
-	}
 	const InterfaceBlock& Shader::get_shader_storage_block(const char* p_identifier) const
 	{
 		auto it = std::find_if(m_shader_storage_blocks.begin(), m_shader_storage_blocks.end(), [p_identifier](const auto& block)
@@ -343,15 +342,4 @@ namespace OpenGL
 		ASSERT_THROW(it != m_shader_storage_blocks.end(), "ShaderStorageBlock '{}' not found in shader '{}'", p_identifier, m_name);
 		return *it;
 	}
-	const Variable& Shader::get_shader_storage_block_variable(const char* p_block_identifier, const char* p_variable_identifier) const
-	{
-		const InterfaceBlock& block = get_shader_storage_block(p_block_identifier);
-		auto it = std::find_if(block.m_variables.begin(), block.m_variables.end(), [p_variable_identifier](const auto& variable)
-			{ return variable.m_identifier == p_variable_identifier; });
-
-		ASSERT_THROW(it != block.m_variables.end(), "ShaderStorageBlockVariable '{}' not found in ShaderStorageBlock '{}' in shader '{}'", p_variable_identifier, p_block_identifier, m_name);
-		return *it;
-	}
-
-
 } // namespace OpenGL

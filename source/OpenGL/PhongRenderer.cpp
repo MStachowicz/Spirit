@@ -47,13 +47,6 @@ namespace OpenGL
 		, m_spot_light_diffuse_offset{0}
 		, m_spot_light_specular_offset{0}
 	{
-		auto get_variable = [](const std::vector<Variable>& p_variables, const char* p_identifier) -> const Variable&
-		{
-			auto it = std::find_if(p_variables.begin(), p_variables.end(), [p_identifier](const auto& var)
-			{ return var.m_identifier == p_identifier; });
-			ASSERT_THROW(it != p_variables.end(), "[OPENGL][PHONG] Could not find the variable in the variables.");
-			return *it;
-		};
 		auto get_block_array_stride = [](const InterfaceBlock& p_block, const char* p_block_array_identifier)
 		{
 			// All block array members have the same stride, so we can just query the first one.
@@ -80,23 +73,23 @@ namespace OpenGL
 
 				ASSERT(directional_light_vars.size() == 5, "[OPENGL][PHONG] Expected 5 variables in the DirectionalLight storage block. If shader changed, update this code!");
 
-				const auto& directional_light_count_var = get_variable(directional_light_vars, "number_of_directional_lights");
+				const auto& directional_light_count_var = directional_light_block.get_variable("number_of_directional_lights");
 				m_directional_light_count_offset = directional_light_count_var.m_offset;
 				ASSERT(directional_light_count_var.m_type == ShaderDataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_directional_lights to be a uint.");
 
-				const auto& directional_light_direction_var = get_variable(directional_light_vars, "directional_lights[0].direction");
+				const auto& directional_light_direction_var = directional_light_block.get_variable("directional_lights[0].direction");
 				m_directional_light_direction_offset = directional_light_direction_var.m_offset;
 				ASSERT(directional_light_direction_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].direction to be a vec3.");
 
-				const auto& directional_light_ambient_var = get_variable(directional_light_vars, "directional_lights[0].ambient");
+				const auto& directional_light_ambient_var = directional_light_block.get_variable("directional_lights[0].ambient");
 				m_directional_light_ambient_offset = directional_light_ambient_var.m_offset;
 				ASSERT(directional_light_ambient_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].ambient to be a vec3.");
 
-				const auto& directional_light_diffuse_var = get_variable(directional_light_vars, "directional_lights[0].diffuse");
+				const auto& directional_light_diffuse_var = directional_light_block.get_variable("directional_lights[0].diffuse");
 				m_directional_light_diffuse_offset = directional_light_diffuse_var.m_offset;
 				ASSERT(directional_light_diffuse_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].diffuse to be a vec3.");
 
-				const auto& directional_light_specular_var = get_variable(directional_light_vars, "directional_lights[0].specular");
+				const auto& directional_light_specular_var = directional_light_block.get_variable("directional_lights[0].specular");
 				m_directional_light_specular_offset = directional_light_specular_var.m_offset;
 				ASSERT(directional_light_specular_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected directional_lights[0].specular to be a vec3.");
 			}
@@ -110,35 +103,35 @@ namespace OpenGL
 
 				ASSERT(point_light_vars.size() == 8, "[OPENGL][PHONG] Expected 8 variables in the PointLight storage block. If shader changed, update this code!");
 
-				const auto& point_light_count_var = get_variable(point_light_vars, "number_of_point_lights");
+				const auto& point_light_count_var = point_light_block.get_variable("number_of_point_lights");
 				m_point_light_count_offset = point_light_count_var.m_offset;
 				ASSERT(point_light_count_var.m_type == ShaderDataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_point_lights to be a uint.");
 
-				const auto& point_light_position_var = get_variable(point_light_vars, "point_lights[0].position");
+				const auto& point_light_position_var = point_light_block.get_variable("point_lights[0].position");
 				m_point_light_position_offset = point_light_position_var.m_offset;
 				ASSERT(point_light_position_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].position to be a vec3.");
 
-				const auto& point_light_constant_var = get_variable(point_light_vars, "point_lights[0].constant");
+				const auto& point_light_constant_var = point_light_block.get_variable("point_lights[0].constant");
 				m_point_light_constant_offset = point_light_constant_var.m_offset;
 				ASSERT(point_light_constant_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected point_lights[0].constant to be a float.");
 
-				const auto& point_light_linear_var = get_variable(point_light_vars, "point_lights[0].linear");
+				const auto& point_light_linear_var = point_light_block.get_variable("point_lights[0].linear");
 				m_point_light_linear_offset = point_light_linear_var.m_offset;
 				ASSERT(point_light_linear_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected point_lights[0].linear to be a float.");
 
-				const auto& point_light_quadratic_var = get_variable(point_light_vars, "point_lights[0].quadratic");
+				const auto& point_light_quadratic_var = point_light_block.get_variable("point_lights[0].quadratic");
 				m_point_light_quadratic_offset = point_light_quadratic_var.m_offset;
 				ASSERT(point_light_quadratic_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected point_lights[0].quadratic to be a float.");
 
-				const auto& point_light_ambient_var = get_variable(point_light_vars, "point_lights[0].ambient");
+				const auto& point_light_ambient_var = point_light_block.get_variable("point_lights[0].ambient");
 				m_point_light_ambient_offset = point_light_ambient_var.m_offset;
 				ASSERT(point_light_ambient_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].ambient to be a vec3.");
 
-				const auto& point_light_diffuse_var = get_variable(point_light_vars, "point_lights[0].diffuse");
+				const auto& point_light_diffuse_var = point_light_block.get_variable("point_lights[0].diffuse");
 				m_point_light_diffuse_offset = point_light_diffuse_var.m_offset;
 				ASSERT(point_light_diffuse_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].diffuse to be a vec3.");
 
-				const auto& point_light_specular_var = get_variable(point_light_vars, "point_lights[0].specular");
+				const auto& point_light_specular_var = point_light_block.get_variable("point_lights[0].specular");
 				m_point_light_specular_offset = point_light_specular_var.m_offset;
 				ASSERT(point_light_specular_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected point_lights[0].specular to be a vec3.");
 			}
@@ -152,47 +145,47 @@ namespace OpenGL
 
 				ASSERT(spot_light_vars.size() == 11, "[OPENGL][PHONG] Expected 11 variables in the SpotLight storage block. If shader changed, update this code!");
 
-				const auto& spot_light_count_var = get_variable(spot_light_vars, "number_of_spot_lights");
+				const auto& spot_light_count_var = spot_light_block.get_variable("number_of_spot_lights");
 				m_spot_light_count_offset = spot_light_count_var.m_offset;
 				ASSERT(spot_light_count_var.m_type == ShaderDataType::UnsignedInt, "[OPENGL][PHONG] Expected number_of_spot_lights to be a uint.");
 
-				const auto& spot_light_position_var = get_variable(spot_light_vars, "spot_lights[0].position");
+				const auto& spot_light_position_var = spot_light_block.get_variable("spot_lights[0].position");
 				m_spot_light_position_offset = spot_light_position_var.m_offset;
 				ASSERT(spot_light_position_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].position to be a vec3.");
 
-				const auto& spot_light_direction_var = get_variable(spot_light_vars, "spot_lights[0].direction");
+				const auto& spot_light_direction_var = spot_light_block.get_variable("spot_lights[0].direction");
 				m_spot_light_direction_offset = spot_light_direction_var.m_offset;
 				ASSERT(spot_light_direction_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].direction to be a vec3.");
 
-				const auto& spot_light_cutoff_var = get_variable(spot_light_vars, "spot_lights[0].cutoff");
+				const auto& spot_light_cutoff_var = spot_light_block.get_variable("spot_lights[0].cutoff");
 				m_spot_light_cutoff_offset = spot_light_cutoff_var.m_offset;
 				ASSERT(spot_light_cutoff_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].cutoff to be a float.");
 
-				const auto& spot_light_outer_cutoff_var = get_variable(spot_light_vars, "spot_lights[0].outer_cutoff");
+				const auto& spot_light_outer_cutoff_var = spot_light_block.get_variable("spot_lights[0].outer_cutoff");
 				m_spot_light_outer_cutoff_offset = spot_light_outer_cutoff_var.m_offset;
 				ASSERT(spot_light_outer_cutoff_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].outer_cutoff to be a float.");
 
-				const auto& spot_light_constant_var = get_variable(spot_light_vars, "spot_lights[0].constant");
+				const auto& spot_light_constant_var = spot_light_block.get_variable("spot_lights[0].constant");
 				m_spot_light_constant_offset = spot_light_constant_var.m_offset;
 				ASSERT(spot_light_constant_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].constant to be a float.");
 
-				const auto& spot_light_linear_var = get_variable(spot_light_vars, "spot_lights[0].linear");
+				const auto& spot_light_linear_var = spot_light_block.get_variable("spot_lights[0].linear");
 				m_spot_light_linear_offset = spot_light_linear_var.m_offset;
 				ASSERT(spot_light_linear_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].linear to be a float.");
 
-				const auto& spot_light_quadratic_var = get_variable(spot_light_vars, "spot_lights[0].quadratic");
+				const auto& spot_light_quadratic_var = spot_light_block.get_variable("spot_lights[0].quadratic");
 				m_spot_light_quadratic_offset = spot_light_quadratic_var.m_offset;
 				ASSERT(spot_light_quadratic_var.m_type == ShaderDataType::Float, "[OPENGL][PHONG] Expected spot_lights[0].quadratic to be a float.");
 
-				const auto& spot_light_ambient_var = get_variable(spot_light_vars, "spot_lights[0].ambient");
+				const auto& spot_light_ambient_var = spot_light_block.get_variable("spot_lights[0].ambient");
 				m_spot_light_ambient_offset = spot_light_ambient_var.m_offset;
 				ASSERT(spot_light_ambient_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].ambient to be a vec3.");
 
-				const auto& spot_light_diffuse_var = get_variable(spot_light_vars, "spot_lights[0].diffuse");
+				const auto& spot_light_diffuse_var = spot_light_block.get_variable("spot_lights[0].diffuse");
 				m_spot_light_diffuse_offset = spot_light_diffuse_var.m_offset;
 				ASSERT(spot_light_diffuse_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].diffuse to be a vec3.");
 
-				const auto& spot_light_specular_var = get_variable(spot_light_vars, "spot_lights[0].specular");
+				const auto& spot_light_specular_var = spot_light_block.get_variable("spot_lights[0].specular");
 				m_spot_light_specular_offset = spot_light_specular_var.m_offset;
 				ASSERT(spot_light_specular_var.m_type == ShaderDataType::Vec3, "[OPENGL][PHONG] Expected spot_lights[0].specular to be a vec3.");
 			}

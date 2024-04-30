@@ -54,19 +54,16 @@ namespace OpenGL
 			ASSERT(view_properties_block.m_data_size == sizeof(Component::ViewInformation), "ViewProperties block size mismatch. Has the shader or the Component::ViewInformation struct changed?");
 			ASSERT(view_properties_block.m_variables.size() == 3, "ViewProperties block variable count mismatch. Has the shader or the Component::ViewInformation struct changed?");
 
-			ASSERT(view_properties_block.m_variables[0].m_identifier == "ViewProperties.view"
-				&& view_properties_block.m_variables[0].m_offset     == offsetof(Component::ViewInformation, m_view)
-				&& view_properties_block.m_variables[0].m_type       == ShaderDataType::Mat4
-				, "ViewProperties.view block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
+			ASSERT(view_properties_block.get_variable("ViewProperties.view").m_offset == offsetof(Component::ViewInformation, m_view)
+			    && view_properties_block.get_variable("ViewProperties.view").m_type   == ShaderDataType::Mat4
+			    , "ViewProperties.view block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
 
-			ASSERT(view_properties_block.m_variables[1].m_identifier == "ViewProperties.projection"
-				&& view_properties_block.m_variables[1].m_offset     == offsetof(Component::ViewInformation, m_projection)
-				&& view_properties_block.m_variables[1].m_type       == ShaderDataType::Mat4
+			ASSERT(view_properties_block.get_variable("ViewProperties.projection").m_offset == offsetof(Component::ViewInformation, m_projection)
+			    && view_properties_block.get_variable("ViewProperties.projection").m_type   == ShaderDataType::Mat4
 				, "ViewProperties.projection block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
 
-			ASSERT(view_properties_block.m_variables[2].m_identifier == "ViewProperties.camera_position"
-				&& view_properties_block.m_variables[2].m_offset     == offsetof(Component::ViewInformation, m_view_position)
-				&& view_properties_block.m_variables[2].m_type       == ShaderDataType::Vec4
+			ASSERT(view_properties_block.get_variable("ViewProperties.camera_position").m_offset == offsetof(Component::ViewInformation, m_view_position)
+			    && view_properties_block.get_variable("ViewProperties.camera_position").m_type   == ShaderDataType::Vec4
 				, "ViewProperties.view_position block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
 		}
 		#endif

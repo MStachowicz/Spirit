@@ -56,6 +56,7 @@ namespace OpenGL
 			ShaderStorageBlock // ShaderStorageBlock is used for SSBOs.
 		};
 		InterfaceBlock(GLHandle p_shader_program, GLuint p_block_index, Type p_type);
+		const Variable& get_variable(const char* p_identifier) const;
 
 		std::string m_identifier; // Identifier of the block in m_parent_shader_program.
 		std::vector<Variable> m_variables; // All the variables this block defines.
@@ -104,10 +105,7 @@ namespace OpenGL
 
 		const InterfaceBlock& get_uniform_block(const char* p_identifier) const;
 		InterfaceBlock& get_uniform_block(const char* p_identifier);
-		const Variable& get_uniform_block_variable(const char* p_block_identifier, const char* p_variable_identifier) const;
-
 		const InterfaceBlock& get_shader_storage_block(const char* p_identifier) const;
 		InterfaceBlock& get_shader_storage_block(const char* p_identifier);
-		const Variable& get_shader_storage_block_variable(const char* p_block_identifier, const char* p_variable_identifier) const;
 	};
 } // namespace OpenGL
