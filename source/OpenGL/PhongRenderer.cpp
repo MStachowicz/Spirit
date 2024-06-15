@@ -65,13 +65,12 @@ namespace OpenGL
 		{ // Initialise offsets
 			{ // DirectionalLight
 				const auto& directional_light_block = m_phong_texture.get_shader_storage_block("DirectionalLightsBuffer");
-				const auto& directional_light_vars  = directional_light_block.m_variables;
 
 				m_directional_light_array_stride = get_block_array_stride(directional_light_block, "directional_lights[0]");
 				// Fixed portion of a shader storage block is the GL_BUFFER_DATA_SIZE (total size) minus GL_TOP_LEVEL_ARRAY_STRIDE (size of the variable-sized-array).
 				m_directional_light_fixed_size = directional_light_block.m_data_size - m_directional_light_array_stride;
 
-				ASSERT(directional_light_vars.size() == 5, "[OPENGL][PHONG] Expected 5 variables in the DirectionalLight storage block. If shader changed, update this code!");
+				ASSERT(directional_light_block.m_variables.size() == 5, "[OPENGL][PHONG] Expected 5 variables in the DirectionalLight storage block. If shader changed, update this code!");
 
 				const auto& directional_light_count_var = directional_light_block.get_variable("number_of_directional_lights");
 				m_directional_light_count_offset = directional_light_count_var.m_offset;
@@ -95,13 +94,12 @@ namespace OpenGL
 			}
 			{ // PointLight
 				const auto& point_light_block = m_phong_texture.get_shader_storage_block("PointLightsBuffer");
-				const auto& point_light_vars  = point_light_block.m_variables;
 
 				m_point_light_array_stride = get_block_array_stride(point_light_block, "point_lights[0]");
 				// Fixed portion of a shader storage block is the GL_BUFFER_DATA_SIZE (total size) minus GL_TOP_LEVEL_ARRAY_STRIDE (size of the variable-sized-array).
 				m_point_light_fixed_size = point_light_block.m_data_size - m_point_light_array_stride;
 
-				ASSERT(point_light_vars.size() == 8, "[OPENGL][PHONG] Expected 8 variables in the PointLight storage block. If shader changed, update this code!");
+				ASSERT(point_light_block.m_variables.size() == 8, "[OPENGL][PHONG] Expected 8 variables in the PointLight storage block. If shader changed, update this code!");
 
 				const auto& point_light_count_var = point_light_block.get_variable("number_of_point_lights");
 				m_point_light_count_offset = point_light_count_var.m_offset;
@@ -137,13 +135,12 @@ namespace OpenGL
 			}
 			{ // SpotLight
 				const auto& spot_light_block = m_phong_texture.get_shader_storage_block("SpotLightsBuffer");
-				const auto& spot_light_vars  = spot_light_block.m_variables;
 
 				m_spot_light_array_stride = get_block_array_stride(spot_light_block, "spot_lights[0]");
 				// Fixed portion of a shader storage block is the GL_BUFFER_DATA_SIZE (total size) minus GL_TOP_LEVEL_ARRAY_STRIDE (size of the variable-sized-array).
 				m_spot_light_fixed_size = spot_light_block.m_data_size - m_spot_light_array_stride;
 
-				ASSERT(spot_light_vars.size() == 11, "[OPENGL][PHONG] Expected 11 variables in the SpotLight storage block. If shader changed, update this code!");
+				ASSERT(spot_light_block.m_variables.size() == 11, "[OPENGL][PHONG] Expected 11 variables in the SpotLight storage block. If shader changed, update this code!");
 
 				const auto& spot_light_count_var = spot_light_block.get_variable("number_of_spot_lights");
 				m_spot_light_count_offset = spot_light_count_var.m_offset;
