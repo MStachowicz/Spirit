@@ -80,6 +80,7 @@ namespace OpenGL
 		std::vector<InterfaceBlock> m_uniform_blocks;
 		std::vector<InterfaceBlock> m_shader_storage_blocks;
 		std::vector<Variable> m_uniforms;
+		bool is_compute_shader;
 
 		// Uniform set functions are used only by the DrawCall class hence are private.
 		void set_uniform(const char* p_identifier, bool p_value) const;

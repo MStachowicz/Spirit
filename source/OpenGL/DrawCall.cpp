@@ -144,7 +144,6 @@ namespace OpenGL
 		else
 			draw_arrays_instanced(p_VAO.draw_primitive_mode(), 0, p_VAO.draw_count(), p_instanced_count);
 	}
-
 	void DrawCall::submit_default(Shader& p_shader, const VAO& p_VAO, const glm::uvec2& p_resolution) const
 	{
 		pre_draw_call(p_shader, p_VAO, 0, p_resolution);
@@ -153,5 +152,11 @@ namespace OpenGL
 			draw_elements(p_VAO.draw_primitive_mode(), p_VAO.draw_count());
 		else
 			draw_arrays(p_VAO.draw_primitive_mode(), 0, p_VAO.draw_count());
+	}
+	void DrawCall::submit_compute(Shader& p_shader, GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z) const
+	{
+		ASSERT(p_shader.is_compute_shader, "Submitting a non-compute shader as a compute shader.");
+		State::Get().use_program(p_shader.m_handle);
+		dispatch_compute(p_num_groups_x, p_num_groups_y, p_num_groups_z);
 	}
 } // namespace OpenGL

@@ -353,6 +353,11 @@ namespace OpenGL
 	{
 		glDrawElementsInstanced(convert(p_primitive_mode), p_elements_size, GL_UNSIGNED_INT, 0, p_instance_count);
 	}
+	void dispatch_compute(GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z)
+	{
+		glDispatchCompute(p_num_groups_x, p_num_groups_y, p_num_groups_z);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -748,6 +753,7 @@ namespace OpenGL
 			case ShaderProgramType::Vertex:                                         return GL_VERTEX_SHADER;
 			case ShaderProgramType::Geometry:                                       return GL_GEOMETRY_SHADER;
 			case ShaderProgramType::Fragment:                                       return GL_FRAGMENT_SHADER;
+			case ShaderProgramType::Compute:                                        return GL_COMPUTE_SHADER;
 			default: ASSERT(false, "[OPENGL] Unknown ShaderProgramType requested"); return 0;
 		}
 	}

@@ -118,5 +118,7 @@ namespace OpenGL
 
 		// Submit the drawcall to the GL context using the provided p_shader and p_VAO drawing into the default framebuffer.
 		void submit_default(Shader& p_shader, const VAO& p_VAO, const glm::uvec2& p_resolution) const;
+		// Launch a compute shader p_shader with the provided number of groups.
+		void submit_compute(Shader& p_shader, GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z) const;
 	};
 } // namespace OpenGL

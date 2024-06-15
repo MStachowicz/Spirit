@@ -16,55 +16,94 @@ namespace OpenGL
 		, m_uniform_blocks{}
 		, m_shader_storage_blocks{}
 		, m_uniforms{}
+		, is_compute_shader{false}
 	{
-		const auto shaderPath = Config::GLSL_Shader_Directory / p_name;
+		{// Load the shader from file
+			const auto shader_path = Config::GLSL_Shader_Directory / p_name;
 
-		unsigned int vertexShader;
-		auto vertexShaderPath = shaderPath;
-		vertexShaderPath.replace_extension("vert");
-		ASSERT(Utility::File::exists(vertexShaderPath), "[OPENGL][SHADER] Vertex shader does not exist at path '{}'", vertexShaderPath.string());
-		std::string vertexSource = Utility::File::read_from_file(vertexShaderPath);
-		{
-			vertexShader = create_shader(ShaderProgramType::Vertex);
-			shader_source(vertexShader, vertexSource);
-			compile_shader(vertexShader);
-		}
-
-		unsigned int fragmentShader;
-		{
-			auto fragmentShaderPath = shaderPath;
-			fragmentShaderPath.replace_extension("frag");
-			ASSERT(Utility::File::exists(fragmentShaderPath), "[OPENGL][SHADER] Fragment shader does not exist at path {}", fragmentShaderPath.string());
-			fragmentShader     = create_shader(ShaderProgramType::Fragment);
-			std::string source = Utility::File::read_from_file(fragmentShaderPath);
-			shader_source(fragmentShader, source);
-			compile_shader(fragmentShader);
-		}
-
-		std::optional<unsigned int> geometryShader;
-		{
-			auto geomShaderPath = shaderPath;
-			geomShaderPath.replace_extension("geom");
-			if (Utility::File::exists(shaderPath))
+			std::optional<GLHandle> vert_shader;
 			{
-				geometryShader     = create_shader(ShaderProgramType::Geometry);
-				std::string source = Utility::File::read_from_file(shaderPath);
-				shader_source(geometryShader.value(), source);
-				compile_shader(geometryShader.value());
+				auto vert_shader_path = shader_path;
+				vert_shader_path.replace_extension("vert");
+				if (Utility::File::exists(vert_shader_path))
+				{
+					std::string vert_source = Utility::File::read_from_file(vert_shader_path);
+					vert_shader             = create_shader(ShaderProgramType::Vertex);
+					shader_source(*vert_shader, vert_source);
+					compile_shader(*vert_shader);
+				}
+			}
+
+			std::optional<GLHandle> frag_shader;
+			{
+				auto frag_shader_path = shader_path;
+				frag_shader_path.replace_extension("frag");
+				if (Utility::File::exists(frag_shader_path))
+				{
+					frag_shader             = create_shader(ShaderProgramType::Fragment);
+					std::string frag_source = Utility::File::read_from_file(frag_shader_path);
+					shader_source(*frag_shader, frag_source);
+					compile_shader(*frag_shader);
+				}
+			}
+
+			std::optional<GLHandle> geom_shader;
+			{
+				auto geom_shader_path = shader_path;
+				geom_shader_path.replace_extension("geom");
+				if (Utility::File::exists(geom_shader_path))
+				{
+					geom_shader        = create_shader(ShaderProgramType::Geometry);
+					std::string source = Utility::File::read_from_file(geom_shader_path);
+					shader_source(geom_shader.value(), source);
+					compile_shader(geom_shader.value());
+				}
+			}
+
+			std::optional<GLHandle> compute_shader;
+			{
+				ASSERT_THROW(!vert_shader || !frag_shader || !geom_shader, "Shader '{}' cannot have both a compute shader and a vertex, fragment or geometry shader", p_name);
+
+				is_compute_shader = true;
+				auto compute_path = shader_path;
+				compute_path.replace_extension("comp");
+				if (Utility::File::exists(compute_path))
+				{
+					compute_shader     = create_shader(ShaderProgramType::Compute);
+					std::string source = Utility::File::read_from_file(compute_path);
+					shader_source(compute_shader.value(), source);
+					compile_shader(compute_shader.value());
+				}
+			}
+
+			{
+				m_handle = create_program();
+
+				if (vert_shader)
+					attach_shader(m_handle, *vert_shader);
+				if (frag_shader)
+					attach_shader(m_handle, *frag_shader);
+				if (geom_shader)
+					attach_shader(m_handle, *geom_shader);
+				if (compute_shader)
+					attach_shader(m_handle, *compute_shader);
+
+				link_program(m_handle);
+
+				// Delete the shaders after linking as they're no longer needed, they will be flagged for deletion,
+				// but will not be deleted until they are no longer attached to any shader program object.
+				if (vert_shader)
+					delete_shader(*vert_shader);
+				if (frag_shader)
+					delete_shader(*frag_shader);
+				if (geom_shader)
+					delete_shader(*geom_shader);
+				if (compute_shader)
+					delete_shader(*compute_shader);
 			}
 		}
-		{
-			m_handle = create_program();
-			attach_shader(m_handle, vertexShader);
-			attach_shader(m_handle, fragmentShader);
-			if (geometryShader.has_value())
-				attach_shader(m_handle, geometryShader.value());
 
-			link_program(m_handle);
-		}
-
-		// After we have linked the program we can query the uniform and shader storage blocks.
-		{
+		{// After we have linked the program we can query the uniform and shader storage blocks.
 			{ // Setup loose uniforms (not belonging to the interface blocks or shader storage blocks)
 				const GLint uniform_count = get_uniform_count(m_handle);
 
@@ -91,13 +130,6 @@ namespace OpenGL
 					m_shader_storage_blocks.emplace_back(m_handle, block_index, InterfaceBlock::Type::ShaderStorageBlock);
 			}
 		}
-
-		// Delete the shaders after linking as they're no longer needed, they will be flagged for deletion,
-		// but will not be deleted until they are no longer attached to any shader program object.
-		delete_shader(vertexShader);
-		delete_shader(fragmentShader);
-		if (geometryShader.has_value())
-			delete_shader(geometryShader.value());
 
 		LOG("OpenGL::Shader '{}' loaded given ID: {}", m_name, m_handle);
 	}
@@ -292,6 +324,7 @@ namespace OpenGL
 		glShaderStorageBlockBinding(m_handle, block.m_block_index, p_storage_block_binding);
 		block.m_binding_point = p_storage_block_binding;
 	}
+
 	GLuint Shader::get_attribute_index(const char* attribute_identifier) const
 	{
 		// queries the previously linked program object specified by program for the attribute variable specified by name and returns the index of the

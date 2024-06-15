@@ -225,7 +225,8 @@ namespace OpenGL
 	{
 		Vertex,
 		Geometry,
-		Fragment
+		Fragment,
+		Compute
 	};
 	enum class ShaderDataType : uint8_t
 	{
@@ -504,6 +505,13 @@ namespace OpenGL
 	// draw_elements_instanced behaves identically to draw_elements except that p_instance_count of the set of elements are executed and the value of the internal counter instanceID advances for each iteration.
 	// instanceID is an internal 32-bit integer counter that may be read by a vertex shader as gl_InstanceID.
 	void draw_elements_instanced(PrimitiveMode p_primitive_mode, GLsizei p_elements_size, GLsizei p_instance_count);
+	// Launch one or more compute work groups.
+	// Each work group is processed by the active program object for the compute shader stage.
+	// The individual shader invocations within a work group are executed as a unit, work groups are executed completely independently and in unspecified order.
+	//@param p_num_groups_x The number of work groups to be launched in the X dimension.
+	//@param p_num_groups_y The number of work groups to be launched in the Y dimension.
+	//@param p_num_groups_z The number of work groups to be launched in the Z dimension.
+	void dispatch_compute(GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
