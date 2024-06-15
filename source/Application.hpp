@@ -209,9 +209,10 @@ int main(int argc, char* argv[])
 		LOG("[INIT] initialisation took {}", stopwatch.duration_since_start<int, std::milli>());
 
 		app.simulation_loop();
-	} // Window and input must go out of scope and destroy their resources before Core::cleanup
+	} // Window and input must go out of scope and destroy their resources before Core::deinitialise
 
 	OpenGL::DebugRenderer::deinit();
-	Platform::Core::cleanup();
+	Platform::Core::deinitialise_ImGui();
+	Platform::Core::deinitialise_GLFW();
 	return EXIT_SUCCESS;
 }

@@ -16,9 +16,9 @@ namespace Platform
 		static void initialise_ImGui(const Window& p_window);
 
 		// DEINIT
-		// Uninitialise ImGui and GLFW.
-		// Make sure no further calls to these happens after cleanup.
-		static void cleanup();
+		static void deinitialise_ImGui();
+		static void deinitialise_GLFW();
+
 		static bool is_dark_mode(); // Is the OS running in dark mode
 
 		struct Theme

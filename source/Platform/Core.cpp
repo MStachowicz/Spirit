@@ -119,19 +119,19 @@ namespace Platform
 		LOG("[INIT] Initialised ImGui");
 	}
 
-	void Core::cleanup()
+	void Core::deinitialise_ImGui()
 	{
-		{
-			ImGui_ImplOpenGL3_Shutdown();
-			ImGui_ImplGlfw_Shutdown();
-			ImGui::DestroyContext();
-			LOG("[DEINIT] Uninitialised ImGui");
-		}
-		{
-			glfwTerminate();
-			LOG("[DEINIT] Uninitialised GLFW");
-		}
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		LOG("[DEINIT] Uninitialised ImGui");
 	}
+	void Core::deinitialise_GLFW()
+	{
+		glfwTerminate();
+		LOG("[DEINIT] Uninitialised GLFW");
+	}
+
 
 #ifdef _WIN32
 	#include <Windows.h>
