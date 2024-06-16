@@ -114,18 +114,16 @@ namespace OpenGL
 	{
 		// Find which target the buffer might be bound to already
 		// If the buffer is bound to a target, we need to unbind it from that target.
-		auto SSBO_it = std::find(current_bound_SSBO.begin(), current_bound_SSBO.end(), p_buffer);
-		if (SSBO_it != current_bound_SSBO.end())
-		{
-			(*SSBO_it).reset();
-			return;
-		}
 
-		auto UBO_it = std::find(current_bound_UBO.begin(), current_bound_UBO.end(), p_buffer);
-		if (UBO_it != current_bound_UBO.end())
+		for (auto& SSBO : current_bound_SSBO)
 		{
-			(*UBO_it).reset();
-			return;
+			if (SSBO == p_buffer)
+				SSBO.reset();
+		}
+		for (auto& UBO : current_bound_UBO)
+		{
+			if (UBO == p_buffer)
+				UBO.reset();
 		}
 	}
 

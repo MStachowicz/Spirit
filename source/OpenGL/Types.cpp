@@ -21,6 +21,8 @@ namespace OpenGL
 	{
 		if (m_handle != 0)
 			glDeleteBuffers(1, &m_handle);
+
+		State::Get().unbind_buffer(m_handle);
 	}
 	Buffer::Buffer(Buffer&& p_other)
 		: m_handle{std::exchange(p_other.m_handle, 0)}
