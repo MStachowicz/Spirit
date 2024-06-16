@@ -85,6 +85,7 @@ namespace OpenGL
 		// Uniform set functions are used only by the DrawCall class hence are private.
 		void set_uniform(const char* p_identifier, bool p_value) const;
 		void set_uniform(const char* p_identifier, int p_value) const;
+		void set_uniform(const char* p_identifier, unsigned int p_value) const;
 		void set_uniform(const char* p_identifier, float p_value) const;
 		void set_uniform(const char* p_identifier, const glm::vec2& p_value) const;
 		void set_uniform(const char* p_identifier, const glm::vec3& p_value) const;
