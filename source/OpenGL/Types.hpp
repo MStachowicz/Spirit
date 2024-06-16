@@ -62,6 +62,13 @@ namespace OpenGL
 			m_count  = static_cast<GLsizei>(N);
 			named_buffer_storage(m_handle, m_size, p_data.data(), m_flags);
 		}
+		template<typename T>
+		std::vector<T> download_data() const
+		{
+			std::vector<T> data(m_count);
+			get_named_buffer_sub_data(m_handle, 0, m_size, data.data());
+			return data;
+		}
 		// Update a subset of a Buffer object's data store
 		template<typename T>
 		void buffer_sub_data(GLintptr p_offset, const T& p_data)

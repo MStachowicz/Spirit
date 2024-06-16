@@ -89,12 +89,33 @@ namespace OpenGL
 		// When all other criteria for the buffer storage allocation are met, this bit may be used by an implementation to determine whether to use storage that is local to the server or to the client to serve as the backing store for the buffer.
 		ClientStorageBit
 	};
+	enum class MemoryBarrierFlag : uint8_t
+	{
+		VertexAttribArrayBarrierBit, // GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT
+		ElementArrayBarrierBit,      // GL_ELEMENT_ARRAY_BARRIER_BIT
+		UniformBarrierBit,           // GL_UNIFORM_BARRIER_BIT
+		TextureFetchBarrierBit,      // GL_TEXTURE_FETCH_BARRIER_BIT
+		ShaderImageAccessBarrierBit, // GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+		CommandBarrierBit,           // GL_COMMAND_BARRIER_BIT
+		PixelBufferBarrierBit,       // GL_PIXEL_BUFFER_BARRIER_BIT
+		TextureUpdateBarrierBit,     // GL_TEXTURE_UPDATE_BARRIER_BIT
+		BufferUpdateBarrierBit,      // GL_BUFFER_UPDATE_BARRIER_BIT
+		FramebufferBarrierBit,       // GL_FRAMEBUFFER_BARRIER_BIT
+		TransformFeedbackBarrierBit, // GL_TRANSFORM_FEEDBACK_BARRIER_BIT
+		AtomicCounterBarrierBit,     // GL_ATOMIC_COUNTER_BARRIER_BIT
+		ShaderStorageBarrierBit      // GL_SHADER_STORAGE_BARRIER_BIT
+	};
+
 	struct BufferStorageBitfield
 	{
 		BufferStorageBitfield(std::initializer_list<BufferStorageFlag> flags);
 		GLuint bitfield = 0;
 	};
-
+	struct MemoryBarrierBitfield
+	{
+		MemoryBarrierBitfield(std::initializer_list<MemoryBarrierFlag> flags);
+		GLuint bitfield = 0;
+	};
 
 	enum class TextureMagFunc : uint8_t
 	{
@@ -639,6 +660,13 @@ namespace OpenGL
 	//@param p_data Pointer to data that will be copied into the data store for initialization, or nullptr if no data is to be copied.
 	//@param p_flags Bitwise combination of flags that specify the intended usage of the buffer's data store.
 	void named_buffer_storage(GLHandle p_buffer, GLsizeiptr p_size, const void* p_data, BufferStorageBitfield p_flags);
+	// Returns a subset of a buffer object's data store.
+	// Copies the data store of the buffer object p_buffer to the memory pointed to by p_data.
+	//@param p_buffer Name of the buffer object to query.
+	//@param p_offset Offset into the buffer object's data store from which data will be returned, measured in bytes.
+	//@param p_size Size in bytes of the data store region being returned.
+	//@param p_data Specifies a pointer to the location where buffer object data is returned.
+	void get_named_buffer_sub_data(GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size, void* p_data);
 	// Update a subset of a Buffer object's data store.
 	// Redefines some or all of the data store for the buffer object p_buffer.
 	// Data starting at byte p_offset and extending for p_size bytes is copied to the data store from the memory pointed to by p_data.
@@ -668,6 +696,9 @@ namespace OpenGL
 	//@param p_offset Starting offset in basic machine units into the p_buffer object buffer.
 	//@param p_size Amount of data in machine units that can be read from the p_buffer object while used as an indexed target.
 	void bind_buffer_range(BufferType p_target, GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
+	// Defines a barrier ordering memory transactions.
+	// Memory_barrier defines a barrier ordering memory transactions issued prior to the barrier relative to memory transactions issued after the barrier.
+	void memory_barrier(MemoryBarrierBitfield p_barrier_bitfield);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

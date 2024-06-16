@@ -275,7 +275,7 @@ namespace OpenGL
 			viewport_size     = { p_width, p_height };
 		}
 	}
-}
+} // namespace OpenGL
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// TEXTURE FUNCTIONS
@@ -509,6 +509,10 @@ namespace OpenGL
 	{
 		glNamedBufferStorage(p_buffer, p_size, p_data, p_flags.bitfield);
 	}
+	void get_named_buffer_sub_data(GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size, void* p_data)
+	{
+		glGetNamedBufferSubData(p_buffer, p_offset, p_size, p_data);
+	}
 	void named_buffer_sub_data(GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size, const void* p_data)
 	{
 		glNamedBufferSubData(p_buffer, p_offset, p_size, p_data);
@@ -521,7 +525,11 @@ namespace OpenGL
 	{
 		glBindBufferRange(convert(p_target), p_index, p_buffer, p_offset, p_size);
 	}
-}
+	void memory_barrier(MemoryBarrierBitfield p_barrier_bitfield)
+	{
+		glMemoryBarrier(p_barrier_bitfield.bitfield);
+	}
+} // namespace OpenGL
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// CONVERSION FUNCS
@@ -576,10 +584,38 @@ namespace OpenGL
 			default: ASSERT_THROW(false, "[OPENGL] Unknown BufferStorageFlag requested"); return 0;
 		}
 	}
+	GLenum convert(MemoryBarrierFlag p_barrier_bitfield)
+	{
+		switch (p_barrier_bitfield)
+		{
+			case MemoryBarrierFlag::VertexAttribArrayBarrierBit:  return GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT;
+			case MemoryBarrierFlag::ElementArrayBarrierBit:       return GL_ELEMENT_ARRAY_BARRIER_BIT;
+			case MemoryBarrierFlag::UniformBarrierBit:            return GL_UNIFORM_BARRIER_BIT;
+			case MemoryBarrierFlag::TextureFetchBarrierBit:       return GL_TEXTURE_FETCH_BARRIER_BIT;
+			case MemoryBarrierFlag::ShaderImageAccessBarrierBit:  return GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
+			case MemoryBarrierFlag::CommandBarrierBit:            return GL_COMMAND_BARRIER_BIT;
+			case MemoryBarrierFlag::PixelBufferBarrierBit:        return GL_PIXEL_BUFFER_BARRIER_BIT;
+			case MemoryBarrierFlag::TextureUpdateBarrierBit:      return GL_TEXTURE_UPDATE_BARRIER_BIT;
+			case MemoryBarrierFlag::BufferUpdateBarrierBit:       return GL_BUFFER_UPDATE_BARRIER_BIT;
+			case MemoryBarrierFlag::FramebufferBarrierBit:        return GL_FRAMEBUFFER_BARRIER_BIT;
+			case MemoryBarrierFlag::TransformFeedbackBarrierBit:  return GL_TRANSFORM_FEEDBACK_BARRIER_BIT;
+			case MemoryBarrierFlag::AtomicCounterBarrierBit:      return GL_ATOMIC_COUNTER_BARRIER_BIT;
+			case MemoryBarrierFlag::ShaderStorageBarrierBit:      return GL_SHADER_STORAGE_BARRIER_BIT;
+			default: ASSERT_THROW(false, "[OPENGL] Unknown MemoryBarrierFlag requested"); return 0;
+		}
+
+	}
 	BufferStorageBitfield::BufferStorageBitfield(std::initializer_list<BufferStorageFlag> flags)
 		: bitfield(0)
 	{
 		for (BufferStorageFlag flag : flags)
+			bitfield |= convert(flag);
+	}
+
+	MemoryBarrierBitfield::MemoryBarrierBitfield(std::initializer_list<MemoryBarrierFlag> flags)
+		: bitfield(0)
+	{
+		for (MemoryBarrierFlag flag : flags)
 			bitfield |= convert(flag);
 	}
 
