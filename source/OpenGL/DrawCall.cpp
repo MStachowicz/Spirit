@@ -156,6 +156,27 @@ namespace OpenGL
 	void DrawCall::submit_compute(Shader& p_shader, GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z) const
 	{
 		ASSERT(p_shader.is_compute_shader, "Submitting a non-compute shader as a compute shader.");
+
+		if (m_uniform_count > 0)
+		{
+			State::Get().use_program(p_shader.m_handle);
+			for (GLuint i = 0; i < m_uniform_count; ++i)
+				std::visit([&](auto&& arg) { p_shader.set_uniform(m_uniforms[i].m_identifier, arg); }, m_uniforms[i].m_data);
+		}
+
+		for (GLuint i = 0; i < m_SSBO_count; ++i)
+		{
+			// Bind the Shader storage block of the shader and the SSBO to the same binding point.
+			p_shader.bind_shader_storage_block(m_SSBOs[i].m_identifier, i);
+			State::Get().bind_shader_storage_buffer(i, m_SSBOs[i].m_handle, m_SSBOs[i].m_offset, m_SSBOs[i].m_size);
+		}
+		for (GLuint i = 0; i < m_UBO_count; ++i)
+		{
+			// Bind the Uniform block of the shader and the UBO to the same binding point.
+			p_shader.bind_uniform_block(m_UBOs[i].m_identifier, i);
+			State::Get().bind_uniform_buffer(i, m_UBOs[i].m_handle, m_UBOs[i].m_offset, m_UBOs[i].m_size);
+		}
+
 		State::Get().use_program(p_shader.m_handle);
 		dispatch_compute(p_num_groups_x, p_num_groups_y, p_num_groups_z);
 	}

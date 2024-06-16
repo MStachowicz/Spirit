@@ -286,7 +286,6 @@ namespace OpenGL
 	}
 	void Shader::set_uniform(const char* p_identifier, const glm::vec4& p_value) const
 	{
-
 		auto location = get_uniform_variable(p_identifier).m_location;
 		glUniform4fv(location, 1, glm::value_ptr(p_value));
 	}
@@ -323,8 +322,8 @@ namespace OpenGL
 	void Shader::bind_shader_storage_block(const char* p_identifier, GLuint p_storage_block_binding)
 	{
 		auto& block = get_shader_storage_block(p_identifier);
-		//if (block.m_binding_point == p_storage_block_binding)
-		//	return;
+		if (block.m_binding_point == p_storage_block_binding)
+			return;
 
 		glShaderStorageBlockBinding(m_handle, block.m_block_index, p_storage_block_binding);
 		block.m_binding_point = p_storage_block_binding;

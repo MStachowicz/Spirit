@@ -34,7 +34,7 @@ namespace OpenGL
 		struct UniformSetData // The data requires to set a uniform variable of a shader.
 		{
 			char m_identifier[max_uniform_identifier_len] = {};
-			std::variant<bool, int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> m_data;
+			std::variant<bool, unsigned int, int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> m_data;
 		};
 		std::array<UniformSetData, max_uniforms> m_uniforms;
 		GLuint m_uniform_count;
