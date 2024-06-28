@@ -3,6 +3,7 @@
 #include "Test/Tests/ECSTester.hpp"
 #include "Test/Tests/GeometryTester.hpp"
 #include "Test/Tests/ResourceManagerTester.hpp"
+#include "Test/Tests/GraphicsTester.hpp"
 
 #include <cstring>
 #include "Utility/Stopwatch.hpp"
@@ -30,6 +31,7 @@ int main(int argc, char* argv[])
 	test_managers.emplace_back(std::make_unique<Test::ECSTester>());
 	test_managers.emplace_back(std::make_unique<Test::GeometryTester>());
 	test_managers.emplace_back(std::make_unique<Test::ResourceManagerTester>());
+	test_managers.emplace_back(std::make_unique<Test::GraphicsTester>());
 
 	size_t unit_test_overall_pass_count    = 0;
 	size_t unit_test_overall_fail_count    = 0;

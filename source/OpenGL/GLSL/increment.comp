@@ -1,0 +1,21 @@
+// Compute shader to read from every index in an SSBO and write a incremented value to the same index in another ssbbo
+
+#version 460 core
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer DataIn
+{
+	uint data[];
+} data_in;
+
+layout(std430, binding = 1) buffer DataOut
+{
+	uint data[];
+} data_out;
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+	data_out.data[index] = data_in.data[index] + 1;
+}

@@ -38,7 +38,7 @@ namespace Test
 	std::string to_string(const std::source_location& p_location);
 
 	#define CHECK_TRUE(p_conditional, p_test_name) { run_unit_test(p_conditional, p_test_name, std::format("Expected: '{}' to be true\n{}", #p_conditional, to_string(std::source_location::current()))); }
-	#define CHECK_EQUAL(p_value, p_expected_value, p_test_name) { run_unit_test(p_value == p_expected_value, p_test_name, std::format("Expected: '{}' to be '{}' but was '{}'\n{}", #p_value, #p_expected_value, p_value, to_string(std::source_location::current()))); }
+	#define CHECK_EQUAL(p_value, p_expected_value, p_test_name) { run_unit_test(p_value == p_expected_value, p_test_name, std::format("Expected {} ({}) to equal {} ({})\n{}", #p_value, p_value, #p_expected_value, p_expected_value, to_string(std::source_location::current()))); }
 	#define SCOPE_SECTION(p_section_name) auto a_random_name_that_will_never_collide_with_anything = ScopeSection(p_section_name, *this);
 
 	// A pure-virtual API for running unit tests and performance tests.

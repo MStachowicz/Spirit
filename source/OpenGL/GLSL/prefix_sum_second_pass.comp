@@ -1,0 +1,33 @@
+// This is the second stage of the prefix sum algorithm.
+// This kernel follows on from the global sum reduction and works back up the tree.
+// GlobalSum is the output from the first stage, PrefixSum is written to.
+// The PrefixSum is written to root->leaf index 0 - 2N
+
+// Given the original array:                           { 3, 1, 7,  0,  4,  1,  6,  3 }
+// The GlobalSum input is:   { 25, 11, 14, 4, 7,  5,  9, 3, 1, 7,  0,  4,  1,  6,  3, 0 }
+// The PrefixSum written is: {  0,  0, 11, 0, 4, 11, 16, 0, 3, 4, 11, 11, 15, 16, 22, 0 }
+
+// The final
+
+#version 460
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+uniform uint offset; // The offset into the array for outputting the sum results per reduction stage.
+
+layout(std430) buffer readonly GlobalSum
+{
+	uint data[];
+} global_sum;
+
+layout(std430) buffer PrefixSum
+{
+	uint data[];
+} prefix_sum;
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x + offset;
+	prefix_sum.data[index * 2 + 1] = prefix_sum.data[index]; // Left child
+	prefix_sum.data[index * 2 + 2] = prefix_sum.data[index] + global_sum.data[index * 2 + 1]; // Right child
+}

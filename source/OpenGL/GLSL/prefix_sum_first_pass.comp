@@ -1,0 +1,27 @@
+// This is the first stage of the prefix sum algorithm.
+// DataIn is expected to be an array of 2 * N ints where N is a power of 2.
+// The first N - 1 elements are output, the second N + 1 elements are input.
+// The output is the global sum of the input from the root to the leaf nodes
+
+// Given an array:      { 3, 1, 7, 0, 4, 1, 6, 3 }
+// Passed in as DataIn: { 0, 0, 0, 0, 0, 0, 0, 3, 1, 7, 0, 4, 1, 6, 3, 0 }
+
+// This kernel returns: { 25, 11, 14, 4, 7, 5, 9,    3, 1, 7, 0, 4, 1, 6, 3, 0 }
+
+#version 460 core
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+uniform uint offset; // The offset into the array for outputting the sum results per reduction stage.
+
+layout(std430) buffer DataIn
+{
+	uint data[];
+} data_in;
+
+void main()
+{
+	uint index_out = offset + gl_GlobalInvocationID.x;
+	uint index_in  = index_out * 2 + 1;
+	data_in.data[index_out] = data_in.data[index_in] + data_in.data[index_in + 1];
+}

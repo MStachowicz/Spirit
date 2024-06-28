@@ -35,6 +35,8 @@ source/Test/Tests/ComponentSerialiseTester.hpp
 source/Test/Tests/ComponentSerialiseTester.cpp
 source/Test/Tests/ECSTester.hpp
 source/Test/Tests/ECSTester.cpp
+source/Test/Tests/GraphicsTester.hpp
+source/Test/Tests/GraphicsTester.cpp
 source/Test/Tests/ResourceManagerTester.hpp
 source/Test/Tests/ResourceManagerTester.cpp
 source/Test/Tests/GeometryTester.hpp
