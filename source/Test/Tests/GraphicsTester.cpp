@@ -90,7 +90,8 @@ namespace Test
 						 { 0,  11, 14, 4, 7, 5, 9,    3, 1, 7, 0, 4, 1, 6, 3, 0 },  // Reduction 2
 						 { 25, 11, 14, 4, 7, 5, 9,    3, 1, 7, 0, 4, 1, 6, 3, 0 }}; // Reduction 3
 
-					for (size_t i = 0; i < std::log2(data.size()); ++i)
+					size_t reduction_steps = std::log2(data.size()) - 1;
+					for (size_t i = 0; i < reduction_steps; ++i)
 					{
 						unsigned int node_count = data.size() / (1 << (i + 2)); // Nodes to be calculated this reduction step:     4, 2, 1 with 8 elements
 						unsigned int offset     = node_count - 1;               // Offset into the data for writing the reduction: 3, 2, 1 with 8 elements
@@ -115,9 +116,10 @@ namespace Test
 					std::vector<std::vector<unsigned int>> expected_results = {
 						{ 0, 0, 11, 0, 0,  0,  0,    0, 0, 0,  0,  0,  0,  0,  0, 0 },
 						{ 0, 0, 11, 0, 4, 11, 16,    0, 0, 0,  0,  0,  0,  0,  0, 0 },
-						{ 0, 0, 11, 0, 4, 11, 16,    0, 3, 4, 11, 11, 15, 16, 22, 0 }};
+						{ 0, 0, 11, 0, 4, 11, 16,    0, 3, 4,  11, 11, 15, 16, 22, 0 }};
 
-					for (size_t i = 0; i < std::log2(data.size()); ++i)
+					size_t scan_steps = std::log2(data.size()) - 1;
+					for (size_t i = 0; i < scan_steps; ++i)
 					{
 						unsigned int node_count = 1 << i;         // Nodes to be calculated this reduction step:     1, 2, 4 with 8 elements
 						unsigned int offset     = node_count - 1; // Offset into the data for writing the reduction: 0, 1, 3 with 8 elements
@@ -132,6 +134,30 @@ namespace Test
 						auto result = prefix_sum_buffer.download_data<unsigned int>();
 						for (size_t j = 0; j < expected_results[i].size(); ++j)
 							CHECK_EQUAL(result[j], expected_results[i][j], "Expansion step " + std::to_string(i));
+					}
+
+					{
+						//std::array<unsigned int, 8> inclusive_out; // Result: { 3, 4, 11, 11, 15, 16, 22, 25}
+						//std::array<unsigned int, 8> exclusive_out; // Result: { 0, 3, 4,  11, 11, 15, 16, 22}
+						//std::array<unsigned int, 8> data_in         = { 3, 1, 7, 0, 4, 1, 6, 3 };
+						//std::inclusive_scan(data_in.begin(), data_in.end(), inclusive_out.begin(), std::plus<>());
+						//std::exclusive_scan(data_in.begin(), data_in.end(), exclusive_out.begin(), 0, std::plus<>());
+
+						// If we want to inclusive prefix sum we need to run this final step of copying the
+
+						// First N - 1 elements are the non-leaf nodes of the prefix sum tree
+						// Elements N -> N + N are the exclsuive sum
+						// Elements N + 1 -> N + N + 1 are the inclusive sum
+						std::array<unsigned int, 16> expected_final = { 0, 0, 11, 0, 4, 11, 16,    0, 3, 4, 11, 11, 15, 16, 22,   25 };
+
+						// Global sum buffer (buff) containts the final prefix sum as its 0th element.
+						// Copy this into the end index of the prefix sum result.
+						prefix_sum_buffer.copy_sub_data(buff, 0, sizeof(unsigned int) * (data.size() - 1), sizeof(unsigned int));
+						auto result = prefix_sum_buffer.download_data<unsigned int>();
+
+						// Check the result
+						for (size_t i = 0; i < expected_final.size(); i++)
+							CHECK_EQUAL(result[i], expected_final[i], "Final result " + std::to_string(i));
 					}
 				}
 			}

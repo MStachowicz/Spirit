@@ -32,6 +32,15 @@ namespace System
 		set_current_scene(scene);
 		add_default_camera(scene);
 		construct_2_sphere_scene(scene);
+
+		auto particle_emitter = Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")};
+
+		std::vector<Component::Particle> particles;
+		for (size_t i = 0; i < 10; i++)
+			particles.emplace_back(glm::vec4(0.f + i, 0.f, 0.f, 10.f - i), glm::vec4(0.f, 0.2f + (i / 5.f), 0.f, 0.f));
+
+		particle_emitter.particle_buf.upload_data(particles);
+		scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 	}
 
 	void SceneSystem::set_current_scene(const Scene& p_scene)

@@ -3,11 +3,9 @@
 // GlobalSum is the output from the first stage, PrefixSum is written to.
 // The PrefixSum is written to root->leaf index 0 - 2N
 
-// Given the original array:                           { 3, 1, 7,  0,  4,  1,  6,  3 }
-// The GlobalSum input is:   { 25, 11, 14, 4, 7,  5,  9, 3, 1, 7,  0,  4,  1,  6,  3, 0 }
+// Given the original array:                           { 3, 1, 7, 0,  4,  1,  6,  3 }
+// The GlobalSum input is:   { 25, 11, 14, 4, 7,  5,  9, 3, 1, 7, 0,  4,  1,  6,  3,  0 }
 // The PrefixSum written is: {  0,  0, 11, 0, 4, 11, 16, 0, 3, 4, 11, 11, 15, 16, 22, 0 }
-
-// The final
 
 #version 460
 
