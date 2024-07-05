@@ -14,11 +14,12 @@ namespace OpenGL
 {
 	class ParticleRenderer
 	{
-		Shader m_particle_shader;
+		Shader m_particle_draw_shader;
+		Shader m_particle_update_shader;
 		VAO m_quad_VAO;
 		Buffer m_quad_VBO;
 		Buffer m_quad_EBO;
-		Buffer m_particle_buffer;
+
 	public:
 		ParticleRenderer();
 

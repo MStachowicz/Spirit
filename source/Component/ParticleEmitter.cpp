@@ -14,24 +14,23 @@ namespace Component
 		, emit_velocity_max{glm::vec3(0.8f, 2.f,  0.2f)}
 		, spawn_period{0.4f}
 		, time_to_next_spawn{0.f} // Spawn on creation.
-		, spawn_count{4u}
 		, lifetime{7.f}
-		, max_particle_count{1'000u}
+		, spawn_count{4}
+		, max_particle_count{1'000}
 		, sort_by_distance_to_camera{false}
-		, particles{}
+		, particle_buf{OpenGL::BufferStorageBitfield({OpenGL::BufferStorageFlag::DynamicStorageBit})}
 	{
 		ASSERT_THROW(emit_velocity_min.x < emit_velocity_max.x
 			&& emit_velocity_min.y < emit_velocity_max.y
 			&& emit_velocity_min.z < emit_velocity_max.z, "ParticleEmitter min not smaller than max");
-
-		particles.reserve(max_particle_count);
 	}
 
 	void ParticleEmitter::draw_UI(System::TextureSystem& p_texture_system)
 	{
 		if (ImGui::TreeNode("Paticle Emitter"))
 		{
-			ImGui::Text("Particle count", particles.size());
+			ImGui::Text("Particle count", particle_buf.count());
+			ImGui::Text("Particlebuffer size", particle_buf.size());
 
 			std::vector<std::string> texture_names;
 			texture_names.reserve(p_texture_system.m_available_textures.size());

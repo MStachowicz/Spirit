@@ -3,8 +3,9 @@
 #include "Component/Texture.hpp"
 #include "Utility/Config.hpp"
 
+#include "OpenGL/Types.hpp"
+
 #include "glm/vec3.hpp"
-#include "glm/vec4.hpp"
 
 namespace System
 {
@@ -12,12 +13,10 @@ namespace System
 }
 namespace Component
 {
-	struct Particle
+	struct Particle // Matches the Particle struct in particle shaders.
 	{
 		glm::vec4 position;
 		glm::vec4 velocity;
-		DeltaTime lifetime;
-		float distance_to_camera = 0.f;
 	};
 
 	class ParticleEmitter
@@ -31,13 +30,16 @@ namespace Component
 		glm::vec3 emit_velocity_max;     // Maximum starting velocity in m/s.
 		DeltaTime spawn_period;          // Duration between particle spawn attempts.
 		DeltaTime time_to_next_spawn;    // Duration remaining to next spawn attempt.
-		unsigned int spawn_count;        // How many particles to spawn every spawn_period.
 		DeltaTime lifetime;              // Duration in seconds a particle stays alive before being removed.
-		unsigned int max_particle_count; // Max number of particles that can be alive concurrently.
+		GLsizei spawn_count;             // How many particles to spawn every spawn_period.
+		GLsizei max_particle_count;      // Max number of particles that can be alive concurrently.
 		bool sort_by_distance_to_camera; // Whether to sort the particles and draw the most distant particles last.
-		std::vector<Particle> particles; // Max size restricted by draw_elements_instanced in ParticleRenderer.
+
+		OpenGL::Buffer particle_buf; // Contains instances of Particle struct.
 
 		ParticleEmitter(const TextureRef& p_texture);
 		void draw_UI(System::TextureSystem& p_texture_system);
+
+		auto alive_count () const { return particle_buf.count(); }
 	};
 }

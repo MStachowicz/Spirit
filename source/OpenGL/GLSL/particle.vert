@@ -5,12 +5,11 @@ layout (location = 3) in vec2 VertexTexCoord;
 
 struct Particle
 {
-	vec4 position;
-	vec4 velocity;
+	vec4 position; // w component is life time
+	vec4 velocity; // w component unused
 };
 layout(std430, binding = 0) buffer ParticlesBuffer
 {
-	uint number_of_particles;
 	Particle particles[];
 };
 layout(shared) uniform ViewProperties
@@ -27,6 +26,9 @@ out VS_OUT
 
 void main()
 {
-	vs_out.tex_coord = VertexTexCoord;
-	gl_Position      = viewProperties.projection * viewProperties.view * vec4(VertexPosition + particles[gl_InstanceID].position.xyz, 1.0);
+	if (particles[gl_InstanceID].position.w > 0.0)
+	{
+		vs_out.tex_coord = VertexTexCoord;
+		gl_Position      = viewProperties.projection * viewProperties.view * vec4(VertexPosition + particles[gl_InstanceID].position.xyz, 1.0);
+	}
 }
