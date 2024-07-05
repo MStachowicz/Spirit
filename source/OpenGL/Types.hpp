@@ -33,8 +33,8 @@ namespace OpenGL
 		Buffer(BufferStorageBitfield p_flags);
 		~Buffer();
 
-		Buffer(const Buffer& p_other)            = delete;
-		Buffer& operator=(const Buffer& p_other) = delete;
+		Buffer(const Buffer& p_other);
+		Buffer& operator=(const Buffer& p_other);
 		Buffer(Buffer&& p_other);
 		Buffer& operator=(Buffer&& p_other);
 

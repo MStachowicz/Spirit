@@ -13,6 +13,7 @@ namespace OpenGL
 		: m_handle{0}
 		, m_size{0}
 		, m_stride{0}
+		, m_count{0}
 		, m_flags{p_flags}
 	{
 		glCreateBuffers(1, &m_handle);
@@ -24,10 +25,41 @@ namespace OpenGL
 
 		State::Get().unbind_buffer(m_handle);
 	}
+	Buffer::Buffer(const Buffer& p_other)
+		: m_handle{0}
+		, m_size{p_other.m_size}
+		, m_stride{p_other.m_stride}
+		, m_count{p_other.m_count}
+		, m_flags{p_other.m_flags}
+	{
+		glCreateBuffers(1, &m_handle);
+
+		// Copy the data from the other buffer.
+		if (m_size > 0)
+		{
+			named_buffer_storage(m_handle, m_size, nullptr, m_flags);
+			copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, m_size);
+		}
+	}
+	Buffer& Buffer::operator=(const Buffer& p_other)
+	{
+		if (this != &p_other)
+		{
+			m_stride = p_other.m_stride;
+			m_flags  = p_other.m_flags;
+			m_count  = p_other.m_count;
+
+			resize(p_other.m_size);
+			if (m_size > 0)
+				copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, m_size);
+		}
+		return *this;
+	}
 	Buffer::Buffer(Buffer&& p_other)
 		: m_handle{std::exchange(p_other.m_handle, 0)}
 		, m_size{std::exchange(p_other.m_size, 0)}
 		, m_stride{std::exchange(p_other.m_stride, 0)}
+		, m_count{std::exchange(p_other.m_count, 0)}
 		, m_flags{p_other.m_flags}
 	{}
 	Buffer& Buffer::operator=(Buffer&& p_other)
@@ -42,12 +74,16 @@ namespace OpenGL
 			m_handle = std::exchange(p_other.m_handle, 0);
 			m_size   = std::exchange(p_other.m_size, 0);
 			m_stride = std::exchange(p_other.m_stride, 0);
+			m_count  = std::exchange(p_other.m_count, 0);
 			m_flags  = p_other.m_flags;
 		}
 		return *this;
 	}
 	void Buffer::resize(GLsizeiptr p_size)
 	{
+		if (p_size == m_size)
+			return;
+
 		ASSERT(is_immutable() == false, "Cannot resize an immutable buffer");
 
 		named_buffer_storage(m_handle, p_size, nullptr, m_flags);
