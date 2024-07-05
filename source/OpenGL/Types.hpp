@@ -94,6 +94,11 @@ namespace OpenGL
 			GLint gl_bool = p_data;
 			buffer_sub_data(p_offset, gl_bool);
 		}
+		// Copy a portion of p_source_buffer from p_source_offset into this buffer at p_destination_offset of p_size.
+		void copy_sub_data(const Buffer& p_source_buffer, GLint p_source_offset, GLint p_destination_offset, GLsizeiptr p_size)
+		{
+			copy_named_buffer_sub_data(p_source_buffer.m_handle, m_handle, p_source_offset, p_destination_offset, p_size);
+		}
 
 		// Resizes the buffer object's data store. All existing data is lost.
 		void resize(GLsizeiptr p_size);
