@@ -26,9 +26,9 @@ out VS_OUT
 
 void main()
 {
-	if (particles[gl_InstanceID].position.w > 0.0)
-	{
-		vs_out.tex_coord = VertexTexCoord;
-		gl_Position      = viewProperties.projection * viewProperties.view * vec4(VertexPosition + particles[gl_InstanceID].position.xyz, 1.0);
-	}
+	if (particles[gl_InstanceID].position.w <= 0.0)
+		return;
+
+	vs_out.tex_coord      = VertexTexCoord;
+	gl_Position           = viewProperties.projection * viewProperties.view * vec4(VertexPosition + particles[gl_InstanceID].position.xyz, 1.0);
 }

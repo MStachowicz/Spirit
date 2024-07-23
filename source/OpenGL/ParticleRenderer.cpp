@@ -4,6 +4,7 @@
 
 #include "System/SceneSystem.hpp"
 #include "Component/ParticleEmitter.hpp"
+#include "Utility/Utility.hpp"
 
 #include "glm/gtx/norm.hpp"
 
@@ -60,7 +61,7 @@ namespace OpenGL
 			m_quad_VBO.upload_data(vertices);
 			m_quad_EBO.upload_data(indices);
 			m_quad_VAO.attach_buffer(m_quad_VBO, 0, vertex_buffer_binding_point, sizeof(Vert));
-			m_quad_VAO.attach_element_buffer(m_quad_EBO);
+			m_quad_VAO.attach_element_buffer(m_quad_EBO, (GLsizei)indices.size());
 			m_quad_VAO.set_vertex_attrib_pointers(PrimitiveMode::Triangles, {{
 					VertexAttributeMeta{m_particle_draw_shader.get_attribute_index("VertexPosition"), 3, BufferDataType::Float, offsetof(Vert, pos), vertex_buffer_binding_point, false},
 					VertexAttributeMeta{m_particle_draw_shader.get_attribute_index("VertexTexCoord"), 2, BufferDataType::Float, offsetof(Vert, tex), vertex_buffer_binding_point, false}
@@ -76,54 +77,63 @@ namespace OpenGL
 
 			{// Spawning new particles every spawn_period
 				p_emitter.time_to_next_spawn -= p_delta_time;
-				// TODO: RUN KERNEL WHICH SPAWNS PARTICLES
 
-				// if (p_emitter.time_to_next_spawn <= zero_seconds)
-				// {
-				// 	p_emitter.time_to_next_spawn = p_emitter.spawn_period; // Reset time.
+				if (p_emitter.time_to_next_spawn <= zero_seconds)
+				{
+					p_emitter.time_to_next_spawn = p_emitter.spawn_period; // Reset time.
 
-				// 	auto current_particle_count = p_emitter.alive_count();
-				// 	if (current_particle_count < p_emitter.max_particle_count)
-				// 	{
-				// 		auto remaining_size     = p_emitter.max_particle_count - current_particle_count;
-				// 		auto new_particle_count = std::min(remaining_size, p_emitter.spawn_count);
+					if (p_emitter.alive_count < p_emitter.max_particle_count)
+					{
+						auto remaining_size     = p_emitter.max_particle_count - p_emitter.alive_count;
+						auto new_particle_count = std::min(remaining_size, p_emitter.spawn_count);
 
-				// 		if (new_particle_count > 0)
-				// 		{// Create random number generators for each component
-				// 			ASSERT_THROW(p_emitter.emit_velocity_min.x < p_emitter.emit_velocity_max.x
-				// 				&& p_emitter.emit_velocity_min.y < p_emitter.emit_velocity_max.y
-				// 				&& p_emitter.emit_velocity_min.z < p_emitter.emit_velocity_max.z, "ParticleEmitter min not smaller than max");
+						if (new_particle_count > 0)
+						{
+							auto rd           = std::random_device();
+							auto gen          = std::mt19937(rd());
+							auto distribution = std::uniform_real_distribution<float>(0.f, 1.f);
 
-				// 			auto rd           = std::random_device();
-				// 			auto gen          = std::mt19937(rd());
-				// 			auto distribution = std::uniform_real_distribution<float>(0.f, 1.f);
+							std::vector<Component::Particle> new_particles;
+							new_particles.reserve(new_particle_count);
+							for (int i = 0; i < new_particle_count; i++)
+							{
+								auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
+									p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
+									p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
+									p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
+									1.f
+								};
+								new_particles.emplace_back<Component::Particle>({glm::vec4{p_emitter.emit_position, p_emitter.lifetime.count()}, vel});
+							}
 
-				// 			for (int i = 0; i < new_particle_count; i++)
-				// 			{
-				// 				auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
-				// 					p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
-				// 					p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
-				// 					p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
-				// 					1.f
-				// 				};
-				// 			}
-				// 		}
-				// 	}
-				// }
+							const GLsizeiptr new_size = (particle_stride * p_emitter.alive_count) + (particle_stride * new_particle_count);
+							if (p_emitter.particle_buf.size() < new_size)
+							{
+								const GLsizeiptr new_size_pwr_2 = Utility::next_power_of_2(new_size);
+								LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.size(), new_size_pwr_2)
+
+								auto new_particle_buff = OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit});
+								new_particle_buff.resize(new_size_pwr_2);
+								new_particle_buff.copy_sub_data(p_emitter.particle_buf, 0, 0, p_emitter.particle_buf.size());
+								p_emitter.particle_buf = std::move(new_particle_buff);
+							}
+
+							p_emitter.particle_buf.buffer_sub_data(particle_stride * p_emitter.alive_count, new_particles);
+							p_emitter.alive_count += new_particle_count;
+						}
+					}
+				}
 			}
 
-			if (p_emitter.alive_count() > 0)
+			// p_emitter.alive_count is incorrect after particle lifetimes expire in the particle_update kernel
+			if (p_emitter.alive_count > 0)
 			{
 				// Update the particles
 				DrawCall comp;
 				comp.set_SSBO("ParticlesBuffer", p_emitter.particle_buf);
 				comp.set_uniform<float>("delta_time", p_delta_time.count());
-				comp.submit_compute(m_particle_update_shader, p_emitter.alive_count(), 1, 1);
+				comp.submit_compute(m_particle_update_shader, p_emitter.alive_count, 1, 1);
 				OpenGL::memory_barrier({OpenGL::MemoryBarrierFlag::ShaderStorageBarrierBit});
-
-				// TODO: REIMPLEMENT SORTING IN KERNEL
-				// if (p_emitter.sort_by_distance_to_camera)
-				// {}
 
 				// Draw the particles
 				DrawCall dc;
@@ -135,7 +145,7 @@ namespace OpenGL
 				dc.set_texture("diffuse", p_emitter.diffuse->m_GL_texture);
 				dc.set_SSBO("ParticlesBuffer", p_emitter.particle_buf);
 				dc.set_UBO("ViewProperties", p_view_properties);
-				dc.submit_instanced(m_particle_draw_shader, m_quad_VAO, p_target_FBO, p_emitter.particle_buf.count());
+				dc.submit_instanced(m_particle_draw_shader, m_quad_VAO, p_target_FBO, p_emitter.alive_count);
 			}
 		});
 	}

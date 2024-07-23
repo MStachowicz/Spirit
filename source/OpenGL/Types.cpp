@@ -13,7 +13,6 @@ namespace OpenGL
 		: m_handle{0}
 		, m_size{0}
 		, m_stride{0}
-		, m_count{0}
 		, m_flags{p_flags}
 	{
 		glCreateBuffers(1, &m_handle);
@@ -29,7 +28,6 @@ namespace OpenGL
 		: m_handle{0}
 		, m_size{p_other.m_size}
 		, m_stride{p_other.m_stride}
-		, m_count{p_other.m_count}
 		, m_flags{p_other.m_flags}
 	{
 		glCreateBuffers(1, &m_handle);
@@ -47,7 +45,6 @@ namespace OpenGL
 		{
 			m_stride = p_other.m_stride;
 			m_flags  = p_other.m_flags;
-			m_count  = p_other.m_count;
 
 			resize(p_other.m_size);
 			if (m_size > 0)
@@ -59,7 +56,6 @@ namespace OpenGL
 		: m_handle{std::exchange(p_other.m_handle, 0)}
 		, m_size{std::exchange(p_other.m_size, 0)}
 		, m_stride{std::exchange(p_other.m_stride, 0)}
-		, m_count{std::exchange(p_other.m_count, 0)}
 		, m_flags{p_other.m_flags}
 	{}
 	Buffer& Buffer::operator=(Buffer&& p_other)
@@ -74,7 +70,6 @@ namespace OpenGL
 			m_handle = std::exchange(p_other.m_handle, 0);
 			m_size   = std::exchange(p_other.m_size, 0);
 			m_stride = std::exchange(p_other.m_stride, 0);
-			m_count  = std::exchange(p_other.m_count, 0);
 			m_flags  = p_other.m_flags;
 		}
 		return *this;
@@ -155,13 +150,13 @@ namespace OpenGL
 	{
 		vertex_array_vertex_buffer(m_handle, p_vertex_buffer_binding_point, p_vertex_buffer.m_handle, p_vertex_buffer_offset, p_stride);
 		if (!m_is_indexed)
-			m_draw_count = p_vertex_buffer.count();
+			m_draw_count = (GLsizei)p_vertex_buffer.size() / p_stride;
 	}
-	void VAO::attach_element_buffer(Buffer& p_element_buffer)
+	void VAO::attach_element_buffer(Buffer& p_element_buffer, GLsizei p_element_count)
 	{
 		vertex_array_element_buffer(m_handle, p_element_buffer.m_handle);
 		m_is_indexed = true;
-		m_draw_count = p_element_buffer.count();
+		m_draw_count = p_element_count;
 	}
 	void VAO::set_vertex_attrib_pointers(PrimitiveMode p_primitive_mode, const std::vector<VertexAttributeMeta>& attributes)
 	{

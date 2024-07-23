@@ -17,6 +17,7 @@ namespace Component
 		, lifetime{7.f}
 		, spawn_count{4}
 		, max_particle_count{1'000}
+		, alive_count{0}
 		, sort_by_distance_to_camera{false}
 		, particle_buf{OpenGL::BufferStorageBitfield({OpenGL::BufferStorageFlag::DynamicStorageBit})}
 	{
@@ -29,7 +30,7 @@ namespace Component
 	{
 		if (ImGui::TreeNode("Paticle Emitter"))
 		{
-			ImGui::Text("Particle count", particle_buf.count());
+			ImGui::Text("Particle count", alive_count);
 			ImGui::Text("Particlebuffer size", particle_buf.size());
 
 			std::vector<std::string> texture_names;

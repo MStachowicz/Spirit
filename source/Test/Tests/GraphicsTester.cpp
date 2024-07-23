@@ -38,7 +38,7 @@ namespace Test
 				OpenGL::memory_barrier({OpenGL::MemoryBarrierFlag::ShaderStorageBarrierBit});
 
 				std::array<unsigned int, 8> expected = { 2, 3, 4, 5, 6, 7, 8, 9 };
-				auto result = out_buffer.download_data<unsigned int>();
+				auto result = out_buffer.download_data<unsigned int>(expected.size());
 
 				for (size_t i = 0; i < expected.size(); ++i)
 					CHECK_EQUAL(result[i], expected[i], "Increment");
@@ -67,7 +67,7 @@ namespace Test
 					compute_call.submit_compute(shader, data.size() / (1 << (i + 1)), 1, 1); // 4, 2, 1 with 8 elements
 					OpenGL::memory_barrier({OpenGL::MemoryBarrierFlag::ShaderStorageBarrierBit});
 
-					auto result = (i % 2 == 0 ? out_buffer : in_buffer).download_data<unsigned int>();
+					auto result = (i % 2 == 0 ? out_buffer : in_buffer).download_data<unsigned int>(data.size());
 					for (size_t j = 0; j < expected_results[i].size(); ++j)
 						CHECK_EQUAL(result[j], expected_results[i][j], "Reduction step " + std::to_string(i));
 				}
@@ -102,7 +102,7 @@ namespace Test
 						compute_call.submit_compute(shader, node_count, 1, 1);
 						OpenGL::memory_barrier({OpenGL::MemoryBarrierFlag::ShaderStorageBarrierBit});
 
-						auto result = buff.download_data<unsigned int>();
+						auto result = buff.download_data<unsigned int>(data.size());
 						for (size_t j = 0; j < expected_results[i].size(); ++j)
 							CHECK_EQUAL(result[j], expected_results[i][j], "Reduction step " + std::to_string(i));
 					}
@@ -131,7 +131,7 @@ namespace Test
 						compute_call.submit_compute(shader, node_count, 1, 1);
 						OpenGL::memory_barrier({OpenGL::MemoryBarrierFlag::ShaderStorageBarrierBit});
 
-						auto result = prefix_sum_buffer.download_data<unsigned int>();
+						auto result = prefix_sum_buffer.download_data<unsigned int>(data.size());
 						for (size_t j = 0; j < expected_results[i].size(); ++j)
 							CHECK_EQUAL(result[j], expected_results[i][j], "Expansion step " + std::to_string(i));
 					}
@@ -153,7 +153,7 @@ namespace Test
 						// Global sum buffer (buff) containts the final prefix sum as its 0th element.
 						// Copy this into the end index of the prefix sum result.
 						prefix_sum_buffer.copy_sub_data(buff, 0, sizeof(unsigned int) * (data.size() - 1), sizeof(unsigned int));
-						auto result = prefix_sum_buffer.download_data<unsigned int>();
+						auto result = prefix_sum_buffer.download_data<unsigned int>(data.size());
 
 						// Check the result
 						for (size_t i = 0; i < expected_final.size(); i++)

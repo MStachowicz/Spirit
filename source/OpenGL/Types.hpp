@@ -26,7 +26,6 @@ namespace OpenGL
 		GLHandle m_handle;
 		GLsizeiptr m_size; // Size in bytes of the buffer. i.e. the amount of GPU memory the whole buffer holds.
 		GLsizei m_stride;  // Stride in bytes between consecutive elements in the buffer. i.e. the amount of GPU memory each element takes up.
-		GLsizei m_count;   // Number of elements in the buffer.
 		BufferStorageBitfield m_flags;
 
 	public:
@@ -47,7 +46,6 @@ namespace OpenGL
 
 			m_size   = p_data.size() * sizeof(T);
 			m_stride = sizeof(T);
-			m_count  = static_cast<GLsizei>(p_data.size());
 			named_buffer_storage(m_handle, m_size, p_data.data(), m_flags);
 		}
 		// Creates and initializes a buffer object's immutable data store.
@@ -59,13 +57,12 @@ namespace OpenGL
 
 			m_size   = N * sizeof(T);
 			m_stride = sizeof(T);
-			m_count  = static_cast<GLsizei>(N);
 			named_buffer_storage(m_handle, m_size, p_data.data(), m_flags);
 		}
 		template<typename T>
-		std::vector<T> download_data() const
+		std::vector<T> download_data(size_t p_count) const
 		{
-			std::vector<T> data(m_count);
+			std::vector<T> data(p_count);
 			get_named_buffer_sub_data(m_handle, 0, m_size, data.data());
 			return data;
 		}
@@ -80,6 +77,18 @@ namespace OpenGL
 			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(T)), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
 
 			named_buffer_sub_data(m_handle, p_offset, sizeof(T), &p_data);
+		}
+		// Update a subset of a Buffer object's data store
+		template<typename T>
+		void buffer_sub_data(GLintptr p_offset, const std::vector<T>& p_data)
+		{
+			// assert T is not a pointer or reference type.
+			static_assert(!std::is_pointer_v<T>, "T must not be a pointer type.");
+			static_assert(!std::is_reference_v<T>, "T must not be a reference type.");
+			static_assert(std::is_standard_layout_v<T>, "T must be a standard layout type.");
+			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(T) * p_data.size()), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
+
+			named_buffer_sub_data(m_handle, p_offset, (GLsizeiptr)(sizeof(T) * p_data.size()), p_data.data());
 		}
 		// Mat4 specialisation of buffer_sub_data
 		void buffer_sub_data(GLintptr p_offset, const glm::mat4& p_data)
@@ -97,7 +106,8 @@ namespace OpenGL
 		// Copy a portion of p_source_buffer from p_source_offset into this buffer at p_destination_offset of p_size.
 		void copy_sub_data(const Buffer& p_source_buffer, GLint p_source_offset, GLint p_destination_offset, GLsizeiptr p_size)
 		{
-			copy_named_buffer_sub_data(p_source_buffer.m_handle, m_handle, p_source_offset, p_destination_offset, p_size);
+			if (p_size > 0)
+				copy_named_buffer_sub_data(p_source_buffer.m_handle, m_handle, p_source_offset, p_destination_offset, p_size);
 		}
 
 		// Resizes the buffer object's data store. All existing data is lost.
@@ -106,7 +116,6 @@ namespace OpenGL
 		void clear();
 		GLsizeiptr size() const { return m_size; }
 		GLsizei stride()  const { return m_stride; }
-		GLsizei count()   const { return m_count; }
 		bool is_immutable() const;
 	};
 	// Meta struct to hold information about a vertex attribute.
@@ -151,7 +160,8 @@ namespace OpenGL
 		void attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point, GLsizei p_stride);
 		// Binds p_element_buffer to the VAO. Does not modify the global GL state.
 		//@param p_element_buffer The element buffer object (EBO) to attach to the VAO for reading index data of the attached vertex_buffer.
-		void attach_element_buffer(Buffer& p_element_buffer);
+		//@param p_element_count The number of indices in p_element_buffer.
+		void attach_element_buffer(Buffer& p_element_buffer, GLsizei p_element_count);
 		// Whether the VAO has an index buffer.
 		bool is_indexed() const { return m_is_indexed; }
 		// Number of vertices to draw. If an index buffer is attached, this is the number of indices to draw.

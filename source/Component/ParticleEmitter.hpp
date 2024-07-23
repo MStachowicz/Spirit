@@ -33,13 +33,12 @@ namespace Component
 		DeltaTime lifetime;              // Duration in seconds a particle stays alive before being removed.
 		GLsizei spawn_count;             // How many particles to spawn every spawn_period.
 		GLsizei max_particle_count;      // Max number of particles that can be alive concurrently.
+		GLsizei alive_count;             // Number of particles currently alive. This value is out of date when particles expire after particle_update kernel runs.
 		bool sort_by_distance_to_camera; // Whether to sort the particles and draw the most distant particles last.
 
 		OpenGL::Buffer particle_buf; // Contains instances of Particle struct.
 
 		ParticleEmitter(const TextureRef& p_texture);
 		void draw_UI(System::TextureSystem& p_texture_system);
-
-		auto alive_count () const { return particle_buf.count(); }
 	};
 }
