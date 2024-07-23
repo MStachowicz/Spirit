@@ -74,6 +74,18 @@ namespace Utility
 		return vec;
 	}
 
+	template <typename T>
+	static T next_power_of_2(const T& p_value)
+	{
+		static_assert(std::is_integral<T>::value, "next_power_of_2 only works with integral types");
+		ASSERT_THROW(p_value > 0, "next_power_of_2 only works with positive values");
+
+		T power = 1;
+		while (power < p_value)
+			power <<= 1;
+		return power;
+	}
+
 	// Construct a model matrix from position, rotation and scale
 	glm::mat4 make_model_matrix(const glm::vec3& p_position, const glm::vec3& p_rotation, const glm::vec3& p_scale);
 	// Converts a quaternion rotation into XYZ (Roll-Pitch-Yaw) Euler angles in radians.
