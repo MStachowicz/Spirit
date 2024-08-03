@@ -112,6 +112,10 @@ namespace ImGui
 	{
 		return SliderFloat3(label, &p_vec3.x, v_min, v_max, format, flags);
 	}
+	inline bool Slider(const char* label, glm::vec4& p_vec4, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+	{
+		return SliderFloat3(label, &p_vec4.x, v_min, v_max, format, flags);
+	}
 	inline bool Slider(const char* label, float& p_float, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
 	{
 		return SliderFloat(label, &p_float, v_min, v_max, format, flags);
