@@ -542,11 +542,15 @@ namespace UI
 				{ ImGui::SeparatorText("Graphics");
 					ImGui::Text("Window size", m_window.size());
 					ImGui::Text("Aspect ratio", m_window.aspect_ratio());
-					bool VSync = m_window.get_VSync();
+					ImGui::Text("Frame count", m_draw_count);
+					ImGui::Separator();
 					ImGui::Text("View Position", m_scene_system.get_current_scene_view_info().m_view_position);
+					ImGui::Text("View", m_scene_system.get_current_scene_view_info().m_view);
+					ImGui::Text("Proj", m_scene_system.get_current_scene_view_info().m_projection);
 					ImGui::Separator();
 					ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
 					ImGui::Checkbox("Visualise normals", &debug_options.m_show_mesh_normals);
+					bool VSync = m_window.get_VSync();
 					if (ImGui::Checkbox("VSync", &VSync))
 						m_window.set_VSync(VSync);
 				}
