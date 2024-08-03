@@ -110,6 +110,7 @@ namespace OpenGL
 				// Draw the particles
 				DrawCall dc;
 				dc.m_cull_face_enabled  = false;
+				dc.m_depth_test_enabled = false;
 				dc.m_blending_enabled   = true;
 				// Additive blending.
 				dc.m_source_factor      = BlendFactorType::SourceAlpha;
