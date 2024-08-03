@@ -2,7 +2,7 @@
 
 uniform sampler2D diffuse;
 
-in VS_OUT
+in GEOM_OUT
 {
 	vec2 tex_coord;
 } fs_in;
