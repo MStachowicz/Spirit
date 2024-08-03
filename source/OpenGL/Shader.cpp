@@ -62,13 +62,15 @@ namespace OpenGL
 
 			std::optional<GLHandle> compute_shader;
 			{
-				ASSERT_THROW(!vert_shader || !frag_shader || !geom_shader, "Shader '{}' cannot have both a compute shader and a vertex, fragment or geometry shader", p_name);
-
-				is_compute_shader = true;
 				auto compute_path = shader_path;
 				compute_path.replace_extension("comp");
+
 				if (Utility::File::exists(compute_path))
 				{
+					// Assert the shader does not have any other shader types.
+					ASSERT_THROW(!vert_shader && !frag_shader && !geom_shader, "Compute shader '{}' cannot be used with other shader types", p_name);
+
+					is_compute_shader  = true;
 					compute_shader     = create_shader(ShaderProgramType::Compute);
 					std::string source = Utility::File::read_from_file(compute_path);
 					shader_source(compute_shader.value(), source);
