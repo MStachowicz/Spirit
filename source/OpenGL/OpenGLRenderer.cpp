@@ -189,6 +189,19 @@ namespace OpenGL
 		m_particle_renderer.update(delta_time, m_scene_system.get_current_scene(), m_scene_system.get_current_scene_view_info().m_view_position, m_view_properties_buffer, m_screen_framebuffer);
 	}
 
+	void OpenGLRenderer::reload_shaders()
+	{
+		m_uniform_colour_shader.reload();
+		m_colour_shader.reload();
+		m_texture_shader.reload();
+		m_screen_texture_shader.reload();
+		m_sky_box_shader.reload();
+		m_particle_renderer.reload_shaders();
+		m_phong_renderer.reload_shaders();
+		m_grid_renderer.reload_shaders();
+		m_shadow_mapper.reload_shaders();
+	}
+
 	void OpenGLRenderer::end_frame()
 	{
 		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_screen_framebuffer);

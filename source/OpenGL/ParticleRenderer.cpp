@@ -41,6 +41,12 @@ namespace OpenGL
 		}
 	}
 
+	void ParticleRenderer::reload_shaders()
+	{
+		m_particle_draw_shader.reload();
+		m_particle_update_shader.reload();
+	}
+
 	void ParticleRenderer::update(const DeltaTime& p_delta_time, System::Scene& p_scene, const glm::vec3& p_camera_position, const Buffer& p_view_properties, const FBO& p_target_FBO)
 	{ (void)p_camera_position;
 		p_scene.m_entities.foreach([&](Component::ParticleEmitter& p_emitter)

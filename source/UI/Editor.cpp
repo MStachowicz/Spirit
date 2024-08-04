@@ -553,6 +553,8 @@ namespace UI
 					bool VSync = m_window.get_VSync();
 					if (ImGui::Checkbox("VSync", &VSync))
 						m_window.set_VSync(VSync);
+					if (ImGui::Button("Reload shaders"))
+						m_openGL_renderer.reload_shaders();
 				}
 
 				{ ImGui::SeparatorText("Post Processing");

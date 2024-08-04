@@ -288,4 +288,9 @@ namespace OpenGL
 			}
 		}
 	}
+	void PhongRenderer::reload_shaders()
+	{
+		m_phong_texture.reload();
+		m_phong_uniform_colour.reload();
+	}
 } // namespace OpenGL

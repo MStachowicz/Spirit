@@ -18,7 +18,12 @@ namespace OpenGL
 		, m_uniforms{}
 		, is_compute_shader{false}
 	{
-		{// Load the shader from file
+		load_from_file(p_name);
+	}
+
+	void Shader::load_from_file(const char* p_name)
+	{
+		{// Load the shader from shader_path
 			const auto shader_path = Config::GLSL_Shader_Directory / p_name;
 
 			std::optional<GLHandle> vert_shader;
@@ -135,18 +140,28 @@ namespace OpenGL
 
 		LOG("OpenGL::Shader '{}' loaded given ID: {}", m_name, m_handle);
 	}
+
+	void Shader::reload()
+	{
+		glDeleteProgram(m_handle);
+		m_uniform_blocks.clear();
+		m_shader_storage_blocks.clear();
+		m_uniforms.clear();
+		load_from_file(m_name.c_str());
+	}
+
 	Variable::Variable(GLHandle p_shader_program, GLuint p_uniform_index, Type p_type)
-		: m_identifier{""}
-		, m_type{ShaderDataType::Unknown}
-		, m_variable_type{p_type}
-		, m_offset{-1}
-		, m_array_size{-1}
-		, m_array_stride{-1}
-		, m_matrix_stride{-1}
-		, m_is_row_major{false}
-		, m_location{-1}
-		, m_top_level_array_size{-1}
-		, m_top_level_array_stride{-1}
+	    : m_identifier{""}
+	    , m_type{ShaderDataType::Unknown}
+	    , m_variable_type{p_type}
+	    , m_offset{-1}
+	    , m_array_size{-1}
+	    , m_array_stride{-1}
+	    , m_matrix_stride{-1}
+	    , m_is_row_major{false}
+	    , m_location{-1}
+	    , m_top_level_array_size{-1}
+	    , m_top_level_array_stride{-1}
 	{
 		GLenum type_query = [p_type]
 		{

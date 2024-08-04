@@ -100,6 +100,10 @@ namespace OpenGL
 
 	public:
 		Shader(const char* p_name);
+
+		void load_from_file(const char* p_name);
+		void reload();
+
 		// Get the index of the attribute with the given identifier.
 		GLuint get_attribute_index(const char* attribute_identifier) const;
 

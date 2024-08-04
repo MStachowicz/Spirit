@@ -21,6 +21,7 @@ namespace OpenGL
 	public:
 		ParticleRenderer();
 
+		void reload_shaders();
 		void update(const DeltaTime& p_delta_time, System::Scene& p_scene, const glm::vec3& p_camera_position, const Buffer& p_view_properties, const FBO& p_target_FBO);
 	};
 }

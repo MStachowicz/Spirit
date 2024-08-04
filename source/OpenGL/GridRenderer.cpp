@@ -87,4 +87,8 @@ namespace OpenGL
 			dc.submit(m_grid_shader, m_origin_arrows.get_VAO(), target_FBO);
 		}
 	}
-}
+	void GridRenderer::reload_shaders()
+	{
+		m_grid_shader.reload();
+	}
+} // namespace OpenGL

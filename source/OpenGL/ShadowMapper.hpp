@@ -24,5 +24,6 @@ namespace OpenGL
 		const Texture& get_depth_map() const { return m_depth_map_FBO.depth_attachment(); };
 
 		void draw_UI();
+		void reload_shaders();
 	};
 }

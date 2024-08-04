@@ -19,6 +19,8 @@ namespace OpenGL
 
 	public:
 		GridRenderer() noexcept;
+
 		void draw(const FBO& target_FBO);
+		void reload_shaders();
 	};
 }

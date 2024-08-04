@@ -66,5 +66,6 @@ namespace OpenGL
 		// Given a p_scene, updates the buffers with the light data from the scene's entities.
 		// Only needs to happen once per frame or on changes to a light.
 		void update_light_data(System::Scene& p_scene);
+		void reload_shaders();
 	};
 } // namespace OpenGL

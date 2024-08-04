@@ -70,5 +70,7 @@ namespace OpenGL
 		void end_frame();
 		// Draw the current state of the ECS.
 		void draw(const DeltaTime& delta_time);
+
+		void reload_shaders();
 	};
 } // namespace OpenGL

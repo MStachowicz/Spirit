@@ -41,4 +41,8 @@ namespace OpenGL
 
 	void ShadowMapper::draw_UI()
 	{}
+	void ShadowMapper::reload_shaders()
+	{
+		m_shadow_depth_shader.reload();
+	}
 } // namespace OpenGL
