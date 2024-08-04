@@ -14,7 +14,8 @@ namespace Component
 		, emit_velocity_max{glm::vec3(0.8f, 2.f,  0.2f)}
 		, spawn_period{0.4f}
 		, time_to_next_spawn{0.f} // Spawn on creation.
-		, lifetime{7.f}
+		, lifetime_min{7.f}
+		, lifetime_max{7.f}
 		, spawn_count{4}
 		, max_particle_count{1'000}
 		, alive_count{0}
@@ -70,7 +71,8 @@ namespace Component
 			ImGui::Slider("Spawn period", spawn_period, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 			ImGui::Slider("Time to next spawn", time_to_next_spawn, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 			ImGui::Slider("Spawn count", spawn_count, 0u, 100u);
-			ImGui::Slider("Lifetime", lifetime, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
+			ImGui::Slider("Lifetime min", lifetime_min, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
+			ImGui::Slider("Lifetime max", lifetime_max, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 			ImGui::Slider("Particle size", particle_size, 0.1f, 10.f, "%.3fm");
 			ImGui::Slider("Max particle count", max_particle_count, 0u, 1'000'000u);
 			ImGui::Checkbox("Sort by distance to camera", &sort_by_distance_to_camera);
