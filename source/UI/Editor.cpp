@@ -251,6 +251,8 @@ namespace UI
 	{
 		// If the entity is in the m_selected_entities list, remove it.
 		auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), p_entity);
+
+		if (it != m_selected_entities.end())
 		{
 			m_selected_entities.erase(it);
 			if (m_entity_to_draw_info_for == p_entity)
