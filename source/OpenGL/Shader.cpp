@@ -7,15 +7,18 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include <sstream>
+#include <stack>
+#include <unordered_set>
 
 namespace OpenGL
 {
-	Shader::Shader(const char* p_name)
+	Shader::Shader(const char* p_name, const std::vector<const char*>& defines)
 		: m_name{p_name}
 		, m_handle{0}
 		, m_uniform_blocks{}
 		, m_shader_storage_blocks{}
 		, m_uniforms{}
+		, m_defines{defines}
 		, is_compute_shader{false}
 	{
 		load_from_file(p_name);
@@ -24,6 +27,8 @@ namespace OpenGL
 	void Shader::load_from_file(const char* p_name)
 	{
 		{// Load the shader from shader_path
+			// #PERF - Can read the file and run the pre-processing in one step instead of read_from_file and then process_code.
+
 			const auto shader_path = Config::GLSL_Shader_Directory / p_name;
 
 			std::optional<GLHandle> vert_shader;
@@ -32,9 +37,10 @@ namespace OpenGL
 				vert_shader_path.replace_extension("vert");
 				if (Utility::File::exists(vert_shader_path))
 				{
-					std::string vert_source = Utility::File::read_from_file(vert_shader_path);
-					vert_shader             = create_shader(ShaderProgramType::Vertex);
-					shader_source(*vert_shader, vert_source);
+					std::string source = Utility::File::read_from_file(vert_shader_path);
+					source             = process_code(source, m_defines);
+					vert_shader        = create_shader(ShaderProgramType::Vertex);
+					shader_source(*vert_shader, source);
 					compile_shader(*vert_shader);
 				}
 			}
@@ -45,9 +51,10 @@ namespace OpenGL
 				frag_shader_path.replace_extension("frag");
 				if (Utility::File::exists(frag_shader_path))
 				{
-					frag_shader             = create_shader(ShaderProgramType::Fragment);
-					std::string frag_source = Utility::File::read_from_file(frag_shader_path);
-					shader_source(*frag_shader, frag_source);
+					frag_shader        = create_shader(ShaderProgramType::Fragment);
+					std::string source = Utility::File::read_from_file(frag_shader_path);
+					source             = process_code(source, m_defines);
+					shader_source(*frag_shader, source);
 					compile_shader(*frag_shader);
 				}
 			}
@@ -60,6 +67,7 @@ namespace OpenGL
 				{
 					geom_shader        = create_shader(ShaderProgramType::Geometry);
 					std::string source = Utility::File::read_from_file(geom_shader_path);
+					source             = process_code(source, m_defines);
 					shader_source(geom_shader.value(), source);
 					compile_shader(geom_shader.value());
 				}
@@ -78,6 +86,7 @@ namespace OpenGL
 					is_compute_shader  = true;
 					compute_shader     = create_shader(ShaderProgramType::Compute);
 					std::string source = Utility::File::read_from_file(compute_path);
+					source             = process_code(source, m_defines);
 					shader_source(compute_shader.value(), source);
 					compile_shader(compute_shader.value());
 				}
@@ -344,6 +353,94 @@ namespace OpenGL
 
 		glShaderStorageBlockBinding(m_handle, block.m_block_index, p_storage_block_binding);
 		block.m_binding_point = p_storage_block_binding;
+	}
+
+	std::string Shader::process_code(const std::string& source_code, const std::vector<const char*>& defined_variables)
+	{
+		auto is_defined_var = [&defined_variables](const std::string& variable)
+		{ return std::find(defined_variables.begin(), defined_variables.end(), variable) != defined_variables.end();};
+
+		std::istringstream code_stream(source_code);
+		std::ostringstream result;
+		std::string line;
+
+		std::stack<bool> condition_stack;       // Stack to track nesting of conditions
+		std::stack<bool> block_processed_stack; // Tracks if any condition in the current block has been true
+		bool current_condition = true;
+
+		while (std::getline(code_stream, line))
+		{
+			std::string trimmed_line = line;
+			// trim all whitespace inside the line (spaces, tabs, newlines, etc.)
+			trimmed_line.erase(std::remove_if(trimmed_line.begin(), trimmed_line.end(), ::isspace), trimmed_line.end());
+
+			if (trimmed_line.starts_with("#ifdef"))
+			{
+				std::string variable = trimmed_line.substr(6); // Extract the variable name after #ifdef
+
+				// Determine if this block should be included
+				bool is_defined_block = is_defined_var(variable);
+				current_condition     = current_condition && is_defined_block;
+				condition_stack.push(is_defined_block);
+				block_processed_stack.push(is_defined_block);
+			}
+			else if (trimmed_line.starts_with("#elifdef"))
+			{
+				std::string variable = trimmed_line.substr(8); // Extract the variable name after #elifdef
+
+				if (!block_processed_stack.empty())
+				{
+					bool was_processed = block_processed_stack.top();
+					if (!was_processed)
+					{
+						// Only evaluate #elif if no previous condition was true
+						bool is_defined_block = is_defined_var(variable);
+						current_condition     = current_condition && is_defined_block;
+						condition_stack.pop(); // Replace the previous condition with this one
+						condition_stack.push(is_defined_block);
+						block_processed_stack.pop();
+						block_processed_stack.push(is_defined_block);
+					}
+					else
+					{
+						// If a previous condition was true, ignore this one
+						current_condition = false;
+						condition_stack.pop(); // Still need to adjust the stack
+						condition_stack.push(false);
+					}
+				}
+			}
+			else if (trimmed_line.starts_with("#else"))
+			{
+				if (!block_processed_stack.empty())
+				{
+					bool was_processed = block_processed_stack.top();
+					condition_stack.pop();
+					condition_stack.push(!was_processed);
+				}
+			}
+			else if (trimmed_line.starts_with("#endif"))
+			{
+				if (!condition_stack.empty())
+				{
+					condition_stack.pop();
+					block_processed_stack.pop();
+				}
+
+				// Reset the current_condition based on the stack
+				current_condition = condition_stack.empty() ? true : condition_stack.top();
+			}
+			else
+			{
+				// Only add lines to the result if they're in an active block
+				if (condition_stack.empty() || condition_stack.top())
+				{
+					result << line << '\n';
+				}
+			}
+		}
+
+		return result.str();
 	}
 
 	GLuint Shader::get_attribute_index(const char* attribute_identifier) const
