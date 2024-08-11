@@ -197,7 +197,6 @@ namespace System
 
 		{ // Particle
 			auto particle_emitter = Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")};
-			particle_emitter.sort_by_distance_to_camera = true;
 			p_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 		}
 		{ // Terrain

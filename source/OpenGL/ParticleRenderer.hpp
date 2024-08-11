@@ -14,8 +14,24 @@ namespace OpenGL
 {
 	class ParticleRenderer
 	{
-		Shader m_particle_draw_shader;
-		Shader m_particle_update_shader;
+		Shader m_particle_draw_constant_colour_fixed_size;
+		Shader m_particle_draw_constant_texture_fixed_size;
+		Shader m_particle_draw_constant_colour_and_texture_fixed_size;
+		Shader m_particle_draw_varying_colour_fixed_size;
+		Shader m_particle_draw_varying_texture_fixed_size;
+		Shader m_particle_draw_varying_colour_constant_texture_fixed_size;
+		Shader m_particle_draw_constant_colour_varying_texture_fixed_size;
+		Shader m_particle_draw_varying_colour_and_texture_fixed_size;
+		Shader m_particle_draw_constant_colour_varying_size;
+		Shader m_particle_draw_constant_texture_varying_size;
+		Shader m_particle_draw_constant_colour_and_texture_varying_size;
+		Shader m_particle_draw_varying_colour_varying_size;
+		Shader m_particle_draw_varying_texture_varying_size;
+		Shader m_particle_draw_varying_colour_constant_texture_varying_size;
+		Shader m_particle_draw_constant_colour_varying_texture_varying_size;
+		Shader m_particle_draw_varying_colour_and_texture_varying_size;
+
+		Shader m_particle_update;
 		VAO m_particle_VAO;
 
 	public:
