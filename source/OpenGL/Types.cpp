@@ -86,9 +86,9 @@ namespace OpenGL
 	}
 	void Buffer::clear()
 	{
+		clear_named_buffer_sub_data(m_handle, GL_R8, 0, m_size, GL_R8, GL_UNSIGNED_BYTE, nullptr);
 		m_size   = 0;
 		m_stride = 0;
-		named_buffer_storage(m_handle, 0, nullptr, m_flags);
 	}
 	bool Buffer::is_immutable() const
 	{

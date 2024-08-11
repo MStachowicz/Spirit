@@ -654,6 +654,16 @@ namespace OpenGL
 	//@param p_buffer Specifies the name of an index buffer to bind to the element array buffer bind point.
 	void vertex_array_element_buffer(GLHandle p_VAO, GLHandle p_buffer);
 
+	// Fill all or part of buffer object's data store with a fixed value
+	//@param p_buffer Specifies the name of the buffer object to clear.
+	//@param p_internal_format Specifies the internal format with which the data will be stored in the buffer object.
+	//@param p_offset Specifies the offset in basic machine units into the buffer object's data store at which to start filling.
+	//@param p_size Specifies the size in basic machine units of the range of the data store to fill.
+	//@param p_format Specifies the format of the data in memory addressed by data.
+	//@param p_type Specifies the type of the data in memory addressed by data.
+	//@param data Specifies the address of a memory location storing the data to be replicated into the buffer's data store.
+	void clear_named_buffer_sub_data(GLHandle p_buffer, GLenum p_internal_format, GLintptr p_offset, GLsizeiptr p_size, GLenum p_format, GLenum p_type, const void *data);
+
 	// Creates and initializes a buffer object's immutable data store
 	//@param p_buffer Name of the buffer object to create and initialize.
 	//@param p_size Size in bytes of the buffer object's new data store.

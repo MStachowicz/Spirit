@@ -505,6 +505,10 @@ namespace OpenGL
 		glVertexArrayElementBuffer(p_VAO, p_buffer);
 	}
 
+	void clear_named_buffer_sub_data(GLHandle p_buffer, GLenum p_internal_format, GLintptr p_offset, GLsizeiptr p_size, GLenum p_format, GLenum p_type, const void* data)
+	{
+		glClearNamedBufferSubData(p_buffer, p_internal_format, p_offset, p_size, p_format, p_type, data);
+	}
 	void named_buffer_storage(GLHandle p_buffer, GLsizeiptr p_size, const void* p_data, BufferStorageBitfield p_flags)
 	{
 		glNamedBufferStorage(p_buffer, p_size, p_data, p_flags.bitfield);
