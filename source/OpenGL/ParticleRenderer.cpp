@@ -105,13 +105,13 @@ namespace OpenGL
 							new_particles.reserve(new_particle_count);
 							for (int i = 0; i < new_particle_count; i++)
 							{
+								auto lifetime = p_emitter.lifetime_min + (distribution(gen) * (p_emitter.lifetime_max - p_emitter.lifetime_min));
 								auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
 									p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
 									p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
 									p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
-									1.f
+									lifetime.count() // Store the starting lifetime in the w component of the velocity.
 								};
-								auto lifetime = p_emitter.lifetime_min + (distribution(gen) * (p_emitter.lifetime_max - p_emitter.lifetime_min));
 								new_particles.emplace_back<Component::Particle>({glm::vec4{p_emitter.emit_position, lifetime.count()}, vel});
 							}
 

@@ -4,9 +4,15 @@
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
+in VERT_OUT
+{
+	float lifetime_factor;
+} vert_out[];
+
 out GEOM_OUT
 {
 	vec2 tex_coord;
+	float lifetime_factor;
 } geom_out;
 
 layout(shared) uniform ViewProperties
@@ -30,9 +36,8 @@ void main()
 		#ifdef FIXED_SIZE
 			float size = size;
 		#elifdef VARYING_SIZE
-			// TODO calculate factor based on time left alive not just lifetime
-			float factor = 0.5;
-			float size = mix(start_size, end_size, factor);
+			geom_out.lifetime_factor = vert_out[0].lifetime_factor;
+			float size = mix(start_size, end_size, vert_out[0].lifetime_factor);
 		#endif
 
 		vec4 particle_center = viewProperties.projection * viewProperties.view * vec4(gl_in[0].gl_Position.xyz, 1.0);

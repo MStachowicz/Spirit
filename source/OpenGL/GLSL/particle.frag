@@ -21,6 +21,7 @@
 in GEOM_OUT //TODO: Wrap in #ifdef HAS_TEXTURE
 {
 	vec2 tex_coord;
+	float lifetime_factor;
 } fs_in;
 
 out vec4 Colour;
@@ -28,8 +29,7 @@ out vec4 Colour;
 void main()
 {
 	#ifdef HAS_VARYING
-		// TODO calculate factor based on time left alive not just lifetime
-		float factor = 0.5;
+		float factor = fs_in.lifetime_factor;
 	#endif
 
 	#ifdef STYLE_CONSTANT_COLOUR
