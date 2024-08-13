@@ -151,35 +151,24 @@ namespace Component
 			{ImGui::SeparatorText("Emission");
 				ImGui::Slider("Emit position", emit_position, -10.f, 10.f, "%.3fm");
 
-				constexpr auto correction_magnitude = 1.f;
 				if (ImGui::Slider("Emit velocity min", emit_velocity_min, -10.f, 10.f, "%.3fm/s"))
-
-				if (emit_velocity_min.x > emit_velocity_max.x)
-					emit_velocity_max.x = emit_velocity_min.x + correction_magnitude;
-				if (emit_velocity_min.y > emit_velocity_max.y)
-					emit_velocity_max.y = emit_velocity_min.y + correction_magnitude;
-				if (emit_velocity_min.z > emit_velocity_max.z)
-					emit_velocity_max.z = emit_velocity_min.z + correction_magnitude;
-
-				if (ImGui::Slider("Emit velocity max", emit_velocity_max, -10.f, 10.f, "%.3fm/s"))
-
-				if (emit_velocity_max.x < emit_velocity_min.x)
-					emit_velocity_min.x = emit_velocity_max.x - correction_magnitude;
-				if (emit_velocity_max.y < emit_velocity_min.y)
-					emit_velocity_min.y = emit_velocity_max.y - correction_magnitude;
-				if (emit_velocity_max.z < emit_velocity_min.z)
-					emit_velocity_min.z = emit_velocity_max.z - correction_magnitude;
-
-				ASSERT_THROW(emit_velocity_min.x < emit_velocity_max.x
-					&& emit_velocity_min.y < emit_velocity_max.y
-					&& emit_velocity_min.z < emit_velocity_max.z, "ParticleEmitter min not smaller than max");
+				{
+					if (emit_velocity_min.x > emit_velocity_max.x) emit_velocity_max.x = emit_velocity_min.x;
+					if (emit_velocity_min.y > emit_velocity_max.y) emit_velocity_max.y = emit_velocity_min.y;
+					if (emit_velocity_min.z > emit_velocity_max.z) emit_velocity_max.z = emit_velocity_min.z;
+				}
+				if(ImGui::Slider("Emit velocity max", emit_velocity_max, -10.f, 10.f, "%.3fm/s"))
+				{
+					if (emit_velocity_max.x < emit_velocity_min.x) emit_velocity_min.x = emit_velocity_max.x;
+					if (emit_velocity_max.y < emit_velocity_min.y) emit_velocity_min.y = emit_velocity_max.y;
+					if (emit_velocity_max.z < emit_velocity_min.z) emit_velocity_min.z = emit_velocity_max.z;
+				}
 
 				ImGui::Slider("Spawn period", spawn_period, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 				ImGui::Slider("Time to next spawn", time_to_next_spawn, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 				ImGui::Slider("Spawn count", spawn_count, 0u, 100u);
 				ImGui::Slider("Lifetime min", lifetime_min, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 				ImGui::Slider("Lifetime max", lifetime_max, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
-				//ImGui::Slider("Particle size", particle_size, 0.1f, 10.f, "%.3fm");
 				ImGui::Slider("Max particle count", max_particle_count, 0u, 1'000'000u);
 			}
 
