@@ -140,6 +140,7 @@ namespace OpenGL
 				DrawCall comp;
 				comp.set_SSBO("ParticlesBuffer", p_emitter.particle_buf);
 				comp.set_uniform<float>("delta_time", p_delta_time.count());
+				comp.set_uniform("u_acceleration", p_emitter.acceleration);
 				comp.submit_compute(m_particle_update, p_emitter.alive_count, 1, 1);
 				OpenGL::memory_barrier({OpenGL::MemoryBarrierFlag::ShaderStorageBarrierBit});
 

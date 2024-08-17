@@ -5,7 +5,7 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 struct Particle
 {
 	vec4 position; // w component is life time
-	vec4 velocity; // w component unused
+	vec4 velocity; // w component is starting life time
 };
 layout(std430, binding = 0) buffer ParticlesBuffer
 {
@@ -13,6 +13,7 @@ layout(std430, binding = 0) buffer ParticlesBuffer
 };
 
 uniform float delta_time;
+uniform vec3 u_acceleration;
 
 void main()
 {
@@ -20,6 +21,7 @@ void main()
 	if (particles[index].position.w > 0.0)
 	{
 		particles[index].position.w   -= delta_time;
+		particles[index].velocity.xyz += u_acceleration * delta_time;
 		particles[index].position.xyz += particles[index].velocity.xyz * delta_time;
 	}
 }

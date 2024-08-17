@@ -106,6 +106,8 @@ namespace Component
 		glm::vec3 emit_velocity_min; // Minimum starting velocity in m/s.
 		glm::vec3 emit_velocity_max; // Maximum starting velocity in m/s.
 
+		glm::vec3 acceleration;
+
 		DeltaTime lifetime_min; // Min duration in seconds a particle stays alive before being removed.
 		DeltaTime lifetime_max; // Max duration in seconds a particle stays alive before being removed.
 

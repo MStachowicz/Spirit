@@ -18,6 +18,7 @@ namespace Component
 		, emit_position_max{glm::vec3(0.f)}
 		, emit_velocity_min{glm::vec3(0.f, 1.5f, -0.8f)}
 		, emit_velocity_max{glm::vec3(0.8f, 2.f,  0.2f)}
+		, acceleration{glm::vec3(0.f)}
 		, lifetime_min{7.f}
 		, lifetime_max{7.f}
 		, spawn_per_second{1.f}
@@ -176,6 +177,7 @@ namespace Component
 					if (emit_velocity_max.y < emit_velocity_min.y) emit_velocity_min.y = emit_velocity_max.y;
 					if (emit_velocity_max.z < emit_velocity_min.z) emit_velocity_min.z = emit_velocity_max.z;
 				}
+				ImGui::Slider("Acceleration", acceleration, -10.f, 10.f, "%.3fm/s^2");
 
 				ImGui::Slider("Lifetime min", lifetime_min, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 				ImGui::Slider("Lifetime max", lifetime_max, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
