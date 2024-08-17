@@ -18,11 +18,10 @@ namespace Component
 		, emit_position_max{glm::vec3(0.f)}
 		, emit_velocity_min{glm::vec3(0.f, 1.5f, -0.8f)}
 		, emit_velocity_max{glm::vec3(0.8f, 2.f,  0.2f)}
-		, spawn_period{0.4f}
-		, time_to_next_spawn{0.f} // Spawn on creation.
 		, lifetime_min{7.f}
 		, lifetime_max{7.f}
-		, spawn_count{4}
+		, spawn_per_second{1.f}
+		, spawn_debt{0.f}
 		, max_particle_count{1'000}
 		, alive_count{0}
 		, particle_buf{OpenGL::BufferStorageBitfield({OpenGL::BufferStorageFlag::DynamicStorageBit})}
@@ -150,6 +149,8 @@ namespace Component
 			}
 
 			{ImGui::SeparatorText("Emission");
+				ImGui::Slider("Spawn", spawn_per_second, 0.f, 100.f, "%.3f/s");
+
 				if (ImGui::Slider("Emit position min", emit_position_min, -10.f, 10.f, "%.3fm"))
 				{
 					if (emit_position_min.x > emit_position_max.x) emit_position_max.x = emit_position_min.x;
@@ -176,9 +177,6 @@ namespace Component
 					if (emit_velocity_max.z < emit_velocity_min.z) emit_velocity_min.z = emit_velocity_max.z;
 				}
 
-				ImGui::Slider("Spawn period", spawn_period, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
-				ImGui::Slider("Time to next spawn", time_to_next_spawn, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
-				ImGui::Slider("Spawn count", spawn_count, 0u, 100u);
 				ImGui::Slider("Lifetime min", lifetime_min, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 				ImGui::Slider("Lifetime max", lifetime_max, DeltaTime(0.f), DeltaTime(10.f), "%.3fs");
 				ImGui::Slider("Max particle count", max_particle_count, 0u, 1'000'000u);
@@ -195,7 +193,7 @@ namespace Component
 	void ParticleEmitter::reset()
 	{
 		particle_buf.clear();
-		alive_count        = 0;
-		time_to_next_spawn = spawn_period;
+		alive_count = 0;
+		spawn_debt  = 0.f;
 	}
 } // namespace Component

@@ -82,62 +82,55 @@ namespace OpenGL
 		p_scene.m_entities.foreach([&](Component::ParticleEmitter& p_emitter)
 		{
 			constexpr auto zero_seconds = std::chrono::seconds(0);
+			p_emitter.spawn_debt += p_delta_time.count() * p_emitter.spawn_per_second;
 
-			{// Spawning new particles every spawn_period
-				p_emitter.time_to_next_spawn -= p_delta_time;
+			if (p_emitter.spawn_debt > 1.f)
+			{
+				const unsigned int particles_to_spawn = (unsigned int)std::floor(p_emitter.spawn_debt);
+				// Decrement as if the spawn exceeded to prevent the spawn_debt from growing indefinitely while the alive count limits spawn.
+				p_emitter.spawn_debt -= particles_to_spawn;
 
-				if (p_emitter.time_to_next_spawn <= zero_seconds)
+				const unsigned int remaining_size     = p_emitter.max_particle_count - p_emitter.alive_count;
+				const unsigned int new_particle_count = std::min(remaining_size, particles_to_spawn);
+
+				auto rd           = std::random_device();
+				auto gen          = std::mt19937(rd());
+				auto distribution = std::uniform_real_distribution<float>(0.f, 1.f);
+
+				std::vector<Component::Particle> new_particles;
+				new_particles.reserve(new_particle_count);
+				for (unsigned int i = 0; i < new_particle_count; i++)
 				{
-					p_emitter.time_to_next_spawn = p_emitter.spawn_period; // Reset time.
-
-					if (p_emitter.alive_count < p_emitter.max_particle_count)
-					{
-						auto remaining_size     = p_emitter.max_particle_count - p_emitter.alive_count;
-						auto new_particle_count = std::min(remaining_size, p_emitter.spawn_count);
-
-						if (new_particle_count > 0)
-						{
-							auto rd           = std::random_device();
-							auto gen          = std::mt19937(rd());
-							auto distribution = std::uniform_real_distribution<float>(0.f, 1.f);
-
-							std::vector<Component::Particle> new_particles;
-							new_particles.reserve(new_particle_count);
-							for (int i = 0; i < new_particle_count; i++)
-							{
-								auto lifetime = p_emitter.lifetime_min + (distribution(gen) * (p_emitter.lifetime_max - p_emitter.lifetime_min));
-								auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
-									p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
-									p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
-									p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
-									lifetime.count() // Store the starting lifetime in the w component of the velocity.
-								};
-								auto pos = glm::vec4{
-									p_emitter.emit_position_min.x + (distribution(gen) * (p_emitter.emit_position_max.x - p_emitter.emit_position_min.x)),
-									p_emitter.emit_position_min.y + (distribution(gen) * (p_emitter.emit_position_max.y - p_emitter.emit_position_min.y)),
-									p_emitter.emit_position_min.z + (distribution(gen) * (p_emitter.emit_position_max.z - p_emitter.emit_position_min.z)),
-									lifetime.count() // Store the starting lifetime in the w component of the velocity.
-								};
-								new_particles.emplace_back<Component::Particle>({pos, vel});
-							}
-
-							const GLsizeiptr new_size = (particle_stride * p_emitter.alive_count) + (particle_stride * new_particle_count);
-							if (p_emitter.particle_buf.size() < new_size)
-							{
-								const GLsizeiptr new_size_pwr_2 = Utility::next_power_of_2(new_size);
-								LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.size(), new_size_pwr_2)
-
-								auto new_particle_buff = OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit});
-								new_particle_buff.resize(new_size_pwr_2);
-								new_particle_buff.copy_sub_data(p_emitter.particle_buf, 0, 0, p_emitter.particle_buf.size());
-								p_emitter.particle_buf = std::move(new_particle_buff);
-							}
-
-							p_emitter.particle_buf.buffer_sub_data(particle_stride * p_emitter.alive_count, new_particles);
-							p_emitter.alive_count += new_particle_count;
-						}
-					}
+					auto lifetime = p_emitter.lifetime_min + (distribution(gen) * (p_emitter.lifetime_max - p_emitter.lifetime_min));
+					auto vel = glm::vec4{ // Scale distribution(gen) from [0 - 1] to [min - max]
+						p_emitter.emit_velocity_min.x + (distribution(gen) * (p_emitter.emit_velocity_max.x - p_emitter.emit_velocity_min.x)),
+						p_emitter.emit_velocity_min.y + (distribution(gen) * (p_emitter.emit_velocity_max.y - p_emitter.emit_velocity_min.y)),
+						p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
+						lifetime.count() // Store the starting lifetime in the w component of the velocity.
+					};
+					auto pos = glm::vec4{
+						p_emitter.emit_position_min.x + (distribution(gen) * (p_emitter.emit_position_max.x - p_emitter.emit_position_min.x)),
+						p_emitter.emit_position_min.y + (distribution(gen) * (p_emitter.emit_position_max.y - p_emitter.emit_position_min.y)),
+						p_emitter.emit_position_min.z + (distribution(gen) * (p_emitter.emit_position_max.z - p_emitter.emit_position_min.z)),
+						lifetime.count() // Store the starting lifetime in the w component of the velocity.
+					};
+					new_particles.emplace_back<Component::Particle>({pos, vel});
 				}
+
+				const GLsizeiptr new_size = (particle_stride * p_emitter.alive_count) + (particle_stride * new_particle_count);
+				if (p_emitter.particle_buf.size() < new_size)
+				{
+					const GLsizeiptr new_size_pwr_2 = Utility::next_power_of_2(new_size);
+					LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.size(), new_size_pwr_2)
+
+					auto new_particle_buff = OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit});
+					new_particle_buff.resize(new_size_pwr_2);
+					new_particle_buff.copy_sub_data(p_emitter.particle_buf, 0, 0, p_emitter.particle_buf.size());
+					p_emitter.particle_buf = std::move(new_particle_buff);
+				}
+
+				p_emitter.particle_buf.buffer_sub_data(particle_stride * p_emitter.alive_count, new_particles);
+				p_emitter.alive_count += new_particle_count;
 			}
 
 			// p_emitter.alive_count is incorrect after particle lifetimes expire in the particle_update kernel
