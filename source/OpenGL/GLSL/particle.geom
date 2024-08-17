@@ -33,10 +33,13 @@ void main()
 {
 	if (gl_in[0].gl_Position.w > 0.0) // w component is lifetime
 	{
+		#ifdef HAS_VARYING
+			geom_out.lifetime_factor = vert_out[0].lifetime_factor;
+		#endif
+
 		#ifdef FIXED_SIZE
 			float size = size;
 		#elifdef VARYING_SIZE
-			geom_out.lifetime_factor = vert_out[0].lifetime_factor;
 			float size = mix(start_size, end_size, vert_out[0].lifetime_factor);
 		#endif
 
