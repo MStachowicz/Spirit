@@ -14,7 +14,8 @@ namespace Component
 		, end_colour{std::nullopt}
 		, start_size{1.f}
 		, end_size{std::nullopt}
-		, emit_position{glm::vec3(0.f)}
+		, emit_position_min{glm::vec3(0.f)}
+		, emit_position_max{glm::vec3(0.f)}
 		, emit_velocity_min{glm::vec3(0.f, 1.5f, -0.8f)}
 		, emit_velocity_max{glm::vec3(0.8f, 2.f,  0.2f)}
 		, spawn_period{0.4f}
@@ -149,7 +150,18 @@ namespace Component
 			}
 
 			{ImGui::SeparatorText("Emission");
-				ImGui::Slider("Emit position", emit_position, -10.f, 10.f, "%.3fm");
+				if (ImGui::Slider("Emit position min", emit_position_min, -10.f, 10.f, "%.3fm"))
+				{
+					if (emit_position_min.x > emit_position_max.x) emit_position_max.x = emit_position_min.x;
+					if (emit_position_min.y > emit_position_max.y) emit_position_max.y = emit_position_min.y;
+					if (emit_position_min.z > emit_position_max.z) emit_position_max.z = emit_position_min.z;
+				}
+				if (ImGui::Slider("Emit position max", emit_position_max, -10.f, 10.f, "%.3fm"))
+				{
+					if (emit_position_max.x < emit_position_min.x) emit_position_min.x = emit_position_max.x;
+					if (emit_position_max.y < emit_position_min.y) emit_position_min.y = emit_position_max.y;
+					if (emit_position_max.z < emit_position_min.z) emit_position_min.z = emit_position_max.z;
+				}
 
 				if (ImGui::Slider("Emit velocity min", emit_velocity_min, -10.f, 10.f, "%.3fm/s"))
 				{
@@ -157,7 +169,7 @@ namespace Component
 					if (emit_velocity_min.y > emit_velocity_max.y) emit_velocity_max.y = emit_velocity_min.y;
 					if (emit_velocity_min.z > emit_velocity_max.z) emit_velocity_max.z = emit_velocity_min.z;
 				}
-				if(ImGui::Slider("Emit velocity max", emit_velocity_max, -10.f, 10.f, "%.3fm/s"))
+				if (ImGui::Slider("Emit velocity max", emit_velocity_max, -10.f, 10.f, "%.3fm/s"))
 				{
 					if (emit_velocity_max.x < emit_velocity_min.x) emit_velocity_min.x = emit_velocity_max.x;
 					if (emit_velocity_max.y < emit_velocity_min.y) emit_velocity_min.y = emit_velocity_max.y;

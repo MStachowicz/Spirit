@@ -112,7 +112,13 @@ namespace OpenGL
 									p_emitter.emit_velocity_min.z + (distribution(gen) * (p_emitter.emit_velocity_max.z - p_emitter.emit_velocity_min.z)),
 									lifetime.count() // Store the starting lifetime in the w component of the velocity.
 								};
-								new_particles.emplace_back<Component::Particle>({glm::vec4{p_emitter.emit_position, lifetime.count()}, vel});
+								auto pos = glm::vec4{
+									p_emitter.emit_position_min.x + (distribution(gen) * (p_emitter.emit_position_max.x - p_emitter.emit_position_min.x)),
+									p_emitter.emit_position_min.y + (distribution(gen) * (p_emitter.emit_position_max.y - p_emitter.emit_position_min.y)),
+									p_emitter.emit_position_min.z + (distribution(gen) * (p_emitter.emit_position_max.z - p_emitter.emit_position_min.z)),
+									lifetime.count() // Store the starting lifetime in the w component of the velocity.
+								};
+								new_particles.emplace_back<Component::Particle>({pos, vel});
 							}
 
 							const GLsizeiptr new_size = (particle_stride * p_emitter.alive_count) + (particle_stride * new_particle_count);
