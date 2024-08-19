@@ -70,7 +70,7 @@
 			"targets": [ "Spirit", "Test" ]
 		},
 		{
-			"name": "g++-release",
+			"name": "g++-Release",
 			"displayName": "Release",
 			"configurePreset": "GCC",
 			"configuration": "Release",
@@ -78,7 +78,7 @@
 			"targets": [ "Spirit", "Test" ]
 		},
 		{
-			"name": "g++-debug",
+			"name": "g++-Debug",
 			"displayName": "Debug",
 			"configurePreset": "GCC",
 			"configuration": "Debug",

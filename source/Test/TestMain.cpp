@@ -11,15 +11,22 @@
 int main(int argc, char* argv[])
 {
 	bool should_run_perf_tests = false;
-	if (argc == 2 && strcmp(argv[1], "--performance") == 0)
-		should_run_perf_tests = true;
-	else if (argc == 1)
-		should_run_perf_tests = false;
-	else
+	bool skip_graphics_test    = false;
+	bool print_help            = false;
+
+	for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "--performance") == 0)                             should_run_perf_tests = true;
+		else if (strcmp(argv[i], "--no-graphics") == 0)                        skip_graphics_test    = true;
+		else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) print_help            = true;
+		else                                                                   print_help            = true;
+	}
+	if (print_help)
 	{
 		printf("Usage: %s [flags]\n", argv[0]);
 		printf("\nFlags:\n");
-		printf("  --performance           Additionally run performance tests\n");
+		printf("  --performance            Additionally run performance tests\n");
+		printf("  --no-graphics            Skip graphics tests\n");
 		printf("\n");
 		exit(1);
 	}
@@ -31,7 +38,8 @@ int main(int argc, char* argv[])
 	test_managers.emplace_back(std::make_unique<Test::ECSTester>());
 	test_managers.emplace_back(std::make_unique<Test::GeometryTester>());
 	test_managers.emplace_back(std::make_unique<Test::ResourceManagerTester>());
-	test_managers.emplace_back(std::make_unique<Test::GraphicsTester>());
+	if (!skip_graphics_test)
+		test_managers.emplace_back(std::make_unique<Test::GraphicsTester>());
 
 	size_t unit_test_overall_pass_count    = 0;
 	size_t unit_test_overall_fail_count    = 0;

@@ -1,65 +1,49 @@
 name: Build
-
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  build:
-    name: ${{ matrix.os }} - ${{ matrix.buildPreset }}
-    runs-on: ${{ matrix.os }}
+  build_linux:
+    name: Linux - ${{ matrix.buildPreset }}
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        configurePreset: [ GCC, visual-studio-17-2022 ]
-        buildPreset: [ msvc-debug, msvc-release, g++-release, g++-debug ]
-        exclude:
-          - os: ubuntu-latest
-            configurePreset: visual-studio-17-2022
-          - os: ubuntu-latest
-            buildPreset: msvc-debug
-          - os: ubuntu-latest
-            buildPreset: msvc-release
-          - os: windows-latest
-            configurePreset: GCC
-          - os: windows-latest
-            buildPreset: g++-debug
-          - os: windows-latest
-            buildPreset: g++-release
-
+        buildPreset: [Release, Debug]
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Install Dependencies (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Dependencies
+        run: |
           sudo apt update
           sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev ninja-build -y gcc-13 g++-13
-
-    - name: Install Dependencies (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
+      - name: Configure CMake
+        run: cmake --preset GCC
+      - name: Build
+        run: cmake --build . --preset g++-${{ matrix.buildPreset }}
+        working-directory: ${{ github.workspace }}
+      - name: Test
+        run: ./Test --no-graphics
+        working-directory: ${{ github.workspace }}/build/GCC/${{ matrix.buildPreset }}
+  build_windows:
+    name: Windows - ${{ matrix.buildPreset }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        buildPreset: [release, debug]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Dependencies
+        run: |
           choco install ninja
-
-    - name: Configure CMake (non-GCC)
-      if: matrix.configurePreset != 'GCC'
-      run: cmake --preset "${{ matrix.configurePreset }}"
-
-    - name: Configure CMake (GCC)
-      if: matrix.configurePreset == 'GCC'
-      run: cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_C_COMPILER=gcc-13 -DCMAKE_CXX_COMPILER=g++-13
-
-    - name: Build
-      run: cmake --build . --preset "${{ matrix.buildPreset }}"
-      working-directory: ${{ github.workspace }}
-
-    - name: Test (Debug)
-      if: matrix.buildPreset == 'g++-debug' || matrix.buildPreset == 'msvc-debug'
-      run: ./Test
-      working-directory: ${{ github.workspace }}/build/${{ matrix.configurePreset }}/Debug
-
-    - name: Test (Release)
-      if: matrix.buildPreset == 'g++-release' || matrix.buildPreset == 'msvc-release'
-      run: ./Test
-      working-directory: ${{ github.workspace }}/build/${{ matrix.configurePreset }}/Release
+      - name: Configure CMake
+        run: cmake --preset visual-studio-17-2022
+      - name: Build
+        run: cmake --build . --preset msvc-${{ matrix.buildPreset }}
+        working-directory: ${{ github.workspace }}
+      - name: Test
+        run: ./Test --no-graphics
+        working-directory: ${{ github.workspace }}/build/visual-studio-17-2022/${{ matrix.buildPreset }}
