@@ -18,13 +18,13 @@ jobs:
           sudo apt update
           sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev ninja-build -y gcc-13 g++-13
       - name: Configure CMake
-        run: cmake --preset GCC
+        run: cmake --preset Ninja-GCC
       - name: Build
         run: cmake --build . --preset g++-${{ matrix.buildPreset }}
         working-directory: ${{ github.workspace }}
       - name: Test
         run: ./Test --no-graphics
-        working-directory: ${{ github.workspace }}/build/GCC/${{ matrix.buildPreset }}
+        working-directory: ${{ github.workspace }}/build/Ninja-GCC/${{ matrix.buildPreset }}
   build_windows:
     name: Windows - ${{ matrix.buildPreset }}
     runs-on: windows-latest
@@ -42,7 +42,7 @@ jobs:
       - name: Configure CMake
         run: cmake --preset visual-studio-17-2022
       - name: Build
-        run: cmake --build . --preset msvc-${{ matrix.buildPreset }}
+        run: cmake --build . --preset vs-msvc-${{ matrix.buildPreset }}
         working-directory: ${{ github.workspace }}
       - name: Test
         run: ./Test --no-graphics

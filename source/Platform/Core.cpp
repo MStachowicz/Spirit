@@ -6,6 +6,9 @@
 #include "Utility/File.hpp"
 #include "Utility/Config.hpp"
 
+#ifdef _WIN32
+#include <Windows.h> // MSVC requires Windows.h to be included before glfw headers
+#endif
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 // ImGui.h (must be included after GLFW)
@@ -134,8 +137,6 @@ namespace Platform
 
 
 #ifdef _WIN32
-	#include <Windows.h>
-
 	bool Core::is_dark_mode()
 	{
 		HKEY key;
