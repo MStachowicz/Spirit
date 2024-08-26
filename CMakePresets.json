@@ -78,6 +78,20 @@
 				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE -g0 -O3",
 				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE -g0 -O3"
 			}
+		},
+		{
+			"name": "Ninja-Clang",
+			"description": "Generate using Ninja multi-config, build using clang and clang++",
+			"generator": "Ninja Multi-Config",
+			"binaryDir": "build/${presetName}",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER":        "clang",
+				"CMAKE_CXX_COMPILER":      "clang++",
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -g3 -ggdb -O0",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -g3 -ggdb -O0",
+				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE -g0 -O3",
+				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE -g0 -O3"
+			}
 		}
 	],
 	"buildPresets": [
@@ -125,6 +139,22 @@
 			"name": "g++-Debug",
 			"displayName": "Debug",
 			"configurePreset": "Ninja-GCC",
+			"configuration": "Debug",
+			"verbose": false,
+			"targets": [ "Spirit", "Test" ]
+		},
+		{
+			"name": "clang++-Release",
+			"displayName": "Release",
+			"configurePreset": "Ninja-Clang",
+			"configuration": "Release",
+			"verbose": false,
+			"targets": [ "Spirit", "Test" ]
+		},
+		{
+			"name": "clang++-Debug",
+			"displayName": "Debug",
+			"configurePreset": "Ninja-Clang",
 			"configuration": "Debug",
 			"verbose": false,
 			"targets": [ "Spirit", "Test" ]
