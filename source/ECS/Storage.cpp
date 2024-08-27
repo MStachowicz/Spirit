@@ -34,7 +34,7 @@ namespace ECS
 		// When saving archetypes we only save ones that have entities all their components are serialisable.
 		// This means we can assume the archetypes are valid and avoid checking on deserialise.
 
-		// Lambda to check if an archetype should be saved, depending on if it has entities and any serialisable components.
+		// Lambda to check if an archetype should be saved, depending on if it has entities and all components are serialisable.
 		auto should_save = [](const Archetype& p_archetype) { return !p_archetype.m_entities.empty() && p_archetype.m_is_serialisable; };
 
 		// If there are any archetypes with non-serialisable components, Log a warning.

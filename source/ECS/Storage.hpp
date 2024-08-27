@@ -16,6 +16,7 @@
 
 namespace ECS
 {
+	constexpr bool Log_ECS_events = false;
 	constexpr size_t Archetype_Start_Capacity = 32;
 
 	using ArchetypeID         = size_t;
@@ -227,9 +228,8 @@ namespace ECS
 				, m_next_instance_ID{0}
 				, m_capacity{Archetype_Start_Capacity}
 				, m_data{(std::byte*)malloc(m_instance_size * m_capacity)}
-
 			{
-				LOG("[ECS][Archetype] New Archetype created from components: {}", to_string(m_components));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] New Archetype created from components: {}", to_string(m_components));
 			}
 
 			// Construct an Archetype from a ComponentBitset.
@@ -243,7 +243,7 @@ namespace ECS
 				, m_capacity{Archetype_Start_Capacity}
 				, m_data{(std::byte*)malloc(m_instance_size * m_capacity)}
 			{
-				LOG("[ECS][Archetype] New Archetype created from components: {}", to_string(m_components));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] New Archetype created from components: {}", to_string(m_components));
 			}
 
 			~Archetype() noexcept
@@ -251,7 +251,7 @@ namespace ECS
 				clear();
 				free(m_data);
 
-				LOG("[ECS][Archetype] Destroyed at address {}", (void*)(this));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] Destroyed at address {}", (void*)(this));
 			}
 
 			// Move-construct
@@ -265,7 +265,7 @@ namespace ECS
 				, m_capacity{std::move(p_other.m_capacity)}
 				, m_data{std::exchange(p_other.m_data, nullptr)}
 			{
-				LOG("[ECS][Archetype] Move constructed {} from {}", (void*)(this), (void*)(&p_other));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] Move constructed {} from {}", (void*)(this), (void*)(&p_other));
 			}
 			// Move-assign
 			Archetype& operator=(Archetype&& p_other) noexcept
@@ -288,7 +288,7 @@ namespace ECS
 					m_data             = std::exchange(p_other.m_data, nullptr);
 				}
 
-				LOG("[ECS][Archetype] Move assigning {} from {}", (void*)(this), (void*)(&p_other));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] Move assigning {} from {}", (void*)(this), (void*)(&p_other));
 				return *this;
 			}
 			// Copy-construct
@@ -317,7 +317,7 @@ namespace ECS
 					}
 				}
 
-				LOG("[ECS][Archetype] Copy constructed {} from {}", (void*)(this), (void*)(&p_other));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] Copy constructed {} from {}", (void*)(this), (void*)(&p_other));
 			}
 			// Copy-assign
 			Archetype& operator=(const Archetype& p_other)
@@ -355,7 +355,7 @@ namespace ECS
 					}
 				}
 
-				LOG("[ECS][Archetype] Copy assigned {} from {}", (void*)(this), (void*)(&p_other));
+				if constexpr (Log_ECS_events) LOG("[ECS][Archetype] Copy assigned {} from {}", (void*)(this), (void*)(&p_other));
 				return *this;
 			}
 
