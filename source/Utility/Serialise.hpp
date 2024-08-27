@@ -1,115 +1,118 @@
 #pragma once
 
-#include <glm/vec3.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/mat4x4.hpp>
-
-#include <fstream>
+#include <iostream>
+#include <string>
 #include <type_traits>
 #include <vector>
-#include <string>
+
+#include <concepts>
+#include <list>
 
 // Helpers for serialising and deserialising objects.
 namespace Utility
 {
-	// Serializable concept for keeping track of types that can be serialised into binary.
+	// For plain old data types, we can just write the data directly to the stream.
 	template <typename T>
-	concept Serializable_Type =
-		std::is_arithmetic_v<T>
-		|| std::is_same_v<T, glm::vec3>
-		|| std::is_same_v<T, glm::quat>
-		|| std::is_same_v<T, glm::mat4>
-		|| std::is_same_v<T, std::string>;
+	concept Is_Trivially_Serializable = (std::is_standard_layout_v<T> && std::is_trivial_v<T>);
 
-	// Write p_value to p_out in binary.
 	template <typename T>
-	void write_binary(std::ofstream& p_out, const T& p_value)
+	concept Is_Container = requires(T container)
 	{
-		static_assert(sizeof(T) > 0, "Cannot write a type of size 0");
-		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot write a reference or pointer");
-		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+		typename T::value_type;     // Must have a value_type
+		typename T::iterator;       // Must have an iterator
+		typename T::const_iterator; // Must have a const_iterator
 
-		p_out.write(reinterpret_cast<const char*>(&p_value), sizeof(T));
-	}
-	// Read into p_value from p_in in binary.
+		{ container.size() }  -> std::convertible_to<std::size_t>;  // Must have a size() member function
+		{ container.begin() } -> std::input_or_output_iterator;     // begin() must return an input or output iterator
+		{ container.end() }   -> std::input_or_output_iterator;     // end() must return an input or output iterator
+	};
+
 	template <typename T>
-	void read_binary(std::ifstream& p_in, T& p_value)
+	concept Is_Contiguous_Container = requires(T container)
 	{
-		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
-		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
-		static_assert(Serializable_Type<T>, "Type is not in serializable list");
+		typename T::value_type;    // Must have a value_type
+		typename T::pointer;       // Must have a pointer type
+		typename T::const_pointer; // Must have a const_pointer type
 
-		p_in.read(reinterpret_cast<char*>(&p_value), sizeof(T));
-	}
-	template <>
-	inline void write_binary<std::string>(std::ofstream& p_out, const std::string& p_value)
-	{
-		// Write the size of the string first then write the string data
-		std::size_t size = p_value.size();
-		p_out.write(reinterpret_cast<const char*>(&size), sizeof(size));
-		p_out.write(p_value.data(), p_value.size());
-	}
-	template <>
-	inline void read_binary<std::string>(std::ifstream& p_in, std::string& p_value)
-	{
-		// Read the size of the string first then read the string data
-		std::size_t size;
-		p_in.read(reinterpret_cast<char*>(&size), sizeof(size));
-		p_value.resize(size);
-		p_in.read(p_value.data(), size);
-	}
-	// Write a vector to p_out in binary.
+		{ container.size() }  -> std::convertible_to<std::size_t>;  // Must have a size() member function
+		{ container.begin() } -> std::contiguous_iterator;          // begin() must return a contiguous iterator
+		{ container.end() }   -> std::contiguous_iterator;          // end() must return a contiguous iterator
+		{ container.data() }  -> std::same_as<typename T::pointer>; // Must have a data() member function returning a pointer
+	};
+
 	template <typename T>
-	void write_binary(std::ofstream& p_out, const std::vector<T>& p_vector)
+	concept Has_Custom_Serialisation = requires(std::ostream& p_out, std::istream& p_in, T& p_value)
 	{
-		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
-		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
-		static_assert(std::is_trivially_copyable_v<T> || Serializable_Type<T>, "Type must be trivially copyable or supported by the serialisation system");
-		static_assert(std::is_default_constructible_v<T>, "Type must be default constructible for vector::resize");
+		{ p_value.write_binary(p_out) };
+		{ p_value.read_binary(p_in)   };
+	};
 
-		// Write the size of the vector first
-		size_t size = p_vector.size();
-		p_out.write(reinterpret_cast<const char*>(&size), sizeof(size));
 
-		if (size > 0)
+	// Write a custom serialisable object to a binary stream.
+	template<Has_Custom_Serialisation T>
+	inline void write_binary(std::ostream& p_out, const T& p_value)
+	{
+		p_value.write_binary(p_out);
+	}
+	// Read a custom serialisable object from a binary stream.
+	template<Has_Custom_Serialisation T>
+	inline void read_binary(std::istream& p_in, T& p_value)
+	{
+		p_value.read_binary(p_in);
+	}
+	// Write a POD type to a binary stream.
+	template<Is_Trivially_Serializable T>
+	inline void write_binary(std::ostream& p_out, const T& p_value)
+	{
+		p_out.write(reinterpret_cast<const char*>(&p_value), sizeof(p_value));
+	}
+	// Read a POD type from a binary stream.
+	template<Is_Trivially_Serializable T>
+	inline void read_binary(std::istream& p_in, T& p_value)
+	{
+		p_in.read(reinterpret_cast<char*>(&p_value), sizeof(p_value));
+	}
+	// Write a container to a binary stream.
+	template<Is_Container T>
+	inline void write_binary(std::ostream& p_out, const T& p_container)
+	{
+		// If we are writing a contiguous container, we can write the size and then the data in one go.
+		// However in the case the container::value_type is not trivially serialisable, we need to serialise each element individually.
+
+		std::size_t num_of_elements = p_container.size();
+		p_out.write(reinterpret_cast<const char*>(&num_of_elements), sizeof(num_of_elements));
+		using value_type = typename T::value_type;
+
+		if constexpr (Is_Trivially_Serializable<value_type> && Is_Contiguous_Container<T>)
 		{
-			if constexpr (std::is_trivially_copyable_v<T>)
-			{// If the type is trivially copyable, we can write the data directly in one go.
-				p_out.write(reinterpret_cast<const char*>(p_vector.data()), sizeof(T) * size);
-			}
-			else
-			{// Otherwise, write each element individually.
-				for (const T& element : p_vector)
-					write_binary(p_out, element);
-			}
+			p_out.write(reinterpret_cast<const char*>(p_container.data()), num_of_elements * sizeof(value_type));
+		}
+		else
+		{
+			for (const auto& element : p_container)
+				write_binary(p_out, element);
 		}
 	}
-	// Read into a vector from p_in in binary.
-	template <typename T>
-	void read_binary(std::ifstream& p_in, std::vector<T>& p_vector)
+	// Read a container from a binary stream.
+	template<Is_Container T>
+	inline void read_binary(std::istream& p_in, T& p_container)
 	{
-		static_assert(sizeof(T) > 0, "Cannot read into a type of size 0");
-		static_assert(!std::is_pointer_v<T> && !std::is_reference_v<T>, "Cannot read into a reference or pointer");
-		static_assert(std::is_trivially_copyable_v<T> || Serializable_Type<T>, "Type must be trivially copyable or supported by the serialisation system");
-		static_assert(std::is_default_constructible_v<T>, "Type must be default constructible for vector::resize");
+		// Read the size of the container and then read the data in one go.
+		// If the container::value_type is not trivially serialisable, we need to deserialise each element individually.
 
-		// Read the size of the vector first
-		size_t size;
-		p_in.read(reinterpret_cast<char*>(&size), sizeof(size));
+		std::size_t num_of_elements;
+		p_in.read(reinterpret_cast<char*>(&num_of_elements), sizeof(num_of_elements));
+		p_container.resize(num_of_elements);
+		using value_type = typename T::value_type;
 
-		if (size > 0)
+		if constexpr (Is_Trivially_Serializable<value_type> && Is_Contiguous_Container<T>)
 		{
-			p_vector.resize(size);
-
-			if constexpr (std::is_trivially_copyable_v<T>)
-			{// If the type is trivially copyable, we can read the data directly in one go.
-				p_in.read(reinterpret_cast<char*>(p_vector.data()), sizeof(T) * size);
-			}
-			else
-			{// Otherwise, read each element individually.
-				for (T& element : p_vector)
-					read_binary(p_in, element);
-			}
+			p_in.read(reinterpret_cast<char*>(p_container.data()), num_of_elements * sizeof(value_type));
+		}
+		else
+		{
+			for (auto& element : p_container)
+				read_binary(p_in, element);
 		}
 	}
 } // namespace Utility
