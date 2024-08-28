@@ -47,6 +47,9 @@ namespace Utility
 		{ p_value.read_binary(p_in)   };
 	};
 
+	template <typename T>
+	concept Is_POD_And_Not_Custom_serialisable = !Has_Custom_Serialisation<T> && Is_Trivially_Serializable<T>;
+
 
 	// Write a custom serialisable object to a binary stream.
 	template<Has_Custom_Serialisation T>
@@ -61,13 +64,13 @@ namespace Utility
 		p_value.read_binary(p_in);
 	}
 	// Write a POD type to a binary stream.
-	template<Is_Trivially_Serializable T>
+	template<Is_POD_And_Not_Custom_serialisable T>
 	inline void write_binary(std::ostream& p_out, const T& p_value)
 	{
 		p_out.write(reinterpret_cast<const char*>(&p_value), sizeof(p_value));
 	}
 	// Read a POD type from a binary stream.
-	template<Is_Trivially_Serializable T>
+	template<Is_POD_And_Not_Custom_serialisable T>
 	inline void read_binary(std::istream& p_in, T& p_value)
 	{
 		p_in.read(reinterpret_cast<char*>(&p_value), sizeof(p_value));

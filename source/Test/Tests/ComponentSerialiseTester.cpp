@@ -484,59 +484,115 @@ namespace Test
 			}
 		}
 
-
 		// Test user defined serialisation.
 		{SCOPE_SECTION("Custom serialisation")
-			struct Non_POD
-			{
-				std::string c;
-				void write_binary(std::ostream& p_out) const { Utility::write_binary(p_out, c); }
-				void read_binary(std::istream& p_in)         { Utility::read_binary(p_in, c);   }
-			};
-			static_assert(!Utility::Is_Trivially_Serializable<Non_POD>, "Non_POD must not be trivially serializable");
-			static_assert(Utility::Has_Custom_Serialisation<Non_POD>, "Non_POD must have custom serialisation");
+			{SCOPE_SECTION("POD");
+				// Plain old data with custom serialisation.
+				struct Custom_Serialisation_POD
+				{
+					int i;
+					void write_binary(std::ostream& p_out) const { Utility::write_binary(p_out, i); }
+					void read_binary(std::istream& p_in)         { Utility::read_binary(p_in, i);   }
+				};
+				static_assert(Utility::Is_Trivially_Serializable<Custom_Serialisation_POD>, "Custom_Serialisation_POD must be trivially serializable");
+				static_assert(Utility::Has_Custom_Serialisation<Custom_Serialisation_POD>, "Custom_Serialisation_POD must have custom serialisation");
 
+				{SCOPE_SECTION("Single object");
+					Custom_Serialisation_POD out_pod{ 42 };
+					Custom_Serialisation_POD in_pod;
+					if (test_serialisation_utility(out_pod, in_pod))
+						CHECK_EQUAL(out_pod.i, in_pod.i, "Equality");
+				}
+				{SCOPE_SECTION("Container")
+					{SCOPE_SECTION("Contiguous")
+						{SCOPE_SECTION("Vector")
+							std::vector<Custom_Serialisation_POD> out_vector = { Custom_Serialisation_POD{ 1 }, Custom_Serialisation_POD{ 2 }, Custom_Serialisation_POD{ 3 } };
+							std::vector<Custom_Serialisation_POD> in_vector  = {};
+							if (test_serialisation_utility(out_vector, in_vector))
+							{
+								CHECK_EQUAL(out_vector.size(), in_vector.size(), "Vector size");
 
-			{SCOPE_SECTION("Single object");
-				Non_POD out_non_pod;
-				out_non_pod.c = "Hello, world!";
-				Non_POD in_non_pod;
-				if (test_serialisation_utility(out_non_pod, in_non_pod))
-					CHECK_EQUAL(out_non_pod.c, in_non_pod.c, "Equality");
+								if (out_vector.size() == in_vector.size())
+								{
+									for (size_t i = 0; i < out_vector.size(); ++i)
+										CHECK_EQUAL(out_vector[i].i, in_vector[i].i, "Vector element");
+								}
+							}
+						}
+					}
+					{SCOPE_SECTION("Non-contiguous")
+						{SCOPE_SECTION("List")
+							std::list<Custom_Serialisation_POD> out_list = { Custom_Serialisation_POD{ 1 }, Custom_Serialisation_POD{ 2 }, Custom_Serialisation_POD{ 3 } };
+							std::list<Custom_Serialisation_POD> in_list  = {};
+							if (test_serialisation_utility(out_list, in_list))
+							{
+								CHECK_EQUAL(out_list.size(), in_list.size(), "List size");
+
+								auto out_it = out_list.begin();
+								auto in_it  = in_list.begin();
+								while (out_it != out_list.end() && in_it != in_list.end())
+								{
+									CHECK_EQUAL(out_it->i, in_it->i, "List element");
+									++out_it;
+									++in_it;
+								}
+							}
+						}
+					}
+				}
 			}
-			{SCOPE_SECTION("Container")
-				{SCOPE_SECTION("Contiguous")
-					std::vector<Non_POD> out_vector = { Non_POD{ "Hello" }, Non_POD{ "World" }, Non_POD{ "!" } };
-					std::vector<Non_POD> in_vector  = {};
-					if (test_serialisation_utility(out_vector, in_vector))
-					{
-						CHECK_EQUAL(out_vector.size(), in_vector.size(), "Vector size");
+			{SCOPE_SECTION("Non-POD")
+				// Non-POD type with custom serialisation.
+				struct Custom_serialisation_Non_POD
+				{
+					std::string c;
+					void write_binary(std::ostream& p_out) const { Utility::write_binary(p_out, c); }
+					void read_binary(std::istream& p_in)         { Utility::read_binary(p_in, c);   }
+				};
+				static_assert(!Utility::Is_Trivially_Serializable<Custom_serialisation_Non_POD>, "Custom_serialisation_Non_POD must not be trivially serializable");
+				static_assert(Utility::Has_Custom_Serialisation<Custom_serialisation_Non_POD>, "Custom_serialisation_Non_POD must have custom serialisation");
 
-						if (out_vector.size() == in_vector.size())
+				{SCOPE_SECTION("Single object");
+					Custom_serialisation_Non_POD out_non_pod;
+					out_non_pod.c = "Hello, world!";
+					Custom_serialisation_Non_POD in_non_pod;
+					if (test_serialisation_utility(out_non_pod, in_non_pod))
+						CHECK_EQUAL(out_non_pod.c, in_non_pod.c, "Equality");
+				}
+				{SCOPE_SECTION("Container")
+					{SCOPE_SECTION("Contiguous")
+						std::vector<Custom_serialisation_Non_POD> out_vector = { Custom_serialisation_Non_POD{ "Hello" }, Custom_serialisation_Non_POD{ "World" }, Custom_serialisation_Non_POD{ "!" } };
+						std::vector<Custom_serialisation_Non_POD> in_vector  = {};
+						if (test_serialisation_utility(out_vector, in_vector))
 						{
-							for (size_t i = 0; i < out_vector.size(); ++i)
-								CHECK_EQUAL(out_vector[i].c, in_vector[i].c, "Vector element");
+							CHECK_EQUAL(out_vector.size(), in_vector.size(), "Vector size");
+
+							if (out_vector.size() == in_vector.size())
+							{
+								for (size_t i = 0; i < out_vector.size(); ++i)
+									CHECK_EQUAL(out_vector[i].c, in_vector[i].c, "Vector element");
+							}
+						}
+					}
+					{SCOPE_SECTION("Non-contiguous")
+						std::list<Custom_serialisation_Non_POD> out_list = { Custom_serialisation_Non_POD{ "Hello" }, Custom_serialisation_Non_POD{ "World" }, Custom_serialisation_Non_POD{ "!" } };
+						std::list<Custom_serialisation_Non_POD> in_list  = {};
+						if (test_serialisation_utility(out_list, in_list))
+						{
+							CHECK_EQUAL(out_list.size(), in_list.size(), "List size");
+
+							auto out_it = out_list.begin();
+							auto in_it  = in_list.begin();
+							while (out_it != out_list.end() && in_it != in_list.end())
+							{
+								CHECK_EQUAL(out_it->c, in_it->c, "List element");
+								++out_it;
+								++in_it;
+							}
 						}
 					}
 				}
-				{SCOPE_SECTION("Non-contiguous")
-					std::list<Non_POD> out_list = { Non_POD{ "Hello" }, Non_POD{ "World" }, Non_POD{ "!" } };
-					std::list<Non_POD> in_list  = {};
-					if (test_serialisation_utility(out_list, in_list))
-					{
-						CHECK_EQUAL(out_list.size(), in_list.size(), "List size");
-
-						auto out_it = out_list.begin();
-						auto in_it  = in_list.begin();
-						while (out_it != out_list.end() && in_it != in_list.end())
-						{
-							CHECK_EQUAL(out_it->c, in_it->c, "List element");
-							++out_it;
-							++in_it;
-						}
-					}
-				}
-		 	}
+			}
 		}
 		{SCOPE_SECTION("ECS components");
 			{SCOPE_SECTION("Directional light");
