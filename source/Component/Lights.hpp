@@ -34,8 +34,8 @@ namespace Component
 		glm::mat4 get_view_proj(const Geometry::AABB& scene_AABB);
 
 		void draw_UI();
-		static void Serialise(const DirectionalLight& p_light, std::ofstream& p_out, uint16_t p_version);
-		static DirectionalLight Deserialise(std::ifstream& p_in, uint16_t p_version);
+		static void serialise(std::ostream& p_out, uint16_t p_version, const DirectionalLight& p_light);
+		static DirectionalLight deserialise(std::istream& p_in, uint16_t p_version);
 	};
 
 	class PointLight
@@ -58,8 +58,8 @@ namespace Component
 		float m_quadratic;
 
 		void draw_UI();
-		static void Serialise(const PointLight& p_light, std::ofstream& p_out, uint16_t p_version);
-		static PointLight Deserialise(std::ifstream& p_in, uint16_t p_version);
+		static void serialise(std::ostream& p_out, uint16_t p_version, const PointLight& p_light);
+		static PointLight deserialise(std::istream& p_in, uint16_t p_version);
 	};
 
 	class SpotLight
@@ -84,7 +84,7 @@ namespace Component
 		float m_outer_cutoff;
 
 		void draw_UI();
-		static void Serialise(const SpotLight& p_light, std::ofstream& p_out, uint16_t p_version);
-		static SpotLight Deserialise(std::ifstream& p_in, uint16_t p_version);
+		static void serialise(std::ostream& p_out, uint16_t p_version, const SpotLight& p_light);
+		static SpotLight deserialise(std::istream& p_in, uint16_t p_version);
 	};
 }

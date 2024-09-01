@@ -19,67 +19,10 @@ DISABLE_WARNING_UNUSED_VARIABLE // Required to stop variables being destroyed be
 
 namespace Test
 {
-	struct MyDouble : public PrimitiveTypeWrapper<double>
-	{
-		static constexpr ECS::ComponentID Persistent_ID = 1;
-
-		static void Serialise(const MyDouble& p_value, std::ofstream& p_out, uint16_t p_version)
-		{
-			Utility::write_binary(p_out, p_value.value);
-		}
-		static MyDouble Deserialise(std::ifstream& p_in, uint16_t p_version)
-		{
-			double value;
-			Utility::read_binary(p_in, value);
-			return MyDouble{value};
-		}
-	};
-	struct MyFloat : public PrimitiveTypeWrapper<float>
-	{
-		static constexpr ECS::ComponentID Persistent_ID = 2;
-
-		static void Serialise(const MyFloat& p_value, std::ofstream& p_out, uint16_t p_version)
-		{
-			Utility::write_binary(p_out, p_value.value);
-		}
-		static MyFloat Deserialise(std::ifstream& p_in, uint16_t p_version)
-		{
-			float value;
-			Utility::read_binary(p_in, value);
-			return MyFloat{value};
-		}
-	};
-	struct MyBool : public PrimitiveTypeWrapper<bool>
-	{
-		static constexpr ECS::ComponentID Persistent_ID = 3;
-
-		static void Serialise(const MyBool& p_value, std::ofstream& p_out, uint16_t p_version)
-		{
-			Utility::write_binary(p_out, p_value.value);
-		}
-		static MyBool Deserialise(std::ifstream& p_in, uint16_t p_version)
-		{
-			bool value;
-			Utility::read_binary(p_in, value);
-			return MyBool{value};
-		}
-	};
-	struct MyInt : public PrimitiveTypeWrapper<int>
-	{
-		static constexpr ECS::ComponentID Persistent_ID = 4;
-
-		static void Serialise(const MyInt& p_value, std::ofstream& p_out, uint16_t p_version)
-		{
-			Utility::write_binary(p_out, p_value.value);
-		}
-		static MyInt Deserialise(std::ifstream& p_in, uint16_t p_version)
-		{
-			int value;
-			Utility::read_binary(p_in, value);
-			return MyInt{value};
-		}
-	};
-
+	struct MyDouble : public PrimitiveTypeWrapper<double>      { static constexpr ECS::ComponentID Persistent_ID = 1; };
+	struct MyFloat  : public PrimitiveTypeWrapper<float>       { static constexpr ECS::ComponentID Persistent_ID = 2; };
+	struct MyBool   : public PrimitiveTypeWrapper<bool>        { static constexpr ECS::ComponentID Persistent_ID = 3; };
+	struct MyInt    : public PrimitiveTypeWrapper<int>         { static constexpr ECS::ComponentID Persistent_ID = 4; };
 	struct MyChar   : public PrimitiveTypeWrapper<char>        { static constexpr ECS::ComponentID Persistent_ID = 5; };
 	struct MyString : public PrimitiveTypeWrapper<std::string> { static constexpr ECS::ComponentID Persistent_ID = 6; };
 	struct MySizet  : public PrimitiveTypeWrapper<size_t>      { static constexpr ECS::ComponentID Persistent_ID = 7; };
@@ -886,6 +829,10 @@ namespace Test
 			std::filesystem::create_directories(test_ecs_save_file.parent_path());
 			bool serialised_successfully = true;
 
+			static_assert(Utility::Is_Serializable_v<MyDouble>, "MyDouble is not serializable");
+			static_assert(Utility::Is_Serializable_v<MyFloat>, "MyFloat is not serializable");
+			static_assert(Utility::Is_Serializable_v<MyBool>, "MyBool is not serializable");
+			static_assert(Utility::Is_Serializable_v<MyInt>, "<MyInt> is not serializable");
 
 			{SCOPE_SECTION("Save")
 				ASSERT_THROW(storage_serialised.count_entities() == 1, "To retrieve components after load, we reuse the same entity ID. So we need to make sure we only have 1 entity in the storage.");
@@ -894,7 +841,7 @@ namespace Test
 				try
 				{
 					ostrm.open(test_ecs_save_file, std::ios::binary);
-					ECS::Storage::Serialise(storage_serialised, ostrm, Config::Save_Version);
+					ECS::Storage::serialise(ostrm, Config::Save_Version, storage_serialised);
 					ostrm.close();
 				}
 				catch (std::ofstream::failure& e)
@@ -911,7 +858,7 @@ namespace Test
 				try
 				{
 					istrm.open(test_ecs_save_file, std::ios::binary);
-					storage_deserialised = ECS::Storage::Deserialise(istrm, Config::Save_Version);
+					storage_deserialised = ECS::Storage::deserialise(istrm, Config::Save_Version);
 					istrm.close();
 				}
 				catch (std::ifstream::failure& e)
@@ -919,6 +866,9 @@ namespace Test
 					CHECK_TRUE(false, e.what());
 					serialised_successfully = false;
 				}
+
+				if (storage_serialised.count_entities() != storage_deserialised.count_entities())
+					serialised_successfully = false; // If the entity count is different, we know the deserialisation failed.
 			}
 
 			CHECK_TRUE(serialised_successfully, "Serialisation success");

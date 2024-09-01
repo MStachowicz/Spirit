@@ -11,11 +11,7 @@ namespace Test
 	public:
 		T value;
 
-		constexpr PrimitiveTypeWrapper() : value{} {}
-		constexpr PrimitiveTypeWrapper(const T& p_value) : value{p_value} {}
 		constexpr operator T() const { return value; } // Implicitly convert a PrimitiveTypeWrapper to its underlying type.
-
-		// operator +=
 		constexpr PrimitiveTypeWrapper& operator+=(const T& p_value)
 		{
 			value += p_value;

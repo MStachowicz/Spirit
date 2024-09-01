@@ -23,12 +23,12 @@ namespace Test
 		{
 			std::ofstream out("test.bin", std::ios::binary);
 			out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-			ComponentType::Serialise(p_to_serialise, out, 0);
+			ComponentType::serialise(out, 0, p_to_serialise);
 			out.close();
 
 			std::ifstream in("test.bin", std::ios::binary);
 			in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-			p_deserialised = ComponentType::Deserialise(in, 0);
+			p_deserialised = ComponentType::deserialise(in, 0);
 			in.close();
 		}
 		catch (std::exception& e)
@@ -54,13 +54,13 @@ namespace Test
 			// Write the value to a binary file.
 			std::ofstream out("test.bin", std::ios::binary);
 			out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-			Utility::write_binary(out, p_to_serialise);
+			Utility::write_binary(out, 0, p_to_serialise);
 			out.close();
 
 			// Read the value back from the binary file.
 			std::ifstream in("test.bin", std::ios::binary);
 			in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-			Utility::read_binary(in, p_deserialised);
+			Utility::read_binary(in, 0, p_deserialised);
 			in.close();
 		}
 		catch (std::exception& e)
@@ -491,8 +491,8 @@ namespace Test
 				struct Custom_Serialisation_POD
 				{
 					int i;
-					void write_binary(std::ostream& p_out) const { Utility::write_binary(p_out, i); }
-					void read_binary(std::istream& p_in)         { Utility::read_binary(p_in, i);   }
+					void write_binary(std::ostream& p_out, uint16_t p_version) const { Utility::write_binary(p_out, p_version, i); }
+					void read_binary(std::istream& p_in, uint16_t p_version)         { Utility::read_binary(p_in, p_version, i);   }
 				};
 				static_assert(Utility::Is_Trivially_Serializable<Custom_Serialisation_POD>, "Custom_Serialisation_POD must be trivially serializable");
 				static_assert(Utility::Has_Custom_Serialisation<Custom_Serialisation_POD>, "Custom_Serialisation_POD must have custom serialisation");
@@ -546,8 +546,8 @@ namespace Test
 				struct Custom_serialisation_Non_POD
 				{
 					std::string c;
-					void write_binary(std::ostream& p_out) const { Utility::write_binary(p_out, c); }
-					void read_binary(std::istream& p_in)         { Utility::read_binary(p_in, c);   }
+					void write_binary(std::ostream& p_out, uint16_t p_version) const { Utility::write_binary(p_out, p_version, c); }
+					void read_binary(std::istream& p_in, uint16_t p_version)         { Utility::read_binary(p_in, p_version, c);   }
 				};
 				static_assert(!Utility::Is_Trivially_Serializable<Custom_serialisation_Non_POD>, "Custom_serialisation_Non_POD must not be trivially serializable");
 				static_assert(Utility::Has_Custom_Serialisation<Custom_serialisation_Non_POD>, "Custom_serialisation_Non_POD must have custom serialisation");
@@ -596,6 +596,7 @@ namespace Test
 		}
 		{SCOPE_SECTION("ECS components");
 			{SCOPE_SECTION("Directional light");
+				static_assert(Utility::Is_Serializable_v<Component::DirectionalLight>, "DirectionalLight must have custom serialisation");
 
 				Component::DirectionalLight serialised_light;
 				serialised_light.m_direction          = glm::vec3(0.8f, 0.2f, 0.1f);
@@ -622,6 +623,7 @@ namespace Test
 			}
 
 			{SCOPE_SECTION("Point light");
+				static_assert(Utility::Is_Serializable_v<Component::PointLight>, "PointLight must have custom serialisation");
 
 				Component::PointLight serialised_light;
 				serialised_light.m_position           = glm::vec3(0.8f, 0.2f, 0.1f);
@@ -648,6 +650,7 @@ namespace Test
 			}
 
 			{SCOPE_SECTION("Spotlight");
+				static_assert(Utility::Is_Serializable_v<Component::SpotLight>, "SpotLight must have custom serialisation");
 
 				Component::SpotLight serialised_light;
 				serialised_light.m_position           = glm::vec3(0.8f, 0.2f, 0.1f);
@@ -680,6 +683,8 @@ namespace Test
 			}
 
 			{SCOPE_SECTION("Transform");
+				static_assert(Utility::Is_Serializable_v<Component::Transform>, "Transform must have custom serialisation");
+
 				Component::Transform serialised_transform;
 				serialised_transform.m_position       = glm::vec3(0.5f, 0.1f, 0.4f);
 				serialised_transform.m_scale          = glm::vec3(2.4f, 2.3f, 5.0f);

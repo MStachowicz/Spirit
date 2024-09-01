@@ -14,7 +14,7 @@ namespace System
 	class SerialisationSystem
 	{
 	public:
-		static void Serialise(const Scene& p_scene, const std::filesystem::path& p_path)
+		static void serialise(const Scene& p_scene, const std::filesystem::path& p_path)
 		{
 			std::ofstream ostrm;
 
@@ -31,7 +31,7 @@ namespace System
 				uint16_t version = Config::Save_Version;
 				ostrm.write(reinterpret_cast<const char*>(&version), sizeof(uint16_t));
 
-				ECS::Storage::Serialise(p_scene.m_entities, ostrm, version);
+				ECS::Storage::serialise(ostrm, version, p_scene.m_entities);
 
 				ostrm.close();
 			}
@@ -40,7 +40,7 @@ namespace System
 				ASSERT_THROW(false, "File not successfully written, exception thrown: {}", e.what());
 			}
 		}
-		static void Deserialise(Scene& p_scene, const std::filesystem::path& p_path)
+		static void deserialise(Scene& p_scene, const std::filesystem::path& p_path)
 		{
 			ASSERT_THROW(std::filesystem::exists(p_path),          "File with path {} doesnt exist", p_path.string());
 			ASSERT_THROW(std::filesystem::is_regular_file(p_path), "Path is not a file");
@@ -57,7 +57,7 @@ namespace System
 				uint16_t version = 0;
 				istrm.read(reinterpret_cast<char*>(&version), sizeof(uint16_t));
 
-				p_scene.m_entities = ECS::Storage::Deserialise(istrm, version);
+				p_scene.m_entities = ECS::Storage::deserialise(istrm, version);
 
 				istrm.close();
 			}

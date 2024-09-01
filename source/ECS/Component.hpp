@@ -4,6 +4,7 @@
 #include "Meta.hpp"
 
 #include "Utility/Logger.hpp"
+#include "Utility/Serialise.hpp"
 
 #include <array>
 #include <bitset>
@@ -39,9 +40,9 @@ namespace ECS
 		// placement-new copy-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
 		void (*CopyConstruct)(void* p_destination_address, const void* p_source_address);
 		// Serialise the object at p_address into p_out. (Optional function)
-		void (*Serialise)(void* p_address, std::ofstream& p_out, uint16_t p_version);
+		void (*Serialise)(void* p_address, std::ostream& p_out, uint16_t p_version);
 		// Deserialise the object into p_destination_address from p_in. (Optional function)
-		void (*Deserialise)(void* p_destination_address, std::ifstream& p_in, uint16_t p_version);
+		void (*Deserialise)(void* p_destination_address, std::istream& p_in, uint16_t p_version);
 	};
 
 	// API for interfacing with Component's types/data after type erasure.
@@ -95,24 +96,13 @@ namespace ECS
 		}
 	};
 
-	template <typename T>
-	concept Serializable = requires(T a, std::ofstream& out, uint16_t version)
-	{
-		{ T::Serialise(a, out, version) } -> std::same_as<void>;
-	};
-	template <typename T>
-	concept Deserializable = requires(std::ifstream& in, uint16_t version)
-	{
-		{ T::Deserialise(in, version) } -> std::same_as<T>;
-	};
-
 	// Construct the ComponentData for a ComponentType.
 	template <typename ComponentType>
 	ComponentData::ComponentData(Meta::PackArg<ComponentType>)
 		: ID{Component::get_ID<ComponentType>()}
 		, size{sizeof(std::decay_t<ComponentType>)}
 		, align{alignof(std::decay_t<ComponentType>)}
-		, is_serialisable{Serializable<std::decay_t<ComponentType>> && Deserializable<std::decay_t<ComponentType>>}
+		, is_serialisable{Utility::Is_Serializable_v<std::decay_t<ComponentType>>}
 		, Destruct{[](void* p_address)
 		{
 			using Type = std::decay_t<ComponentType>;
@@ -133,20 +123,18 @@ namespace ECS
 			using Type = std::decay_t<ComponentType>;
 			new (p_destination_address) Type(*static_cast<const Type*>(p_source_address));
 		}}
-		, Serialise{[](void* p_address, std::ofstream& p_out, uint16_t p_version)
+		, Serialise{[](void* p_address, std::ostream& p_out, uint16_t p_version)
 		{
 			using Type = std::decay_t<ComponentType>;
-			if constexpr (Serializable<Type>)
-				Type::Serialise(*static_cast<Type*>(p_address), p_out, p_version);
+			if constexpr (Utility::Is_Serializable_v<Type>)
+				Utility::write_binary(p_out, p_version, *static_cast<Type*>(p_address));
 		}}
-		, Deserialise{[](void* p_destination_address, std::ifstream& p_in, uint16_t p_version)
+		, Deserialise{[](void* p_destination_address, std::istream& p_in, uint16_t p_version)
 		{
 			using Type = std::decay_t<ComponentType>;
-			if constexpr (Deserializable<Type>)
-				new (p_destination_address) Type(Type::Deserialise(p_in, p_version));
+			if constexpr (Utility::Is_Serializable_v<Type>)
+				Utility::read_binary(p_in, p_version, *static_cast<Type*>(p_destination_address));
 		}}
-	{
-		static_assert((Serializable<std::decay_t<ComponentType>> == Deserializable<std::decay_t<ComponentType>>), "Component must have both Serialise and Deserialise functions or neither. Did you forget to implement one of the functions or use the wrong function signatures?");
-	}
+	{}
 
 } // namespace ECS

@@ -906,8 +906,8 @@ namespace ECS
 		}
 
 		// Write the state of the storage to p_file stream.
-		static void Serialise(const Storage& p_storage, std::ofstream& p_out, uint16_t p_version);
+		static void serialise(std::ostream& p_out, uint16_t p_version, const Storage& p_storage);
 		// Construct a Storage from the state in p_file stream.
-		static Storage Deserialise(std::ifstream& p_in, uint16_t p_version);
+		static Storage deserialise(std::istream& p_in, uint16_t p_version);
 	};
 } // namespace ECS
