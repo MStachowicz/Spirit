@@ -25,6 +25,7 @@ namespace Component
 		, spawn_debt{0.f}
 		, max_particle_count{1'000}
 		, alive_count{0}
+		, blending_style{BlendingStyle::AlphaBlended}
 		, particle_buf{OpenGL::BufferStorageBitfield({OpenGL::BufferStorageFlag::DynamicStorageBit})}
 	{
 		ASSERT_THROW(emit_velocity_min.x < emit_velocity_max.x
@@ -93,6 +94,14 @@ namespace Component
 							textures.first = p_texture_system.getTexture(p_texture_system.m_available_textures.front());
 					}
 				}// End texture
+
+				{ImGui::SeparatorText("Blending");
+					const char* blending_styles[]{"Additive", "Alpha blended"};
+					int style = static_cast<int>(blending_style);
+
+					if (ImGui::Combo("Blending style", &style, blending_styles, 2))
+						blending_style = static_cast<BlendingStyle>(style);
+				}// End blending
 
 				{ImGui::SeparatorText("Colour");
 					if (start_colour.has_value())

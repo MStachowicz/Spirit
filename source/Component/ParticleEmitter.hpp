@@ -24,6 +24,12 @@ namespace Component
 	public:
 		constexpr static size_t Persistent_ID = 8;
 
+		enum BlendingStyle
+		{
+			Additive,
+			AlphaBlended
+		};
+
 		// start_texture and end_texture are optional.
 		// start_texture is required for end_texture to be available.
 		TextureRef start_texture; // Texture to use at the start of the particle's life. If end_texture is not set, this texture is used for the entire life of the particle.
@@ -116,6 +122,8 @@ namespace Component
 
 		unsigned int max_particle_count; // Max number of particles that can be alive concurrently.
 		unsigned int alive_count;        // Number of particles currently alive. This value is out of date when particles expire after particle_update kernel runs.
+
+		BlendingStyle blending_style;
 
 		OpenGL::Buffer particle_buf; // Contains instances of Particle struct.
 

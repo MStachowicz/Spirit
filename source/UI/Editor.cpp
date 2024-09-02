@@ -665,10 +665,23 @@ namespace UI
 				{
 					if (ImGui::Button("Smoke"))
 					{
+						auto emitter = Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")};
+						emitter.emit_position_min  = *m_cursor_intersection;
+						emitter.emit_position_max  = *m_cursor_intersection;
+						emitter.start_colour       = glm::vec4(1.f);
+						emitter.end_colour         = glm::vec4(0.f);
+						emitter.start_size         = 0.15f;
+						emitter.end_size           = 5.f;
+						emitter.spawn_per_second   = 50.f;
+						emitter.lifetime_min       = DeltaTime{10.f};
+						emitter.lifetime_max       = DeltaTime{20.f};
+						emitter.max_particle_count = 65'000;
+						emitter.acceleration       = glm::vec3(0.f, -0.05f, 0.f);
+
 						m_scene_system.get_current_scene_entities().add_entity(
 							Component::Label{"Particle Emitter"},
 							Component::Transform{*m_cursor_intersection},
-							Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")});
+							std::move(emitter));
 					}
 					ImGui::EndMenu();
 				}

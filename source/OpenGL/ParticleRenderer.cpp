@@ -149,9 +149,20 @@ namespace OpenGL
 				dc.m_cull_face_enabled  = false;
 				dc.m_depth_test_enabled = false;
 				dc.m_blending_enabled   = true;
-				// Additive blending.
-				dc.m_source_factor      = BlendFactorType::SourceAlpha;
-				dc.m_destination_factor = BlendFactorType::One;
+
+				if (p_emitter.blending_style == Component::ParticleEmitter::BlendingStyle::AlphaBlended)
+				{
+					dc.m_source_factor      = BlendFactorType::SourceAlpha;
+					dc.m_destination_factor = BlendFactorType::OneMinusSourceAlpha;
+				}
+				else if (p_emitter.blending_style == Component::ParticleEmitter::BlendingStyle::Additive)
+				{
+					dc.m_source_factor      = BlendFactorType::SourceAlpha;
+					dc.m_destination_factor = BlendFactorType::One;
+				}
+				else
+					ASSERT_THROW(false, "Unknown blending style.");
+
 				dc.set_UBO("ViewProperties", p_view_properties);
 
 				auto emitter_colour_source = p_emitter.get_colour_source();
