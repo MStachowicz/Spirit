@@ -198,7 +198,9 @@ namespace OpenGL
 				{ // Resize the buffer to accomodate at least the directional_light_count
 					if (required_size > m_directional_lights_buffer.size())
 					{
-						m_directional_lights_buffer.resize(required_size);
+						OpenGL::Buffer new_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
+						new_buffer.resize(required_size);
+						m_directional_lights_buffer = std::move(new_buffer);
 						LOG("[OPENGL][PHONG] DirectionalLight count changed ({}), resized the directional light buffer to {}B", directional_light_count, required_size);
 					}
 				}
@@ -227,7 +229,9 @@ namespace OpenGL
 				{ // Resize the buffer to accomodate at least the point_light_count
 					if (required_size > m_point_lights_buffer.size())
 					{
-						m_point_lights_buffer.resize(required_size);
+						OpenGL::Buffer new_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
+						new_buffer.resize(required_size);
+						m_point_lights_buffer = std::move(new_buffer);
 						LOG("[OPENGL][PHONG] PointLight count changed ({}), resized the point light buffer to {}B", point_light_count, required_size);
 					}
 				}
@@ -259,7 +263,9 @@ namespace OpenGL
 				{ // Resize the buffer to accomodate at least the spot_light_count
 					if (required_size > m_spot_lights_buffer.size())
 					{
-						m_spot_lights_buffer.resize(required_size);
+						OpenGL::Buffer new_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
+						new_buffer.resize(required_size);
+						m_spot_lights_buffer = std::move(new_buffer);
 						LOG("[OPENGL][PHONG] SpotLight count changed ({}), resized the spot light buffer to {}B", spot_light_count, required_size);
 					}
 				}
