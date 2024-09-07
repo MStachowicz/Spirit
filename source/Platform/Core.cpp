@@ -7,7 +7,7 @@
 #include "Utility/Config.hpp"
 
 #ifdef _WIN32
-#include <Windows.h> // MSVC requires Windows.h to be included before glfw headers
+	#include <Windows.h> // MSVC requires Windows.h to be included before glfw headers
 #endif
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -182,4 +182,63 @@ namespace Platform
 		ImGui::ColorEdit4("Success",    &success_text.x);
 		ImGui::End();
 	}
-}
+
+	std::filesystem::path file_dialog(FileDialogType p_type, FileDialogFilter p_filter, const char* p_title, const std::filesystem::path& p_start_path)
+	{
+		#ifdef _WIN32
+			OPENFILENAMEA ofn;
+			CHAR szFile[260]    = { 0 };
+			ZeroMemory(&ofn, sizeof(ofn));
+
+			ofn.lpstrTitle      = p_title;
+			ofn.lStructSize     = sizeof(ofn);
+			ofn.hwndOwner       = NULL;
+			ofn.lpstrFile       = szFile;
+			ofn.lpstrFile[0]    = '\0';
+			ofn.nMaxFile        = sizeof(szFile);
+			ofn.nFilterIndex    = 1;
+			ofn.lpstrFileTitle  = NULL;
+			ofn.nMaxFileTitle   = 0;
+
+			// If the start path is empty isnt empty and doesnt exist, create it
+			if (!p_start_path.empty() && !std::filesystem::exists(p_start_path))
+				std::filesystem::create_directories(p_start_path);
+			ofn.lpstrInitialDir = p_start_path.string().c_str();
+
+			// ("Scene Files (*.{})\0*.{}\0", Config::Save_Extension, Config::Save_Extension)
+			static std::string scene_filter = "Scene File\0*.SS\0";
+			switch (p_filter)
+			{
+				case FileDialogFilter::All:   ofn.lpstrFilter = "All Files\0*.*\0"; break;
+				case FileDialogFilter::Scene: ofn.lpstrFilter = scene_filter.c_str(); break;
+				default: ASSERT_THROW(false, "Invalid FileDialogFilter");
+			}
+
+			std::filesystem::path selected_path;
+			switch (p_type)
+			{
+				case FileDialogType::Save:
+				{
+					ofn.Flags = OFN_OVERWRITEPROMPT;
+					if (GetSaveFileNameA(&ofn) == TRUE) selected_path = std::filesystem::path(ofn.lpstrFile);
+					break;
+				}
+				case FileDialogType::Open:
+				{
+					if (GetOpenFileNameA(&ofn) == TRUE) selected_path = std::filesystem::path(ofn.lpstrFile);
+					break;
+				}
+				default: ASSERT_THROW(false, "Invalid FileDialogType");
+			}
+
+			// Append the .ss extension if not present
+			if (p_type == FileDialogType::Save && !selected_path.empty() && selected_path.extension() != ".ss")
+				selected_path.replace_extension(".ss");
+
+			return selected_path;
+		#else
+			(void)p_type; (void)p_title; (void)p_filter; (void)p_start_path; (void)p_default_path;
+			ASSERT_THROW(false, "file_dialog not implemented for this platform");
+		#endif
+	}
+} // namespace Platform

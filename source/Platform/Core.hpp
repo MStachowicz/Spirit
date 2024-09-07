@@ -2,9 +2,33 @@
 
 #include "glm/vec4.hpp"
 
+#include <filesystem>
+
 namespace Platform
 {
 	class Window;
+
+	enum class FileDialogType : uint8_t
+	{
+		Open,
+		Save
+	};
+	enum class FileDialogFilter : uint8_t
+	{
+		All,
+		Scene
+	};
+	// Open a native file dialog for this platform.
+	//@param p_filter The filter to apply to the dialog. Usage examples:
+	// All files = "All Files\0*.*\0"
+	// Text files = "Text Files\0*.txt\0"
+	// Multiple filters = "Text Files\0*.txt\0Image Files\0*.png;*.jpg\0"
+	//@return The path to the file selected by the user. If the user cancels the dialog, an empty path is returned.
+	std::filesystem::path file_dialog(
+		FileDialogType p_type,
+		FileDialogFilter p_filter,
+		const char* p_title,
+		const std::filesystem::path& p_start_path = {});
 
 	class Core // Working name
 	{

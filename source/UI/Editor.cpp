@@ -338,6 +338,32 @@ namespace UI
 
 		if (ImGui::BeginMenuBar())
 		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Save"))
+				{
+					auto file_path = Platform::file_dialog(Platform::FileDialogType::Save, Platform::FileDialogFilter::Scene, "Save scene", Config::Scene_Save_Directory);
+					if (!file_path.empty())
+					{
+						std::ofstream file(file_path);
+						auto& scene = m_scene_system.get_current_scene();
+						System::Scene::serialise(file, Config::Save_Version, scene);
+					}
+				}
+				if (ImGui::MenuItem("Load"))
+				{
+					auto file_path = Platform::file_dialog(Platform::FileDialogType::Open, Platform::FileDialogFilter::Scene, "Load scene", Config::Scene_Save_Directory);
+					if (!file_path.empty())
+					{
+						std::ifstream file(file_path);
+						auto& scene = m_scene_system.add_scene();
+						scene       = System::Scene::deserialise(file, Config::Save_Version);
+						m_scene_system.set_current_scene(scene);
+					}
+				}
+
+				ImGui::EndMenu();
+			}
 			if (ImGui::BeginMenu("Edit"))
 			{
 				ImGui::MenuItem("Entity tree", NULL, &m_windows_to_display.Entity);

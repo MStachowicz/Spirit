@@ -1,7 +1,6 @@
 #include "SceneSystem.hpp"
 #include "MeshSystem.hpp"
 #include "TextureSystem.hpp"
-#include "SerialisationSystem.hpp"
 
 #include "Component/FirstPersonCamera.hpp"
 #include "Component/Collider.hpp"
@@ -81,6 +80,19 @@ namespace System
 				});
 			}
 		}
+	}
+
+	void Scene::serialise(std::ostream& p_out, uint16_t p_version, const Scene& p_Scene)
+	{
+		ECS::Storage::serialise(p_out, p_version, p_Scene.m_entities);
+	}
+
+	Scene Scene::deserialise(std::istream& p_in, uint16_t p_version)
+	{
+		Scene scene;
+		scene.m_entities = ECS::Storage::deserialise(p_in, p_version);
+		// TODO: Update the scene bounds and view information after deserialising
+		return scene;
 	}
 
 	void SceneSystem::add_default_camera(Scene& p_scene)
