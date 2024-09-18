@@ -237,7 +237,7 @@ namespace Platform
 
 			return selected_path;
 		#else
-			(void)p_type; (void)p_filter (void)p_title; (void)p_start_path;
+			(void)p_type; (void)p_filter; (void)p_title; (void)p_start_path;
 			ASSERT_THROW(false, "file_dialog not implemented for this platform");
 		#endif
 	}
