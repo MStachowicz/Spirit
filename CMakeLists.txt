@@ -115,6 +115,7 @@ source/Component/Collider.hpp
 source/Component/Input.cpp
 source/Component/Input.hpp
 source/Component/Label.hpp
+source/Component/Label.cpp
 source/Component/Mesh.cpp
 source/Component/Mesh.hpp
 source/Component/ParticleEmitter.hpp

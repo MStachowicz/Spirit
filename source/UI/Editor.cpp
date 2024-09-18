@@ -515,7 +515,7 @@ namespace UI
 				if (scene.has_components<Component::Label>(p_entity))
 				{
 					auto label = scene.get_component<Component::Label&>(p_entity);
-					title = label.mName;
+					title = label.m_name;
 				}
 
 				if (ImGui::TreeNode(title.c_str()))
@@ -543,7 +543,7 @@ namespace UI
 			if (scene.has_components<Component::Label>(ent))
 			{
 				auto label = scene.get_component<Component::Label&>(ent);
-				title = label.mName;
+				title = label.m_name;
 			}
 			else
 				title = "Entity " + std::to_string(ent.ID);
