@@ -133,7 +133,22 @@ namespace ECS
 		{
 			using Type = std::decay_t<ComponentType>;
 			if constexpr (Utility::Is_Serializable_v<Type>)
-				Utility::read_binary(p_in, p_version, *static_cast<Type*>(p_destination_address));
+			{
+				// Static_Func_Custom_Serialisation API returns a T, we can directly placement new move construct the object.
+				// Otherwise we need to default construct the object and then deserialise into it.
+				if constexpr (Utility::Has_Static_Func_Custom_Serialisation<Type>)
+				{
+					new (p_destination_address) Type(std::move(Type::deserialise(p_in, p_version)));
+				}
+				else if constexpr (std::is_default_constructible_v<Type>)
+				{
+					Type destination;
+					Utility::read_binary(p_in, p_version, destination);
+					new (p_destination_address) Type(std::move(destination));
+				}
+				else
+					[]<bool flag=false>(){ static_assert(flag, "Passed Is_Serializable_v check but no Serialise or Deserialise function found. Missing case here for a serialisable function."); }(); // #CPP23 P2593R0 swap for static_assert(false)
+			}
 		}}
 	{}
 
