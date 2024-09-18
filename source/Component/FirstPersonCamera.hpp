@@ -7,6 +7,8 @@
 
 #include "glm/glm.hpp"
 
+#include <iostream>
+
 namespace Component
 {
 	class RigidBody;
@@ -84,5 +86,7 @@ namespace Component
 		Geometry::Frustrum frustrum(const float p_aspect_ratio, const glm::vec3& p_eye_position) const;
 
 		void draw_UI(Component::Transform* p_transform = nullptr);
+		static void serialise(std::ostream& p_out, uint16_t p_version, const FirstPersonCamera& p_first_person_camera);
+		static FirstPersonCamera deserialise(std::istream& p_in, uint16_t p_version);
 	};
 } // namespace Component

@@ -3,6 +3,8 @@
 
 #include "imgui.h"
 
+#include "Utility/Serialise.hpp"
+
 namespace Component
 {
 	glm::vec2 FirstPersonCamera::get_pitch_yaw(const glm::vec3& p_direction)
@@ -217,4 +219,31 @@ namespace Component
 			ImGui::TreePop();
 		}
 	}
+	void FirstPersonCamera::serialise(std::ostream& p_out, uint16_t p_version, const FirstPersonCamera& p_first_person_camera)
+	{
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_FOV);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_near);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_far);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_pitch);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_yaw);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_look_sensitivity);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_move_speed);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_body_move);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_primary);
+	}
+	FirstPersonCamera FirstPersonCamera::deserialise(std::istream& p_in, uint16_t p_version)
+	{
+		FirstPersonCamera first_person_camera;
+		Utility::read_binary(p_in, p_version, first_person_camera.m_FOV);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_near);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_far);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_pitch);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_yaw);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_look_sensitivity);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_move_speed);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_body_move);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_primary);
+		return first_person_camera;
+	}
+	static_assert(Utility::Is_Serializable_v<FirstPersonCamera>, "FirstPersonCamera is not serializable, check that the required functions are implemented.");
 } // namespace Component
