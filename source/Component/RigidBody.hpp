@@ -3,6 +3,8 @@
 #include "glm/vec3.hpp"
 #include "glm/mat3x3.hpp"
 
+#include <iostream>
+
 namespace Component
 {
 	// An idealised body that exhibits 0 deformation. All units are in SI.
@@ -33,5 +35,8 @@ namespace Component
 		// Apply a linear p_force (kg m/s²) on the body. Force is applied on a PhysicsSystem::update tick.
 		void apply_linear_force(const glm::vec3& p_force);
 		void draw_UI();
+
+		static void serialise(std::ostream& p_out, uint16_t p_version, const RigidBody& p_rigid_body);
+		static RigidBody deserialise(std::istream& p_in, uint16_t p_version);
 	};
 }

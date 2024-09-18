@@ -2,6 +2,8 @@
 
 #include "Geometry/AABB.hpp"
 
+#include <iostream>
+
 namespace Component
 {
 	struct Transform;
@@ -18,5 +20,8 @@ namespace Component
 		Collider();
 
 		void draw_UI();
+
+		static void serialise(std::ostream& p_out, uint16_t p_version, const Collider& p_collider);
+		static Collider deserialise(std::istream& p_in, uint16_t p_version);
 	};
 } // namespace Component

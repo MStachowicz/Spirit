@@ -77,6 +77,7 @@ namespace Component
 		Utility::read_binary(p_in, p_version, light.m_ortho_size);
 		return light;
 	}
+	static_assert(Utility::Is_Serializable_v<DirectionalLight>, "DirectionalLight is not serializable, check that the required functions are implemented.");
 
 	glm::mat4 DirectionalLight::get_view_proj(const Geometry::AABB& p_scene_AABB)
 	{
@@ -150,6 +151,7 @@ namespace Component
 		Utility::read_binary(p_in, p_version, light.m_quadratic);
 		return light;
 	}
+	static_assert(Utility::Is_Serializable_v<PointLight>, "PointLight is not serializable, check that the required functions are implemented.");
 
 	SpotLight::SpotLight() noexcept
 		: m_position{glm::vec3(0.f, 0.f, 0.f)}
@@ -213,4 +215,5 @@ namespace Component
 		Utility::read_binary(p_in, p_version, light.m_outer_cutoff);
 		return light;
 	}
+	static_assert(Utility::Is_Serializable_v<SpotLight>, "SpotLight is not serializable, check that the required functions are implemented.");
 } // namespace Component

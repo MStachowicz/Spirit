@@ -3,6 +3,8 @@
 #include "glm/fwd.hpp"
 #include "glm/vec3.hpp"
 
+#include <iostream>
+
 namespace Geometry
 {
 	// Axis alligned bounding box
@@ -28,5 +30,8 @@ namespace Geometry
 		static AABB unite(const AABB& p_AABB, const glm::vec3& p_point);
 		// Returns an encompassing AABB after translating and transforming p_AABB.
 		static AABB transform(const AABB& p_AABB, const glm::vec3& p_position, const glm::mat4& p_rotation, const glm::vec3& p_scale);
+
+		static void serialise(std::ostream& p_out, uint16_t p_version, const AABB& p_AABB);
+		static AABB deserialise(std::istream& p_in, uint16_t p_version);
 	};
 }// namespace Geometry
