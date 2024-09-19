@@ -154,6 +154,8 @@ target_compile_options(Component PRIVATE ${WARNING_COMPILE_FLAGS})
 
 # System ----------------------------------------------------------------------------------------------------------------------------------
 add_library(System
+source/System/AssetManager.cpp
+source/System/AssetManager.hpp
 source/System/CollisionSystem.cpp
 source/System/CollisionSystem.hpp
 source/System/PhysicsSystem.cpp
@@ -162,10 +164,6 @@ source/System/InputSystem.hpp
 source/System/InputSystem.cpp
 source/System/SceneSystem.hpp
 source/System/SceneSystem.cpp
-source/System/MeshSystem.cpp
-source/System/MeshSystem.hpp
-source/System/TextureSystem.cpp
-source/System/TextureSystem.hpp
 )
 target_include_directories(System
 PRIVATE source/System

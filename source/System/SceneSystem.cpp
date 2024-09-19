@@ -1,6 +1,5 @@
 #include "SceneSystem.hpp"
-#include "MeshSystem.hpp"
-#include "TextureSystem.hpp"
+#include "AssetManager.hpp"
 
 #include "Component/FirstPersonCamera.hpp"
 #include "Component/Collider.hpp"
@@ -21,9 +20,8 @@
 
 namespace System
 {
-	SceneSystem::SceneSystem(System::TextureSystem& p_texture_system, System::MeshSystem& p_mesh_system)
-		: m_texture_system(p_texture_system)
-		, m_mesh_system(p_mesh_system)
+	SceneSystem::SceneSystem(System::AssetManager& p_asset_manager)
+		: m_asset_manager{p_asset_manager}
 		, m_scenes{}
 		, m_current_scene_index{0}
 	{
@@ -120,9 +118,9 @@ namespace System
 			p_scene.m_entities.add_entity(
 				Component::Label{"Floor"},
 				Component::RigidBody{},
-				Component::Texture{m_texture_system.getTexture(Config::Texture_Directory / "wood_floor.png")},
+				Component::Texture{m_asset_manager.get_texture(Config::Texture_Directory / "wood_floor.png")},
 				transform,
-				Component::Mesh{m_mesh_system.m_quad},
+				Component::Mesh{m_asset_manager.m_quad},
 				Component::Collider{});
 		}
 
@@ -137,14 +135,14 @@ namespace System
 
 		{ // Textured cube
 			Component::Texture texture;
-			texture.m_diffuse  = m_texture_system.getTexture(Config::Texture_Directory / "metalContainerDiffuse.png");
-			texture.m_specular = m_texture_system.getTexture(Config::Texture_Directory / "metalContainerSpecular.png");
+			texture.m_diffuse  = m_asset_manager.get_texture(Config::Texture_Directory / "metalContainerDiffuse.png");
+			texture.m_specular = m_asset_manager.get_texture(Config::Texture_Directory / "metalContainerSpecular.png");
 
 			p_scene.m_entities.add_entity(
 				Component::Label{"Cube"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
-				Component::Mesh{m_mesh_system.m_cube},
+				Component::Mesh{m_asset_manager.m_cube},
 				Component::Collider{},
 				texture);
 			running_x += increment;
@@ -154,7 +152,7 @@ namespace System
 				Component::Label{"Cone"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
-				Component::Mesh{m_mesh_system.m_cone},
+				Component::Mesh{m_asset_manager.m_cone},
 				Component::Collider{});
 			running_x += increment;
 		}
@@ -164,7 +162,7 @@ namespace System
 				Component::Label{"Cylinder"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
-				Component::Mesh{m_mesh_system.m_cylinder},
+				Component::Mesh{m_asset_manager.m_cylinder},
 				Component::Collider{});
 			running_x += increment;
 		}
@@ -173,7 +171,7 @@ namespace System
 				Component::Label{"Plane"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
-				Component::Mesh{m_mesh_system.m_quad},
+				Component::Mesh{m_asset_manager.m_quad},
 				Component::Collider{});
 			running_x += increment;
 		}
@@ -182,7 +180,7 @@ namespace System
 				Component::Label{"Sphere"},
 				Component::RigidBody{},
 				Component::Transform{glm::vec3(running_x, start_y, -mesh_width)},
-				Component::Mesh{m_mesh_system.m_sphere},
+				Component::Mesh{m_asset_manager.m_sphere},
 				Component::Collider{});
 			running_x += increment;
 		}
@@ -208,7 +206,7 @@ namespace System
 		}
 
 		{ // Particle
-			auto particle_emitter = Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")};
+			auto particle_emitter = Component::ParticleEmitter{m_asset_manager.get_texture(Config::Texture_Directory / "smoke.png")};
 			p_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 		}
 		{ // Terrain
@@ -225,12 +223,12 @@ namespace System
 			for (size_t i = 0; i < 100; i += 2)
 			{
 				Component::Texture texture;
-				texture.m_diffuse = m_texture_system.getTexture(containerDiffuse);
-				texture.m_specular = m_texture_system.getTexture(containerSpecular);
+				texture.m_diffuse = m_asset_manager.get_texture(containerDiffuse);
+				texture.m_specular = m_asset_manager.get_texture(containerSpecular);
 
 				p_scene.m_entities.add_entity(
 					Component::Label("Cube " + std::to_string((i / 2) + 1)),
-					Component::Mesh(m_mesh_system.m_cube),
+					Component::Mesh(m_asset_manager.m_cube),
 					Component::Transform{glm::vec3(i, 0.f, 0.f)},
 					Component::Collider{},
 					Component::RigidBody{},
@@ -276,7 +274,7 @@ namespace System
 		auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
 		mb.add_icosphere(glm::vec3(0.f), 1.f, 1);
 		auto icosphere_mesh = mb.get_mesh();
-		auto icosphere_meshref = m_mesh_system.insert(std::move(icosphere_mesh));
+		auto icosphere_meshref = m_asset_manager.insert(std::move(icosphere_mesh));
 
 		p_scene.m_entities.add_entity(
 			Component::Label{"Directional light 1"},
@@ -309,10 +307,10 @@ namespace System
 
 			Component::Label name = Component::Label("Sphere");
 
-			Component::Mesh mesh = Component::Mesh(m_mesh_system.m_sphere);
+			Component::Mesh mesh = Component::Mesh(m_asset_manager.m_sphere);
 			Component::Texture texture;
-			texture.m_diffuse = m_texture_system.getTexture(containerDiffuse);
-			texture.m_specular = m_texture_system.getTexture(containerSpecular);
+			texture.m_diffuse = m_asset_manager.get_texture(containerDiffuse);
+			texture.m_specular = m_asset_manager.get_texture(containerSpecular);
 
 			Component::RigidBody rigidBody;
 			rigidBody.m_mass = 1.f;
@@ -325,9 +323,9 @@ namespace System
 			p_scene.m_entities.add_entity(
 				Component::Label{"Floor"},
 				Component::RigidBody{},
-				Component::Texture{m_texture_system.getTexture(Config::Texture_Directory / "wood_floor.png")},
+				Component::Texture{m_asset_manager.get_texture(Config::Texture_Directory / "wood_floor.png")},
 				transform,
-				Component::Mesh{m_mesh_system.m_quad},
+				Component::Mesh{m_asset_manager.m_quad},
 				Component::Collider{});
 		}
 		{// Lights

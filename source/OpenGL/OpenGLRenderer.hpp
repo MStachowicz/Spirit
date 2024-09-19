@@ -15,8 +15,7 @@
 
 namespace System
 {
-	class MeshSystem;
-	class TextureSystem;
+	class AssetManager;
 	class SceneSystem;
 }
 namespace Platform
@@ -41,8 +40,8 @@ namespace OpenGL
 
 		Platform::Window& m_window;
 		FBO m_screen_framebuffer; // Framebuffer the scene is rendered to. We then render this texture to the screen allowing for post-processing.
+		System::AssetManager& m_asset_manager;
 		System::SceneSystem& m_scene_system;
-		System::MeshSystem& m_mesh_system;
 
 		Buffer m_view_properties_buffer; // Contains the view and projection matrices shared across all shaders.
 		Shader m_uniform_colour_shader;
@@ -64,7 +63,7 @@ namespace OpenGL
 		PostProcessingOptions m_post_processing_options;
 
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-		OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& p_scene_system, System::MeshSystem& p_mesh_system, System::TextureSystem& p_texture_system) noexcept;
+		OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;
 
 		void start_frame();
 		void end_frame();

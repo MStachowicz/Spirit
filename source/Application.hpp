@@ -1,11 +1,10 @@
 #pragma once
 
+#include "System/AssetManager.hpp"
 #include "System/CollisionSystem.hpp"
 #include "System/InputSystem.hpp"
-#include "System/MeshSystem.hpp"
 #include "System/PhysicsSystem.hpp"
 #include "System/SceneSystem.hpp"
-#include "System/TextureSystem.hpp"
 
 #include "UI/Editor.hpp"
 
@@ -47,8 +46,7 @@ private:
 	Platform::Input& m_input;
 	Platform::Window& m_window; // Main window all application business takes place in. When this window is closed, the application ends and vice-versa.
 
-	System::TextureSystem m_texture_system;
-	System::MeshSystem m_mesh_system;
+	System::AssetManager m_asset_manager;
 	System::SceneSystem m_scene_system;
 
 	OpenGL::OpenGLRenderer m_openGL_renderer;

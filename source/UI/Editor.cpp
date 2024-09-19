@@ -12,11 +12,10 @@
 #include "Component/Texture.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
+#include "System/AssetManager.hpp"
 #include "System/CollisionSystem.hpp"
-#include "System/MeshSystem.hpp"
 #include "System/PhysicsSystem.hpp"
 #include "System/SceneSystem.hpp"
-#include "System/TextureSystem.hpp"
 
 #include "OpenGL/DebugRenderer.hpp"
 #include "OpenGL/OpenGLRenderer.hpp"
@@ -36,16 +35,14 @@
 namespace UI
 {
 	Editor::Editor(Platform::Input& p_input, Platform::Window& p_window
-		, System::TextureSystem& p_texture_system
-		, System::MeshSystem& p_mesh_system
+		, System::AssetManager& p_asset_manager
 		, System::SceneSystem& p_scene_system
 		, System::CollisionSystem& p_collision_system
 		, System::PhysicsSystem& p_physics_system
 		, OpenGL::OpenGLRenderer& p_openGL_renderer)
 		: m_input{p_input}
 		, m_window{p_window}
-		, m_texture_system{p_texture_system}
-		, m_mesh_system{p_mesh_system}
+		, m_asset_manager{p_asset_manager}
 		, m_scene_system{p_scene_system}
 		, m_collision_system{p_collision_system}
 		, m_physics_system{p_physics_system}
@@ -487,13 +484,13 @@ namespace UI
 		if (scene.has_components<Component::FirstPersonCamera>(p_entity))
 			scene.get_component<Component::FirstPersonCamera>(p_entity).draw_UI();
 		if (scene.has_components<Component::ParticleEmitter>(p_entity))
-			scene.get_component<Component::ParticleEmitter>(p_entity).draw_UI(m_texture_system);
+			scene.get_component<Component::ParticleEmitter>(p_entity).draw_UI(m_asset_manager);
 		if (scene.has_components<Component::Terrain>(p_entity))
-			scene.get_component<Component::Terrain>(p_entity).draw_UI(m_texture_system);
+			scene.get_component<Component::Terrain>(p_entity).draw_UI(m_asset_manager);
 		if (scene.has_components<Component::Mesh>(p_entity))
 			scene.get_component<Component::Mesh>(p_entity).draw_UI();
 		if (scene.has_components<Component::Texture>(p_entity))
-			scene.get_component<Component::Texture>(p_entity).draw_UI(m_texture_system);
+			scene.get_component<Component::Texture>(p_entity).draw_UI(m_asset_manager);
 
 		ImGui::SeparatorText("Quick options");
 		if (ImGui::Button("Delete entity"))
@@ -665,7 +662,7 @@ namespace UI
 							Component::Label{"Cube"},
 							Component::RigidBody{},
 							Component::Transform{*m_cursor_intersection},
-							Component::Mesh{m_mesh_system.m_cube},
+							Component::Mesh{m_asset_manager.m_cube},
 							Component::Collider{});
 					}
 					else if (ImGui::Button("Terrain"))
@@ -691,7 +688,7 @@ namespace UI
 				{
 					if (ImGui::Button("Smoke"))
 					{
-						auto emitter = Component::ParticleEmitter{m_texture_system.getTexture(Config::Texture_Directory / "smoke.png")};
+						auto emitter = Component::ParticleEmitter{m_asset_manager.get_texture(Config::Texture_Directory / "smoke.png")};
 						emitter.emit_position_min  = *m_cursor_intersection;
 						emitter.emit_position_max  = *m_cursor_intersection;
 						emitter.start_colour       = glm::vec4(1.f);

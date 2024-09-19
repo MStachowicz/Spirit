@@ -7,7 +7,6 @@
 #include "Component/RigidBody.hpp"
 #include "Component/Transform.hpp"
 #include "System/SceneSystem.hpp"
-#include "System/MeshSystem.hpp"
 
 #include "Geometry/GJK.hpp"
 #include "Geometry/Frustrum.hpp"

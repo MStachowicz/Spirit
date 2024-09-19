@@ -8,9 +8,8 @@
 #include "Component/Terrain.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
-#include "System/MeshSystem.hpp"
+#include "System/AssetManager.hpp"
 #include "System/SceneSystem.hpp"
-#include "System/TextureSystem.hpp"
 
 #include "Platform/Core.hpp"
 #include "Platform/Window.hpp"
@@ -28,11 +27,11 @@ namespace OpenGL
 		return mb.get_mesh();
 	}
 
-	OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::SceneSystem& p_scene_system, System::MeshSystem& p_mesh_system, System::TextureSystem& p_texture_system) noexcept
+	OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept
 		: m_window{p_window}
 		, m_screen_framebuffer{m_window.size()}
+		, m_asset_manager{p_asset_manager}
 		, m_scene_system{p_scene_system}
-		, m_mesh_system{p_mesh_system}
 		, m_view_properties_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
 		, m_uniform_colour_shader{"uniformColour"}
 		, m_colour_shader{"colour"}
@@ -43,8 +42,8 @@ namespace OpenGL
 		, m_particle_renderer{}
 		, m_grid_renderer{}
 		, m_shadow_mapper{glm::uvec2(2048, 2048)}
-		, m_missing_texture{p_texture_system.m_texture_manager.insert(Data::Texture{Config::Texture_Directory / "missing.png"})}
-		, m_blank_texture{p_texture_system.m_texture_manager.insert(Data::Texture{Config::Texture_Directory / "black.jpg"})}
+		, m_missing_texture{m_asset_manager.get_texture("missing.png")}
+		, m_blank_texture{m_asset_manager.get_texture("black.jpg")}
 		, m_screen_quad{make_screen_quad_mesh()}
 		, m_post_processing_options{}
 	{

@@ -31,7 +31,7 @@ using TextureRef     = Utility::ResourceRef<Data::Texture>;
 
 namespace System
 {
-	class TextureSystem;
+	class AssetManager;
 }
 namespace Component
 {
@@ -50,6 +50,6 @@ namespace Component
 		Texture(const TextureRef& m_diffuse) noexcept;
 		Texture(const glm::vec4& p_colour) noexcept;
 
-		void draw_UI(System::TextureSystem& p_texture_system);
+		void draw_UI(System::AssetManager& p_asset_manager);
 	};
 }; // namespace Component

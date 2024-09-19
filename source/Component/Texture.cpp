@@ -1,5 +1,5 @@
 #include "Texture.hpp"
-#include "System/TextureSystem.hpp"
+#include "System/AssetManager.hpp"
 
 #include "Utility/Logger.hpp"
 #include "Utility/File.hpp"
@@ -68,7 +68,7 @@ namespace Component
 		, m_colour{p_colour}
 	{}
 
-	void Texture::draw_UI(System::TextureSystem& p_texture_system)
+	void Texture::draw_UI(System::AssetManager& p_asset_manager)
 	{
 		if (ImGui::TreeNode("Texture"))
 		{
@@ -76,15 +76,15 @@ namespace Component
 			const std::string currentSpecular = m_specular ? m_specular->m_image_ref->name() : "None";
 
 			static size_t selected;
-			auto& availableTextures = p_texture_system.m_available_textures;
+			auto& availableTextures = p_asset_manager.m_available_textures;
 			std::vector<std::string> availableTextureNames;
 			for (const auto& path : availableTextures)
 				availableTextureNames.push_back(path.stem().string());
 
 			if (ImGui::ComboContainer("Diffuse Texture", currentDiffuse.c_str(), availableTextureNames, selected))
-				m_diffuse = p_texture_system.getTexture(availableTextures[selected]);
+				m_diffuse = p_asset_manager.get_texture(availableTextures[selected]);
 			if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
-				m_specular = p_texture_system.getTexture(availableTextures[selected]);
+				m_specular = p_asset_manager.get_texture(availableTextures[selected]);
 			ImGui::Slider("Shininess", m_shininess, 1.f, 512.f, "%.1f");
 
 			ImGui::ColorEdit4("Colour", &m_colour[0]);

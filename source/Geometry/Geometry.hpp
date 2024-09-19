@@ -35,14 +35,4 @@ namespace Geometry
 	glm::vec3 angular_impulse(const glm::vec3& p_collision_point_world_space, const glm::vec3& p_collision_normal, const float& p_restitution
 								, const glm::vec3& p_body_1_center_of_mass_position_world, const glm::vec3& p_body_1_linear_velocity, const glm::vec3& p_body_1_angular_velocity, const float& p_body_1_mass, const glm::mat3& p_body_1_inertia_tensor
 								, const glm::vec3& p_body_2_center_of_mass_position_world, const glm::vec3& p_body_2_linear_velocity, const glm::vec3& p_body_2_angular_velocity, const float& p_body_2_mass, const glm::mat3& p_body_2_inertia_tensor);
-
-	enum class ShapeType : uint8_t
-	{
-		Cone,
-		Cuboid,
-		Cylinder,
-		Plane,
-		Sphere,
-		Quad
-	};
 }

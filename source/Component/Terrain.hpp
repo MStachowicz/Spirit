@@ -5,7 +5,7 @@
 
 namespace System
 {
-	class TextureSystem;
+	class AssetManager;
 }
 namespace Component
 {
@@ -31,6 +31,6 @@ namespace Component
 		Terrain(Terrain&& p_other) noexcept            = default;
 		Terrain& operator=(Terrain&& p_other) noexcept = default;
 
-		void draw_UI(System::TextureSystem& p_texture_system);
+		void draw_UI(System::AssetManager& p_asset_manager);
 	};
 } // namespace Component

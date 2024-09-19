@@ -8,8 +8,7 @@
 
 namespace System
 {
-	class TextureSystem;
-	class MeshSystem;
+	class AssetManager;
 
 	class Scene
 	{
@@ -28,14 +27,13 @@ namespace System
 
 	class SceneSystem
 	{
-		TextureSystem& m_texture_system;
-		MeshSystem& m_mesh_system;
+		AssetManager& m_asset_manager;
 
 		std::vector<std::unique_ptr<Scene>> m_scenes;
 		size_t m_current_scene_index;
 
 	public:
-		SceneSystem(TextureSystem& p_texture_system, MeshSystem& p_mesh_system);
+		SceneSystem(AssetManager& p_asset_manager);
 
 		Scene& get_current_scene()                                      { return *m_scenes[m_current_scene_index]; }
 		const Scene& get_current_scene() const                          { return *m_scenes[m_current_scene_index]; }

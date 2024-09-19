@@ -88,7 +88,7 @@ namespace Component
 {
 	// Component Mesh is an indirection to a Data::Mesh.
 	// By not owning the Data::Mesh, we can have multiple entities share the same mesh data and save loading models.
-	// Meshes are loaded by the MeshSystem via a MeshManager.
+	// Meshes are loaded by the AssetManager.
 	class Mesh
 	{
 	public:

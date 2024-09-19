@@ -1,7 +1,7 @@
 #include "ParticleEmitter.hpp"
 #include "Component/Texture.hpp"
 
-#include "System/TextureSystem.hpp"
+#include "System/AssetManager.hpp"
 
 #include "imgui.h"
 
@@ -33,7 +33,7 @@ namespace Component
 			&& emit_velocity_min.z < emit_velocity_max.z, "ParticleEmitter min not smaller than max");
 	}
 
-	void ParticleEmitter::draw_UI(System::TextureSystem& p_texture_system)
+	void ParticleEmitter::draw_UI(System::AssetManager& p_asset_manager)
 	{
 		if (ImGui::TreeNode("Paticle Emitter"))
 		{
@@ -48,15 +48,15 @@ namespace Component
 					auto textures = get_textures();
 
 					std::vector<std::string> texture_names;
-					texture_names.reserve(p_texture_system.m_available_textures.size());
-					for (const auto& path : p_texture_system.m_available_textures)
+					texture_names.reserve(p_asset_manager.m_available_textures.size());
+					for (const auto& path : p_asset_manager.m_available_textures)
 						texture_names.push_back(path.stem().string());
 
 					auto texture_selected_combo = [&](const char* combo_label, TextureRef& current_texture)
 					{
 						size_t selected_index;
 						if (ImGui::ComboContainer(combo_label, current_texture->m_image_ref->name().c_str(), texture_names, selected_index))
-							current_texture = p_texture_system.getTexture(p_texture_system.m_available_textures[selected_index]);
+							current_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index]);
 					};
 
 					if (textures.first.has_value())
@@ -91,7 +91,7 @@ namespace Component
 					else
 					{
 						if (ImGui::Button("Add##add_texture_particle_emitter"))
-							textures.first = p_texture_system.getTexture(p_texture_system.m_available_textures.front());
+							textures.first = p_asset_manager.get_texture(p_asset_manager.m_available_textures.front());
 					}
 				}// End texture
 

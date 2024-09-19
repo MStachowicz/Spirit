@@ -20,8 +20,7 @@ namespace Platform
 }
 namespace System
 {
-	class TextureSystem;
-	class MeshSystem;
+	class AssetManager;
 	class SceneSystem;
 	class Scene;
 	class CollisionSystem;
@@ -63,8 +62,7 @@ namespace UI
 
 		Platform::Input&         m_input;
 		Platform::Window&        m_window;
-		System::TextureSystem&   m_texture_system;
-		System::MeshSystem&      m_mesh_system;
+		System::AssetManager&    m_asset_manager;
 		System::SceneSystem&     m_scene_system;
 		System::CollisionSystem& m_collision_system;
 		System::PhysicsSystem&   m_physics_system;
@@ -121,8 +119,7 @@ namespace UI
 		}
 
 		Editor(Platform::Input& p_input, Platform::Window& p_window
-			, System::TextureSystem& p_texture_system
-			, System::MeshSystem& p_mesh_system
+			, System::AssetManager& p_asset_manager
 			, System::SceneSystem& p_scene_system
 			, System::CollisionSystem& p_collision_system
 			, System::PhysicsSystem& p_physics_system

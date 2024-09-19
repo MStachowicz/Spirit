@@ -9,7 +9,7 @@
 
 namespace System
 {
-	class TextureSystem;
+	class AssetManager;
 }
 namespace Component
 {
@@ -128,7 +128,7 @@ namespace Component
 		OpenGL::Buffer particle_buf; // Contains instances of Particle struct.
 
 		ParticleEmitter(const TextureRef& p_texture);
-		void draw_UI(System::TextureSystem& p_texture_system);
+		void draw_UI(System::AssetManager& p_asset_manager);
 		// Clear the particles and begin spawning them again.
 		void reset();
 
