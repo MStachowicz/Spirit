@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Component/Vertex.hpp"
+#include "Data/Vertex.hpp"
 #include "Geometry/AABB.hpp"
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
@@ -19,7 +19,7 @@ namespace Data
 		Geometry::AABB AABB;                     // Object-space AABB for broad-phase collision detection.
 
 		template <typename VertexType>
-		requires is_valid_mesh_vert<VertexType>
+		requires Data::is_valid_mesh_vert<VertexType>
 		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
 			: VAO{}
 			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}

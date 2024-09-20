@@ -132,7 +132,6 @@ source/Component/Transform.cpp
 source/Component/Transform.hpp
 source/Component/TwoAxisCamera.cpp
 source/Component/TwoAxisCamera.hpp
-source/Component/Vertex.hpp
 source/Component/ViewInformation.hpp
 )
 target_include_directories(Component
@@ -142,6 +141,7 @@ PRIVATE source
 target_link_libraries(Component
 PUBLIC Geometry
 PUBLIC OpenGL
+PUBLIC Data
 PUBLIC GLM
 PUBLIC Utility # Used in headers of Mesh, Texture, Input
 PRIVATE System
@@ -252,6 +252,21 @@ PRIVATE ImGui
 target_compile_options(UI PRIVATE ${WARNING_COMPILE_FLAGS})
 # UI end ----------------------------------------------------------------------------------------------------------------------------------
 
+# Data   ----------------------------------------------------------------------------------------------------------------------------------
+add_library(Data
+source/Data/Image.hpp
+source/Data/Image.cpp
+source/Data/Vertex.hpp
+)
+target_include_directories(Data
+PRIVATE source/Data
+PRIVATE source
+)
+target_link_libraries(Data
+PUBLIC STB
+PUBLIC GLM
+)
+
 # Platform --------------------------------------------------------------------------------------------------------------------------------
 add_library(Platform
 source/Platform/Window.hpp
@@ -268,6 +283,7 @@ PRIVATE source
 target_link_libraries(Platform
 PUBLIC GLM
 PUBLIC Utility # EventDispatcher in Window and Input hpps.
+PRIVATE Data # Image in Window.cpp for icon
 PRIVATE glfw
 PRIVATE glad
 PRIVATE ImGui
@@ -341,7 +357,6 @@ target_link_libraries(Utility
 PUBLIC GLM
 PUBLIC Geometry
 PUBLIC OpenGL
-PRIVATE STB
 PRIVATE UI # Logger.cpp uses Editor for output
 )
 target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})

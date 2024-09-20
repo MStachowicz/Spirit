@@ -71,7 +71,7 @@ void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
 				texture_names.push_back(path.stem().string());
 
 			size_t selected_index;
-			std::string current = m_texture ? m_texture->m_image_ref->name() : "None";
+			std::string current = m_texture ? m_texture->name() : "None";
 			if (ImGui::ComboContainer("Texture", current.c_str(), texture_names, selected_index))
 				m_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index]);
 		}

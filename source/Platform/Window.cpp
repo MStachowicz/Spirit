@@ -1,9 +1,10 @@
 #include "Window.hpp"
 #include "Input.hpp"
 
+#include "Data/Image.hpp"
+
 #include "Utility/Logger.hpp"
 #include "Utility/Utility.hpp"
-#include "Utility/File.hpp"
 #include "Utility/Config.hpp"
 
 #ifdef _WIN32
@@ -68,12 +69,11 @@ namespace Platform
 			}
 		}
 		{ // Set the taskbar icon for the window
-			const auto icon_path = Config::Texture_Directory / "Icons" / "Icon.png";
-			auto icon_image      = Utility::File::s_image_files.get_or_create([&icon_path](const Utility::Image& p_image) { return p_image.m_filepath == icon_path; }, icon_path);
+			auto icon_image = Data::Image(Config::Texture_Directory / "Icons" / "Icon.png");
 			GLFWimage icon;
-			icon.pixels = (unsigned char*)(icon_image->get_data());
-			icon.width  = icon_image->m_width;
-			icon.height = icon_image->m_height;
+			icon.pixels = (unsigned char*)(icon_image.data);
+			icon.width  = icon_image.width;
+			icon.height = icon_image.height;
 			glfwSetWindowIcon(m_handle, 1, &icon);
 		}
 		LOG("[WINDOW] Created Window with resolution {}x{}", size().x, size().y);

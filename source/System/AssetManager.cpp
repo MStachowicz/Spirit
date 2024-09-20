@@ -82,7 +82,7 @@ namespace System
 	{
 		return m_texture_manager.get_or_create([&p_file_path](const Data::Texture& p_texture)
 		{
-			return p_texture.m_image_ref->m_filepath == p_file_path;
+			return p_texture.filepath() == p_file_path;
 		}, p_file_path);
 	}
 	TextureRef AssetManager::get_texture(const std::string_view p_file_name)

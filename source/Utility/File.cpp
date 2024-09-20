@@ -1,62 +1,11 @@
 #include "File.hpp"
 #include "Logger.hpp"
-#include "Config.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#include <functional>
-#include <algorithm>
 #include <fstream>
 #include <sstream>
 
 namespace Utility
 {
-	Image::Image(const std::filesystem::path& p_path) noexcept
-		: m_data{nullptr}
-		, m_filepath{p_path}
-		, m_width{0}
-		, m_height{0}
-		, m_number_of_channels{0}
-	{
-		ASSERT(File::exists(p_path), "[FILE][IMAGE] Path '{}' does not exist.", p_path.string());
-
-		// OpenGL expects 0 coordinate on y-axis to be the bottom side of the image, images usually have 0 at the top of y-axis
-		// Flip textures here to account for this.
-		stbi_set_flip_vertically_on_load(false);
-
-		int components = 0;
-		m_data = (std::byte*)(stbi_load(m_filepath.string().c_str(), &m_width, &m_height, &components, 0));
-		m_number_of_channels = static_cast<uint8_t>(components);
-		ASSERT(m_data != nullptr, "Failed to load texture at path '{}'", m_filepath.string());
-	}
-	Image::~Image() noexcept
-	{
-		if (m_data)
-			stbi_image_free(m_data);
-	}
-
-	Image::Image(Image&& p_other) noexcept
-		: m_data{std::exchange(p_other.m_data, nullptr)}
-		, m_filepath{std::exchange(p_other.m_filepath, {})}
-		, m_width{std::exchange(p_other.m_width, 0)}
-		, m_height{std::exchange(p_other.m_height, 0)}
-		, m_number_of_channels{std::exchange(p_other.m_number_of_channels, 0)}
-	{}
-
-	Image& Image::operator=(Image&& p_other) noexcept
-	{
-		if (this != &p_other)
-		{
-			m_data               = std::exchange(p_other.m_data, nullptr);
-			m_filepath           = std::exchange(p_other.m_filepath, {});
-			m_width              = std::exchange(p_other.m_width, 0);
-			m_height             = std::exchange(p_other.m_height, 0);
-			m_number_of_channels = std::exchange(p_other.m_number_of_channels, 0);
-		}
-		return *this;
-	}
-
 	std::string File::read_from_file(const std::filesystem::path& p_path)
 	{
 		if (!exists(p_path))

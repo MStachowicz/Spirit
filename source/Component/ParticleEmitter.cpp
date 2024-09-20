@@ -55,7 +55,7 @@ namespace Component
 					auto texture_selected_combo = [&](const char* combo_label, TextureRef& current_texture)
 					{
 						size_t selected_index;
-						if (ImGui::ComboContainer(combo_label, current_texture->m_image_ref->name().c_str(), texture_names, selected_index))
+						if (ImGui::ComboContainer(combo_label, current_texture->name().c_str(), texture_names, selected_index))
 							current_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index]);
 					};
 

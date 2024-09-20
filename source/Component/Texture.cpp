@@ -32,20 +32,18 @@ namespace Data
 	}
 
 	Texture::Texture(const std::filesystem::path& p_filepath) noexcept
-		: m_image_ref{Utility::File::s_image_files.get_or_create([&p_filepath](const Utility::Image& p_image){ return p_image.m_filepath == p_filepath; }, p_filepath)}
-		, m_GL_texture{
-		                m_image_ref->resolution(),
+		: m_filepath{p_filepath}
+		, m_image{p_filepath}
+		, m_GL_texture{ resolution(),
 		                OpenGL::TextureMagFunc::Linear,
 		                OpenGL::WrappingMode::Repeat,
-		                internal_format_from_channels(m_image_ref->m_number_of_channels),
-		                format_from_channels(m_image_ref->m_number_of_channels),
+		                internal_format_from_channels(m_image.number_of_channels),
+		                format_from_channels(m_image.number_of_channels),
 		                OpenGL::TextureDataType::UNSIGNED_BYTE,
 		                true,
-		                m_image_ref->get_data()}
-	{
-		LOG("Data::Texture '{}' loaded", m_image_ref->m_filepath.string());
-	}
-}
+		                m_image.data }
+	{}
+} // namespace Data
 
 namespace Component
 {
@@ -72,8 +70,8 @@ namespace Component
 	{
 		if (ImGui::TreeNode("Texture"))
 		{
-			const std::string currentDiffuse  = m_diffuse ? m_diffuse->m_image_ref->name() : "None";
-			const std::string currentSpecular = m_specular ? m_specular->m_image_ref->name() : "None";
+			const std::string currentDiffuse  = m_diffuse ? m_diffuse->name() : "None";
+			const std::string currentSpecular = m_specular ? m_specular->name() : "None";
 
 			static size_t selected;
 			auto& availableTextures = p_asset_manager.m_available_textures;

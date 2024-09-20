@@ -1,11 +1,15 @@
 #pragma once
 
+#include "Data/Image.hpp"
 #include "OpenGL/Types.hpp"
-#include "Utility/ResourceManager.hpp"
 #include "Utility/File.hpp"
+#include "Utility/ResourceManager.hpp"
 
 #include <glm/vec4.hpp>
+#include <glm/vec2.hpp>
+
 #include <filesystem>
+#include <string>
 
 namespace Data
 {
@@ -13,7 +17,12 @@ namespace Data
 	// On construction a Texture is loaded into memory and onto the GPU ready for rendering.
 	class Texture
 	{
+		std::filesystem::path m_filepath;
+		Data::Image m_image;
+
 	public:
+		OpenGL::Texture m_GL_texture;
+
 		Texture(const std::filesystem::path& p_filePath) noexcept;
 		~Texture()                                     = default;
 		Texture(Texture&& p_other) noexcept            = default;
@@ -21,8 +30,14 @@ namespace Data
 		Texture(const Texture& p_other)                = delete;
 		Texture& operator=(const Texture& p_other)     = delete;
 
-		Utility::File::ImageRef m_image_ref;
-		OpenGL::Texture m_GL_texture;
+		// Raw access to the image pixel data. Access for read only.
+		std::byte* data() const { return m_image.data; }
+		// Return a display-friendly name for this image.
+		std::string name() const { return m_filepath.stem().string(); };
+		// Return the resolution of the image in pixels.
+		glm::uvec2 resolution() const { return {m_image.width, m_image.height}; }
+		// Return the filepath of the image.
+		const std::filesystem::path& filepath() const { return m_filepath; }
 	};
 }
 
