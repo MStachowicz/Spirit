@@ -58,6 +58,7 @@ namespace UI
 			bool editor_camera    = false;
 			bool ImGuiStyleEditor = false;
 			bool Console          = true;
+			bool asset_browser    = false;
 		};
 
 		Platform::Input&         m_input;

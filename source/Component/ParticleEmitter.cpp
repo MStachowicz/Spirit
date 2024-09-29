@@ -49,14 +49,14 @@ namespace Component
 
 					std::vector<std::string> texture_names;
 					texture_names.reserve(p_asset_manager.m_available_textures.size());
-					for (const auto& path : p_asset_manager.m_available_textures)
-						texture_names.push_back(path.stem().string());
+					for (const auto& tex : p_asset_manager.m_available_textures)
+						texture_names.push_back(tex.path.stem().string());
 
 					auto texture_selected_combo = [&](const char* combo_label, TextureRef& current_texture)
 					{
 						size_t selected_index;
 						if (ImGui::ComboContainer(combo_label, current_texture->name().c_str(), texture_names, selected_index))
-							current_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index]);
+							current_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index].path);
 					};
 
 					if (textures.first.has_value())
@@ -91,7 +91,7 @@ namespace Component
 					else
 					{
 						if (ImGui::Button("Add##add_texture_particle_emitter"))
-							textures.first = p_asset_manager.get_texture(p_asset_manager.m_available_textures.front());
+							textures.first = p_asset_manager.get_texture(p_asset_manager.m_available_textures.front().path);
 					}
 				}// End texture
 

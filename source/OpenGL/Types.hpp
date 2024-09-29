@@ -213,6 +213,8 @@ namespace OpenGL
 		Texture& operator=(const Texture& p_other) = delete;
 		Texture(Texture&& p_other);
 		Texture& operator=(Texture&& p_other);
+
+		GLHandle handle() const { return m_handle; }
 	};
 
 

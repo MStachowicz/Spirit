@@ -175,6 +175,7 @@ PUBLIC Geometry
 PUBLIC ECS #SceneSystem.hpp uses ECS storage
 PUBLIC Utility
 PRIVATE Platform
+PRIVATE ImGui
 )
 target_compile_options(System PRIVATE ${WARNING_COMPILE_FLAGS})
 # System end ------------------------------------------------------------------------------------------------------------------------------

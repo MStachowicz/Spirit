@@ -76,13 +76,13 @@ namespace Component
 			static size_t selected;
 			auto& availableTextures = p_asset_manager.m_available_textures;
 			std::vector<std::string> availableTextureNames;
-			for (const auto& path : availableTextures)
-				availableTextureNames.push_back(path.stem().string());
+			for (const auto& tex : availableTextures)
+				availableTextureNames.emplace_back(tex.path.stem().string());
 
 			if (ImGui::ComboContainer("Diffuse Texture", currentDiffuse.c_str(), availableTextureNames, selected))
-				m_diffuse = p_asset_manager.get_texture(availableTextures[selected]);
+				m_diffuse = p_asset_manager.get_texture(availableTextures[selected].path);
 			if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
-				m_specular = p_asset_manager.get_texture(availableTextures[selected]);
+				m_specular = p_asset_manager.get_texture(availableTextures[selected].path);
 			ImGui::Slider("Shininess", m_shininess, 1.f, 512.f, "%.1f");
 
 			ImGui::ColorEdit4("Colour", &m_colour[0]);

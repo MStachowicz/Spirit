@@ -8,6 +8,8 @@
 
 #include "glm/vec3.hpp"
 
+#include "imgui.h"
+
 namespace System
 {
 	enum class ShapeType : uint8_t { Cone, Cuboid, Cylinder, Plane, Sphere, Quad };
@@ -64,7 +66,9 @@ namespace System
 		Utility::File::foreach_file(Config::Texture_Directory, [&](auto& entry)
 		{
 			if (entry.is_regular_file())
-				m_available_textures.push_back(entry.path());
+			{
+				m_available_textures.emplace_back(AvailableTexture{entry.path(), Data::Texture(entry.path())});
+			}
 		});
 		Utility::File::foreach_file_recursive(Config::Model_Directory, [&](auto& entry)
 		{
@@ -88,5 +92,47 @@ namespace System
 	TextureRef AssetManager::get_texture(const std::string_view p_file_name)
 	{
 		return get_texture(Config::Texture_Directory / p_file_name);
+	}
+
+	void AssetManager::draw_UI(bool* p_open)
+	{
+		const float button_size_factor = 0.1f;
+		const glm::vec2 display_size   = ImGui::GetIO().DisplaySize;
+		const glm::vec2 button_size    = display_size * button_size_factor;
+
+		// Set minimum window size to size of 1 button + SeperatorText
+		const glm::vec2 min_window_size = {button_size.x + ImGui::GetStyle().ItemSpacing.x * 2.f,
+		                                   button_size.y + ImGui::GetStyle().ItemSpacing.y * 4.f + ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeight()};
+		ImGui::SetNextWindowSizeConstraints(min_window_size, display_size);
+
+		ImGui::Begin("Asset Browser", p_open);
+		{ImGui::SeparatorText("Textures");
+			// Calculate how many textures can fit into the window.
+			const ImVec2 window_size = ImGui::GetContentRegionAvail();
+			const int columns        = std::max(1, (int)(window_size.x / (button_size.x + ImGui::GetStyle().ItemSpacing.x)));
+			const int rows           = std::max(1, (int)(window_size.y / (button_size.y + ImGui::GetStyle().ItemSpacing.y)));
+			unsigned int i = 0;
+
+			for (int row = 0; row < rows; row++)
+			{
+				ImGui::BeginGroup();
+				for (int col = 0; col < columns; col++)
+				{
+					if (i >= m_available_textures.size())
+						break;
+
+					ImTextureID texture_id = (void*)(intptr_t)m_available_textures[i].thumbnail.m_GL_texture.handle();
+					if (ImGui::ImageButton(m_available_textures[i].path.filename().stem().string().c_str(),
+					                       texture_id, button_size))
+					{
+						LOG("Selected texture: {}", m_available_textures[i].path.string());
+					}
+					ImGui::SameLine();
+					i++;
+				}
+				ImGui::EndGroup();
+			}
+		}
+		ImGui::End();
 	}
 } // namespace System

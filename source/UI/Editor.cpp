@@ -368,17 +368,15 @@ namespace UI
 			}
 			if (ImGui::BeginMenu("View"))
 			{
-				if (ImGui::BeginMenu("Editor"))
-				{
-					ImGui::MenuItem("Camera",             NULL, &m_windows_to_display.editor_camera);
-					ImGui::MenuItem("Console",            NULL, &m_windows_to_display.Console);
-					ImGui::Separator();
-					ImGui::MenuItem("FPS Timer",          NULL, &m_windows_to_display.FPSTimer);
-					ImGui::Separator();
-					ImGui::MenuItem("Theme",              NULL, &m_windows_to_display.theme_editor);
-					ImGui::MenuItem("ImGui style editor", NULL, &m_windows_to_display.ImGuiStyleEditor);
-					ImGui::EndMenu();
-				}
+				ImGui::MenuItem("Console",            NULL, &m_windows_to_display.Console);
+				ImGui::MenuItem("Asset browser",      NULL, &m_windows_to_display.asset_browser);
+				ImGui::Separator();
+				ImGui::MenuItem("Camera",             NULL, &m_windows_to_display.editor_camera);
+				ImGui::MenuItem("FPS Timer",          NULL, &m_windows_to_display.FPSTimer);
+				ImGui::Separator();
+				ImGui::MenuItem("Theme",              NULL, &m_windows_to_display.theme_editor);
+				ImGui::MenuItem("ImGui style editor", NULL, &m_windows_to_display.ImGuiStyleEditor);
+
 				if (ImGui::BeginMenu("ImGui"))
 				{
 					ImGui::MenuItem("Demo",  NULL, &m_windows_to_display.ImGuiDemo);
@@ -411,6 +409,7 @@ namespace UI
 		}
 		if (m_windows_to_display.Entity)        draw_entity_tree_window();
 		if (m_windows_to_display.Console)       draw_console_window();
+		if (m_windows_to_display.asset_browser) m_asset_manager.draw_UI(&m_windows_to_display.asset_browser);
 		draw_debug_window();
 		if (m_windows_to_display.ImGuiDemo)     ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
 		if (m_windows_to_display.ImGuiMetrics)  ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
