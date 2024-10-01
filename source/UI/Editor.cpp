@@ -507,6 +507,7 @@ namespace UI
 			auto& scene = m_scene_system.get_current_scene_entities();
 			scene.foreach([&](ECS::Entity& p_entity)
 			{
+				ImGui::PushID(static_cast<int>(p_entity.ID));
 				std::string title = "Entity " + std::to_string(p_entity.ID);
 				if (scene.has_components<Component::Label>(p_entity))
 				{
@@ -521,6 +522,7 @@ namespace UI
 					ImGui::Separator();
 					ImGui::TreePop();
 				}
+				ImGui::PopID();
 			});
 		}
 		ImGui::End();
