@@ -12,16 +12,17 @@ Component::Terrain::Terrain(const glm::vec3& p_position, int p_size_x, int p_siz
 	, m_size_z{p_size_z}
 	, m_scale_factor{1.f}
 	, m_texture{}
-	, m_mesh{generate_mesh()}
+	, m_seed{Utility::get_random_number<unsigned int>()}
+	, m_mesh{generate_mesh(m_seed)}
 {}
-
 Component::Terrain::Terrain(const Terrain& p_other) noexcept
 	: m_position{p_other.m_position}
 	, m_size_x{p_other.m_size_x}
 	, m_size_z{p_other.m_size_z}
 	, m_scale_factor{p_other.m_scale_factor}
 	, m_texture{p_other.m_texture}
-	, m_mesh{generate_mesh()} // TODO: Implement a Data::Mesh copy.
+	, m_seed{p_other.m_seed}
+	, m_mesh{generate_mesh(m_seed)} // TODO: Implement a Data::Mesh copy.
 {}
 Component::Terrain& Component::Terrain::operator=(const Terrain& p_other) noexcept
 {
@@ -30,7 +31,8 @@ Component::Terrain& Component::Terrain::operator=(const Terrain& p_other) noexce
 	m_size_z       = p_other.m_size_z;
 	m_scale_factor = p_other.m_scale_factor;
 	m_texture      = p_other.m_texture;
-	m_mesh         = generate_mesh(); // TODO: Implement a Data::Mesh copy.
+	m_seed         = p_other.m_seed;
+	m_mesh         = generate_mesh(m_seed); // TODO: Implement a Data::Mesh copy.
 	return *this;
 }
 
@@ -39,13 +41,12 @@ float compute_height(float p_x, float p_z, float p_scale_factor, const siv::Perl
 	return static_cast<float>(perlin.noise2D(p_x * p_scale_factor, p_z * p_scale_factor));
 }
 
-Data::Mesh Component::Terrain::generate_mesh() noexcept
+Data::Mesh Component::Terrain::generate_mesh(unsigned int p_seed) noexcept
 {
 	// Use perlin noise to generate a heightmap in the xz plane.
 	auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
 	mb.reserve((m_size_x * m_size_z) * 6);
-	const siv::PerlinNoise::seed_type seed = 123456u;
-	const siv::PerlinNoise perlin{seed};
+	const siv::PerlinNoise perlin{p_seed};
 
 	for (float x = 0; x < m_size_x; x++)
 		for (float z = 0; z < m_size_z; z++)
@@ -76,13 +77,25 @@ void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
 				m_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index].path);
 		}
 
-		ImGui::Slider("Position", m_position, -100.f, 100.f, "%.3fm");
-		ImGui::Slider("Size X", m_size_x, 1, 1000, "%dm");
-		ImGui::Slider("Size Z", m_size_z, 1, 1000, "%dm");
-		ImGui::Slider("Scale factor", m_scale_factor, 0.01f , 10.f);
+		ImGui::SeparatorText("Generation settings");
+		static bool m_regen_on_changes = true;
+		bool changed = false;
+		changed |= ImGui::Slider("Position", m_position, -100.f, 100.f, "%.3fm");
+		changed |= ImGui::Slider("Size X", m_size_x, 1, 1000, "%dm");
+		changed |= ImGui::Slider("Size Z", m_size_z, 1, 1000, "%dm");
+		changed |= ImGui::Slider("Scale factor", m_scale_factor, 0.01f , 10.f);
+		changed |= ImGui::InputScalar("Seed", ImGuiDataType_U32, &m_seed);
+		ImGui::SameLine();
+		if (ImGui::Button("Rand"))
+		{
+			changed = true;
+			m_seed  = Utility::get_random_number<unsigned int>();
+		}
+		if (ImGui::Button("Re-generate terrain") || (changed && m_regen_on_changes))
+			m_mesh = generate_mesh(m_seed);
 
-		if (ImGui::Button("Re-generate terrain"))
-			m_mesh = generate_mesh();
+		ImGui::SameLine();
+		ImGui::Checkbox("Regen on changes", &m_regen_on_changes);
 
 		ImGui::TreePop();
 	}

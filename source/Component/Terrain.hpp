@@ -11,7 +11,7 @@ namespace Component
 {
 	class Terrain
 	{
-		Data::Mesh generate_mesh() noexcept;
+		Data::Mesh generate_mesh(unsigned int p_seed) noexcept;
 
 	public:
 		constexpr static size_t Persistent_ID = 6;
@@ -21,6 +21,7 @@ namespace Component
 		int m_size_z;
 		float m_scale_factor;
 		TextureRef m_texture;
+		unsigned int m_seed; // Seed used to generate m_mesh.
 		Data::Mesh m_mesh;
 
 		Terrain(const glm::vec3& p_position, int p_size_x, int p_size_z) noexcept;

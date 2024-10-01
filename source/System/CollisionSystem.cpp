@@ -4,6 +4,7 @@
 #include "Component/Collider.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/Transform.hpp"
+#include "Component/Terrain.hpp"
 
 #include "Geometry/Point.hpp"
 #include "Geometry/Ray.hpp"
@@ -91,6 +92,14 @@ namespace System
 		{
 			float length_along_ray = 0.f;
 			if (auto intersection = Geometry::get_intersection(p_collider.m_world_AABB, p_ray, &length_along_ray))
+				entities_and_distance.push_back({p_entity, length_along_ray});
+		});
+		m_scene_system.get_current_scene_entities().foreach([&](ECS::Entity& p_entity, Component::Terrain& p_terrain)
+		{
+			auto terrain_mesh_AABB = p_terrain.m_mesh.AABB;
+			terrain_mesh_AABB      = Geometry::AABB::transform(terrain_mesh_AABB, p_terrain.m_position, glm::identity<glm::mat4>(), glm::vec3(1.f));
+			float length_along_ray = 0.f;
+			if (auto intersection = Geometry::get_intersection(terrain_mesh_AABB, p_ray, &length_along_ray))
 				entities_and_distance.push_back({p_entity, length_along_ray});
 		});
 
