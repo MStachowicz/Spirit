@@ -29,6 +29,10 @@ namespace System
 		set_current_scene(scene);
 		add_default_camera(scene);
 		construct_2_sphere_scene(scene);
+
+		Component::Terrain terrain({0.f, 5.f, -100.f}, 100, 100, 20);
+		terrain.m_texture = m_asset_manager.get_texture(Config::Texture_Directory / "GrassTile.png");
+		scene.m_entities.add_entity(terrain);
 	}
 
 	void SceneSystem::set_current_scene(const Scene& p_scene)
@@ -209,9 +213,6 @@ namespace System
 			auto particle_emitter = Component::ParticleEmitter{m_asset_manager.get_texture(Config::Texture_Directory / "smoke.png")};
 			p_scene.m_entities.add_entity(Component::Label{"Particle emitter"}, particle_emitter);
 		}
-		{ // Terrain
-			p_scene.m_entities.add_entity(Component::Label{"Terrain"}, Component::Terrain{glm::vec3(0.f), 100, 100});
-		}
 	}
 
 	void SceneSystem::constructBoxScene(Scene& p_scene)
@@ -283,7 +284,7 @@ namespace System
 		p_scene.m_entities.add_entity(
 			Component::Label{"Sphere 1"},
 			Component::RigidBody{},
-			Component::Transform{glm::vec3(2.f, 0.f, 0.f)},
+			Component::Transform{glm::vec3(50.f, 30.f, -50.f)},
 			Component::Mesh{icosphere_meshref},
 			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 0.6f)}, // Grey
 			Component::Collider{});
@@ -291,7 +292,7 @@ namespace System
 		p_scene.m_entities.add_entity(
 			Component::Label{"Sphere 2"},
 			Component::RigidBody{},
-			Component::Transform{glm::vec3(5.f, 0.f, 0.f)},
+			Component::Transform{glm::vec3(55.f, 30.f, -50.f)},
 			Component::Mesh{icosphere_meshref},
 			Component::Texture{glm::vec4(1.f, 0.647f, 0.f, 0.6f)}, // Orange
 			Component::Collider{});

@@ -670,7 +670,7 @@ namespace UI
 					{
 						m_scene_system.get_current_scene_entities().add_entity(
 							Component::Label{"Terrain"},
-							Component::Terrain{*m_cursor_intersection, 10, 10});
+							Component::Terrain{*m_cursor_intersection, 10, 10, 5.f});
 					}
 					ImGui::EndMenu();
 				}
