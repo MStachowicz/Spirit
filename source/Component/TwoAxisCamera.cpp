@@ -54,6 +54,11 @@ namespace Component
 		else
 			return m_orbit_center - m_orbit_radius * forward();
 	}
+	void TwoAxisCamera::set_view_direction(const glm::vec3& p_view_direction)
+	{
+		m_pitch = glm::asin(p_view_direction.y);
+		m_yaw   = glm::atan(p_view_direction.z, p_view_direction.x);
+	}
 	glm::mat4 TwoAxisCamera::view() const
 	{
 		return glm::lookAt(position(), m_orbit_center, up());

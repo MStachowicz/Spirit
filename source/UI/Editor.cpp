@@ -70,6 +70,11 @@ namespace UI
 		m_input.m_mouse_move_event.subscribe(this,   &Editor::on_mouse_move_event);
 		m_input.m_mouse_scroll_event.subscribe(this, &Editor::on_mouse_scroll_event);
 
+		// TODO: Use the current scene bounds (not initialised at this point)
+		m_camera.set_orbit_point(glm::vec3(50.f, 0.f, -50.f));
+		m_camera.set_orbit_distance(75.f);
+		m_camera.set_view_direction(glm::normalize(glm::vec3(0.5f, -0.8f, -0.5f)));
+
 		set_state(m_state, true); // Set the initial state.
 		initialiseStyling();
 	}

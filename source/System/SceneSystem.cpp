@@ -279,7 +279,7 @@ namespace System
 
 		p_scene.m_entities.add_entity(
 			Component::Label{"Directional light 1"},
-			Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.3f, 0.5f});
+			Component::DirectionalLight{glm::normalize(glm::vec3(-1.f, -1.f, 0.f)), 0.3f, 0.5f});
 
 		p_scene.m_entities.add_entity(
 			Component::Label{"Sphere 1"},

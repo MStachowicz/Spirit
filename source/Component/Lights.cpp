@@ -9,7 +9,7 @@
 namespace Component
 {
 	DirectionalLight::DirectionalLight() noexcept
-		: m_direction{glm::vec3(0.f, -1.f, 0.f)}
+		: m_direction{glm::normalize(glm::vec3(-1.f, -1.f, 0.f))}
 		, m_colour{glm::vec3(1.f, 1.f, 1.f)}
 		, m_ambient_intensity{0.05f}
 		, m_diffuse_intensity{0.15f}
