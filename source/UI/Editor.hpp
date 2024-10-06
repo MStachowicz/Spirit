@@ -49,7 +49,8 @@ namespace UI
 			bool FPSTimer         = true;
 			bool add_entity_popup = false;
 			bool ent_properties   = false;
-			bool Debug            = false;
+			bool Graphics_Debug   = false;
+			bool Physics_Debug    = false;
 			bool ImGuiDemo        = false;
 			bool ImGuiMetrics     = false;
 			bool ImGuiStack       = false;
@@ -152,7 +153,8 @@ namespace UI
 		void draw_entity_tree_window();
 		// If m_entity_to_draw_info_for is set, draw_entity_UI for the entity in a window.
 		void draw_entity_properties();
-		void draw_debug_window();
+		void draw_graphics_debug_window();
+		void draw_physics_debug_window();
 		void draw_console_window();
 
 		void entity_creation_popup();

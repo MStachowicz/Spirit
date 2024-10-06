@@ -57,11 +57,11 @@ namespace OpenGL
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;
 		Data::Mesh m_screen_quad;
-	public:
 		PostProcessingOptions m_post_processing_options;
 		bool m_draw_shadows;
 		bool m_draw_grid;
 
+	public:
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
 		OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;
 
@@ -69,7 +69,8 @@ namespace OpenGL
 		void end_frame();
 		// Draw the current state of the ECS.
 		void draw(const DeltaTime& delta_time);
-
+		void draw_UI();
+		void reset_debug_options();
 		void reload_shaders();
 	};
 } // namespace OpenGL

@@ -327,6 +327,7 @@ PRIVATE System
 PRIVATE Platform
 PRIVATE Component
 PRIVATE ECS
+PRIVATE ImGui
 PRIVATE glad
 )
 target_compile_options(OpenGL PRIVATE ${WARNING_COMPILE_FLAGS})

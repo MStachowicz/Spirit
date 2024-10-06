@@ -393,7 +393,8 @@ namespace UI
 			}
 			if (ImGui::BeginMenu("Debug"))
 			{
-				ImGui::MenuItem("Debug options",          NULL, &m_windows_to_display.Debug);
+				ImGui::MenuItem("Graphics",               NULL, &m_windows_to_display.Graphics_Debug);
+				ImGui::MenuItem("Physics",                NULL, &m_windows_to_display.Physics_Debug);
 				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
 				ImGui::EndMenu();
 			}
@@ -412,15 +413,16 @@ namespace UI
 			}
 			ImGui::EndMenuBar();
 		}
-		if (m_windows_to_display.Entity)        draw_entity_tree_window();
-		if (m_windows_to_display.Console)       draw_console_window();
-		if (m_windows_to_display.asset_browser) m_asset_manager.draw_UI(&m_windows_to_display.asset_browser);
-		draw_debug_window();
-		if (m_windows_to_display.ImGuiDemo)     ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
-		if (m_windows_to_display.ImGuiMetrics)  ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
-		if (m_windows_to_display.ImGuiStack)    ImGui::ShowStackToolWindow(&m_windows_to_display.ImGuiStack);
-		if (m_windows_to_display.ImGuiAbout)    ImGui::ShowAboutWindow(&m_windows_to_display.ImGuiAbout);
-		if (m_windows_to_display.theme_editor)  Platform::Core::s_theme.draw_theme_editor_UI();
+		if (m_windows_to_display.Entity)         draw_entity_tree_window();
+		if (m_windows_to_display.Console)        draw_console_window();
+		if (m_windows_to_display.asset_browser)  m_asset_manager.draw_UI(&m_windows_to_display.asset_browser);
+		if (m_windows_to_display.Graphics_Debug) draw_graphics_debug_window();
+		if (m_windows_to_display.Physics_Debug)  draw_physics_debug_window();
+		if (m_windows_to_display.ImGuiDemo)      ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
+		if (m_windows_to_display.ImGuiMetrics)   ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
+		if (m_windows_to_display.ImGuiStack)     ImGui::ShowStackToolWindow(&m_windows_to_display.ImGuiStack);
+		if (m_windows_to_display.ImGuiAbout)     ImGui::ShowAboutWindow(&m_windows_to_display.ImGuiAbout);
+		if (m_windows_to_display.theme_editor)   Platform::Core::s_theme.draw_theme_editor_UI();
 		if (m_windows_to_display.ImGuiStyleEditor)
 		{
 			ImGui::Begin("Dear ImGui Style Editor", &m_windows_to_display.ImGuiStyleEditor);
@@ -559,89 +561,92 @@ namespace UI
 				m_entity_to_draw_info_for.reset(); // If the window is closed, reset the entity to draw info for.
 		}
 	}
-	void Editor::draw_console_window()
+	void Editor::draw_graphics_debug_window()
 	{
-		m_console.draw("Console", &m_windows_to_display.Console);
-	}
-	void Editor::draw_debug_window()
-	{
-		if (m_windows_to_display.Debug)
+		auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
+
+		if (ImGui::Begin("Graphics", &m_windows_to_display.Graphics_Debug))
 		{
-			if (ImGui::Begin("Debug options", &m_windows_to_display.Debug))
+			ImGui::Text("Window size",  m_window.size());
+			ImGui::Text("Aspect ratio", m_window.aspect_ratio());
+			ImGui::Text("Frame count",  m_draw_count);
+			ImGui::Separator();
+			ImGui::Text("View Position", m_scene_system.get_current_scene_view_info().m_view_position);
+			ImGui::Text("View",          m_scene_system.get_current_scene_view_info().m_view);
+			ImGui::Text("Proj",          m_scene_system.get_current_scene_view_info().m_projection);
+			ImGui::Separator();
+			ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
+			ImGui::Checkbox("Visualise normals",    &debug_options.m_show_mesh_normals);
+			bool VSync = m_window.get_VSync();
+			if (ImGui::Checkbox("VSync", &VSync))
+				m_window.set_VSync(VSync);
+
+			ImGui::SeparatorText("Renderer");
+			m_openGL_renderer.draw_UI();
+
+			if (ImGui::Button("Reset"))
 			{
-				auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
-				{ ImGui::SeparatorText("Graphics");
-					ImGui::Text("Window size", m_window.size());
-					ImGui::Text("Aspect ratio", m_window.aspect_ratio());
-					ImGui::Text("Frame count", m_draw_count);
-					ImGui::Separator();
-					ImGui::Text("View Position", m_scene_system.get_current_scene_view_info().m_view_position);
-					ImGui::Text("View", m_scene_system.get_current_scene_view_info().m_view);
-					ImGui::Text("Proj", m_scene_system.get_current_scene_view_info().m_projection);
-					ImGui::Separator();
-					ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
-					ImGui::Checkbox("Visualise normals", &debug_options.m_show_mesh_normals);
-					bool VSync = m_window.get_VSync();
-					if (ImGui::Checkbox("VSync", &VSync))
-						m_window.set_VSync(VSync);
-					if (ImGui::Button("Reload shaders"))
-						m_openGL_renderer.reload_shaders();
-				}
-
-				{ ImGui::SeparatorText("Post Processing");
-					ImGui::Checkbox("Invert", &m_openGL_renderer.m_post_processing_options.mInvertColours);
-					ImGui::Checkbox("Grayscale", &m_openGL_renderer.m_post_processing_options.mGrayScale);
-					ImGui::Checkbox("Sharpen", &m_openGL_renderer.m_post_processing_options.mSharpen);
-					ImGui::Checkbox("Blur", &m_openGL_renderer.m_post_processing_options.mBlur);
-					ImGui::Checkbox("Edge detection", &m_openGL_renderer.m_post_processing_options.mEdgeDetection);
-
-					const bool isPostProcessingOn = m_openGL_renderer.m_post_processing_options.mInvertColours
-						|| m_openGL_renderer.m_post_processing_options.mGrayScale || m_openGL_renderer.m_post_processing_options.mSharpen
-						|| m_openGL_renderer.m_post_processing_options.mBlur      || m_openGL_renderer.m_post_processing_options.mEdgeDetection;
-
-					if (!isPostProcessingOn) ImGui::BeginDisabled();
-						ImGui::SliderFloat("Kernel offset", &m_openGL_renderer.m_post_processing_options.mKernelOffset, -1.f, 1.f);
-					if (!isPostProcessingOn) ImGui::EndDisabled();
-				}
-
-				{ImGui::SeparatorText("Physics");
-					{// GJK visualiser
-						if (m_selected_entities.size() != 2)
-							ImGui::BeginDisabled();
-
-						ImGui::Checkbox("Toggle GJK debug", &m_debug_GJK);
-
-						if (m_selected_entities.size() != 2)
-						{
-							ImGui::SameLine();
-							ImGui::TextColored(Platform::Core::s_theme.error_text, "Select 2 entities to debug GJK");
-							ImGui::EndDisabled();
-						}
-					}
-
-					ImGui::Checkbox("Show orientations",        &debug_options.m_show_orientations);
-					ImGui::Checkbox("Show bounding box",        &debug_options.m_show_bounding_box);
-					ImGui::Checkbox("Fill bounding box",        &debug_options.m_fill_bounding_box);
-
-					if (!debug_options.m_show_bounding_box) ImGui::BeginDisabled();
-					ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
-					ImGui::ColorEdit3("Bounding box collided colour", &debug_options.m_bounding_box_collided_colour[0]);
-					if (!debug_options.m_show_bounding_box) ImGui::EndDisabled();
-
-					ImGui::Slider("Position offset factor",            debug_options.m_position_offset_factor, -10.f, 10.f);
-					ImGui::Slider("Position offset units",             debug_options.m_position_offset_units, -10.f, 10.f);
-				}
-
-				if (ImGui::Button("Reset"))
-					debug_options = OpenGL::DebugRenderer::DebugOptions();
+				debug_options.m_show_light_positions = false;
+				debug_options.m_show_mesh_normals    = false;
+				m_window.set_VSync(true);
+				m_openGL_renderer.reset_debug_options();
 			}
-			ImGui::End();
 		}
+		ImGui::End();
+	}
+	void Editor::draw_physics_debug_window()
+	{
+		auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
+
+		if (ImGui::Begin("Physics", &m_windows_to_display.Physics_Debug))
+		{
+			{// GJK visualiser
+				if (m_selected_entities.size() != 2)
+					ImGui::BeginDisabled();
+
+				ImGui::Checkbox("Toggle GJK debug", &m_debug_GJK);
+
+				if (m_selected_entities.size() != 2)
+				{
+					ImGui::SameLine();
+					ImGui::TextColored(Platform::Core::s_theme.error_text, "Select 2 entities to debug GJK");
+					ImGui::EndDisabled();
+				}
+			}
+
+			ImGui::Checkbox("Show orientations", &debug_options.m_show_orientations);
+			ImGui::Checkbox("Show bounding box", &debug_options.m_show_bounding_box);
+			ImGui::Checkbox("Fill bounding box", &debug_options.m_fill_bounding_box);
+
+			if (!debug_options.m_show_bounding_box) ImGui::BeginDisabled();
+			ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
+			ImGui::ColorEdit3("Bounding box collided colour", &debug_options.m_bounding_box_collided_colour[0]);
+			if (!debug_options.m_show_bounding_box) ImGui::EndDisabled();
+
+			ImGui::Slider("Position offset factor", debug_options.m_position_offset_factor, -10.f, 10.f);
+			ImGui::Slider("Position offset units",  debug_options.m_position_offset_units,  -10.f, 10.f);
+
+			if (ImGui::Button("Reset"))
+			{
+				debug_options.m_show_orientations            = false;
+				debug_options.m_show_bounding_box            = false;
+				debug_options.m_fill_bounding_box            = false;
+				debug_options.m_bounding_box_colour          = glm::vec3(0.f, 1.f, 0.f);
+				debug_options.m_bounding_box_collided_colour = glm::vec3(1.f, 0.f, 0.f);
+				debug_options.m_position_offset_factor       = 1.f;
+				debug_options.m_position_offset_units        = 0.f;
+			}
+		}
+		ImGui::End();
 
 		{// Regardless of the debug window being displayed, we want to display or do certain things related to the options.
 			if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2)
 				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.get_current_scene(), m_debug_GJK_step);
 		}
+	}
+	void Editor::draw_console_window()
+	{
+		m_console.draw("Console", &m_windows_to_display.Console);
 	}
 
 	void Editor::entity_creation_popup()

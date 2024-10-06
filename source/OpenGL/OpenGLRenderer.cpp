@@ -18,6 +18,8 @@
 #include "Utility/MeshBuilder.hpp"
 #include "Utility/Utility.hpp"
 
+#include "imgui.h"
+
 namespace OpenGL
 {
 	Data::Mesh OpenGLRenderer::make_screen_quad_mesh()
@@ -203,6 +205,38 @@ namespace OpenGL
 		m_particle_renderer.update(delta_time, m_scene_system.get_current_scene(), m_scene_system.get_current_scene_view_info().m_view_position, m_view_properties_buffer, m_screen_framebuffer);
 	}
 
+
+	void OpenGLRenderer::draw_UI()
+	{
+		ImGui::Checkbox("Draw shadows", &m_draw_shadows);
+		ImGui::Checkbox("Draw grid",    &m_draw_grid);
+
+		if (ImGui::Button("Reload Shaders"))
+			reload_shaders();
+
+		{ ImGui::SeparatorText("Post Processing");
+			ImGui::Checkbox("Invert",         &m_post_processing_options.mInvertColours);
+			ImGui::Checkbox("Grayscale",      &m_post_processing_options.mGrayScale);
+			ImGui::Checkbox("Sharpen",        &m_post_processing_options.mSharpen);
+			ImGui::Checkbox("Blur",           &m_post_processing_options.mBlur);
+			ImGui::Checkbox("Edge detection", &m_post_processing_options.mEdgeDetection);
+
+			const bool post_processing_active = m_post_processing_options.mInvertColours
+				|| m_post_processing_options.mGrayScale || m_post_processing_options.mSharpen
+				|| m_post_processing_options.mBlur      || m_post_processing_options.mEdgeDetection;
+
+			if (!post_processing_active) ImGui::BeginDisabled();
+				ImGui::SliderFloat("Kernel offset", &m_post_processing_options.mKernelOffset, -1.f, 1.f);
+			if (!post_processing_active) ImGui::EndDisabled();
+		}
+	}
+
+	void OpenGLRenderer::reset_debug_options()
+	{
+		m_draw_shadows            = true;
+		m_draw_grid               = true;
+		m_post_processing_options = {};
+	}
 	void OpenGLRenderer::reload_shaders()
 	{
 		m_uniform_colour_shader.reload();
