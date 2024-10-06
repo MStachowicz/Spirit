@@ -46,6 +46,8 @@ namespace OpenGL
 		, m_blank_texture{m_asset_manager.get_texture("black.jpg")}
 		, m_screen_quad{make_screen_quad_mesh()}
 		, m_post_processing_options{}
+		, m_draw_shadows{false}
+		, m_draw_grid{true}
 	{
 		#ifdef Z_DEBUG // Ensure the uniform block layout matches the Component::ViewInformation struct layout for direct memory copy.
 		{
@@ -92,18 +94,18 @@ namespace OpenGL
 		auto& entities = m_scene_system.get_current_scene_entities();
 		auto& scene    = m_scene_system.get_current_scene();
 
-		auto get_first_light_proj_view = [&]() -> glm::mat4
+		glm::mat4 light_proj_view = glm::identity<glm::mat4>();
+		if (m_draw_shadows)
 		{
-			glm::mat4 proj_view = glm::identity<glm::mat4>();
 			entities.foreach([&](Component::DirectionalLight& p_light)
-				{
-					proj_view = p_light.get_view_proj(scene.m_bound);
-					return;
-				});
-			return proj_view;
-		};
+			{
+				light_proj_view = p_light.get_view_proj(scene.m_bound);
+				return;
+			});
+		}
 
-		m_grid_renderer.draw(m_screen_framebuffer);
+		if (m_draw_grid)
+			m_grid_renderer.draw(m_screen_framebuffer);
 
 		m_phong_renderer.update_light_data(m_scene_system.get_current_scene());
 		const auto& directional_light_buffer = m_phong_renderer.get_directional_lights_buffer();
@@ -114,28 +116,26 @@ namespace OpenGL
 		{
 			if (mesh_comp.m_mesh)
 			{
+				Shader* mesh_shader = nullptr;
+				DrawCall dc;
+
 				if (entities.has_components<Component::Texture>(p_entity))
 				{
 					auto& texComponent = entities.get_component<Component::Texture>(p_entity);
-
-					DrawCall dc;
-					dc.set_uniform("model", p_transform.get_model());
-					dc.set_uniform("light_proj_view", get_first_light_proj_view());
-					dc.set_uniform("shininess", texComponent.m_shininess);
-					dc.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
-
 					dc.set_SSBO("DirectionalLightsBuffer", directional_light_buffer);
-					dc.set_SSBO("PointLightsBuffer", point_light_buffer);
-					dc.set_SSBO("SpotLightsBuffer", spot_light_buffer);
-
-					dc.set_UBO("ViewProperties", m_view_properties_buffer);
-					dc.set_texture("shadow_map", m_shadow_mapper.get_depth_map());
+					dc.set_SSBO("PointLightsBuffer",       point_light_buffer);
+					dc.set_SSBO("SpotLightsBuffer",        spot_light_buffer);
+					dc.set_uniform("shininess",            texComponent.m_shininess);
 
 					if (texComponent.m_diffuse.has_value())
 					{
 						dc.set_texture("diffuse",  texComponent.m_diffuse->m_GL_texture);
 						dc.set_texture("specular", texComponent.m_specular.has_value() ? texComponent.m_specular->m_GL_texture : m_blank_texture->m_GL_texture);
-						dc.submit(m_phong_renderer.get_texture_shader(), mesh_comp.m_mesh->get_VAO(), m_screen_framebuffer);
+
+						if (m_draw_shadows)
+							mesh_shader = &m_phong_renderer.get_texture_shadow_shader();
+						else
+							mesh_shader = &m_phong_renderer.get_texture_shader();
 					}
 					else
 					{
@@ -148,18 +148,29 @@ namespace OpenGL
 							dc.m_write_to_depth_buffer = false;
 							dc.m_blending_enabled = true;
 						}
-						dc.submit(m_phong_renderer.get_uniform_colour_shader(), mesh_comp.m_mesh->get_VAO(), m_screen_framebuffer);
+						if (m_draw_shadows)
+							mesh_shader = &m_phong_renderer.get_uniform_colour_shadow_shader();
+						else
+							mesh_shader = &m_phong_renderer.get_uniform_colour_shader();
 					}
 
-					return;
+					if (m_draw_shadows)
+					{
+						dc.set_uniform("PCF_bias",        Component::DirectionalLight::PCF_bias);
+						dc.set_uniform("light_proj_view", light_proj_view);
+						dc.set_texture("shadow_map",      m_shadow_mapper.get_depth_map());
+					}
+				}
+				else
+				{
+					// Fallback to rendering using default colour and no lighting.
+					dc.set_uniform("colour", glm::vec4(0.06f, 0.44f, 0.81f, 1.f));
+					mesh_shader = &m_uniform_colour_shader;
 				}
 
-				// Fallback to rendering using default colour and no lighting.
-				DrawCall dc;
-				dc.set_uniform("model", p_transform.get_model());
-				dc.set_uniform("colour", glm::vec4(0.06f, 0.44f, 0.81f, 1.f));
 				dc.set_UBO("ViewProperties", m_view_properties_buffer);
-				dc.submit(m_uniform_colour_shader, mesh_comp.m_mesh->get_VAO(), m_screen_framebuffer);
+				dc.set_uniform("model", p_transform.get_model());
+				dc.submit(*mesh_shader, mesh_comp.m_mesh->get_VAO(), m_screen_framebuffer);
 			}
 		});
 
@@ -167,21 +178,25 @@ namespace OpenGL
 			entities.foreach([&](Component::Terrain& p_terrain)
 			{
 				DrawCall dc;
-				dc.set_uniform("model", glm::translate(glm::identity<glm::mat4>(), p_terrain.m_position));
-				dc.set_uniform("light_proj_view", get_first_light_proj_view());
-				dc.set_uniform("shininess", 64.f);
-				dc.set_uniform("PCF_bias", Component::DirectionalLight::PCF_bias);
-
 				dc.set_SSBO("DirectionalLightsBuffer", directional_light_buffer);
-				dc.set_SSBO("PointLightsBuffer", point_light_buffer);
-				dc.set_SSBO("SpotLightsBuffer", spot_light_buffer);
-
-				dc.set_UBO("ViewProperties", m_view_properties_buffer);
-				dc.set_texture("shadow_map", m_shadow_mapper.get_depth_map());
+				dc.set_SSBO("PointLightsBuffer",       point_light_buffer);
+				dc.set_SSBO("SpotLightsBuffer",        spot_light_buffer);
+				dc.set_UBO("ViewProperties",           m_view_properties_buffer);
+				dc.set_uniform("model",                glm::translate(glm::identity<glm::mat4>(), p_terrain.m_position));
+				dc.set_uniform("shininess", 64.f);
 
 				dc.set_texture("diffuse",  p_terrain.m_texture.has_value() ? p_terrain.m_texture->m_GL_texture : m_missing_texture->m_GL_texture);
 				dc.set_texture("specular", m_blank_texture->m_GL_texture);
-				dc.submit(m_phong_renderer.get_texture_shader(), p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
+
+				if (m_draw_shadows)
+				{
+					dc.set_uniform("PCF_bias",        Component::DirectionalLight::PCF_bias);
+					dc.set_uniform("light_proj_view", light_proj_view);
+					dc.set_texture("shadow_map",      m_shadow_mapper.get_depth_map());
+					dc.submit(m_phong_renderer.get_texture_shadow_shader(), p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
+				}
+				else
+					dc.submit(m_phong_renderer.get_texture_shader(), p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
 			});
 		}
 

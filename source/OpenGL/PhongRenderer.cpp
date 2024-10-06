@@ -11,8 +11,10 @@
 namespace OpenGL
 {
 	PhongRenderer::PhongRenderer()
-		: m_phong_texture{"phong-texture"}
-		, m_phong_uniform_colour{"phong-uColour"}
+		: m_phong_texture{"phong"}
+		, m_phong_texture_shadow{"phong", {"SHADOWS"}}
+		, m_phong_uniform_colour{"phong", {"UNIFORM_COLOUR"}}
+		, m_phong_uniform_colour_shadow{"phong", {"UNIFORM_COLOUR", "SHADOWS"}}
 		, m_directional_lights_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
 		, m_directional_light_fixed_size{0}
 		, m_directional_light_count_offset{0}
@@ -298,5 +300,6 @@ namespace OpenGL
 	{
 		m_phong_texture.reload();
 		m_phong_uniform_colour.reload();
+		m_phong_texture_shadow.reload();
 	}
 } // namespace OpenGL
