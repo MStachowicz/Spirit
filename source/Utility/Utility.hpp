@@ -140,6 +140,16 @@ namespace Utility
 		out << std::fixed << std::setprecision(decimal_places) << static_cast<double>(value);
 		return out.str();
 	}
+	// @param value The number to format with thousands separators.
+	// @return A string representation of the number with the appropriate thousands separator depending on locale.
+	template <typename T>
+	std::string number_with_seperator(T value)
+	{
+		std::ostringstream out;
+		out.imbue(std::locale("")); // Use the current global locale for thousands separator
+		out << std::fixed << value;
+		return out.str();
+	}
 
 	// Construct a model matrix from position, rotation and scale
 	glm::mat4 make_model_matrix(const glm::vec3& p_position, const glm::vec3& p_rotation, const glm::vec3& p_scale);

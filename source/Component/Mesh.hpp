@@ -76,7 +76,8 @@ namespace Data
 		Mesh& operator=(Mesh&&)      = default;
 
 		const OpenGL::VAO& get_VAO() const { return VAO; }
-		bool empty() const { return VAO.draw_count() > 0; }
+		bool empty()                 const { return VAO.draw_count() > 0; }
+		void draw_UI();
 	};
 }
 

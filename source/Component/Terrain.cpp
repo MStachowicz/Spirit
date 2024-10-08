@@ -90,6 +90,9 @@ void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
 {
 	if (ImGui::TreeNode("Terrain"))
 	{
+		m_mesh.draw_UI();
+		ImGui::SeparatorText("Mesh settings");
+
 		{// Texture settings
 			std::vector<std::string> texture_names;
 			texture_names.reserve(p_asset_manager.m_available_textures.size());

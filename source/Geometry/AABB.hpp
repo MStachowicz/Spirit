@@ -25,6 +25,8 @@ namespace Geometry
 		void unite(const AABB& p_AABB);
 
 		bool contains(const AABB& p_AABB) const;
+		void draw_UI(const char* title) const;
+
 		// Return a bounding box encompassing both bounding boxes.
 		static AABB unite(const AABB& p_AABB, const AABB& pAABB2);
 		static AABB unite(const AABB& p_AABB, const glm::vec3& p_point);

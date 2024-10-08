@@ -6,6 +6,8 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtx/transform.hpp"
 
+#include "imgui.h"
+
 #include <algorithm>
 
 namespace Geometry
@@ -115,6 +117,15 @@ namespace Geometry
 		}
 
 		return transformedAABB;
+	}
+
+	void AABB::draw_UI(const char* title) const
+	{
+		if (title)
+			ImGui::SeparatorText(title);
+
+		ImGui::Text("Min: (%.3f, %.3f, %.3f)", m_min.x, m_min.y, m_min.z);
+		ImGui::Text("Max: (%.3f, %.3f, %.3f)", m_max.x, m_max.y, m_max.z);
 	}
 
 	void AABB::serialise(std::ostream& p_out, uint16_t p_version, const AABB& p_AABB)
