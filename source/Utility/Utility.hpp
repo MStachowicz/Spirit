@@ -8,7 +8,9 @@
 #include <filesystem>
 #include <functional>
 #include <random>
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace Geometry
 {
@@ -99,6 +101,44 @@ namespace Utility
 		while (power < p_value)
 			power <<= 1;
 		return power;
+	}
+
+	//@param value The number to format.
+	//@param decimal_places The number of decimal places to display.
+	//@returns A string representation of the number with a metric prefix.
+	template <typename T>
+	std::string format_number(T value, uint8_t decimal_places = 3)
+	{
+		const std::pair<double, const char*> metric_prefixes[] = {
+		    {1'000'000'000'000.0, "T"}, // Tera
+		    {1'000'000'000.0, "G"},     // Giga
+		    {1'000'000.0, "M"},         // Mega
+		    {1'000.0, "k"},             // Kilo
+		    {1.0, ""},                  // No prefix for values between 1 and 999
+		    {0.001, "m"},               // Milli
+		    {0.000001, "µ"},            // Micro
+		    {0.000000001, "n"}          // Nano
+		};
+
+		// Iterate through the metric prefixes to find the appropriate scale
+		for (const auto& prefix : metric_prefixes)
+		{
+			if (value >= prefix.first || value <= -prefix.first)
+			{
+				double scaled_value = static_cast<double>(value) / prefix.first;
+
+				// Create a string stream to format the number
+				std::ostringstream out;
+				out << std::fixed << std::setprecision(decimal_places) << scaled_value << prefix.second;
+
+				return out.str();
+			}
+		}
+
+		// If the value is extremely small (even smaller than nano)
+		std::ostringstream out;
+		out << std::fixed << std::setprecision(decimal_places) << static_cast<double>(value);
+		return out.str();
 	}
 
 	// Construct a model matrix from position, rotation and scale

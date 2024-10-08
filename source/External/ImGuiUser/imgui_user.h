@@ -19,6 +19,13 @@
 // Add extra functions within the ImGui:: namespace here.
 namespace ImGui
 {
+	inline void Text_Manual(const char* fmt, ...)
+	{
+		va_list args;
+		va_start(args, fmt);
+		TextV(fmt, args);
+		va_end(args);
+	}
 	inline void Text(const char* p_label, const char* p_string)
 	{
 		Text("%s: [%s]", p_label, p_string);
