@@ -56,6 +56,7 @@ namespace System
 		: m_texture_manager{}
 		, m_mesh_manager{}
 		, m_available_textures{}
+		, m_available_PBR_textures{}
 		, m_available_models{}
 		, m_cone{m_mesh_manager.insert(make_mesh(ShapeType::Cone))}
 		, m_cube{m_mesh_manager.insert(make_mesh(ShapeType::Cuboid))}
@@ -70,6 +71,22 @@ namespace System
 				m_available_textures.emplace_back(AvailableTexture{entry.path(), Data::Texture(entry.path())});
 			}
 		});
+		Utility::File::foreach_file(Config::Texture_PBR_Directory, [&](auto& entry)
+		{
+			// In this directory, parse each folder as a new PBR texture, using the name of the directory as the name of the texture.
+			if (entry.is_directory())
+			{
+				std::optional<std::filesystem::path> colour_path;
+				     if (std::filesystem::exists(entry.path() / "colour.jpg")) colour_path = entry.path() / "colour.jpg";
+				else if (std::filesystem::exists(entry.path() / "color.jpg"))  colour_path = entry.path() / "color.jpg";
+				else if (std::filesystem::exists(entry.path() / "colour.png")) colour_path = entry.path() / "colour.png";
+				else if (std::filesystem::exists(entry.path() / "color.png"))  colour_path = entry.path() / "color.png";
+
+				if (colour_path)
+					m_available_PBR_textures.emplace_back(AvailableTexture{entry.path(), Data::Texture(*colour_path)});
+			}
+		});
+
 		Utility::File::foreach_file_recursive(Config::Model_Directory, [&](auto& entry)
 		{
 			if (entry.is_regular_file() && entry.path().has_extension() && entry.path().extension() == ".obj")
@@ -106,7 +123,9 @@ namespace System
 		ImGui::SetNextWindowSizeConstraints(min_window_size, display_size);
 
 		ImGui::Begin("Asset Browser", p_open);
-		{ImGui::SeparatorText("Textures");
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+		if (ImGui::CollapsingHeader("Textures"))
+		{
 			// Calculate how many textures can fit into the window.
 			const ImVec2 window_size = ImGui::GetContentRegionAvail();
 			const int columns        = std::max(1, (int)(window_size.x / (button_size.x + ImGui::GetStyle().ItemSpacing.x)));
@@ -123,9 +142,38 @@ namespace System
 
 					ImTextureID texture_id = (void*)(intptr_t)m_available_textures[i].thumbnail.m_GL_texture.handle();
 					if (ImGui::ImageButton(m_available_textures[i].path.filename().stem().string().c_str(),
-					                       texture_id, button_size))
+										texture_id, button_size))
 					{
 						LOG("Selected texture: {}", m_available_textures[i].path.string());
+					}
+					ImGui::SameLine();
+					i++;
+				}
+				ImGui::EndGroup();
+			}
+		}
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+		if (ImGui::CollapsingHeader("PBR Textures"))
+		{
+			// Calculate how many textures can fit into the window.
+			const ImVec2 window_size = ImGui::GetContentRegionAvail();
+			const int columns        = std::max(1, (int)(window_size.x / (button_size.x + ImGui::GetStyle().ItemSpacing.x)));
+			const int rows           = std::max(1, (int)(window_size.y / (button_size.y + ImGui::GetStyle().ItemSpacing.y)));
+			unsigned int i = 0;
+
+			for (int row = 0; row < rows; row++)
+			{
+				ImGui::BeginGroup();
+				for (int col = 0; col < columns; col++)
+				{
+					if (i >= m_available_PBR_textures.size())
+						break;
+
+					ImTextureID texture_id = (void*)(intptr_t)m_available_PBR_textures[i].thumbnail.m_GL_texture.handle();
+					if (ImGui::ImageButton(m_available_PBR_textures[i].path.filename().stem().string().c_str(),
+										texture_id, button_size))
+					{
+						LOG("Selected PBR texture: {}", m_available_PBR_textures[i].path.string());
 					}
 					ImGui::SameLine();
 					i++;

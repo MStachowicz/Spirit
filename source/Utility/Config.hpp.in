@@ -14,6 +14,7 @@ namespace Config
 	inline const auto Scene_Save_Directory    = std::filesystem::path(Source_Directory / "Scenes");
 	inline const auto GLSL_Shader_Directory   = std::filesystem::path(Source_Directory / "source" / "OpenGL" / "GLSL");
 	inline const auto Texture_Directory       = std::filesystem::path(Source_Directory / "source" / "Resources" / "Textures");
+	inline const auto Texture_PBR_Directory   = std::filesystem::path(Source_Directory / "source" / "Resources" / "Textures" / "PBR");
 	inline const auto Model_Directory         = std::filesystem::path(Source_Directory / "source" / "Resources" / "Models");
 
 	inline const char* OpenGL_Version_String  = "${OPENGL_VERSION_STRING}";

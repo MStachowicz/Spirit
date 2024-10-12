@@ -21,8 +21,9 @@ namespace System
 		MeshManager m_mesh_manager;
 
 	public:
-		std::vector<AvailableTexture> m_available_textures; // All the available texture files.
-		std::vector<std::filesystem::path> m_available_models;   // All the available model files.
+		std::vector<AvailableTexture> m_available_textures;     // All the available texture files.
+		std::vector<AvailableTexture> m_available_PBR_textures; // All the available PBR texture files.
+		std::vector<std::filesystem::path> m_available_models;  // All the available model files.
 
 		AssetManager();
 
