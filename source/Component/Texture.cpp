@@ -70,25 +70,13 @@ namespace Component
 	{
 		if (ImGui::TreeNode("Texture"))
 		{
-			const std::string currentDiffuse  = m_diffuse ? m_diffuse->name() : "None";
-			const std::string currentSpecular = m_specular ? m_specular->name() : "None";
+			p_asset_manager.draw_texture_selector("Diffuse", m_diffuse);
+			p_asset_manager.draw_texture_selector("Specular", m_specular);
 
-			static size_t selected;
-			auto& availableTextures = p_asset_manager.m_available_textures;
-			std::vector<std::string> availableTextureNames;
-			for (const auto& tex : availableTextures)
-				availableTextureNames.emplace_back(tex.path.stem().string());
-
-			if (ImGui::ComboContainer("Diffuse Texture", currentDiffuse.c_str(), availableTextureNames, selected))
-				m_diffuse = p_asset_manager.get_texture(availableTextures[selected].path);
-			if (ImGui::ComboContainer("Specular Texture", currentSpecular.c_str(), availableTextureNames, selected))
-				m_specular = p_asset_manager.get_texture(availableTextures[selected].path);
 			ImGui::Slider("Shininess", m_shininess, 1.f, 512.f, "%.1f");
-
 			ImGui::ColorEdit4("Colour", &m_colour[0]);
 			ImGui::SameLine();
 			ImGui::Text("Used if no textures are specified.");
-
 			ImGui::TreePop();
 		}
 	}

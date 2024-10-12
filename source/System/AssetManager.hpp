@@ -11,6 +11,7 @@ namespace System
 {
 	struct AvailableTexture
 	{
+		std::string name;
 		std::filesystem::path path;
 		Data::Texture thumbnail;
 	};
@@ -43,6 +44,12 @@ namespace System
 		[[nodiscard]] TextureRef get_texture(const char* p_file_name) { return get_texture(std::string_view(p_file_name)); }
 
 		void draw_UI(bool* p_open = nullptr);
+		//@param p_label The label to display for the selector.
+		//@param p_current_texture The current texture to display and select.
+		//@param p_show_none If true, show "None" as an option.
+		//@param p_show_PBR If true, show PBR textures.
+		//@returns True if the texture was changed.
+		bool draw_texture_selector(const char* p_label, TextureRef& p_current_texture, bool p_show_none = true, bool p_show_PBR = true);
 
 		MeshRef m_cone;
 		MeshRef m_cube;

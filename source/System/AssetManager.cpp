@@ -68,7 +68,7 @@ namespace System
 		{
 			if (entry.is_regular_file())
 			{
-				m_available_textures.emplace_back(AvailableTexture{entry.path(), Data::Texture(entry.path())});
+				m_available_textures.emplace_back(AvailableTexture{entry.path().stem().string(), entry.path(), Data::Texture(entry.path())});
 			}
 		});
 		Utility::File::foreach_file(Config::Texture_PBR_Directory, [&](auto& entry)
@@ -83,7 +83,7 @@ namespace System
 				else if (std::filesystem::exists(entry.path() / "color.png"))  colour_path = entry.path() / "color.png";
 
 				if (colour_path)
-					m_available_PBR_textures.emplace_back(AvailableTexture{entry.path(), Data::Texture(*colour_path)});
+					m_available_PBR_textures.emplace_back(AvailableTexture{entry.path().stem().string(), entry.path(), Data::Texture(*colour_path)});
 			}
 		});
 
@@ -170,8 +170,7 @@ namespace System
 						break;
 
 					ImTextureID texture_id = (void*)(intptr_t)m_available_PBR_textures[i].thumbnail.m_GL_texture.handle();
-					if (ImGui::ImageButton(m_available_PBR_textures[i].path.filename().stem().string().c_str(),
-										texture_id, button_size))
+					if (ImGui::ImageButton(m_available_PBR_textures[i].path.filename().stem().string().c_str(), texture_id, button_size))
 					{
 						LOG("Selected PBR texture: {}", m_available_PBR_textures[i].path.string());
 					}
@@ -182,5 +181,59 @@ namespace System
 			}
 		}
 		ImGui::End();
+	}
+
+	bool AssetManager::draw_texture_selector(const char* p_label, TextureRef& p_current_texture, bool p_show_none, bool p_show_PBR)
+	{
+		auto current_tex_name = p_current_texture ? p_current_texture->name() : "None";
+		bool changed          = false;
+
+		if (ImGui::BeginCombo(p_label, current_tex_name.c_str()))
+		{
+			for (size_t i = 0; i < m_available_textures.size(); ++i)
+			{
+				bool is_selected = p_current_texture ? m_available_textures[i].thumbnail.filepath() == p_current_texture->filepath() : false;
+				if (ImGui::Selectable(m_available_textures[i].name.c_str(), is_selected))
+				{
+					p_current_texture = get_texture(m_available_textures[i].path);
+					changed           = true;
+				}
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+
+			if (p_show_PBR)
+			{
+				for (size_t i = 0; i < m_available_PBR_textures.size(); ++i)
+				{
+					bool is_selected = p_current_texture ? m_available_PBR_textures[i].thumbnail.filepath() == p_current_texture->filepath() : false;
+					if (ImGui::Selectable(m_available_PBR_textures[i].name.c_str(), is_selected))
+					{
+						p_current_texture = get_texture(m_available_PBR_textures[i].path);
+						changed           = true;
+					}
+
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			if (p_show_none)
+			{
+				bool is_selected = !p_current_texture;
+				if (ImGui::Selectable("None", is_selected))
+				{
+					p_current_texture = {};
+					changed           = true;
+				}
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+
+			ImGui::EndCombo();
+		}
+		return changed;
 	}
 } // namespace System

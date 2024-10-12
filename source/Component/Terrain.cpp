@@ -92,18 +92,7 @@ void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
 	{
 		m_mesh.draw_UI();
 		ImGui::SeparatorText("Mesh settings");
-
-		{// Texture settings
-			std::vector<std::string> texture_names;
-			texture_names.reserve(p_asset_manager.m_available_textures.size());
-			for (const auto& tex : p_asset_manager.m_available_textures)
-				texture_names.push_back(tex.path.stem().string());
-
-			size_t selected_index;
-			std::string current = m_texture ? m_texture->name() : "None";
-			if (ImGui::ComboContainer("Texture", current.c_str(), texture_names, selected_index))
-				m_texture = p_asset_manager.get_texture(p_asset_manager.m_available_textures[selected_index].path);
-		}
+		p_asset_manager.draw_texture_selector("Texture", m_texture);
 
 		ImGui::SeparatorText("Generation settings");
 		static bool m_regen_on_changes = true;
