@@ -6,6 +6,7 @@
 #include "Utility/ResourceManager.hpp"
 
 #include <vector>
+#include <optional>
 
 namespace Data
 {
@@ -13,6 +14,7 @@ namespace Data
 	{
 		OpenGL::VAO VAO;
 		OpenGL::Buffer vert_buffer; // VBO for vertex data.
+		std::optional<OpenGL::Buffer> index_buffer; // EBO for indexed rendering.
 
 	public:
 		std::vector<glm::vec3> vertex_positions; // Unique vertex positions for collision detection.
@@ -23,6 +25,7 @@ namespace Data
 		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
 			: VAO{}
 			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
+			, index_buffer{}
 			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder directly.
 			, AABB{} // TODO: Feed AABB out of the MeshBuilder directly.
 		{
@@ -65,6 +68,62 @@ namespace Data
 
 			vert_buffer.upload_data(vertex_data);
 			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
+
+			for (const auto& vertex : vertex_data)
+				AABB.unite(vertex.position);
+		}
+
+		template <typename VertexType>
+		requires Data::is_valid_mesh_vert<VertexType>
+		Mesh(std::vector<VertexType>&& vertex_data, std::vector<unsigned int> indices, OpenGL::PrimitiveMode primitive_mode)
+			: VAO{}
+			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
+			, index_buffer{OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit})}
+			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder directly.
+			, AABB{} // TODO: Feed AABB out of the MeshBuilder directly.
+		{
+			ASSERT_THROW(!vertex_data.empty(), "Vertex data is empty");
+			ASSERT_THROW(!indices.empty(), "Index data is empty");
+
+			constexpr GLint vertex_buffer_binding_point = 0;
+
+			if constexpr (std::is_same_v<VertexType, Data::Vertex>)
+			{
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
+					{1, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, normal),   vertex_buffer_binding_point, false},
+					{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false},
+					{3, 2, OpenGL::BufferDataType::Float, offsetof(VertexType, uv),       vertex_buffer_binding_point, false}
+				});
+			}
+			else if constexpr (std::is_same_v<VertexType, Data::ColourVertex>)
+			{
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
+					{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false}
+				});
+			}
+			else if constexpr (std::is_same_v<VertexType, Data::TextureVertex>)
+			{
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
+					{3, 2, OpenGL::BufferDataType::Float, offsetof(VertexType, uv),       vertex_buffer_binding_point, false}
+				});
+			}
+			else if constexpr (std::is_same_v<VertexType, Data::PositionVertex>)
+			{
+				VAO.set_vertex_attrib_pointers(primitive_mode, {
+					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false}
+				});
+			}
+			else
+				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
+
+			vert_buffer.upload_data(vertex_data);
+			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
+
+			index_buffer->upload_data(indices);
+			VAO.attach_element_buffer(index_buffer.value(), (GLsizei)indices.size());
 
 			for (const auto& vertex : vertex_data)
 				AABB.unite(vertex.position);
