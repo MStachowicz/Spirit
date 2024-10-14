@@ -28,7 +28,14 @@ namespace Component
 		float m_lacunarity;
 		float m_persistence;
 		int m_octaves;
-		TextureRef m_texture;
+
+		TextureRef m_grass_tex;
+		TextureRef m_gravel_tex;
+		TextureRef m_ground_tex;
+		TextureRef m_rock_tex;
+		TextureRef m_sand_tex;
+		TextureRef m_snow_tex;
+
 		unsigned int m_seed; // Seed used to generate m_mesh.
 		Data::Mesh m_mesh;
 

@@ -3,6 +3,7 @@
 #include "System/AssetManager.hpp"
 #include "Utility/MeshBuilder.hpp"
 #include "Utility/PerlinNoise.hpp"
+#include "Utility/Stopwatch.hpp"
 
 #include "imgui.h"
 
@@ -15,7 +16,12 @@ Component::Terrain::Terrain(const glm::vec3& p_position, int p_size_x, int p_siz
 	, m_lacunarity{2.f}
 	, m_persistence{0.5f}
 	, m_octaves{4}
-	, m_texture{}
+	, m_grass_tex{}
+	, m_gravel_tex{}
+	, m_ground_tex{}
+	, m_rock_tex{}
+	, m_sand_tex{}
+	, m_snow_tex{}
 	, m_seed{Utility::get_random_number<unsigned int>()}
 	, m_mesh{generate_mesh(m_seed)}
 {}
@@ -28,7 +34,12 @@ Component::Terrain::Terrain(const Terrain& p_other) noexcept
 	, m_lacunarity{p_other.m_lacunarity}
 	, m_persistence{p_other.m_persistence}
 	, m_octaves{p_other.m_octaves}
-	, m_texture{p_other.m_texture}
+	, m_grass_tex{p_other.m_grass_tex}
+	, m_gravel_tex{p_other.m_gravel_tex}
+	, m_ground_tex{p_other.m_ground_tex}
+	, m_rock_tex{p_other.m_rock_tex}
+	, m_sand_tex{p_other.m_sand_tex}
+	, m_snow_tex{p_other.m_snow_tex}
 	, m_seed{p_other.m_seed}
 	, m_mesh{generate_mesh(m_seed)} // TODO: Implement a Data::Mesh copy.
 {}
@@ -42,7 +53,12 @@ Component::Terrain& Component::Terrain::operator=(const Terrain& p_other) noexce
 	m_lacunarity   = p_other.m_lacunarity;
 	m_persistence  = p_other.m_persistence;
 	m_octaves      = p_other.m_octaves;
-	m_texture      = p_other.m_texture;
+	m_grass_tex    = p_other.m_grass_tex;
+	m_gravel_tex   = p_other.m_gravel_tex;
+	m_ground_tex   = p_other.m_ground_tex;
+	m_rock_tex     = p_other.m_rock_tex;
+	m_sand_tex     = p_other.m_sand_tex;
+	m_snow_tex     = p_other.m_snow_tex;
 	m_seed         = p_other.m_seed;
 	m_mesh         = generate_mesh(m_seed); // TODO: Implement a Data::Mesh copy.
 	return *this;
@@ -68,22 +84,77 @@ float Component::Terrain::compute_height(float p_x, float p_z, const siv::Perlin
 
 Data::Mesh Component::Terrain::generate_mesh(unsigned int p_seed) noexcept
 {
-	// Use perlin noise to generate a heightmap in the xz plane.
-	auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles>{};
-	mb.reserve((m_size_x * m_size_z) * 6);
 	const siv::PerlinNoise perlin{p_seed};
+	std::vector<Data::Vertex> unique_verts;
+	std::vector<unsigned int> indices;
 
-	for (float x = 0; x < m_size_x; x++)
-		for (float z = 0; z < m_size_z; z++)
+	for (int z = 0; z <= m_size_z; ++z)
+	{
+		for (int x = 0; x <= m_size_x; ++x)
 		{
-			mb.add_quad(
-				glm::vec3(x + 1, compute_height(x + 1, z,     perlin), z),
-				glm::vec3(x + 1, compute_height(x + 1, z + 1, perlin), z + 1),
-				glm::vec3(x,     compute_height(x, z,         perlin), z),
-				glm::vec3(x,     compute_height(x, z + 1,     perlin), z  + 1));
+			Data::Vertex vert;
+			auto y = compute_height((float)x, (float)z, perlin);
+			vert.position = {x, y, z};
+			vert.normal   = {0.f, 0.f, 0.f}; // Calculate normals later
+			unique_verts.push_back(vert);
 		}
+	}
 
-	return mb.get_mesh();
+	// Generate indices for each quad (two triangles per quad)
+	for (int z = 0; z < m_size_z; ++z)
+	{
+		for (int x = 0; x < m_size_x; ++x)
+		{
+			// Get the indices for the four corners of the current quad
+			unsigned int top_left     = z * (m_size_x + 1) + x;
+			unsigned int top_right    = top_left + 1;
+			unsigned int bottom_left  = (z + 1) * (m_size_x + 1) + x;
+			unsigned int bottom_right = bottom_left + 1;
+
+			// First triangle (top-left, bottom-left, top-right)
+			indices.push_back(top_left);
+			indices.push_back(bottom_left);
+			indices.push_back(top_right);
+			// Second triangle (top-right, bottom-left, bottom-right)
+			indices.push_back(top_right);
+			indices.push_back(bottom_left);
+			indices.push_back(bottom_right);
+
+			// Calculate normals for the first triangle then accumulate the normal to each of the triangle's vertices
+			glm::vec3 v0     = unique_verts[top_left].position;
+			glm::vec3 v1     = unique_verts[bottom_left].position;
+			glm::vec3 v2     = unique_verts[top_right].position;
+			glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+			unique_verts[top_left].normal    += normal;
+			unique_verts[bottom_left].normal += normal;
+			unique_verts[top_right].normal   += normal;
+
+			// Calculate normals for the second triangle
+			// Accumulate the normal to each of the triangle's vertices
+			v0     = unique_verts[top_right].position;
+			v1     = unique_verts[bottom_left].position;
+			v2     = unique_verts[bottom_right].position;
+			normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+			unique_verts[top_right].normal    += normal;
+			unique_verts[bottom_left].normal  += normal;
+			unique_verts[bottom_right].normal += normal;
+
+			// Calculate UV coordinates based on vertex position within the terrain grid.
+			// UV coordinates range from 0.0 to size_x or size_z
+			float u = static_cast<float>(x);
+			float v = static_cast<float>(z);
+			unique_verts[top_left].uv     = {u, v + 1.0f};
+			unique_verts[bottom_left].uv  = {u, v};
+			unique_verts[top_right].uv    = {u + 1.0f, v + 1.0f};
+			unique_verts[bottom_right].uv = {u + 1.0f, v};
+		}
+	}
+
+	// Normalize the vertex normals
+	for (auto& vert : unique_verts)
+		vert.normal = glm::normalize(vert.normal);
+
+	return Data::Mesh{std::move(unique_verts), std::move(indices), OpenGL::PrimitiveMode::Triangles};
 }
 
 void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
@@ -91,8 +162,14 @@ void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
 	if (ImGui::TreeNode("Terrain"))
 	{
 		m_mesh.draw_UI();
-		ImGui::SeparatorText("Mesh settings");
-		p_asset_manager.draw_texture_selector("Texture", m_texture);
+
+		ImGui::SeparatorText("Textures");
+		p_asset_manager.draw_texture_selector("Grass texture", m_grass_tex);
+		p_asset_manager.draw_texture_selector("Gravel texture", m_gravel_tex);
+		p_asset_manager.draw_texture_selector("Rock texture", m_rock_tex);
+		p_asset_manager.draw_texture_selector("Ground texture", m_ground_tex);
+		p_asset_manager.draw_texture_selector("Sand texture", m_sand_tex);
+		p_asset_manager.draw_texture_selector("Snow texture", m_snow_tex);
 
 		ImGui::SeparatorText("Generation settings");
 		static bool m_regen_on_changes = true;
@@ -112,11 +189,24 @@ void Component::Terrain::draw_UI(System::AssetManager& p_asset_manager)
 			changed = true;
 			m_seed  = Utility::get_random_number<unsigned int>();
 		}
+
+		static auto most_recent_time_taken_s = std::optional<float>{};
 		if (ImGui::Button("Re-generate terrain") || (changed && m_regen_on_changes))
+		{
+			Utility::Stopwatch stopwatch;
 			m_mesh = generate_mesh(m_seed);
+			most_recent_time_taken_s = stopwatch.getTime<std::ratio<1, 1>, float>();
+		}
+		if (most_recent_time_taken_s)
+		{
+			ImGui::SameLine();
+			auto formatted_time = Utility::format_number(*most_recent_time_taken_s, 1);
+			ImGui::Text_Manual("%ss", formatted_time.c_str());
+		}
 
 		ImGui::SameLine();
 		ImGui::Checkbox("Regen on changes", &m_regen_on_changes);
+
 
 		ImGui::TreePop();
 	}

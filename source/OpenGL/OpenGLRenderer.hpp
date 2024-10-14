@@ -49,6 +49,7 @@ namespace OpenGL
 		Shader m_texture_shader;
 		Shader m_screen_texture_shader;
 		Shader m_sky_box_shader;
+		Shader m_terrain_shader;
 
 		PhongRenderer m_phong_renderer;
 		ParticleRenderer m_particle_renderer;

@@ -31,7 +31,10 @@ namespace System
 		construct_2_sphere_scene(scene);
 
 		Component::Terrain terrain({0.f, 5.f, -100.f}, 100, 100, 20);
-		terrain.m_texture = m_asset_manager.get_texture(Config::Texture_Directory / "GrassTile.png");
+		terrain.m_grass_tex = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Grass" / "Color.jpg");
+		terrain.m_sand_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Sand" / "Color.jpg");
+		terrain.m_snow_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Snow" / "Color.jpg");
+		terrain.m_rock_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Rock" / "Color.jpg");
 		scene.m_entities.add_entity(terrain);
 	}
 

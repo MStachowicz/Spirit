@@ -40,6 +40,7 @@ namespace OpenGL
 		, m_texture_shader{"texture1"}
 		, m_screen_texture_shader{"screenTexture"}
 		, m_sky_box_shader{"skybox"}
+		, m_terrain_shader{"phong_terrain"}
 		, m_phong_renderer{}
 		, m_particle_renderer{}
 		, m_grid_renderer{}
@@ -184,21 +185,18 @@ namespace OpenGL
 				dc.set_SSBO("PointLightsBuffer",       point_light_buffer);
 				dc.set_SSBO("SpotLightsBuffer",        spot_light_buffer);
 				dc.set_UBO("ViewProperties",           m_view_properties_buffer);
+
 				dc.set_uniform("model",                glm::translate(glm::identity<glm::mat4>(), p_terrain.m_position));
-				dc.set_uniform("shininess", 64.f);
+				dc.set_uniform("shininess",            1000000.f); // Force terrain to not be shiny.
+				// TODO: calc instead of using amplitude... use the actual height of the terrain.
+				dc.set_uniform("min_height", -p_terrain.m_amplitude);
+				dc.set_uniform("max_height",  p_terrain.m_amplitude);
 
-				dc.set_texture("diffuse",  p_terrain.m_texture.has_value() ? p_terrain.m_texture->m_GL_texture : m_missing_texture->m_GL_texture);
-				dc.set_texture("specular", m_blank_texture->m_GL_texture);
+				dc.set_texture("grass", p_terrain.m_grass_tex->m_GL_texture);
+				dc.set_texture("rock",  p_terrain.m_rock_tex->m_GL_texture);
+				dc.set_texture("snow",  p_terrain.m_snow_tex->m_GL_texture);
 
-				if (m_draw_shadows)
-				{
-					dc.set_uniform("PCF_bias",        Component::DirectionalLight::PCF_bias);
-					dc.set_uniform("light_proj_view", light_proj_view);
-					dc.set_texture("shadow_map",      m_shadow_mapper.get_depth_map());
-					dc.submit(m_phong_renderer.get_texture_shadow_shader(), p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
-				}
-				else
-					dc.submit(m_phong_renderer.get_texture_shader(), p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
+				dc.submit(m_terrain_shader, p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
 			});
 		}
 
@@ -244,6 +242,7 @@ namespace OpenGL
 		m_texture_shader.reload();
 		m_screen_texture_shader.reload();
 		m_sky_box_shader.reload();
+		m_terrain_shader.reload();
 		m_particle_renderer.reload_shaders();
 		m_phong_renderer.reload_shaders();
 		m_grid_renderer.reload_shaders();
