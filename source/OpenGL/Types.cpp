@@ -19,10 +19,7 @@ namespace OpenGL
 	}
 	Buffer::~Buffer()
 	{
-		if (m_handle != 0)
-			glDeleteBuffers(1, &m_handle);
-
-		State::Get().unbind_buffer(m_handle);
+		State::Get().delete_buffer(m_handle);
 	}
 	Buffer::Buffer(const Buffer& p_other)
 		: m_handle{0}
@@ -64,7 +61,7 @@ namespace OpenGL
 		{
 			// Free the existing resource.
 			if (m_handle != 0)
-				glDeleteBuffers(1, &m_handle);
+				State::Get().delete_buffer(m_handle);
 
 			// Copy the data pointer from the source object.
 			m_handle = std::exchange(p_other.m_handle, 0);
@@ -109,10 +106,8 @@ namespace OpenGL
 	VAO::~VAO()
 	{
 		// We initialise m_handle to 0 and reset to 0 on move and depend on this to check if there is a vertex array to delete here.
-		// We still want to call glDeleteVertexArrays if the array was generated but not used with bind and/or VBOs hence
-		// not using glIsVertexArray here.
 		if (m_handle != 0)
-			glDeleteVertexArrays(1, &m_handle);
+			State::Get().delete_VAO(m_handle);
 
 		if constexpr (LogGLTypeEvents) LOG("VAO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
 	}
@@ -121,7 +116,7 @@ namespace OpenGL
 		, m_draw_count{std::move(p_other.m_draw_count)}
 		, m_draw_primitive_mode{std::move(p_other.m_draw_primitive_mode)}
 		, m_is_indexed{std::move(p_other.m_is_indexed)}
-	{ // Steal the handle of the other VAO and set it to 0 to prevent the p_other destructor calling glDeleteVertexArrays
+	{ // Steal the handle of the other VAO and set it to 0 to prevent the p_other destructor calling delete.
 		p_other.m_handle = 0;
 
 		if constexpr (LogGLTypeEvents) LOG("VAO move-constructed with GLHandle {} at address {}", m_handle, (void*)(this));
@@ -132,14 +127,14 @@ namespace OpenGL
 		{
 			// Free the existing resource.
 			if (m_handle != 0)
-				glDeleteVertexArrays(1, &m_handle);
+				State::Get().delete_VAO(m_handle);
 
 			// Copy the data pointer from the source object.
 			m_handle              = p_other.m_handle;
 			m_draw_count          = p_other.m_draw_count;
 			m_draw_primitive_mode = p_other.m_draw_primitive_mode;
 			m_is_indexed          = p_other.m_is_indexed;
-			// Release the handle so ~VAO doesnt call glDeleteVertexArrays on m_handle.
+			// Release the handle so ~VAO doesnt call State::delete_VAO on the moved handle.
 			p_other.m_handle = 0;
 		}
 
@@ -388,7 +383,7 @@ namespace OpenGL
 
 			// Copy the data pointer from the source object.
 			m_handle = p_other.m_handle;
-			// Release the handle so ~Texture doesnt call glDeleteBuffers on m_handle.
+			// Release the handle so ~Texture doesnt call State::delete_texture on the moved handle.
 			p_other.m_handle = 0;
 		}
 
@@ -444,7 +439,7 @@ namespace OpenGL
 	FBO::~FBO()
 	{
 		if (m_handle != 0)
-			glDeleteFramebuffers(1, &m_handle);
+			State::Get().delete_FBO(m_handle);
 
 		if constexpr (LogGLTypeEvents) LOG("FBO destroyed with GLHandle {} at address {}", m_handle, (void*)(this));
 	}
@@ -467,7 +462,7 @@ namespace OpenGL
 		{
 			// Free the existing resources.
 			if (m_handle != 0)
-				glDeleteFramebuffers(1, &m_handle);
+				State::Get().delete_FBO(m_handle);
 
 			m_handle = p_other.m_handle;
 			p_other.m_handle = 0;

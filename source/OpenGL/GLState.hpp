@@ -398,17 +398,18 @@ namespace OpenGL
 	public:
 		void bind_VAO(GLHandle p_VAO);
 		void unbind_VAO();
+		void delete_VAO(GLHandle p_VAO);
 
 		void bind_FBO(GLHandle p_FBO);
 		void unbind_FBO();
+		void delete_FBO(GLHandle p_FBO);
 
 		void bind_shader_storage_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
 		void bind_uniform_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
-		void unbind_buffer(GLHandle p_buffer);
+		void delete_buffer(GLHandle p_buffer);
 
 		void bind_texture_unit(GLuint p_texture_unit, GLHandle p_texture);
-		void unbind_texture_unit(GLHandle p_texture);
-
+		void delete_texture(GLHandle p_texture);
 
 		// Installs a program object as part of current rendering state
 		// While a program object is in use, applications are free to modify attached shader objects, compile attached shader objects, attach additional shader objects, and detach or delete shader objects.

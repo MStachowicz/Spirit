@@ -80,6 +80,14 @@ namespace OpenGL
 		bind_VAO(0);
 	}
 
+	void State::delete_VAO(GLHandle p_VAO)
+	{
+		if (current_bound_VAO == p_VAO)
+			current_bound_VAO = 0;
+
+		glDeleteVertexArrays(1, &p_VAO);
+	}
+
 	void State::bind_FBO(GLHandle p_FBO)
 	{
 		if (current_bound_FBO == p_FBO)
@@ -93,6 +101,13 @@ namespace OpenGL
 		bind_FBO(0);
 	}
 
+	void State::delete_FBO(GLHandle p_FBO)
+	{
+		if (current_bound_FBO == p_FBO)
+			current_bound_FBO = 0;
+
+		glDeleteFramebuffers(1, &p_FBO);
+	}
 
 	void State::bind_shader_storage_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size)
 	{
@@ -110,11 +125,10 @@ namespace OpenGL
 		glBindBufferRange(GL_UNIFORM_BUFFER, p_index, p_buffer, p_offset, p_size);
 		current_bound_UBO[p_index] = p_buffer;
 	}
-	void State::unbind_buffer(GLHandle p_buffer)
-	{
-		// Find which target the buffer might be bound to already
-		// If the buffer is bound to a target, we need to unbind it from that target.
 
+	void State::delete_buffer(GLHandle p_buffer)
+	{
+		// If the buffer is bound to an SSBO or UBO target, we need to unbind it.
 		for (auto& SSBO : current_bound_SSBO)
 		{
 			if (SSBO == p_buffer)
@@ -125,6 +139,8 @@ namespace OpenGL
 			if (UBO == p_buffer)
 				UBO.reset();
 		}
+
+		glDeleteBuffers(1, &p_buffer);
 	}
 
 	void State::bind_texture_unit(GLuint p_texture_unit, GLHandle p_texture)
@@ -136,14 +152,16 @@ namespace OpenGL
 
 		current_bound_texture[p_texture_unit] = p_texture;
 	}
-	void State::unbind_texture_unit(GLHandle p_texture)
+	void State::delete_texture(GLHandle p_texture)
 	{
-		auto texture_it = std::find(current_bound_texture.begin(), current_bound_texture.end(), p_texture);
-		if (texture_it != current_bound_texture.end())
+		// If the texture is bound to a texture unit, we need to unbind it.
+		for (auto& texture : current_bound_texture)
 		{
-			(*texture_it).reset();
-			return;
+			if (texture == p_texture)
+				texture.reset();
 		}
+
+		glDeleteTextures(1, &p_texture);
 	}
 
 	void State::use_program(GLHandle p_shader_program)
