@@ -68,6 +68,7 @@ namespace OpenGL
 			auto line_mesh = m_line_mb.get_mesh();
 			DrawCall dc;
 			dc.m_cull_face_enabled = false;
+			dc.m_blending_enabled  = line_mesh.has_alpha;
 			dc.set_UBO("ViewProperties", p_view_properties);
 			dc.submit(m_debug_shader.value(), line_mesh.get_VAO(), p_target_FBO);
 		}
@@ -76,6 +77,7 @@ namespace OpenGL
 			auto tri_mesh = m_tri_mb.get_mesh();
 			DrawCall dc;
 			dc.m_cull_face_enabled = false;
+			dc.m_blending_enabled  = tri_mesh.has_alpha;
 			dc.set_UBO("ViewProperties", p_view_properties);
 			dc.submit(m_debug_shader.value(), tri_mesh.get_VAO(), p_target_FBO);
 		}

@@ -5,8 +5,9 @@
 #include "OpenGL/Types.hpp"
 #include "Utility/ResourceManager.hpp"
 
-#include <vector>
+#include <algorithm>
 #include <optional>
+#include <vector>
 
 namespace Data
 {
@@ -19,6 +20,7 @@ namespace Data
 	public:
 		std::vector<glm::vec3> vertex_positions; // Unique vertex positions for collision detection.
 		Geometry::AABB AABB;                     // Object-space AABB for broad-phase collision detection.
+		bool has_alpha;                          // If the mesh has any alpha values in its colour data.
 
 		template <typename VertexType>
 		requires Data::is_valid_mesh_vert<VertexType>
@@ -26,8 +28,9 @@ namespace Data
 			: VAO{}
 			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
 			, index_buffer{}
-			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder directly.
-			, AABB{} // TODO: Feed AABB out of the MeshBuilder directly.
+			, vertex_positions{}// }
+			, AABB{}            // |> TODO: these out of the MeshBuilder directly.
+			, has_alpha{false}  // }
 		{
 			static_assert(has_position_member<VertexType>, "VertexType must have a position member");
 			ASSERT_THROW(!vertex_data.empty(), "Vertex data is empty");
@@ -42,6 +45,8 @@ namespace Data
 					{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false},
 					{3, 2, OpenGL::BufferDataType::Float, offsetof(VertexType, uv),       vertex_buffer_binding_point, false}
 				});
+
+				has_alpha = std::find_if(vertex_data.begin(), vertex_data.end(), [](const auto& vertex) { return vertex.colour.a < 1.0f; }) != vertex_data.end();
 			}
 			else if constexpr (std::is_same_v<VertexType, Data::ColourVertex>)
 			{
@@ -49,6 +54,8 @@ namespace Data
 					{0, 3, OpenGL::BufferDataType::Float, offsetof(VertexType, position), vertex_buffer_binding_point, false},
 					{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false}
 				});
+
+				has_alpha = std::find_if(vertex_data.begin(), vertex_data.end(), [](const auto& vertex) { return vertex.colour.a < 1.0f; }) != vertex_data.end();
 			}
 			else if constexpr (std::is_same_v<VertexType, Data::TextureVertex>)
 			{
