@@ -14,21 +14,20 @@ namespace Geometry
 
 	// A quadrilateral. Four-sided polygon, having four edges (sides) and four corners (vertices).
 	// Quad is a 2-dimensional shape.
-	// Stored quad points are in CCW winding order.
 	class Quad
 	{
 	public:
-		glm::vec3 m_point_1;
-		glm::vec3 m_point_2;
-		glm::vec3 m_point_3;
-		glm::vec3 m_point_4;
+		glm::vec3 m_top_left;
+		glm::vec3 m_top_right;
+		glm::vec3 m_bottom_left;
+		glm::vec3 m_bottom_right;
 
-		// Construct a quad from its 4 corner points. Points expected in CCW order.
-		constexpr Quad(const glm::vec3& p_point_1, const glm::vec3& p_point_2, const glm::vec3& p_point_3, const glm::vec3& p_point_4) noexcept
-			: m_point_1{p_point_1}
-			, m_point_2{p_point_2}
-			, m_point_3{p_point_3}
-			, m_point_4{p_point_4}
+		// Construct a quad from its 4 corner points.
+		constexpr Quad(const glm::vec3& p_top_left, const glm::vec3& p_top_right, const glm::vec3& p_bottom_left, const glm::vec3& p_bottom_right) noexcept
+			: m_top_left{p_top_left}
+			, m_top_right{p_top_right}
+			, m_bottom_left{p_bottom_left}
+			, m_bottom_right{p_bottom_right}
 		{}
 		// Construct a unit quad at p_point facing p_normal (counter-clockwise winding).
 		Quad(const glm::vec3& p_point, const glm::vec3& p_normal) noexcept;

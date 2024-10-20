@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Constants.hpp"
+
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 
@@ -20,6 +22,10 @@ namespace Geometry
 		// Construct a plane from a plane equation.
 		//@param p_equation Equation of a plane in the form 'x + y + z + w = 0'
 		Plane(const glm::vec4& p_equation) noexcept;
+		// @param p_point The point to check if it lies on the plane.
+		// @param tolerance The tolerance to use when comparing the point to the plane.
+		// @return True if the point lies on the plane, false otherwise.
+		bool point_on_plane(const glm::vec3& p_point, const float tolerance = TOLERANCE) const;
 
 		void normalise();
 	};

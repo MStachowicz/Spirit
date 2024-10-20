@@ -2,6 +2,7 @@
 
 #include "Geometry/Line.hpp"
 #include "Geometry/LineSegment.hpp"
+#include "Geometry/Constants.hpp"
 #include "Utility/Logger.hpp"
 
 #include "glm/vec3.hpp"
@@ -100,12 +101,13 @@ namespace Geometry
 //==============================================================================================================================
 // intersecting functions: Return if the geometries are intersecting.
 //==============================================================================================================================
-	bool intersecting(const AABB& AABB_1, const AABB& AABB_2);
-	bool intersecting(const AABB& AABB,   const Ray& ray);
-	bool intersecting(const Line& line,   const Triangle& triangle);
-	bool intersecting(const Plane& plane_1, const Plane& plane_2);
-	bool intersecting(const Plane& plane,   const Sphere& sphere);
-	bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2);
+	bool intersecting(const AABB& AABB_1,         const AABB& AABB_2);
+	bool intersecting(const AABB& AABB,           const Ray& ray);
+	bool intersecting(const Line& line,           const Triangle& triangle);
+	bool intersecting(const Plane& plane_1,       const Plane& plane_2);
+	bool intersecting(const Plane& plane,         const Sphere& sphere);
+	bool intersecting(const Plane& plane,         const glm::vec3& point, float tolerance = TOLERANCE);
+	bool intersecting(const Sphere& sphere_1,     const Sphere& sphere_2);
 	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2);
 
 } // namespace Geometry

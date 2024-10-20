@@ -433,7 +433,7 @@ namespace Geometry
 		if (std::abs(denom) < Epsilon)
 			return std::nullopt;
 		else
-			return plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal) / denom;
+			return (plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal)) / denom;
 	}
 	std::optional<glm::vec3> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
 	{
@@ -583,6 +583,13 @@ namespace Geometry
 		float dist = glm::dot(sphere.m_center, plane.m_normal) - plane.m_distance;
 		// If sphere center within +/-radius from plane, plane intersects sphere
 		return std::abs(dist) <= sphere.m_radius;
+	}
+	bool intersecting(const Plane& plane, const glm::vec3& point, float tolerance)
+	{
+		// The point is on the plane if the dot product of the normal and the point is equal to the distance of the plane.
+		// The dot product of the normal and the point is the projection of the point onto the normal.
+		// If the projection is equal to the distance of the plane, then the point is on the plane.
+		return glm::abs(glm::dot(plane.m_normal, point) - plane.m_distance) < tolerance;
 	}
 	bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2)
 	{

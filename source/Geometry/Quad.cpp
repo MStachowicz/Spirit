@@ -15,38 +15,38 @@ namespace Geometry
 		else
 			right = glm::normalize(glm::vec3(p_normal.y, -p_normal.x, 0.f));
 
-		const glm::vec3 up = glm::normalize(glm::cross(right, p_normal));
+		glm::vec3 up = -glm::cross(right, p_normal);
 
-		m_point_1 = glm::vec3(p_point + right + up);
-		m_point_2 = glm::vec3(p_point - right + up);
-		m_point_3 = glm::vec3(p_point - right - up);
-		m_point_4 = glm::vec3(p_point + right - up);
+		m_top_left     = glm::vec3(p_point - right + up);
+		m_top_right    = glm::vec3(p_point + right + up);
+		m_bottom_left  = glm::vec3(p_point - right - up);
+		m_bottom_right = glm::vec3(p_point + right - up);
 	}
 	Quad::Quad(const Plane& p_plane) noexcept
 	{
 		// Since Plane has no real position, we construct the quad at the arbitrary center-point represented by the closest point
 		// on the plane to the origin.
 		const glm::vec3 p = p_plane.m_normal * p_plane.m_distance;
-		auto quad = Quad(p, p_plane.m_normal);
-		m_point_1 = quad.m_point_1;
-		m_point_2 = quad.m_point_2;
-		m_point_3 = quad.m_point_3;
-		m_point_4 = quad.m_point_4;
+		auto quad         = Quad(p, p_plane.m_normal);
+		m_top_left        = quad.m_top_left;
+		m_top_right       = quad.m_top_right;
+		m_bottom_left     = quad.m_bottom_left;
+		m_bottom_right    = quad.m_bottom_right;
 	}
 	void Quad::transform(const glm::mat4& p_transform)
 	{
-		m_point_1 = glm::vec3(p_transform * glm::vec4(m_point_1, 1.f));
-		m_point_2 = glm::vec3(p_transform * glm::vec4(m_point_2, 1.f));
-		m_point_3 = glm::vec3(p_transform * glm::vec4(m_point_3, 1.f));
-		m_point_4 = glm::vec3(p_transform * glm::vec4(m_point_4, 1.f));
+		m_top_left     = glm::vec3(p_transform * glm::vec4(m_top_left, 1.f));
+		m_top_right    = glm::vec3(p_transform * glm::vec4(m_top_right, 1.f));
+		m_bottom_left  = glm::vec3(p_transform * glm::vec4(m_bottom_left, 1.f));
+		m_bottom_right = glm::vec3(p_transform * glm::vec4(m_bottom_right, 1.f));
 	}
 	void Quad::draw_UI() const
 	{
 		ImGui::SeparatorText("Quad");
-		ImGui::Text("Point 1", m_point_1);
-		ImGui::Text("Point 2", m_point_2);
-		ImGui::Text("Point 3", m_point_3);
-		ImGui::Text("Point 4", m_point_4);
+		ImGui::Text("Point 1", m_top_left);
+		ImGui::Text("Point 2", m_top_right);
+		ImGui::Text("Point 3", m_bottom_left);
+		ImGui::Text("Point 4", m_bottom_right);
 		ImGui::Text("Center", center());
 	}
 	Quad::Quad(const Triangle& p_triangle) noexcept
@@ -85,27 +85,27 @@ namespace Geometry
 				most_left_value = dot_left;
 		}
 
-		m_point_1 = glm::vec3(triangle_center + (right  * most_right_value) + (up  * most_up_value));
-		m_point_2 = glm::vec3(triangle_center + (-right * most_left_value)  + (up  * most_up_value));
-		m_point_3 = glm::vec3(triangle_center + (-right * most_left_value)  + (-up * most_down_value));
-		m_point_4 = glm::vec3(triangle_center + (right  * most_right_value) + (-up * most_down_value));
+		m_top_left     = glm::vec3(triangle_center + (right  * most_right_value) + (up  * most_up_value));
+		m_top_right    = glm::vec3(triangle_center + (-right * most_left_value)  + (up  * most_up_value));
+		m_bottom_left  = glm::vec3(triangle_center + (-right * most_left_value)  + (-up * most_down_value));
+		m_bottom_right = glm::vec3(triangle_center + (right  * most_right_value) + (-up * most_down_value));
 	}
 
 	glm::vec3 Quad::center() const
 	{
-		return (m_point_1 + m_point_2 + m_point_3 + m_point_4) / 4.0f;
+		return (m_top_left + m_top_right + m_bottom_left + m_bottom_right) / 4.0f;
 	}
 	void Quad::scale(const float p_scale)
 	{
 		const auto c = center();
-		m_point_1 = m_point_1 + (glm::normalize(m_point_1 - c) * p_scale);
-		m_point_2 = m_point_2 + (glm::normalize(m_point_2 - c) * p_scale);
-		m_point_3 = m_point_3 + (glm::normalize(m_point_3 - c) * p_scale);
-		m_point_4 = m_point_4 + (glm::normalize(m_point_4 - c) * p_scale);
+		m_top_left = m_top_left + (glm::normalize(m_top_left - c) * p_scale);
+		m_top_right = m_top_right + (glm::normalize(m_top_right - c) * p_scale);
+		m_bottom_left = m_bottom_left + (glm::normalize(m_bottom_left - c) * p_scale);
+		m_bottom_right = m_bottom_right + (glm::normalize(m_bottom_right - c) * p_scale);
 	}
 
 	std::array<Triangle, 2> Quad::get_triangles() const
 	{
-		return std::array<Triangle, 2>({Triangle{m_point_1, m_point_2, m_point_3}, Triangle{m_point_3, m_point_4, m_point_1}});
+		return std::array<Triangle, 2>({Triangle{m_top_left, m_top_right, m_bottom_left}, Triangle{m_bottom_left, m_bottom_right, m_top_left}});
 	}
 }

@@ -1,4 +1,5 @@
 #include "Plane.hpp"
+#include "Intersect.hpp"
 
 #include "glm/glm.hpp"
 
@@ -13,6 +14,8 @@ namespace Geometry
 		: m_normal{glm::vec3(p_equation.x, p_equation.y, p_equation.z)}
 		, m_distance{p_equation.w}
 	{}
+
+	bool Plane::point_on_plane(const glm::vec3 & p_point, float tolerance) const { return intersecting(*this, p_point, tolerance); }
 
 	void Plane::normalise()
 	{

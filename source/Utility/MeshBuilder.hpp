@@ -296,11 +296,10 @@ namespace Utility
 		void add_quad(const glm::vec3& top_left, const glm::vec3& top_right, const glm::vec3& bottom_left, const glm::vec3& bottom_right)
 		{
 			add_quad_impl(top_left, top_right, bottom_left, bottom_right);
-
 		}
 		void add_quad(const Geometry::Quad& quad)
 		{
-			add_quad(quad.m_point_1, quad.m_point_2, quad.m_point_3, quad.m_point_4);
+			add_quad(quad.m_top_left, quad.m_top_right, quad.m_bottom_left, quad.m_bottom_right);
 		}
 		void add_cone(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments = 16)
 		{
