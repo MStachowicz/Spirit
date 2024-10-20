@@ -75,7 +75,7 @@ namespace OpenGL
 		static void init();
 		static void deinit();
 		static void clear();
-		static void render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const FBO& p_target_FBO);
+		static void render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const Buffer& p_point_lights_buffer, const FBO& p_target_FBO);
 
 		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
 		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);

@@ -251,7 +251,7 @@ namespace OpenGL
 
 	void OpenGLRenderer::end_frame()
 	{
-		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_screen_framebuffer);
+		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_phong_renderer.get_point_lights_buffer(), m_screen_framebuffer);
 
 		// Draw the colour output from m_screen_framebuffer colour texture to the default FBO as a fullscreen quad.
 
