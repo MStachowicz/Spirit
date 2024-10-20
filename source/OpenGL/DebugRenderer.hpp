@@ -80,7 +80,7 @@ namespace OpenGL
 		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
 		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
 		static void add(const Geometry::Cuboid& p_cuboid,     const glm::vec4& p_colour = glm::vec4(1.f));
-		static void add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::Frustrum& p_frustrum, float alpha = 0.5f);
 		static void add(const Geometry::LineSegment& p_line,  const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Plane& p_plane,       const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Point& p_point,       const glm::vec4& p_colour = glm::vec4(1.f));

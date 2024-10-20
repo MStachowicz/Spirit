@@ -168,42 +168,50 @@ namespace OpenGL
 		m_tri_mb.set_colour(p_colour);
 		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, subdivisions);
 	}
-	void DebugRenderer::add(const Geometry::Frustrum& p_frustrum, const glm::vec4& p_colour)
+	void DebugRenderer::add(const Geometry::Frustrum& frustrum, float alpha)
 	{
-		if (auto near_top_left     = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_left))
-		if (auto near_top_right    = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_top,    p_frustrum.m_right))
-		if (auto near_bottom_left  = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_left))
-		if (auto near_bottom_right = Geometry::get_intersection(p_frustrum.m_near, p_frustrum.m_bottom, p_frustrum.m_right))
-		if (auto far_top_left      = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_left))
-		if (auto far_top_right     = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_top,    p_frustrum.m_right))
-		if (auto far_bottom_left   = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_left))
-		if (auto far_bottom_right  = Geometry::get_intersection(p_frustrum.m_far,  p_frustrum.m_bottom, p_frustrum.m_right))
-		{
-			add(Geometry::Sphere(*near_top_left, 0.1f));
-			add(Geometry::Sphere(*near_top_right, 0.1f));
-			add(Geometry::Sphere(*near_bottom_left, 0.1f));
-			add(Geometry::Sphere(*near_bottom_right, 0.1f));
-			add(Geometry::Sphere(*far_top_left, 0.1f));
-			add(Geometry::Sphere(*far_top_right, 0.1f));
-			add(Geometry::Sphere(*far_bottom_left, 0.1f));
-			add(Geometry::Sphere(*far_bottom_right, 0.1f));
+		auto near_top_left     = Geometry::get_intersection(frustrum.m_near, frustrum.m_top,    frustrum.m_left);
+		auto near_top_right    = Geometry::get_intersection(frustrum.m_near, frustrum.m_top,    frustrum.m_right);
+		auto near_bottom_left  = Geometry::get_intersection(frustrum.m_near, frustrum.m_bottom, frustrum.m_left);
+		auto near_bottom_right = Geometry::get_intersection(frustrum.m_near, frustrum.m_bottom, frustrum.m_right);
+		auto far_top_left      = Geometry::get_intersection(frustrum.m_far,  frustrum.m_top,    frustrum.m_left);
+		auto far_top_right     = Geometry::get_intersection(frustrum.m_far,  frustrum.m_top,    frustrum.m_right);
+		auto far_bottom_left   = Geometry::get_intersection(frustrum.m_far,  frustrum.m_bottom, frustrum.m_left);
+		auto far_bottom_right  = Geometry::get_intersection(frustrum.m_far,  frustrum.m_bottom, frustrum.m_right);
+		ASSERT(near_top_left && near_top_right && near_bottom_left && near_bottom_right && far_top_left && far_top_right && far_bottom_left && far_bottom_right, "Frustrum planes are parallel. Intersection points are required for rendering.");
 
-			add(Geometry::Quad(*near_top_left,    *far_top_left,      *far_bottom_left,   *near_bottom_left),  glm::vec4(1.f, 0.f, 0.f, p_colour.w));
-			add(Geometry::Quad(*near_top_right,   *far_top_right,     *far_bottom_right,  *near_bottom_right), glm::vec4(1.f, 0.f, 0.f, p_colour.w));
-			add(Geometry::Quad(*near_top_left,    *near_top_right,    *far_top_right,     *far_top_left),      glm::vec4(0.f, 1.f, 0.f, p_colour.w));
-			add(Geometry::Quad(*near_bottom_left, *near_bottom_right, *far_bottom_right,  *far_bottom_left),   glm::vec4(0.f, 1.f, 0.f, p_colour.w));
-			add(Geometry::Quad(*near_top_left,    *near_top_right,    *near_bottom_right, *near_bottom_left),  glm::vec4(0.f, 0.f, 1.f, p_colour.w));
-			add(Geometry::Quad(*far_top_left,     *far_top_right,     *far_bottom_right,  *far_bottom_left),   glm::vec4(0.f, 0.f, 1.f, p_colour.w));
-			return;
+		{// Draw planes
+			OpenGL::DebugRenderer::add(Geometry::Quad(*far_top_left,     *far_top_right,     *far_bottom_left,   *far_bottom_right),  glm::vec4(0.f, 0.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::Quad(*near_top_left,    *near_top_right,    *near_bottom_left,  *near_bottom_right), glm::vec4(0.f, 0.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::Quad(*near_top_left,    *far_top_left,      *near_bottom_left,  *far_bottom_left),   glm::vec4(1.f, 0.f, 0.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::Quad(*near_top_right,   *far_top_right,     *near_bottom_right, *far_bottom_right),  glm::vec4(1.f, 0.f, 0.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::Quad(*near_top_left,    *near_top_right,    *far_top_left,      *far_top_right),     glm::vec4(0.f, 1.f, 0.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::Quad(*near_bottom_left, *near_bottom_right, *far_bottom_left,   *far_bottom_right),  glm::vec4(0.f, 1.f, 0.f, alpha));
 		}
-
-		{
-			add(p_frustrum.m_left,   p_colour);
-			add(p_frustrum.m_right,  p_colour);
-			add(p_frustrum.m_bottom, p_colour);
-			add(p_frustrum.m_top,    p_colour);
-			add(p_frustrum.m_near,   p_colour);
-			add(p_frustrum.m_far,    p_colour);
+		{// Draw corners
+			float sphere_radius = glm::distance(*near_top_left, *far_bottom_right) * 0.001f;
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_top_left,     sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_top_right,    sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_bottom_left,  sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_bottom_right, sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_top_left,      sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_top_right,     sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_bottom_left,   sphere_radius));
+			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_bottom_right,  sphere_radius));
+		}
+		{// Draw connecting line segments
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_top_left,     *far_top_left),     glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_top_right,    *far_top_right),    glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_bottom_left,  *far_bottom_left),  glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_bottom_right, *far_bottom_right), glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_top_left,     *near_top_right),   glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_top_right,    *near_bottom_right),glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_bottom_right, *near_bottom_left), glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_bottom_left,  *near_top_left),    glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*far_top_left,      *far_top_right),    glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*far_top_right,     *far_bottom_right), glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*far_bottom_right,  *far_bottom_left),  glm::vec4(1.f, 1.f, 1.f, alpha));
+			OpenGL::DebugRenderer::add(Geometry::LineSegment(*far_bottom_left,   *far_top_left),     glm::vec4(1.f, 1.f, 1.f, alpha));
 		}
 	}
 	void DebugRenderer::add(const Geometry::Plane& p_plane, const glm::vec4& p_colour)

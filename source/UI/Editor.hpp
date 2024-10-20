@@ -88,6 +88,7 @@ namespace UI
 		std::optional<ECS::Entity> m_debug_GJK_entity_2;
 		int m_debug_GJK_step;
 
+		bool m_show_primary_camera_frustrum;
 	public:
 		using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a float precision duration in seconds.
 

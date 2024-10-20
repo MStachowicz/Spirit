@@ -61,6 +61,7 @@ namespace UI
 		, m_debug_GJK_entity_1{}
 		, m_debug_GJK_entity_2{}
 		, m_debug_GJK_step{0}
+		, m_show_primary_camera_frustrum{false}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
@@ -436,6 +437,20 @@ namespace UI
 			ImGui::End();
 		}
 
+		if (m_show_primary_camera_frustrum)
+		{
+			auto& scene = m_scene_system.get_current_scene_entities();
+			scene.foreach([&](Component::FirstPersonCamera& p_camera, const Component::Transform& p_transform)
+			{
+				if (!p_camera.m_primary)
+					return;
+
+				OpenGL::DebugRenderer::add(Geometry::Sphere(p_transform.m_position, 0.5f), glm::vec4(1.f, 0.f, 0.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position + p_camera.forward() * p_camera.m_far), glm::vec4(1.f, 1.f, 0.f, 1.f));
+				OpenGL::DebugRenderer::add(p_camera.frustrum(m_window.aspect_ratio(), p_transform.m_position));
+			});
+		}
+
 		draw_entity_properties();
 		entity_creation_popup();
 
@@ -576,6 +591,7 @@ namespace UI
 			ImGui::Text("Proj",          m_scene_system.get_current_scene_view_info().m_projection);
 			ImGui::Separator();
 			ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
+			ImGui::Checkbox("Show camera frustrum", &m_show_primary_camera_frustrum);
 			ImGui::Checkbox("Visualise normals",    &debug_options.m_show_mesh_normals);
 			bool VSync = m_window.get_VSync();
 			if (ImGui::Checkbox("VSync", &VSync))
