@@ -106,6 +106,7 @@ namespace System
 		camera_transform.m_position = {0.f, 7.f, 12.5f};
 		auto camera = Component::FirstPersonCamera(glm::vec3(0.f, -0.5f, 0.5f), true);
 		camera.look_at(glm::vec3(0.f), camera_transform.m_position);
+		camera.m_move_speed = 300.f; // 300 good for testing large terrain.
 
 		p_scene.m_entities.add_entity(
 			camera_transform,

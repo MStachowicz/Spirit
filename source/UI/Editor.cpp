@@ -194,6 +194,14 @@ namespace UI
 				}
 				break;
 			}
+			case Platform::Key::C:
+			{
+				if (p_action == Platform::Action::Release)
+				{
+					set_state(m_state == State::CameraTesting ? State::Editing : State::CameraTesting);
+				}
+				break;
+			}
 			case Platform::Key::G:
 			{
 				if (p_action == Platform::Action::Release)
@@ -223,7 +231,12 @@ namespace UI
 			case Platform::Key::Escape:
 			{
 				if (p_action == Platform::Action::Release)
-					m_window.request_close();
+				{
+					if (m_state == State::Playing || m_state == State::CameraTesting)
+						set_state(State::Editing);
+					else
+						m_window.request_close();
+				}
 				break;
 			}
 			case Platform::Key::Space:
@@ -285,11 +298,12 @@ namespace UI
 			case State::Editing:
 			{
 				m_input.set_cursor_mode(Platform::CursorMode::Normal);
-				m_window.m_show_menu_bar = true;
+				m_window.m_show_menu_bar                = true;
 				m_physics_system.m_bool_apply_kinematic = false;
+				m_show_primary_camera_frustrum          = false;
+
 				if (m_scene_before_play)
 					m_scene_system.set_current_scene(*m_scene_before_play);
-
 				break;
 			}
 			case State::Playing:
@@ -305,6 +319,17 @@ namespace UI
 				play_scene          = m_scene_system.get_current_scene();
 				m_scene_system.set_current_scene(play_scene);
 				m_physics_system.m_bool_apply_kinematic = true;
+				m_show_primary_camera_frustrum          = false;
+				break;
+			}
+			case State::CameraTesting:
+			{
+				m_input.set_cursor_mode(Platform::CursorMode::Captured);
+				m_window.m_show_menu_bar                = true;
+				m_physics_system.m_bool_apply_kinematic = false;
+				m_show_primary_camera_frustrum          = true;
+				if (m_scene_before_play && m_state == State::Playing) // Only reset the scene if the user was playing before entering camera testing.
+					m_scene_system.set_current_scene(*m_scene_before_play);
 				break;
 			}
 			default: break;
@@ -314,7 +339,7 @@ namespace UI
 	}
 	Component::ViewInformation* Editor::get_editor_view_info()
 	{
-		if (m_state == State::Editing)
+		if (m_state == State::Editing || m_state == State::CameraTesting)
 		{
 			m_view_info = m_camera.view_information(m_window.aspect_ratio());
 			return &m_view_info;
@@ -325,19 +350,10 @@ namespace UI
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
 	{
-		if (m_state != State::Editing)
+		if (m_state == State::Playing)
 			return;
-		m_duration_between_draws.push_back(p_duration_since_last_draw);
 
-		{// Draw a play button in the middle top of the screen.
-			const auto button_size = ImVec2(50.f, 50.f);
-			const auto button_pos  = ImVec2((m_window.size().x - button_size.x) / 2.f, button_size.y / 2.f);
-			ImGui::SetNextWindowPos(button_pos);
-			ImGui::Begin("Play", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
-			if (ImGui::Button("Play"))
-				set_state(State::Playing);
-			ImGui::End();
-		}
+		m_duration_between_draws.push_back(p_duration_since_last_draw);
 
 		if (ImGui::BeginMenuBar())
 		{
@@ -397,6 +413,11 @@ namespace UI
 				ImGui::MenuItem("Graphics",               NULL, &m_windows_to_display.Graphics_Debug);
 				ImGui::MenuItem("Physics",                NULL, &m_windows_to_display.Physics_Debug);
 				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
+				ImGui::Separator();
+				if (ImGui::MenuItem("Play"))
+					set_state(State::Playing);
+				if (ImGui::MenuItem("Camera Test"))
+					set_state(State::CameraTesting);
 				ImGui::EndMenu();
 			}
 			if (m_windows_to_display.FPSTimer)

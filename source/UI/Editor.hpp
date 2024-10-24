@@ -39,8 +39,9 @@ namespace UI
 	{
 		enum class State
 		{
-			Editing, // The editor is active and the user is interacting with the scene.
-			Playing  // The editor is inactive and the scene is running.
+			Editing,       // The editor is active and the user is interacting with the scene.
+			Playing,       // The editor is inactive and the scene is running.
+			CameraTesting  // The editor is active and the cursor is captured.
 		};
 
 		struct Windows
