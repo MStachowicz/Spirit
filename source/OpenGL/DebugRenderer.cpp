@@ -61,7 +61,7 @@ namespace OpenGL
 		m_line_mb.clear();
 		m_tri_mb.clear();
 	}
-	void DebugRenderer::render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const FBO& p_target_FBO)
+	void DebugRenderer::render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const Buffer& p_point_lights_buffer, const FBO& p_target_FBO)
 	{
 		if (!m_line_mb.empty())
 		{
@@ -99,17 +99,20 @@ namespace OpenGL
 					dc.m_polygon_offset_units   = opt.m_position_offset_units;
 					dc.set_uniform("model", model);
 					dc.set_uniform("colour", p_collider.m_collided ? glm::vec4(opt.m_bounding_box_collided_colour, 1.f) : glm::vec4(opt.m_bounding_box_colour, 1.f));
+					dc.set_UBO("ViewProperties", p_view_properties);
 					dc.submit(*m_bound_shader, m_AABB_outline_mesh->get_VAO(), p_target_FBO);
 				}
 				if (opt.m_fill_bounding_box)
 				{
 					DrawCall dc;
+					dc.m_blending_enabled       = true;
 					dc.m_cull_face_enabled      = false;
 					dc.m_polygon_offset_enabled = true;
 					dc.m_polygon_offset_factor  = opt.m_position_offset_factor;
 					dc.m_polygon_offset_units   = opt.m_position_offset_units;
 					dc.set_uniform("model", model);
 					dc.set_uniform("colour", p_collider.m_collided ? glm::vec4(opt.m_bounding_box_collided_colour, 0.2f) : glm::vec4(opt.m_bounding_box_colour, 0.2f));
+					dc.set_UBO("ViewProperties", p_view_properties);
 					dc.submit(*m_bound_shader, m_AABB_filled_mesh->get_VAO(), p_target_FBO);
 				}
 			});
@@ -122,6 +125,8 @@ namespace OpenGL
 			{
 				DrawCall dc;
 				dc.set_uniform("scale", opt.m_light_position_scale);
+				dc.set_UBO("ViewProperties", p_view_properties);
+				dc.set_SSBO("PointLightsBuffer", p_point_lights_buffer);
 				dc.submit_instanced(*m_light_position_shader, m_point_light_mesh->get_VAO(), p_target_FBO, point_light_count);
 			}
 		}
