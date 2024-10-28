@@ -29,7 +29,7 @@ namespace Component
 		//@return vec2 where x=pitch and y=yaw in radians.
 		static glm::vec2 get_pitch_yaw(const glm::vec3& p_direction);
 
-		float m_FOV;
+		float m_vertical_FOV; // Vertical field of view in radians
 		float m_near;
 		float m_far;
 
@@ -84,6 +84,10 @@ namespace Component
 		glm::vec3 forward() const;
 		//@return The view frustrum of the camera.
 		Geometry::Frustrum frustrum(const float p_aspect_ratio, const glm::vec3& p_eye_position) const;
+		//@return The horizontal field of view in radians.
+		float get_horizontal_FOV(const float p_aspect_ratio) const;
+		//@return The maximum distance the camera can see. Equivalent to the radius of the sphere that encompasses the view frustum.
+		float get_maximum_view_distance(float aspect_ratio) const;
 
 		void draw_UI(Component::Transform* p_transform = nullptr);
 		static void serialise(std::ostream& p_out, uint16_t p_version, const FirstPersonCamera& p_first_person_camera);

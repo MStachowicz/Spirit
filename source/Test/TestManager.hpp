@@ -2,6 +2,7 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include "glm/gtc/epsilon.hpp"
 #include "Geometry/Triangle.hpp"
 
 #include <string>
@@ -39,6 +40,7 @@ namespace Test
 
 	#define CHECK_TRUE(p_conditional, p_test_name) { run_unit_test(p_conditional, p_test_name, std::format("Expected: '{}' to be true\n{}", #p_conditional, to_string(std::source_location::current()))); }
 	#define CHECK_EQUAL(p_value, p_expected_value, p_test_name) { run_unit_test(p_value == p_expected_value, p_test_name, std::format("Expected {} ({}) to equal {} ({})\n{}", #p_value, p_value, #p_expected_value, p_expected_value, to_string(std::source_location::current()))); }
+	#define CHECK_EQUAL_FLOAT(p_value, p_expected_value, p_test_name, p_epsilon) { run_unit_test(glm::epsilonEqual(p_value, p_expected_value, p_epsilon), p_test_name, std::format("Expected {} ({}) to equal {} ({}) with epsilon {}\n{}", #p_value, p_value, #p_expected_value, p_expected_value, p_epsilon, to_string(std::source_location::current()))); }
 	#define SCOPE_SECTION(p_section_name) auto a_random_name_that_will_never_collide_with_anything = ScopeSection(p_section_name, *this);
 
 	// A pure-virtual API for running unit tests and performance tests.

@@ -1,4 +1,5 @@
 #include "Test/TestManager.hpp"
+#include "Test/Tests/CameraTester.hpp"
 #include "Test/Tests/ComponentSerialiseTester.hpp"
 #include "Test/Tests/ECSTester.hpp"
 #include "Test/Tests/GeometryTester.hpp"
@@ -34,6 +35,7 @@ int main(int argc, char* argv[])
 	const char* seperator = "--------------------------------------------------\n";
 
 	std::vector<std::unique_ptr<Test::TestManager>> test_managers;
+	test_managers.emplace_back(std::make_unique<Test::CameraTester>());
 	test_managers.emplace_back(std::make_unique<Test::ComponentSerialiseTester>());
 	test_managers.emplace_back(std::make_unique<Test::ECSTester>());
 	test_managers.emplace_back(std::make_unique<Test::GeometryTester>());

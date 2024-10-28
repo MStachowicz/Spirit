@@ -60,9 +60,10 @@ namespace OpenGL
 		Data::Mesh m_screen_quad;
 		PostProcessingOptions m_post_processing_options;
 		bool m_draw_shadows;
-		bool m_draw_grid;
 
 	public:
+		bool m_draw_grid;
+
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
 		OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;
 

@@ -28,7 +28,7 @@ namespace Component
 	}
 
 	FirstPersonCamera::FirstPersonCamera(const glm::vec3& p_view_direction /* = glm::vec3(0.f, 0.f, -1.f)*/, bool p_make_primary /* = false*/)
-		: m_FOV{45.f}
+		: m_vertical_FOV{glm::radians(45.f)}
 		, m_near{0.01f}
 		, m_far{150.f}
 		, m_pitch{get_pitch_yaw(p_view_direction).x}
@@ -41,9 +41,9 @@ namespace Component
 
 	void FirstPersonCamera::scroll(float p_offset)
 	{
-		m_FOV -= p_offset;
-		if (m_FOV < 1.0f)  m_FOV = 1.0f;
-		if (m_FOV > 45.0f) m_FOV = 45.0f;
+		m_vertical_FOV -= p_offset;
+		if (m_vertical_FOV < glm::radians(1.0f))  m_vertical_FOV = glm::radians(1.0f);
+		if (m_vertical_FOV > glm::radians(45.0f)) m_vertical_FOV = glm::radians(45.0f);
 	}
 
 	void FirstPersonCamera::mouse_look(const glm::vec2& p_offset)
@@ -139,6 +139,20 @@ namespace Component
 
 		return Geometry::Frustrum(projection(p_aspect_ratio) * view);
 	}
+	float FirstPersonCamera::get_horizontal_FOV(const float p_aspect_ratio) const
+	{
+		return 2.0f * std::atan(std::tan(m_vertical_FOV / 2.0f) * p_aspect_ratio);
+	}
+	float FirstPersonCamera::get_maximum_view_distance(float aspect_ratio) const
+	{
+		auto horizontal_FOV = get_horizontal_FOV(aspect_ratio);
+
+		// halfFarWidth and halfFarHeight represent half the dimensions of the far plane.
+		// extent is computed using the pythagorean theorem to give the distance to the farthest point from m_position.
+		auto halfFarWidth  = m_far * std::tan(horizontal_FOV / 2.0f);
+		auto halfFarHeight = m_far * std::tan(m_vertical_FOV / 2.0f);
+		return std::sqrt(m_far * m_far + halfFarWidth * halfFarWidth + halfFarHeight * halfFarHeight);
+	}
 	ViewInformation FirstPersonCamera::view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const
 	{
 		ViewInformation view_info;
@@ -149,7 +163,7 @@ namespace Component
 	}
 	glm::mat4 FirstPersonCamera::projection(const float p_aspect_ratio) const
 	{
-		return glm::perspective(glm::radians(m_FOV), p_aspect_ratio, m_near, m_far);
+		return glm::perspective(m_vertical_FOV, p_aspect_ratio, m_near, m_far);
 	}
 	glm::mat4 FirstPersonCamera::view(const glm::vec3& p_eye_position) const
 	{
@@ -179,7 +193,9 @@ namespace Component
 		if (ImGui::TreeNode("FPS Camera"))
 		{
 			ImGui::SeparatorText("Projection");
-			ImGui::Slider("FOV", m_FOV, -1.f, 30.);
+			auto fov_degrees = glm::degrees(m_vertical_FOV);
+			if (ImGui::Slider("FOV", fov_degrees, 1.f, 90.f, "%.3f °"))
+				m_vertical_FOV = glm::radians(fov_degrees);
 			ImGui::Slider("Near", m_near, 0.01f, 10.f);
 			ImGui::Slider("Far", m_far, 10.f, 300.f);
 
@@ -212,7 +228,7 @@ namespace Component
 			{
 				m_pitch            = 0.f;
 				m_yaw              = 0.f;
-				m_FOV              = 45.f;
+				m_vertical_FOV     = glm::radians(45.f);
 				m_look_sensitivity = 0.1f;
 			}
 
@@ -221,7 +237,7 @@ namespace Component
 	}
 	void FirstPersonCamera::serialise(std::ostream& p_out, uint16_t p_version, const FirstPersonCamera& p_first_person_camera)
 	{
-		Utility::write_binary(p_out, p_version, p_first_person_camera.m_FOV);
+		Utility::write_binary(p_out, p_version, p_first_person_camera.m_vertical_FOV);
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_near);
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_far);
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_pitch);
@@ -234,7 +250,7 @@ namespace Component
 	FirstPersonCamera FirstPersonCamera::deserialise(std::istream& p_in, uint16_t p_version)
 	{
 		FirstPersonCamera first_person_camera;
-		Utility::read_binary(p_in, p_version, first_person_camera.m_FOV);
+		Utility::read_binary(p_in, p_version, first_person_camera.m_vertical_FOV);
 		Utility::read_binary(p_in, p_version, first_person_camera.m_near);
 		Utility::read_binary(p_in, p_version, first_person_camera.m_far);
 		Utility::read_binary(p_in, p_version, first_person_camera.m_pitch);

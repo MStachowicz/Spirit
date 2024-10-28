@@ -202,6 +202,12 @@ namespace UI
 				}
 				break;
 			}
+			case Platform::Key::E:
+			{
+				if (p_action == Platform::Action::Release)
+					m_windows_to_display.Entity = !m_windows_to_display.Entity;
+				break;
+			}
 			case Platform::Key::G:
 			{
 				if (p_action == Platform::Action::Release)
@@ -226,6 +232,12 @@ namespace UI
 			{
 				if (p_action == Platform::Action::Release && m_state == State::Editing)
 					m_camera.toggle_orthographic();
+				break;
+			}
+			case Platform::Key::U:
+			{
+				if (p_action == Platform::Action::Release)
+					m_windows_to_display.Console = !m_windows_to_display.Console;
 				break;
 			}
 			case Platform::Key::Escape:
@@ -466,9 +478,14 @@ namespace UI
 				if (!p_camera.m_primary)
 					return;
 
-				OpenGL::DebugRenderer::add(Geometry::Sphere(p_transform.m_position, 0.5f), glm::vec4(1.f, 0.f, 0.f, 1.f));
-				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position + p_camera.forward() * p_camera.m_far), glm::vec4(1.f, 1.f, 0.f, 1.f));
 				OpenGL::DebugRenderer::add(p_camera.frustrum(m_window.aspect_ratio(), p_transform.m_position));
+
+				auto camera_view_dist = p_camera.get_maximum_view_distance(m_window.aspect_ratio());
+				//OpenGL::DebugRenderer::add(Geometry::Sphere(p_transform.m_position, camera_view_dist), glm::vec4(1.f, 1.f, 0.f, 0.25f), 3);
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position + p_camera.forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position - p_camera.forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position + p_camera.right() * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position - p_camera.right() * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
 			});
 		}
 
@@ -758,6 +775,8 @@ namespace UI
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::MenuItem(m_openGL_renderer.m_draw_grid ? "Hide grid" : "Show grid"))
+				m_openGL_renderer.m_draw_grid = !m_openGL_renderer.m_draw_grid;
 			ImGui::EndPopup();
 		}
 	}
