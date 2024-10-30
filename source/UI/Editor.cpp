@@ -259,7 +259,13 @@ namespace UI
 
 				break;
 			}
-			case Platform::Key::F11: m_window.toggle_fullscreen(); break;
+			case Platform::Key::F11:
+			{
+				if (p_action == Platform::Action::Release)
+					m_window.toggle_fullscreen();
+
+				break;
+			}
 			default: break;
 		}
 	}

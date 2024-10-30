@@ -7,9 +7,6 @@
 #include "Utility/Utility.hpp"
 #include "Utility/Config.hpp"
 
-#ifdef _WIN32
-#include <Windows.h> // MSVC requires Windows.h to be included before glfw headers
-#endif
 #include "GLFW/glfw3.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -17,17 +14,12 @@
 #include "imgui_internal.h"
 #include "ImGuizmo.h"
 
-#include <iostream>
-
 namespace Platform
 {
-	Window::Window(const int& p_width, const int& p_height, Input& p_input_state) noexcept
-		: m_size_fullscreen{get_max_resolution()}
-		, m_position_fullscreen{0, 0}
-		, m_size_windowed{p_width, p_height}
-		, m_position_windowed{0, get_window_title_bar_height()} // Offset starting position by height of title bar.
+	Window::Window(const glm::vec2& p_screen_factor, Input& p_input_state) noexcept
+		: m_last_position_windowed{0, 0} // init in body via set_position
+		, m_last_size_windowed{0, 0}     // init in body
 		, m_fullscreen{false}
-		, m_aspect_ratio{m_fullscreen ? static_cast<float>(m_size_fullscreen.x) / static_cast<float>(m_size_fullscreen.y) : static_cast<float>(m_size_windowed.x) / static_cast<float>(m_size_windowed.y)}
 		, m_VSync{true}
 		, m_close_requested{false}
 		, m_handle{nullptr}
@@ -36,23 +28,30 @@ namespace Platform
 	{
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 		glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-		const auto window_size = size();
-		const auto window_position = position();
-		m_handle = glfwCreateWindow(window_size.x, window_size.y, Config::Is_Debug ? "Spirit - Debug" : "Spirit", m_fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+
+		auto monitor = glfwGetPrimaryMonitor();
+		int wa_xpos, wa_ypos, wa_width, wa_height;
+		glfwGetMonitorWorkarea(monitor, &wa_xpos, &wa_ypos, &wa_width, &wa_height);
+		const glm::ivec2 desired_size_windowed = {wa_width * p_screen_factor.x, wa_height * p_screen_factor.y};
+
+		ASSERT(!m_fullscreen, "[WINDOW] Fullscreen construction not implemented. Add glfwCreateWindow call for fullscreen.");
+		m_handle = glfwCreateWindow(desired_size_windowed.x, desired_size_windowed.y, Config::Is_Debug ? "Spirit - Debug" : "Spirit", NULL, NULL);
 		ASSERT(m_handle != nullptr, "[WINDOW] Failed to construct Window");
 
-		glfwMakeContextCurrent(m_handle); // Set this window as the context for GL render calls.
-		glfwSetWindowPos(m_handle, window_position.x, window_position.y);
-		glfwSetWindowSize(m_handle, window_size.x, window_size.y); // glfwCreateWindow size requests are not hard constraints. Have to ensure size was set by calling glfwSetWindowSize.
+		m_last_size_windowed = size(); // Get the actual size of the window after creation. Per GLFW docs, this may not be the same as the requested size.
+		const glm::ivec2 desired_position_windowed = {wa_xpos + (wa_width - m_last_size_windowed.x) * 0.5f, wa_ypos + (wa_height - m_last_size_windowed.y) * 0.5f};
+		set_position(desired_position_windowed);
 		set_VSync(m_VSync);
+		glfwMakeContextCurrent(m_handle); // Set this window as the context for GL render calls.
 
 		{ // Set the GLFW callbacks.
 			// GLFW is a C library requiring static || global functions for callbacks.
 			// We use the glfwSetWindowUserPointer and glfwGetWindowUserPointer to retrieve this instance of Window from the library and call the member functions.
 			glfwSetWindowUserPointer(m_handle, this);
-			glfwSetWindowCloseCallback(m_handle, [](GLFWwindow* p_handle){((Window*)glfwGetWindowUserPointer(p_handle))->request_close();});
-			glfwSetWindowSizeCallback(m_handle,  [](GLFWwindow* p_handle, int p_size_x, int p_size_y){((Window*)glfwGetWindowUserPointer(p_handle))->set_size({p_size_x, p_size_y});});
-			glfwSetWindowPosCallback(m_handle,   [](GLFWwindow* p_handle, int p_pos_x, int p_pos_y){((Window*)glfwGetWindowUserPointer(p_handle))->set_position({p_pos_x, p_pos_y});});
+			glfwSetWindowCloseCallback(m_handle,        [](GLFWwindow* p_handle){((Window*)glfwGetWindowUserPointer(p_handle))->request_close();});
+			glfwSetWindowSizeCallback(m_handle,         [](GLFWwindow* p_handle, int p_size_x, int p_size_y){((Window*)glfwGetWindowUserPointer(p_handle))->on_size_callback({p_size_x, p_size_y});});
+			glfwSetWindowPosCallback(m_handle,          [](GLFWwindow* p_handle, int p_pos_x, int p_pos_y){((Window*)glfwGetWindowUserPointer(p_handle))->on_position_callback({p_pos_x, p_pos_y});});
+			glfwSetWindowContentScaleCallback(m_handle, [](GLFWwindow* p_handle, float p_scale_x, float p_scale_y){((Window*)glfwGetWindowUserPointer(p_handle))->on_content_scale_callback((p_scale_x + p_scale_y) * 0.5f);});
 
 			{ // INPUT CALLBACKS - Because we only have access to the WindowUserPointer via GLFW, we have to access the Input and set it from the window.
 				glfwSetKeyCallback(m_handle,         [](GLFWwindow* p_handle, int p_key, int p_scancode, int p_action, int p_mode){((Window*)glfwGetWindowUserPointer(p_handle))->m_input.glfw_key_press(p_key, p_scancode, p_action, p_mode);});
@@ -76,6 +75,7 @@ namespace Platform
 			icon.height = icon_image.height;
 			glfwSetWindowIcon(m_handle, 1, &icon);
 		}
+
 		LOG("[WINDOW] Created Window with resolution {}x{}", size().x, size().y);
 	}
 	Window::~Window() noexcept
@@ -85,45 +85,62 @@ namespace Platform
 		LOG("[WINDOW] Closed window");
 	}
 
-	void Window::set_size(glm::uvec2 p_new_size)
+	glm::uvec2 Window::size() const
 	{
-		if (p_new_size.x == 0 || p_new_size.y == 0) // When the window is minimised the size can be 0. Ignore and keep original size data.
+		int size_x, size_y;
+		glfwGetWindowSize(m_handle, &size_x, &size_y);
+
+		if (size_x == 0 || size_y == 0) // When the window is minimised the size can be 0.
+			return {1, 1};
+		else
+			return {static_cast<unsigned int>(size_x), static_cast<unsigned int>(size_y)};
+	}
+
+	void Window::on_size_callback(const glm::uvec2& p_new_size)
+	{
+		if (p_new_size.x == 0 || p_new_size.y == 0)
 			return;
 
-		ImGuiIO& io = ImGui::GetIO();
-		io.FontGlobalScale = std::round(ImGui::GetMainViewport()->DpiScale);
+		if (!m_fullscreen)
+			m_last_size_windowed = p_new_size;
 
-		if (m_fullscreen)
-		{
-			m_size_fullscreen = p_new_size;
-			m_aspect_ratio    = static_cast<float>(m_size_fullscreen.x) / static_cast<float>(m_size_fullscreen.y);
-			io.DisplaySize    = ImVec2(static_cast<float>(m_size_fullscreen.x), static_cast<float>(m_size_fullscreen.y));
-		}
-		else
-		{
-			m_size_windowed = p_new_size;
-			m_aspect_ratio  = static_cast<float>(m_size_windowed.x) / static_cast<float>(m_size_windowed.y);
-			io.DisplaySize  = ImVec2(static_cast<float>(m_size_windowed.x), static_cast<float>(m_size_windowed.y));
-		}
-
-		//mWindowResizeEvent.dispatch(new_size.x, new_size.y);
+		if (ImGui::IsInitialised())
+			ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(p_new_size.x), static_cast<float>(p_new_size.y));
 
 		LOG("[WINDOW] Resized to {}x{} aspect: {}", size().x, size().y, aspect_ratio());
 	}
-	void Window::set_position(glm::uvec2 p_new_position)
+	void Window::set_size(const glm::uvec2& p_new_size)
 	{
-		if (m_fullscreen)
-			m_position_fullscreen = p_new_position;
-		else
-			m_position_windowed = p_new_position;
-
-		LOG("[WINDOW] Moved to {}, {}", position().x, position().y, aspect_ratio());
+		glfwSetWindowSize(m_handle, p_new_size.x, p_new_size.y);
+		on_size_callback(size()); // Actual size may not be the same as requested call size to get the actual size.
+	}
+	glm::uvec2 Window::position() const
+	{
+		int pos_x, pos_y;
+		glfwGetWindowPos(m_handle, &pos_x, &pos_y);
+		return {static_cast<unsigned int>(pos_x), static_cast<unsigned int>(pos_y)};
+	}
+	void Window::on_position_callback(const glm::uvec2& new_position)
+	{
+		if (!m_fullscreen)
+			m_last_position_windowed = new_position;
+		LOG("[WINDOW] Moved to {}, {}", new_position.x, new_position.y, aspect_ratio());
+	}
+	void Window::set_position(const glm::uvec2& p_new_position)
+	{
+		glfwSetWindowPos(m_handle, p_new_position.x, p_new_position.y);
+		on_position_callback(position());// Actual position may not be the same as requested call position to get the actual position.
 	}
 
 	void Window::request_close()
 	{
 		glfwSetWindowShouldClose(m_handle, GL_TRUE); // Ask GLFW to close this window
 		m_close_requested = true;
+	}
+	float Window::aspect_ratio() const
+	{
+		const auto curr_size = size();
+		return static_cast<float>(curr_size.x) / static_cast<float>(curr_size.y);
 	}
 	void Window::set_VSync(bool p_enabled)
 	{
@@ -142,15 +159,14 @@ namespace Platform
 		{
 			const auto max_res = get_max_resolution();
 			glfwSetWindowMonitor(m_handle, glfwGetPrimaryMonitor(), 0, 0, max_res.x, max_res.y, GLFW_DONT_CARE);
-			set_position({0, 0});
-			set_size(max_res);
-			LOG("[WINDOW] Set to fullscreen. Position: {},{} Resolution: {}x{} Aspect ratio: {}", 0, 0, m_size_fullscreen.x, m_size_fullscreen.y, m_aspect_ratio);
 		}
 		else // Windowed mode. Reuse the old size and position
-		{
-			glfwSetWindowMonitor(m_handle, NULL, m_position_windowed.x, m_position_windowed.y, m_size_windowed.x, m_size_windowed.y, GLFW_DONT_CARE);
-			LOG("[WINDOW] Set to windowed mode. Position: {},{} Resolution: {}x{} Aspect ratio: {}", 0, 0, m_size_windowed.x, m_size_windowed.y, m_aspect_ratio);
-		}
+			glfwSetWindowMonitor(m_handle, NULL, m_last_position_windowed.x, m_last_position_windowed.y, m_last_size_windowed.x, m_last_size_windowed.y, GLFW_DONT_CARE);
+
+		on_position_callback(position());
+		on_size_callback(size());
+
+		LOG("[WINDOW] Set to fullscreen. Position: {},{} Resolution: {}x{} Aspect ratio: {}", position().x, position().y, size().x, size().y, aspect_ratio());
 	}
 
 	void Window::swap_buffers()
@@ -217,14 +233,16 @@ namespace Platform
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
-	int Window::get_window_title_bar_height()
+	void Window::on_content_scale_callback(float new_scale)
 	{
-#ifdef _WIN32
-		return (GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXPADDEDBORDER));
-#else
-		// Not implemented get_taskbar_height for this platform
-		return 0;
-#endif
+		if (ImGui::IsInitialised())
+			ImGui::GetIO().FontGlobalScale = new_scale;
+	}
+	float Window::content_scale() const
+	{
+		float xscale, yscale;
+		glfwGetWindowContentScale(m_handle, &xscale, &yscale);
+		return (xscale + yscale) * 0.5f;
 	}
 
 	glm::uvec2 Window::get_max_resolution()

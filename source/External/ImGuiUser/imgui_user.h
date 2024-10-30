@@ -19,6 +19,10 @@
 // Add extra functions within the ImGui:: namespace here.
 namespace ImGui
 {
+	inline bool IsInitialised()
+	{
+		return GetCurrentContext() != nullptr;
+	}
 	inline void Text_Manual(const char* fmt, ...)
 	{
 		va_list args;

@@ -16,7 +16,7 @@ namespace Test
 		Platform::Core::initialise_directories();
 		Platform::Core::initialise_GLFW();
 		Platform::Input input   = Platform::Input();
-		Platform::Window window = Platform::Window(1920, 1080, input);
+		Platform::Window window = Platform::Window({0.5, 0.5}, input);
 		Platform::Core::initialise_OpenGL();
 
 

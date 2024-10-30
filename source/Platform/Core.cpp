@@ -111,13 +111,14 @@ namespace Platform
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO();
-		(void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
 		ImGui_ImplGlfw_InitForOpenGL(p_window.m_handle, true);
 		ImGui_ImplOpenGL3_Init(Config::GLSL_Version_String);
-		glm::uvec2 size = p_window.size();
-		io.DisplaySize = ImVec2(static_cast<float>(size.x), static_cast<float>(size.y));
+
+		ImGuiIO& io        = ImGui::GetIO();
+		io.FontGlobalScale = p_window.content_scale();
+		glm::uvec2 size    = p_window.size();
+		io.DisplaySize     = ImVec2(static_cast<float>(size.x), static_cast<float>(size.y));
+		io.ConfigFlags    |= ImGuiConfigFlags_DockingEnable;
 
 		LOG("[INIT] Initialised ImGui");
 	}
