@@ -590,7 +590,7 @@ namespace OpenGL
 			case BufferDataType::UnsignedInt:   return GL_UNSIGNED_INT;
 			case BufferDataType::Float:         return GL_FLOAT;
 			case BufferDataType::Double:        return GL_DOUBLE;
-			default: ASSERT_THROW(false, "[OPENGL] Unknown BufferDataType requested");
+			default: ASSERT_FAIL("[OPENGL] Unknown BufferDataType requested");
 		}
 	}
 	GLenum convert(BufferStorageFlag p_flag)
@@ -603,7 +603,7 @@ namespace OpenGL
 			case BufferStorageFlag::MapPersistentBit:  return GL_MAP_PERSISTENT_BIT;
 			case BufferStorageFlag::MapCoherentBit:    return GL_MAP_COHERENT_BIT;
 			case BufferStorageFlag::ClientStorageBit:  return GL_CLIENT_STORAGE_BIT;
-			default: ASSERT_THROW(false, "[OPENGL] Unknown BufferStorageFlag requested"); return 0;
+			default: ASSERT_FAIL("[OPENGL] Unknown BufferStorageFlag requested");
 		}
 	}
 	GLenum convert(MemoryBarrierFlag p_barrier_bitfield)
@@ -623,7 +623,7 @@ namespace OpenGL
 			case MemoryBarrierFlag::TransformFeedbackBarrierBit:  return GL_TRANSFORM_FEEDBACK_BARRIER_BIT;
 			case MemoryBarrierFlag::AtomicCounterBarrierBit:      return GL_ATOMIC_COUNTER_BARRIER_BIT;
 			case MemoryBarrierFlag::ShaderStorageBarrierBit:      return GL_SHADER_STORAGE_BARRIER_BIT;
-			default: ASSERT_THROW(false, "[OPENGL] Unknown MemoryBarrierFlag requested"); return 0;
+			default: ASSERT_FAIL("[OPENGL] Unknown MemoryBarrierFlag requested");
 		}
 
 	}

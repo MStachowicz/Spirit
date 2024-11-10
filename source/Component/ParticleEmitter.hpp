@@ -94,7 +94,7 @@ namespace Component
 					return ColourSource::ConstantColour;
 			}
 			else // Invalid state
-				ASSERT_THROW(false, "Invalid colour source state. ParticleEmitter needs either a colour or a texture.")
+				ASSERT_FAIL("Invalid colour source state. ParticleEmitter needs either a colour or a texture.");
 		}
 		enum class SizeSource : uint8_t
 		{

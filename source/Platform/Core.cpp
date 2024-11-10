@@ -84,11 +84,11 @@ namespace Platform
 
 				if (severity == GL_DEBUG_SEVERITY_HIGH)
 				{
-					ASSERT_THROW(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
 				}
 				else if (severity == GL_DEBUG_SEVERITY_MEDIUM)
 				{
-					ASSERT_THROW(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
 				}
 				else if (severity == GL_DEBUG_SEVERITY_LOW)
 				{
@@ -212,7 +212,7 @@ namespace Platform
 			{
 				case FileDialogFilter::All:   ofn.lpstrFilter = "All Files\0*.*\0"; break;
 				case FileDialogFilter::Scene: ofn.lpstrFilter = scene_filter.c_str(); break;
-				default: ASSERT_THROW(false, "Invalid FileDialogFilter");
+				default: ASSERT_FAIL("Invalid FileDialogFilter");
 			}
 
 			std::filesystem::path selected_path;
@@ -229,7 +229,7 @@ namespace Platform
 					if (GetOpenFileNameA(&ofn) == TRUE) selected_path = std::filesystem::path(ofn.lpstrFile);
 					break;
 				}
-				default: ASSERT_THROW(false, "Invalid FileDialogType");
+				default: ASSERT_FAIL("Invalid FileDialogType");
 			}
 
 			// Append the .ss extension if not present
@@ -239,7 +239,7 @@ namespace Platform
 			return selected_path;
 		#else
 			(void)p_type; (void)p_filter; (void)p_title; (void)p_start_path;
-			ASSERT_THROW(false, "file_dialog not implemented for this platform");
+			ASSERT_FAIL("file_dialog not implemented for this platform");
 		#endif
 	}
 } // namespace Platform

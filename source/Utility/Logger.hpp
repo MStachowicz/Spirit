@@ -14,7 +14,8 @@ public:
 	static void log_info(const std::string& p_message);
 	static void log_warning(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
 	static void log_error(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
-	static void assert_fail(const std::string& p_conditional, const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+	[[noreturn]] static void assert_fail(const std::string& p_conditional, const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+	[[noreturn]] static void assert_fail(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
 	static inline UI::Editor* s_editor_sink = nullptr; // If pointing to an Editor && s_log_to_editor is true, the editor will output the Log message to its console.
 
 private:
@@ -40,7 +41,8 @@ private:
 #define ASSERT(x, ...)    (void)0;
 #endif
 
-#define ASSERT_THROW(x, ...) if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); throw std::runtime_error(std::format(__VA_ARGS__)); }
+#define ASSERT_THROW(x, ...) if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
+#define ASSERT_FAIL(...)               { Logger::assert_fail(std::format(__VA_ARGS__), std::source_location::current());     }
 
 
 #if defined(_MSC_VER)

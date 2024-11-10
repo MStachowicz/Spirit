@@ -29,10 +29,8 @@ namespace Utility
 		}
 		catch (std::ifstream::failure& e)
 		{
-			ASSERT_THROW(false, "File not successfully read, exception thrown: {}", e.what());
+			ASSERT_FAIL("File not successfully read, exception thrown: {}", e.what());
 		}
-
-		return "";
 	}
 
 	void File::foreach_file(const std::filesystem::path& p_directory, const std::function<void(const std::filesystem::directory_entry& p_entry)>& p_function)
