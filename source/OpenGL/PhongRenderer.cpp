@@ -193,51 +193,40 @@ namespace OpenGL
 
 	void PhongRenderer::update_light_data(System::Scene& p_scene)
 	{
+		// TODO: Seperate the light storage blocks into meta data and data, so we can push the entire light data in one go per instance.
+
 		{ // Set DirectonalLight buffer data
 			GLuint directional_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::DirectionalLight>());
+
+			const GLsizeiptr required_capacity = m_directional_light_fixed_size + (m_directional_light_array_stride * directional_light_count);
+			if (required_capacity > m_directional_lights_buffer.capacity())
+				m_directional_lights_buffer.reserve(required_capacity);
+
+			m_directional_lights_buffer.set_data(directional_light_count, m_directional_light_count_offset);
+
+			GLuint i = 0;
+			p_scene.m_entities.foreach([&](Component::DirectionalLight& p_directional_light)
 			{
-				const GLsizeiptr required_size = m_directional_light_fixed_size + (m_directional_light_array_stride * directional_light_count);
-				{ // Resize the buffer to accomodate at least the directional_light_count
-					if (required_size > m_directional_lights_buffer.size())
-					{
-						OpenGL::Buffer new_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
-						new_buffer.resize(required_size);
-						m_directional_lights_buffer = std::move(new_buffer);
-						LOG("[OPENGL][PHONG] DirectionalLight count changed ({}), resized the directional light buffer to {}B", directional_light_count, required_size);
-					}
-				}
-				m_directional_lights_buffer.buffer_sub_data(m_directional_light_count_offset, directional_light_count);
+				const glm::vec3 diffuse  = p_directional_light.m_colour * p_directional_light.m_diffuse_intensity;
+				const glm::vec3 ambient  = p_directional_light.m_colour * p_directional_light.m_ambient_intensity;
+				const glm::vec3 specular = glm::vec3(p_directional_light.m_specular_intensity);
 
-				GLuint i = 0;
-				p_scene.m_entities.foreach([&](Component::DirectionalLight& p_directional_light)
-				{
-					const glm::vec3 diffuse  = p_directional_light.m_colour * p_directional_light.m_diffuse_intensity;
-					const glm::vec3 ambient  = p_directional_light.m_colour * p_directional_light.m_ambient_intensity;
-					const glm::vec3 specular = glm::vec3(p_directional_light.m_specular_intensity);
+				m_directional_lights_buffer.set_data(p_directional_light.m_direction, m_directional_light_direction_offset + (m_directional_light_array_stride * i));
+				m_directional_lights_buffer.set_data(ambient,                         m_directional_light_ambient_offset   + (m_directional_light_array_stride * i));
+				m_directional_lights_buffer.set_data(diffuse,                         m_directional_light_diffuse_offset   + (m_directional_light_array_stride * i));
+				m_directional_lights_buffer.set_data(specular,                        m_directional_light_specular_offset  + (m_directional_light_array_stride * i));
 
-					m_directional_lights_buffer.buffer_sub_data(m_directional_light_direction_offset + (m_directional_light_array_stride * i), p_directional_light.m_direction);
-					m_directional_lights_buffer.buffer_sub_data(m_directional_light_ambient_offset   + (m_directional_light_array_stride * i), ambient);
-					m_directional_lights_buffer.buffer_sub_data(m_directional_light_diffuse_offset   + (m_directional_light_array_stride * i), diffuse);
-					m_directional_lights_buffer.buffer_sub_data(m_directional_light_specular_offset  + (m_directional_light_array_stride * i), specular);
-
-					i++;
-				});
-			}
+				i++;
+			});
 		}
 		{ // Set PointLight buffer data
 			GLuint point_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::PointLight>());
 			{
-				const GLsizeiptr required_size = m_point_light_fixed_size + (m_point_light_array_stride * point_light_count);
-				{ // Resize the buffer to accomodate at least the point_light_count
-					if (required_size > m_point_lights_buffer.size())
-					{
-						OpenGL::Buffer new_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
-						new_buffer.resize(required_size);
-						m_point_lights_buffer = std::move(new_buffer);
-						LOG("[OPENGL][PHONG] PointLight count changed ({}), resized the point light buffer to {}B", point_light_count, required_size);
-					}
-				}
-				m_point_lights_buffer.buffer_sub_data(m_point_light_count_offset, point_light_count);
+				const GLsizeiptr required_capacity = m_point_light_fixed_size + (m_point_light_array_stride * point_light_count);
+				if (required_capacity > m_point_lights_buffer.capacity())
+					m_point_lights_buffer.reserve(required_capacity);
+
+				m_point_lights_buffer.set_data(point_light_count, m_point_light_count_offset);
 
 				GLuint i = 0;
 				p_scene.m_entities.foreach([&](Component::PointLight& p_point_light)
@@ -246,13 +235,13 @@ namespace OpenGL
 					const glm::vec3 ambient  = p_point_light.m_colour * p_point_light.m_ambient_intensity;
 					const glm::vec3 specular = glm::vec3(p_point_light.m_specular_intensity);
 
-					m_point_lights_buffer.buffer_sub_data(m_point_light_position_offset  + (m_point_light_array_stride * i), p_point_light.m_position);
-					m_point_lights_buffer.buffer_sub_data(m_point_light_constant_offset  + (m_point_light_array_stride * i), p_point_light.m_constant);
-					m_point_lights_buffer.buffer_sub_data(m_point_light_linear_offset    + (m_point_light_array_stride * i), p_point_light.m_linear);
-					m_point_lights_buffer.buffer_sub_data(m_point_light_quadratic_offset + (m_point_light_array_stride * i), p_point_light.m_quadratic);
-					m_point_lights_buffer.buffer_sub_data(m_point_light_ambient_offset   + (m_point_light_array_stride * i), ambient);
-					m_point_lights_buffer.buffer_sub_data(m_point_light_diffuse_offset   + (m_point_light_array_stride * i), diffuse);
-					m_point_lights_buffer.buffer_sub_data(m_point_light_specular_offset  + (m_point_light_array_stride * i), specular);
+					m_point_lights_buffer.set_data(p_point_light.m_position,  m_point_light_position_offset  + (m_point_light_array_stride * i));
+					m_point_lights_buffer.set_data(p_point_light.m_constant,  m_point_light_constant_offset  + (m_point_light_array_stride * i));
+					m_point_lights_buffer.set_data(p_point_light.m_linear,    m_point_light_linear_offset    + (m_point_light_array_stride * i));
+					m_point_lights_buffer.set_data(p_point_light.m_quadratic, m_point_light_quadratic_offset + (m_point_light_array_stride * i));
+					m_point_lights_buffer.set_data(ambient,                   m_point_light_ambient_offset   + (m_point_light_array_stride * i));
+					m_point_lights_buffer.set_data(diffuse,                   m_point_light_diffuse_offset   + (m_point_light_array_stride * i));
+					m_point_lights_buffer.set_data(specular,                  m_point_light_specular_offset  + (m_point_light_array_stride * i));
 
 					i++;
 				});
@@ -261,18 +250,11 @@ namespace OpenGL
 		{ // Set Spotlight buffer data
 			GLuint spot_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::SpotLight>());
 			{
-				const GLsizeiptr required_size = m_spot_light_fixed_size + (m_spot_light_array_stride * spot_light_count);
-				{ // Resize the buffer to accomodate at least the spot_light_count
-					if (required_size > m_spot_lights_buffer.size())
-					{
-						OpenGL::Buffer new_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}};
-						new_buffer.resize(required_size);
-						m_spot_lights_buffer = std::move(new_buffer);
-						LOG("[OPENGL][PHONG] SpotLight count changed ({}), resized the spot light buffer to {}B", spot_light_count, required_size);
-					}
-				}
+				const GLsizeiptr required_capacity = m_spot_light_fixed_size + (m_spot_light_array_stride * spot_light_count);
+				if (required_capacity > m_spot_lights_buffer.capacity())
+					m_spot_lights_buffer.reserve(required_capacity);
 
-				m_spot_lights_buffer.buffer_sub_data(m_spot_light_count_offset, spot_light_count);
+				m_spot_lights_buffer.set_data(spot_light_count, m_spot_light_count_offset);
 
 				GLuint i = 0;
 				p_scene.m_entities.foreach([&](Component::SpotLight& p_spotlight)
@@ -281,16 +263,16 @@ namespace OpenGL
 					const glm::vec3 ambient  = p_spotlight.m_colour * p_spotlight.m_ambient_intensity;
 					const glm::vec3 specular = glm::vec3(p_spotlight.m_specular_intensity);
 
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_position_offset     + (m_spot_light_array_stride * i), p_spotlight.m_position);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_direction_offset    + (m_spot_light_array_stride * i), p_spotlight.m_direction);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_cutoff_offset       + (m_spot_light_array_stride * i), p_spotlight.m_cutoff);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_outer_cutoff_offset + (m_spot_light_array_stride * i), p_spotlight.m_outer_cutoff);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_constant_offset     + (m_spot_light_array_stride * i), p_spotlight.m_constant);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_linear_offset       + (m_spot_light_array_stride * i), p_spotlight.m_linear);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_quadratic_offset    + (m_spot_light_array_stride * i), p_spotlight.m_quadratic);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_ambient_offset      + (m_spot_light_array_stride * i), ambient);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_diffuse_offset      + (m_spot_light_array_stride * i), diffuse);
-					m_spot_lights_buffer.buffer_sub_data(m_spot_light_specular_offset     + (m_spot_light_array_stride * i), specular);
+					m_spot_lights_buffer.set_data(p_spotlight.m_position,     m_spot_light_position_offset     + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(p_spotlight.m_direction,    m_spot_light_direction_offset    + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(p_spotlight.m_cutoff,       m_spot_light_cutoff_offset       + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(p_spotlight.m_outer_cutoff, m_spot_light_outer_cutoff_offset + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(p_spotlight.m_constant,     m_spot_light_constant_offset     + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(p_spotlight.m_linear,       m_spot_light_linear_offset       + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(p_spotlight.m_quadratic,    m_spot_light_quadratic_offset    + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(ambient,                    m_spot_light_ambient_offset      + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(diffuse,                    m_spot_light_diffuse_offset      + (m_spot_light_array_stride * i));
+					m_spot_lights_buffer.set_data(specular,                   m_spot_light_specular_offset     + (m_spot_light_array_stride * i));
 					i++;
 				});
 			}

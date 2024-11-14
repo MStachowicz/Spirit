@@ -18,47 +18,83 @@ namespace OpenGL
 {
 	// Represents a block of memory on the GPU.
 	// The buffer can be used to store any data. It is up to the user to interpret the data correctly using a VAO.
+	// If the buffer data wont be changing, it is recommended construct the buffer with the data directly.
+	// Otherwise allocate the buffer with the desired capacity and use set_data to update the data as you go.
 	class Buffer
 	{
 		friend class VAO;
 		friend class DrawCall;
 
 		GLHandle m_handle;
-		GLsizeiptr m_size; // Size in bytes of the buffer. i.e. the amount of GPU memory the whole buffer holds.
-		GLsizei m_stride;  // Stride in bytes between consecutive elements in the buffer. i.e. the amount of GPU memory each element takes up.
+		GLsizeiptr m_size;     // Number of Bytes used by the buffer. Not the number of elements like in std::vector.
+		GLsizeiptr m_capacity; // Number of Bytes allocated for the buffer.
+		GLsizei m_stride;      // Stride in bytes between consecutive elements in the buffer. i.e. the amount of GPU memory each element takes up.
 		BufferStorageBitfield m_flags;
 
 	public:
-		Buffer(BufferStorageBitfield p_flags);
-		~Buffer();
+		// Create a buffer object with the specified flags and capacity.
+		//@param p_flags The flags to use when creating the buffer.
+		//@param p_capacity The capacity of the buffer in bytes. If 0, the buffer is created with no storage.
+		Buffer(BufferStorageBitfield p_flags, GLsizeiptr p_capacity = 0);
+
+		// Construct a buffer to match the vector p_data exactly.
+		//@param p_flags The flags to use when creating the buffer.
+		//@param p_data The data to copy into the buffer.
+		//@param p_capacity The capacity of the buffer in bytes. Must be greater than or equal to the size of the vector p_data.
+		template<typename T>
+		Buffer(BufferStorageBitfield p_flags, const std::vector<T>& p_data, GLsizeiptr p_capacity)
+			: m_handle{State::Get().create_buffer()}
+			, m_size{(GLsizeiptr)(p_data.size() * sizeof(T))} // #NarrowingConversion
+			, m_capacity{p_capacity}
+			, m_stride{sizeof(T)}
+			, m_flags{p_flags}
+		{
+			ASSERT(p_data.size() <= std::numeric_limits<GLsizei>::max(), "Too many elements in vector to fit in a GLsizei.");
+			ASSERT(p_data.size() > 0, "Vector is empty.");
+			ASSERT(p_capacity >= m_size, "Buffer capacity must be greater than or equal to the size of the data.");
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Creating buffer {} with capacity {}B and copying {}B of data", m_handle, m_capacity, m_size);
+
+			if (m_size == m_capacity) // If size is equal to capacity, we can directly allocate and copy the data.
+				named_buffer_storage(m_handle, m_capacity, p_data.data(), m_flags);
+			else
+			{
+				named_buffer_storage(m_handle, m_capacity, nullptr, m_flags);
+				named_buffer_sub_data(m_handle, 0, m_size, p_data.data());
+			}
+		}
+		template<typename T>
+		Buffer(BufferStorageBitfield p_flags, const std::vector<T>& p_data)
+			: Buffer(p_flags, p_data, p_data.size() * sizeof(T)) {}
+
+		// Construct the buffer to match the array p_data exactly.
+		template<typename T, size_t N>
+		Buffer(BufferStorageBitfield p_flags, const std::array<T, N>& p_data, GLsizeiptr p_capacity = N * sizeof(T))
+			: m_handle{State::Get().create_buffer()}
+			, m_size{N * sizeof(T)}
+			, m_capacity{p_capacity}
+			, m_stride{sizeof(T)}
+			, m_flags{p_flags}
+		{
+			static_assert(N <= std::numeric_limits<GLsizei>::max(), "Too many elements in array to fit in a GLsizei.");
+			static_assert(N > 0, "Array is empty.");
+			ASSERT(p_capacity >= m_size, "Buffer capacity must be greater than or equal to the size of the data.");
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Creating buffer {} with capacity {}B and copying {}B of data", m_handle, m_capacity, m_size);
+
+			if (m_size == m_capacity) // If size is equal to capacity, we can directly allocate and copy the data.
+				named_buffer_storage(m_handle, m_capacity, p_data.data(), m_flags);
+			else
+			{
+				named_buffer_storage(m_handle, m_capacity, nullptr, m_flags);
+				named_buffer_sub_data(m_handle, 0, m_size, p_data.data());
+			}
+		}
 
 		Buffer(const Buffer& p_other);
 		Buffer& operator=(const Buffer& p_other);
 		Buffer(Buffer&& p_other);
 		Buffer& operator=(Buffer&& p_other);
+		~Buffer();
 
-		// Creates and initializes a buffer object's immutable data store.
-		//@param p_data Vector of data to copy to the buffer.
-		template<typename T>
-		void upload_data(const std::vector<T>& p_data)
-		{
-			ASSERT_THROW(p_data.size() <= std::numeric_limits<GLsizei>::max(), "Too many elements in vector to fit in a GLsizei.");
-
-			m_size   = p_data.size() * sizeof(T);
-			m_stride = sizeof(T);
-			named_buffer_storage(m_handle, m_size, p_data.data(), m_flags);
-		}
-		// Creates and initializes a buffer object's immutable data store.
-		//@param p_data Array of data to copy to the buffer.
-		template<typename T, size_t N>
-		void upload_data(const std::array<T, N>& p_data)
-		{
-			static_assert(N <= std::numeric_limits<GLsizei>::max(), "Too many elements in array to fit in a GLsizei.");
-
-			m_size   = N * sizeof(T);
-			m_stride = sizeof(T);
-			named_buffer_storage(m_handle, m_size, p_data.data(), m_flags);
-		}
 		template<typename T>
 		std::vector<T> download_data(size_t p_count) const
 		{
@@ -66,57 +102,89 @@ namespace OpenGL
 			get_named_buffer_sub_data(m_handle, 0, m_size, data.data());
 			return data;
 		}
-		// Update a subset of a Buffer object's data store
+
+		// Set the section of the buffer starting at p_offset to p_data.
 		template<typename T>
-		void buffer_sub_data(GLintptr p_offset, const T& p_data)
+		void set_data(const T& p_data, GLintptr p_offset)
 		{
-			// assert T is not a pointer or reference type.
 			static_assert(!std::is_pointer_v<T>, "T must not be a pointer type.");
 			static_assert(!std::is_reference_v<T>, "T must not be a reference type.");
 			static_assert(std::is_standard_layout_v<T>, "T must be a standard layout type.");
-			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(T)), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
+			ASSERT(m_capacity >= p_offset + (GLsizeiptr)(sizeof(T)), "Buffer sub data out of bounds. Use reserve to increase the capacity of the buffer before.");
 
 			named_buffer_sub_data(m_handle, p_offset, sizeof(T), &p_data);
+			m_size = std::max(m_size, p_offset + (GLsizeiptr)(sizeof(T)));
 		}
-		// Update a subset of a Buffer object's data store
 		template<typename T>
-		void buffer_sub_data(GLintptr p_offset, const std::vector<T>& p_data)
+		void set_data(const T& p_data) { set_data(p_data, m_size); }
+
+		// Set the section of the buffer starting at p_offset to the vector p_data.
+		template<typename T>
+		void set_data(const std::vector<T>& p_data, GLintptr p_offset)
 		{
-			// assert T is not a pointer or reference type.
 			static_assert(!std::is_pointer_v<T>, "T must not be a pointer type.");
 			static_assert(!std::is_reference_v<T>, "T must not be a reference type.");
 			static_assert(std::is_standard_layout_v<T>, "T must be a standard layout type.");
-			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(T) * p_data.size()), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
+			ASSERT(m_capacity >= p_offset + (GLsizeiptr)(sizeof(T) * p_data.size()), "Buffer sub data out of bounds. Use reserve to increase the capacity of the buffer before.");
 
 			named_buffer_sub_data(m_handle, p_offset, (GLsizeiptr)(sizeof(T) * p_data.size()), p_data.data());
+			m_size = std::max(m_size, p_offset + (GLsizeiptr)(sizeof(T) * p_data.size()));
 		}
-		// Mat4 specialisation of buffer_sub_data
-		void buffer_sub_data(GLintptr p_offset, const glm::mat4& p_data)
+		template<typename T>
+		void set_data(const std::vector<T>& p_data) { set_data(p_data, m_size); }
+
+		// Set a section of the buffer to 4x4 matrix p_data.
+		//@param p_data The data to set in the buffer.
+		//@param p_offset The offset in bytes from the start of the buffer to the start of the data. By default, the data is appended to the end of the buffer.
+		void set_data(const glm::mat4& p_data, GLintptr p_offset)
 		{
-			ASSERT(m_size >= p_offset + (GLsizeiptr)(sizeof(glm::mat4)), "Buffer sub data out of bounds. Have you set the buffer size using upload_data or resize?");
+			ASSERT(m_capacity >= p_offset + (GLsizeiptr)(sizeof(glm::mat4)), "Buffer sub data out of bounds. Use reserve to increase the capacity of the buffer before.");
+
 			named_buffer_sub_data(m_handle, p_offset, sizeof(glm::mat4), &p_data[0][0]);
+			m_size = std::max(m_size, p_offset + (GLsizeiptr)(sizeof(glm::mat4)));
 		}
-		// Bool specialisation of buffer_sub_data
-		void buffer_sub_data(GLintptr p_offset, bool p_data)
+		void set_data(const glm::mat4& p_data) { set_data(p_data, m_size); }
+
+		// Set a section of the buffer using p_data.
+		//@param p_data The data to set in the buffer.
+		//@param p_offset The offset in bytes from the start of the buffer to the start of the data. By default, the data is appended to the end of the buffer.
+		void set_data(bool p_data, GLintptr p_offset)
 		{
 			// GLSL bools are 4 bytes in size.
 			GLint gl_bool = p_data;
-			buffer_sub_data(p_offset, gl_bool);
+			set_data(p_offset, gl_bool);
 		}
-		// Copy a portion of p_source_buffer from p_source_offset into this buffer at p_destination_offset of p_size.
-		void copy_sub_data(const Buffer& p_source_buffer, GLint p_source_offset, GLint p_destination_offset, GLsizeiptr p_size)
+		void set_data(bool p_data) { set_data(p_data, m_size); }
+
+
+		// Copy a p_size portion of p_source_buffer from p_source_offset into this buffer at p_destination_offset.
+		void copy_from_buffer(const Buffer& p_source_buffer, GLint p_source_offset, GLint p_destination_offset, GLsizeiptr p_size)
 		{
-			if (p_size > 0)
-				copy_named_buffer_sub_data(p_source_buffer.m_handle, m_handle, p_source_offset, p_destination_offset, p_size);
+			ASSERT(p_source_buffer.m_handle != m_handle, "Source and destination buffers must be different.");
+			ASSERT(m_capacity >= p_destination_offset + p_size, "Buffer sub data out of bounds. Use reserve to increase the capacity of the buffer before.");
+			ASSERT(p_source_buffer.m_capacity >= p_source_offset + p_size, "Source buffer sub data out of bounds. Use reserve to increase the capacity of the buffer before.");
+			ASSERT(p_size > 0, "Size must be greater than 0.");
+			if constexpr (LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of data from buffer {} to buffer {}", p_size, p_source_buffer.m_handle, m_handle);
+
+			copy_named_buffer_sub_data(p_source_buffer.m_handle, m_handle, p_source_offset, p_destination_offset, p_size);
+			m_size = std::max(m_size, p_destination_offset + p_size);
 		}
 
-		// Resizes the buffer object's data store. All existing data is lost.
-		void resize(GLsizeiptr p_size);
+		// Increase the capacity of the Buffer to a number of bytes that's greater or equal to p_capacity.
+		//@param p_capacity The new capacity of the buffer in bytes.
+		void reserve(GLsizeiptr p_capacity);
+		// Truncate the buffer to the specified size. Any data beyond p_size is lost.
+		//@param p_size The new size of the buffer in bytes.
+		void shrink_to_size(GLsizeiptr p_size);
+		// Shrinks the buffer to fit the data. Does nothing if size() == capacity().
+		void shrink_to_fit();
 		// Clears the buffer object's data store. All existing data is lost.
 		void clear();
-		GLsizeiptr size() const { return m_size; }
-		GLsizei stride()  const { return m_stride; }
-		bool is_immutable() const;
+
+		GLsizeiptr size()     const { return m_size; }
+		GLsizeiptr capacity() const { return m_capacity; }
+		GLsizei stride()      const { return m_stride; }
+		bool is_immutable()   const;
 	};
 	// Meta struct to hold information about a vertex attribute.
 	// Every attribute in a VAO must have a corresponding VertexAttributeMeta which describes how and where to interpret the data.
@@ -160,7 +228,7 @@ namespace OpenGL
 		void attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point, GLsizei p_stride);
 		// Binds p_element_buffer to the VAO. Does not modify the global GL state.
 		//@param p_element_buffer The element buffer object (EBO) to attach to the VAO for reading index data of the attached vertex_buffer.
-		//@param p_element_count The number of indices in p_element_buffer.
+		//@param p_element_count The number of indices in p_element_buffer. Used by VAO to determine the number of vertices to draw.
 		void attach_element_buffer(Buffer& p_element_buffer, GLsizei p_element_count);
 		// Whether the VAO has an index buffer.
 		bool is_indexed() const { return m_is_indexed; }

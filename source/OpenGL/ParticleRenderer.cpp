@@ -121,15 +121,11 @@ namespace OpenGL
 				if (p_emitter.particle_buf.size() < new_size)
 				{
 					const GLsizeiptr new_size_pwr_2 = Utility::next_power_of_2(new_size);
-					LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.size(), new_size_pwr_2)
-
-					auto new_particle_buff = OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit});
-					new_particle_buff.resize(new_size_pwr_2);
-					new_particle_buff.copy_sub_data(p_emitter.particle_buf, 0, 0, p_emitter.particle_buf.size());
-					p_emitter.particle_buf = std::move(new_particle_buff);
+					p_emitter.particle_buf.reserve(new_size_pwr_2);
+					LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.size(), new_size_pwr_2);
 				}
 
-				p_emitter.particle_buf.buffer_sub_data(particle_stride * p_emitter.alive_count, new_particles);
+				p_emitter.particle_buf.set_data(new_particles, particle_stride * p_emitter.alive_count);
 				p_emitter.alive_count += new_particle_count;
 			}
 

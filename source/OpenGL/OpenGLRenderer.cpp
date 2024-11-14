@@ -34,7 +34,7 @@ namespace OpenGL
 		, m_screen_framebuffer{m_window.size()}
 		, m_asset_manager{p_asset_manager}
 		, m_scene_system{p_scene_system}
-		, m_view_properties_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
+		, m_view_properties_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}, sizeof(Component::ViewInformation)}
 		, m_uniform_colour_shader{"uniformColour"}
 		, m_colour_shader{"colour"}
 		, m_texture_shader{"texture1"}
@@ -71,15 +71,14 @@ namespace OpenGL
 				, "ViewProperties.view_position block variable mismatch. Has the shader or the Component::ViewInformation struct changed?");
 		}
 		#endif
-		m_view_properties_buffer.resize(sizeof(Component::ViewInformation));
-		m_view_properties_buffer.buffer_sub_data(0, m_scene_system.get_current_scene_view_info());
+		m_view_properties_buffer.set_data(m_scene_system.get_current_scene_view_info(), 0);
 
 		LOG("[OPENGL] Constructed new OpenGLRenderer instance");
 	}
 
 	void OpenGLRenderer::start_frame()
 	{
-		m_view_properties_buffer.buffer_sub_data(0, m_scene_system.get_current_scene_view_info());
+		m_view_properties_buffer.set_data(m_scene_system.get_current_scene_view_info(), 0);
 
 		m_shadow_mapper.shadow_pass(m_scene_system.get_current_scene());
 

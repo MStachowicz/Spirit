@@ -35,7 +35,7 @@ namespace System
 		terrain.m_sand_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Sand" / "Color.jpg");
 		terrain.m_snow_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Snow" / "Color.jpg");
 		terrain.m_rock_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Rock" / "Color.jpg");
-		scene.m_entities.add_entity(terrain);
+		scene.m_entities.add_entity(std::move(terrain));
 	}
 
 	void SceneSystem::set_current_scene(const Scene& p_scene)

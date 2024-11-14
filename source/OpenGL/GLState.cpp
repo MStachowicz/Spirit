@@ -142,6 +142,12 @@ namespace OpenGL
 
 		glDeleteBuffers(1, &p_buffer);
 	}
+	GLHandle State::create_buffer()
+	{
+		GLHandle buffer;
+		glCreateBuffers(1, &buffer);
+		return buffer;
+	}
 
 	void State::bind_texture_unit(GLuint p_texture_unit, GLHandle p_texture)
 	{

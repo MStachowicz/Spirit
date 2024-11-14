@@ -31,7 +31,8 @@ using GLintptr   = std::ptrdiff_t;
 /// STRONGLY TYPED ENUM WRAPPERS
 namespace OpenGL
 {
-	constexpr inline static bool LogGLTypeEvents = false;
+	constexpr inline static bool LogGLTypeEvents   = false;
+	constexpr inline static bool LogGLBufferEvents = false;
 
 	enum class BufferType : uint8_t
 	{
@@ -407,6 +408,7 @@ namespace OpenGL
 		void bind_shader_storage_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
 		void bind_uniform_buffer(GLuint p_index, GLHandle p_buffer, GLintptr p_offset, GLsizeiptr p_size);
 		void delete_buffer(GLHandle p_buffer);
+		GLHandle create_buffer();
 
 		void bind_texture_unit(GLuint p_texture_unit, GLHandle p_texture);
 		void delete_texture(GLHandle p_texture);
@@ -662,7 +664,7 @@ namespace OpenGL
 	//@param p_size Specifies the size in basic machine units of the range of the data store to fill.
 	//@param p_format Specifies the format of the data in memory addressed by data.
 	//@param p_type Specifies the type of the data in memory addressed by data.
-	//@param data Specifies the address of a memory location storing the data to be replicated into the buffer's data store.
+	//@param data Specifies the address of a memory location storing the data to be replicated into the buffer's data store. If data is nullptr, then the subrange of the buffer's data store is filled with zeros.
 	void clear_named_buffer_sub_data(GLHandle p_buffer, GLenum p_internal_format, GLintptr p_offset, GLsizeiptr p_size, GLenum p_format, GLenum p_type, const void *data);
 
 	// Creates and initializes a buffer object's immutable data store

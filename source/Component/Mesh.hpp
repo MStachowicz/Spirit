@@ -26,7 +26,7 @@ namespace Data
 		requires Data::is_valid_mesh_vert<VertexType>
 		Mesh(const std::vector<VertexType>& vertex_data, OpenGL::PrimitiveMode primitive_mode)
 			: VAO{}
-			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
+			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}, vertex_data}
 			, index_buffer{}
 			, vertex_positions{}// }
 			, AABB{}            // |> TODO: these out of the MeshBuilder directly.
@@ -73,7 +73,6 @@ namespace Data
 			else
 				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			vert_buffer.upload_data(vertex_data);
 			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
 
 			for (const auto& vertex : vertex_data)
@@ -84,8 +83,8 @@ namespace Data
 		requires Data::is_valid_mesh_vert<VertexType>
 		Mesh(std::vector<VertexType>&& vertex_data, std::vector<unsigned int> indices, OpenGL::PrimitiveMode primitive_mode)
 			: VAO{}
-			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
-			, index_buffer{OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit})}
+			, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}, vertex_data}
+			, index_buffer{OpenGL::Buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}, indices}}
 			, vertex_positions{}// TODO: Feed vertex_positions out of the MeshBuilder directly.
 			, AABB{} // TODO: Feed AABB out of the MeshBuilder directly.
 		{
@@ -126,10 +125,7 @@ namespace Data
 			else
 				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			vert_buffer.upload_data(vertex_data);
 			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
-
-			index_buffer->upload_data(indices);
 			VAO.attach_element_buffer(index_buffer.value(), (GLsizei)indices.size());
 
 			for (const auto& vertex : vertex_data)

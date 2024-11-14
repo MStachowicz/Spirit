@@ -7,85 +7,147 @@
 
 #include <utility>
 
+using Buffer = OpenGL::Buffer;
+
 namespace OpenGL
 {
-	Buffer::Buffer(BufferStorageBitfield p_flags)
-		: m_handle{0}
+	Buffer::Buffer(BufferStorageBitfield p_flags, GLsizeiptr p_capacity)
+		: m_handle{State::Get().create_buffer()}
 		, m_size{0}
+		, m_capacity{p_capacity}
 		, m_stride{0}
 		, m_flags{p_flags}
 	{
-		glCreateBuffers(1, &m_handle);
-	}
-	Buffer::~Buffer()
-	{
-		State::Get().delete_buffer(m_handle);
+		if (m_capacity > 0)
+		{
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Creating buffer {} with capacity {}B", m_handle, m_capacity);
+			named_buffer_storage(m_handle, m_capacity, nullptr, m_flags);
+		}
+		else if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Creating empty buffer {}", m_handle);
 	}
 	Buffer::Buffer(const Buffer& p_other)
-		: m_handle{0}
+		: m_handle{State::Get().create_buffer()}
 		, m_size{p_other.m_size}
+		, m_capacity{p_other.m_capacity}
 		, m_stride{p_other.m_stride}
 		, m_flags{p_other.m_flags}
 	{
-		glCreateBuffers(1, &m_handle);
+		named_buffer_storage(m_handle, m_capacity, nullptr, m_flags); // Regardless of the p_other.m_size, we need to allocate the buffer to match p_other.capacity.
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copy constructing buffer {} from buffer {} with capacity {}B", m_handle, p_other.m_handle, m_capacity);
 
-		// Copy the data from the other buffer.
-		if (m_size > 0)
+		if (p_other.m_size > 0) // If the buffer has data, copy it over.
 		{
-			named_buffer_storage(m_handle, m_size, nullptr, m_flags);
 			copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, m_size);
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of buffer data from {} to {}", m_size, p_other.m_handle, m_handle);
 		}
 	}
 	Buffer& Buffer::operator=(const Buffer& p_other)
 	{
 		if (this != &p_other)
 		{
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copy assigning buffer {} from buffer {} with capacity {}B", m_handle, p_other.m_handle, p_other.m_capacity);
+
+			if (m_capacity < p_other.m_size)
+			{// If the buffer is too small, we need to create a new allocation for copying p_other's data.
+				Buffer new_buffer{m_flags, p_other.m_size};
+				*this = std::move(new_buffer);
+				if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Reallocating buffer {} from {}B to {}B", m_handle, m_capacity, p_other.m_size);
+			}
+
+			if (p_other.m_size > 0)
+			{
+				copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, p_other.m_size);
+				if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of buffer data from {} to {}", p_other.m_size, p_other.m_handle, m_handle);
+			}
+
+			m_size   = p_other.m_size;
 			m_stride = p_other.m_stride;
 			m_flags  = p_other.m_flags;
-
-			resize(p_other.m_size);
-			if (m_size > 0)
-				copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, m_size);
 		}
 		return *this;
 	}
 	Buffer::Buffer(Buffer&& p_other)
 		: m_handle{std::exchange(p_other.m_handle, 0)}
 		, m_size{std::exchange(p_other.m_size, 0)}
+		, m_capacity{std::exchange(p_other.m_capacity, 0)}
 		, m_stride{std::exchange(p_other.m_stride, 0)}
 		, m_flags{p_other.m_flags}
-	{}
+	{
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Move-constructing buffer {} with capacity {}B", m_handle, m_capacity);
+	}
 	Buffer& Buffer::operator=(Buffer&& p_other)
 	{
 		if (this != &p_other)
 		{
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Buffer {} move-assigned from buffer {} with capacity {}B", m_handle, p_other.m_handle, p_other.m_capacity);
+
 			// Free the existing resource.
 			if (m_handle != 0)
 				State::Get().delete_buffer(m_handle);
 
 			// Copy the data pointer from the source object.
-			m_handle = std::exchange(p_other.m_handle, 0);
-			m_size   = std::exchange(p_other.m_size, 0);
-			m_stride = std::exchange(p_other.m_stride, 0);
-			m_flags  = p_other.m_flags;
+			m_handle   = std::exchange(p_other.m_handle, 0);
+			m_size     = std::exchange(p_other.m_size, 0);
+			m_capacity = std::exchange(p_other.m_capacity, 0);
+			m_stride   = std::exchange(p_other.m_stride, 0);
+			m_flags    = p_other.m_flags;
 		}
 		return *this;
 	}
-	void Buffer::resize(GLsizeiptr p_size)
+	Buffer::~Buffer()
 	{
-		if (p_size == m_size)
+		if (m_handle != 0)
+		{
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Buffer {} destroyed with capacity {}B", m_handle, m_capacity);
+			State::Get().delete_buffer(m_handle);
+		}
+	}
+	void Buffer::reserve(GLsizeiptr p_capacity)
+	{
+		if (p_capacity <= m_capacity)
 			return;
 
-		ASSERT(is_immutable() == false, "Cannot resize an immutable buffer");
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Reallocating buffer {} from {}B to {}B", m_handle, m_capacity, p_capacity);
 
-		named_buffer_storage(m_handle, p_size, nullptr, m_flags);
-		m_size = p_size;
+		Buffer new_buffer{m_flags, p_capacity};
+		new_buffer.m_stride = m_stride;
+		new_buffer.m_size   = m_size;
+		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, m_size);
+		*this = std::move(new_buffer);
+	}
+	void Buffer::shrink_to_size(GLsizeiptr p_size)
+	{
+		if (p_size >= m_size)
+			return;
+
+		Buffer new_buffer{m_flags, p_size};
+		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, p_size);
+		new_buffer.m_stride = m_stride;
+		new_buffer.m_size   = p_size;
+		*this               = std::move(new_buffer);
+
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_size, p_size);
+	}
+	void Buffer::shrink_to_fit()
+	{
+		if (m_size == m_capacity)
+			return;
+
+		Buffer new_buffer{m_flags, m_size};
+		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, m_size);
+		new_buffer.m_stride   = m_stride;
+		new_buffer.m_size     = m_size;
+		*this                 = std::move(new_buffer);
+
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_capacity, m_size);
 	}
 	void Buffer::clear()
 	{
 		clear_named_buffer_sub_data(m_handle, GL_R8, 0, m_size, GL_R8, GL_UNSIGNED_BYTE, nullptr);
 		m_size   = 0;
 		m_stride = 0;
+
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Clearing {}B of buffer data from buffer {}", m_size, m_handle);
 	}
 	bool Buffer::is_immutable() const
 	{
