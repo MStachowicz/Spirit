@@ -198,7 +198,7 @@ namespace OpenGL
 		{ // Set DirectonalLight buffer data
 			GLuint directional_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::DirectionalLight>());
 
-			const GLsizeiptr required_capacity = m_directional_light_fixed_size + (m_directional_light_array_stride * directional_light_count);
+			const size_t required_capacity = m_directional_light_fixed_size + (m_directional_light_array_stride * directional_light_count);
 			if (required_capacity > m_directional_lights_buffer.capacity())
 				m_directional_lights_buffer.reserve(required_capacity);
 
@@ -222,7 +222,7 @@ namespace OpenGL
 		{ // Set PointLight buffer data
 			GLuint point_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::PointLight>());
 			{
-				const GLsizeiptr required_capacity = m_point_light_fixed_size + (m_point_light_array_stride * point_light_count);
+				const size_t required_capacity = m_point_light_fixed_size + (m_point_light_array_stride * point_light_count);
 				if (required_capacity > m_point_lights_buffer.capacity())
 					m_point_lights_buffer.reserve(required_capacity);
 
@@ -250,7 +250,7 @@ namespace OpenGL
 		{ // Set Spotlight buffer data
 			GLuint spot_light_count = static_cast<GLuint>(p_scene.m_entities.count_components<Component::SpotLight>());
 			{
-				const GLsizeiptr required_capacity = m_spot_light_fixed_size + (m_spot_light_array_stride * spot_light_count);
+				const size_t required_capacity = m_spot_light_fixed_size + (m_spot_light_array_stride * spot_light_count);
 				if (required_capacity > m_spot_lights_buffer.capacity())
 					m_spot_lights_buffer.reserve(required_capacity);
 

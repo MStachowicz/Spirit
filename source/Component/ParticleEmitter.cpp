@@ -2,6 +2,7 @@
 #include "Component/Texture.hpp"
 
 #include "System/AssetManager.hpp"
+#include "Utility/Utility.hpp"
 
 #include "imgui.h"
 
@@ -38,8 +39,10 @@ namespace Component
 		if (ImGui::TreeNode("Paticle Emitter"))
 		{
 			ImGui::Text("Particle count", alive_count);
-			ImGui::Text("Particlebuffer size", particle_buf.size());
-
+			auto formatted_capacity      = Utility::format_number(particle_buf.capacity());
+			auto formatted_used_capacity = Utility::format_number(particle_buf.used_capacity());
+			ImGui::Text_Manual("Buffer size %sB", formatted_capacity.c_str());
+			ImGui::Text_Manual("Buffer used %sB (%.2f%%)", formatted_used_capacity.c_str(), particle_buf.used_capacity_ratio() * 100.f);
 
 			{ImGui::SeparatorText("Render styling");
 				ImGui::Text("Colour style", to_string(get_colour_source()));

@@ -54,7 +54,7 @@ namespace OpenGL
 		m_SSBOs[m_SSBO_count].m_handle = p_SSBO.m_handle;
 		// We bind the entire buffer to the SSBO binding point.
 		m_SSBOs[m_SSBO_count].m_offset = 0;
-		m_SSBOs[m_SSBO_count].m_size   = p_SSBO.m_size;
+		m_SSBOs[m_SSBO_count].m_size   = p_SSBO.m_used_capacity;
 
 		++m_SSBO_count;
 	}
@@ -71,7 +71,7 @@ namespace OpenGL
 		m_UBOs[m_UBO_count].m_handle = p_UBO.m_handle;
 		// We bind the entire buffer to the UBO binding point.
 		m_UBOs[m_UBO_count].m_offset = 0;
-		m_UBOs[m_UBO_count].m_size   = p_UBO.m_size;
+		m_UBOs[m_UBO_count].m_size   = p_UBO.m_used_capacity;
 		++m_UBO_count;
 	}
 

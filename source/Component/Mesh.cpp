@@ -32,8 +32,10 @@ namespace Data
 		ImGui::SameLine();
 		ImGui::Text(VAO.is_indexed() ? " (Indexed)" : " (Not Indexed)");
 
-		auto formatted_size = Utility::format_number(vert_buffer.size());
-		ImGui::Text_Manual("Buffer size %sB", formatted_size.c_str());
+		auto formatted_capacity      = Utility::format_number(vert_buffer.capacity());
+		auto formatted_used_capacity = Utility::format_number(vert_buffer.used_capacity());
+		ImGui::Text_Manual("Buffer size %sB", formatted_capacity.c_str());
+		ImGui::Text_Manual("Buffer used %sB (%.2f%%)", formatted_used_capacity.c_str(), vert_buffer.used_capacity_ratio() * 100.f);
 
 		AABB.draw_UI("Bounds");
 	}

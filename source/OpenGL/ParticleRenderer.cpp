@@ -117,12 +117,12 @@ namespace OpenGL
 					new_particles.emplace_back<Component::Particle>({pos, vel});
 				}
 
-				const GLsizeiptr new_size = (particle_stride * p_emitter.alive_count) + (particle_stride * new_particle_count);
-				if (p_emitter.particle_buf.size() < new_size)
+				const size_t required_capacity = (particle_stride * p_emitter.alive_count) + (particle_stride * new_particle_count);
+				if (p_emitter.particle_buf.capacity() < required_capacity)
 				{
-					const GLsizeiptr new_size_pwr_2 = Utility::next_power_of_2(new_size);
+					const GLsizeiptr new_size_pwr_2 = Utility::next_power_of_2(required_capacity);
 					p_emitter.particle_buf.reserve(new_size_pwr_2);
-					LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.size(), new_size_pwr_2);
+					LOG("Resizing particle buffer from {}B to {}B", p_emitter.particle_buf.capacity(), new_size_pwr_2);
 				}
 
 				p_emitter.particle_buf.set_data(new_particles, particle_stride * p_emitter.alive_count);
@@ -223,7 +223,7 @@ namespace OpenGL
 				constexpr GLuint particle_position_vertex_attribute_index = 0; // Matches the layout(location = 0) in the particle.vert shader.
 				constexpr GLuint particle_velocity_vertex_attribute_index = 1;
 
-				m_particle_VAO.attach_buffer(p_emitter.particle_buf, 0, vertex_buffer_binding_point, particle_stride);
+				m_particle_VAO.attach_buffer(p_emitter.particle_buf, 0, vertex_buffer_binding_point, particle_stride, p_emitter.alive_count);
 				m_particle_VAO.set_vertex_attrib_pointers(PrimitiveMode::Points, {{
 						VertexAttributeMeta{particle_position_vertex_attribute_index, 4, BufferDataType::Float, particle_position_offset, vertex_buffer_binding_point, false},
 						VertexAttributeMeta{particle_velocity_vertex_attribute_index, 4, BufferDataType::Float, particle_velocity_offset, vertex_buffer_binding_point, false}

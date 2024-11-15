@@ -11,11 +11,10 @@ using Buffer = OpenGL::Buffer;
 
 namespace OpenGL
 {
-	Buffer::Buffer(BufferStorageBitfield p_flags, GLsizeiptr p_capacity)
+	Buffer::Buffer(BufferStorageBitfield p_flags, size_t p_capacity)
 		: m_handle{State::Get().create_buffer()}
-		, m_size{0}
 		, m_capacity{p_capacity}
-		, m_stride{0}
+		, m_used_capacity{0}
 		, m_flags{p_flags}
 	{
 		if (m_capacity > 0)
@@ -27,18 +26,17 @@ namespace OpenGL
 	}
 	Buffer::Buffer(const Buffer& p_other)
 		: m_handle{State::Get().create_buffer()}
-		, m_size{p_other.m_size}
 		, m_capacity{p_other.m_capacity}
-		, m_stride{p_other.m_stride}
+		, m_used_capacity{p_other.m_used_capacity}
 		, m_flags{p_other.m_flags}
 	{
-		named_buffer_storage(m_handle, m_capacity, nullptr, m_flags); // Regardless of the p_other.m_size, we need to allocate the buffer to match p_other.capacity.
+		named_buffer_storage(m_handle, m_capacity, nullptr, m_flags); // Regardless of the p_other.m_used_capacity, we need to allocate the buffer to match p_other.capacity.
 		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copy constructing buffer {} from buffer {} with capacity {}B", m_handle, p_other.m_handle, m_capacity);
 
-		if (p_other.m_size > 0) // If the buffer has data, copy it over.
+		if (p_other.m_used_capacity > 0) // If the buffer has data, copy it over.
 		{
-			copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, m_size);
-			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of buffer data from {} to {}", m_size, p_other.m_handle, m_handle);
+			copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, m_used_capacity);
+			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of buffer data from {} to {}", m_used_capacity, p_other.m_handle, m_handle);
 		}
 	}
 	Buffer& Buffer::operator=(const Buffer& p_other)
@@ -47,30 +45,28 @@ namespace OpenGL
 		{
 			if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copy assigning buffer {} from buffer {} with capacity {}B", m_handle, p_other.m_handle, p_other.m_capacity);
 
-			if (m_capacity < p_other.m_size)
+			if (m_capacity < p_other.m_used_capacity)
 			{// If the buffer is too small, we need to create a new allocation for copying p_other's data.
-				Buffer new_buffer{m_flags, p_other.m_size};
+				Buffer new_buffer{m_flags, p_other.m_used_capacity};
 				*this = std::move(new_buffer);
-				if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Reallocating buffer {} from {}B to {}B", m_handle, m_capacity, p_other.m_size);
+				if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Reallocating buffer {} from {}B to {}B", m_handle, m_capacity, p_other.m_used_capacity);
 			}
 
-			if (p_other.m_size > 0)
+			if (p_other.m_used_capacity > 0)
 			{
-				copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, p_other.m_size);
-				if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of buffer data from {} to {}", p_other.m_size, p_other.m_handle, m_handle);
+				copy_named_buffer_sub_data(p_other.m_handle, m_handle, 0, 0, p_other.m_used_capacity);
+				if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Copying {}B of buffer data from {} to {}", p_other.m_used_capacity, p_other.m_handle, m_handle);
 			}
 
-			m_size   = p_other.m_size;
-			m_stride = p_other.m_stride;
+			m_used_capacity   = p_other.m_used_capacity;
 			m_flags  = p_other.m_flags;
 		}
 		return *this;
 	}
 	Buffer::Buffer(Buffer&& p_other)
 		: m_handle{std::exchange(p_other.m_handle, 0)}
-		, m_size{std::exchange(p_other.m_size, 0)}
 		, m_capacity{std::exchange(p_other.m_capacity, 0)}
-		, m_stride{std::exchange(p_other.m_stride, 0)}
+		, m_used_capacity{std::exchange(p_other.m_used_capacity, 0)}
 		, m_flags{p_other.m_flags}
 	{
 		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Move-constructing buffer {} with capacity {}B", m_handle, m_capacity);
@@ -87,9 +83,8 @@ namespace OpenGL
 
 			// Copy the data pointer from the source object.
 			m_handle   = std::exchange(p_other.m_handle, 0);
-			m_size     = std::exchange(p_other.m_size, 0);
 			m_capacity = std::exchange(p_other.m_capacity, 0);
-			m_stride   = std::exchange(p_other.m_stride, 0);
+			m_used_capacity     = std::exchange(p_other.m_used_capacity, 0);
 			m_flags    = p_other.m_flags;
 		}
 		return *this;
@@ -102,7 +97,7 @@ namespace OpenGL
 			State::Get().delete_buffer(m_handle);
 		}
 	}
-	void Buffer::reserve(GLsizeiptr p_capacity)
+	void Buffer::reserve(size_t p_capacity)
 	{
 		if (p_capacity <= m_capacity)
 			return;
@@ -110,44 +105,40 @@ namespace OpenGL
 		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Reallocating buffer {} from {}B to {}B", m_handle, m_capacity, p_capacity);
 
 		Buffer new_buffer{m_flags, p_capacity};
-		new_buffer.m_stride = m_stride;
-		new_buffer.m_size   = m_size;
-		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, m_size);
+		new_buffer.m_used_capacity   = m_used_capacity;
+		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, m_used_capacity);
 		*this = std::move(new_buffer);
 	}
-	void Buffer::shrink_to_size(GLsizeiptr p_size)
+	void Buffer::shrink_to_size(size_t p_size)
 	{
-		if (p_size >= m_size)
+		if (p_size >= m_used_capacity)
 			return;
 
 		Buffer new_buffer{m_flags, p_size};
 		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, p_size);
-		new_buffer.m_stride = m_stride;
-		new_buffer.m_size   = p_size;
+		new_buffer.m_used_capacity   = p_size;
 		*this               = std::move(new_buffer);
 
-		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_size, p_size);
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_used_capacity, p_size);
 	}
 	void Buffer::shrink_to_fit()
 	{
-		if (m_size == m_capacity)
+		if (m_used_capacity == m_capacity)
 			return;
 
-		Buffer new_buffer{m_flags, m_size};
-		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, m_size);
-		new_buffer.m_stride   = m_stride;
-		new_buffer.m_size     = m_size;
+		Buffer new_buffer{m_flags, m_used_capacity};
+		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, m_used_capacity);
+		new_buffer.m_used_capacity     = m_used_capacity;
 		*this                 = std::move(new_buffer);
 
-		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_capacity, m_size);
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_capacity, m_used_capacity);
 	}
 	void Buffer::clear()
 	{
-		clear_named_buffer_sub_data(m_handle, GL_R8, 0, m_size, GL_R8, GL_UNSIGNED_BYTE, nullptr);
-		m_size   = 0;
-		m_stride = 0;
+		clear_named_buffer_sub_data(m_handle, GL_R8, 0, m_used_capacity, GL_R8, GL_UNSIGNED_BYTE, nullptr);
+		m_used_capacity   = 0;
 
-		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Clearing {}B of buffer data from buffer {}", m_size, m_handle);
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Clearing {}B of buffer data from buffer {}", m_used_capacity, m_handle);
 	}
 	bool Buffer::is_immutable() const
 	{
@@ -203,11 +194,11 @@ namespace OpenGL
 		if constexpr (LogGLTypeEvents) LOG("VAO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
 		return *this;
 	}
-	void VAO::attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point, GLsizei p_stride)
+	void VAO::attach_buffer(Buffer& p_vertex_buffer, GLintptr p_vertex_buffer_offset, GLuint p_vertex_buffer_binding_point, GLsizei p_stride, GLsizei p_vertex_count)
 	{
 		vertex_array_vertex_buffer(m_handle, p_vertex_buffer_binding_point, p_vertex_buffer.m_handle, p_vertex_buffer_offset, p_stride);
 		if (!m_is_indexed)
-			m_draw_count = (GLsizei)p_vertex_buffer.size() / p_stride;
+			m_draw_count = p_vertex_count;
 	}
 	void VAO::attach_element_buffer(Buffer& p_element_buffer, GLsizei p_element_count)
 	{

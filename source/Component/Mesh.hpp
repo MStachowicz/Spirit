@@ -73,7 +73,7 @@ namespace Data
 			else
 				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
+			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType), (GLsizei)vertex_data.size());
 
 			for (const auto& vertex : vertex_data)
 				AABB.unite(vertex.position);
@@ -125,7 +125,7 @@ namespace Data
 			else
 				[]<bool flag = false>() { static_assert(flag, "Unsupported Vertex type"); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
-			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType));
+			VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType), (GLsizei)vertex_data.size());
 			VAO.attach_element_buffer(index_buffer.value(), (GLsizei)indices.size());
 
 			for (const auto& vertex : vertex_data)
