@@ -141,4 +141,43 @@ namespace Geometry
 		return out_AABB;
 	}
 	static_assert(Utility::Is_Serializable_v<AABB>, "AABB is not serializable. Check that the required functions are implemented.");
+
+	void AABB2D::unite(const glm::vec2& point)
+	{
+		min.x = std::min(min.x, point.x);
+		min.y = std::min(min.y, point.y);
+		max.x = std::max(max.x, point.x);
+		max.y = std::max(max.y, point.y);
+	}
+	void AABB2D::unite(const AABB2D& AABB)
+	{
+		min.x = std::min(min.x, AABB.min.x);
+		min.y = std::min(min.y, AABB.min.y);
+		max.x = std::max(max.x, AABB.max.x);
+		max.y = std::max(max.y, AABB.max.y);
+	}
+	bool AABB2D::contains(const AABB2D& AABB) const
+	{
+		return
+			min.x <= AABB.min.x &&
+			max.x >= AABB.max.x &&
+			min.y <= AABB.min.y &&
+			max.y >= AABB.max.y;
+	}
+	bool AABB2D::contains(const glm::vec2& point) const
+	{
+		return
+			min.x <= point.x &&
+			max.x >= point.x &&
+			min.y <= point.y &&
+			max.y >= point.y;
+	}
+	void AABB2D::draw_UI(const char* title) const
+	{
+		if (title)
+			ImGui::SeparatorText(title);
+
+		ImGui::Text("Min: (%.3f, %.3f)", min.x, min.y);
+		ImGui::Text("Max: (%.3f, %.3f)", max.x, max.y);
+	}
 } // namespace Geometry

@@ -2,12 +2,13 @@
 
 #include "glm/fwd.hpp"
 #include "glm/vec3.hpp"
+#include "glm/vec2.hpp"
 
 #include <iostream>
 
 namespace Geometry
 {
-	// Axis alligned bounding box
+	// Axis alligned 3-dimensional bounding box
 	class AABB
 	{
 	public:
@@ -35,5 +36,26 @@ namespace Geometry
 
 		static void serialise(std::ostream& p_out, uint16_t p_version, const AABB& p_AABB);
 		static AABB deserialise(std::istream& p_in, uint16_t p_version);
+	};
+
+	// Axis alligned 2-dimensional bounding box
+	class AABB2D
+	{
+	public:
+		glm::vec2 min;
+		glm::vec2 max;
+
+		AABB2D() : min(0.f), max(0.f) {}
+		AABB2D(const glm::vec2& min, const glm::vec2& max) : min(min), max(max) {}
+		bool operator==(const AABB2D& other) const = default;
+
+		glm::vec2 size()   const { return max - min; }
+		glm::vec2 center() const { return (min + max) / 2.f; }
+
+		void unite(const glm::vec2& point);
+		void unite(const AABB2D& AABB);
+		bool contains(const AABB2D& AABB) const;
+		bool contains(const glm::vec2& point) const;
+		void draw_UI(const char* title) const;
 	};
 }// namespace Geometry
