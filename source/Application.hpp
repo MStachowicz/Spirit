@@ -134,13 +134,12 @@ private:
 
 			if (duration_since_last_render_tick >= renderTimestep)
 			{
-				m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
-
 				// Rendering is only relevant if the data changed in the physics update.
 				// Not neccessary to decrement duration_since_last_render_tick as in physics update above as repeated draws will be identical with no data changes.
 				m_window.start_ImGui_frame();
-				m_openGL_renderer.start_frame();
+				m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
 
+				m_openGL_renderer.start_frame();
 				m_openGL_renderer.draw(duration_since_last_render_tick);
 				m_editor.draw(duration_since_last_render_tick);
 
