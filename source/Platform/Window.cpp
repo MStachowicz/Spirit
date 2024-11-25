@@ -38,9 +38,17 @@ namespace Platform
 		m_handle = glfwCreateWindow(desired_size_windowed.x, desired_size_windowed.y, Config::Is_Debug ? "Spirit - Debug" : "Spirit", NULL, NULL);
 		ASSERT(m_handle != nullptr, "[WINDOW] Failed to construct Window");
 
-		m_last_size_windowed = size(); // Get the actual size of the window after creation. Per GLFW docs, this may not be the same as the requested size.
-		const glm::ivec2 desired_position_windowed = {wa_xpos + (wa_width - m_last_size_windowed.x) * 0.5f, wa_ypos + (wa_height - m_last_size_windowed.y) * 0.5f};
+		// Check the actual size of the window after creation. Per GLFW docs, this may not be the same as the requested size.
+		if (size() != glm::uvec2(desired_size_windowed))
+			set_size(desired_size_windowed);
+
+		const glm::ivec2 desired_position_windowed =
+		{
+			wa_xpos + (wa_width  - m_last_size_windowed.x) * 0.5f,
+			wa_ypos + (wa_height - m_last_size_windowed.y) * 0.5f
+		};
 		set_position(desired_position_windowed);
+
 		set_VSync(m_VSync);
 		glfwMakeContextCurrent(m_handle); // Set this window as the context for GL render calls.
 
