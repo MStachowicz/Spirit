@@ -128,6 +128,10 @@ namespace OpenGL
 
 	void DrawCall::submit(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO) const
 	{
+		ASSERT(p_FBO.m_handle != 0, "Submitting a draw call with an FBO that has not been initialised.");
+		ASSERT(p_FBO.is_complete(), "Submitting a draw call with an incomplete FBO.");
+		ASSERT(p_VAO.draw_count() > 0, "Submitting a draw call with no vertices to draw.");
+
 		pre_draw_call(p_shader, p_VAO, p_FBO.m_handle, p_FBO.m_resolution);
 
 		if (p_VAO.is_indexed())

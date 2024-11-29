@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
 		Platform::Core::initialise_directories();
 		Platform::Core::initialise_GLFW();
 		Platform::Input input   = Platform::Input();
-		Platform::Window window = Platform::Window(glm::vec2{0.5f, 0.5f}, input);
+		Platform::Window window = Platform::Window(glm::vec2{0.75f, 0.75f}, input);
 		Platform::Core::initialise_OpenGL();
 		OpenGL::DebugRenderer::init();
 		Platform::Core::initialise_ImGui(window);

@@ -82,21 +82,18 @@ namespace Platform
 				auto sv  = severity_map.at(severity);
 				auto tp  = error_type_map.at(type);
 
-				if (severity == GL_DEBUG_SEVERITY_HIGH)
+				if (type == GL_DEBUG_TYPE_PERFORMANCE ||
+				    severity == GL_DEBUG_SEVERITY_NOTIFICATION || severity == GL_DEBUG_SEVERITY_LOW)
 				{
-					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					LOG_WARN(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
 				}
 				else if (severity == GL_DEBUG_SEVERITY_MEDIUM)
 				{
 					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
 				}
-				else if (severity == GL_DEBUG_SEVERITY_LOW)
+				else if (severity == GL_DEBUG_SEVERITY_HIGH)
 				{
-					LOG_WARN(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
-				}
-				else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
-				{
-					LOG_WARN(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
 				}
 			};
 

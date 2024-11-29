@@ -38,9 +38,8 @@ namespace Platform
 		m_handle = glfwCreateWindow(desired_size_windowed.x, desired_size_windowed.y, Config::Is_Debug ? "Spirit - Debug" : "Spirit", NULL, NULL);
 		ASSERT(m_handle != nullptr, "[WINDOW] Failed to construct Window");
 
-		// Check the actual size of the window after creation. Per GLFW docs, this may not be the same as the requested size.
-		if (size() != glm::uvec2(desired_size_windowed))
-			set_size(desired_size_windowed);
+		// set_size again as per GLFW docs, glfwCreateWindow may not set the window to the desired size.
+		set_size(desired_size_windowed);
 
 		const glm::ivec2 desired_position_windowed =
 		{
