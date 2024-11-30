@@ -13,7 +13,7 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 uniform uint offset; // The offset into the array for outputting the sum results per reduction stage.
 
-layout(std430) buffer readonly GlobalSum
+layout(std430) readonly buffer GlobalSum
 {
 	uint data[];
 } global_sum;

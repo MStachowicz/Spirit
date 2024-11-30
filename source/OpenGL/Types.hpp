@@ -99,6 +99,15 @@ namespace OpenGL
 			get_named_buffer_sub_data(m_handle, 0, m_used_capacity, data.data());
 			return data;
 		}
+		template<typename T, size_t N>
+		std::array<T, N> download_data_array(size_t offset = 0) const
+		{
+			ASSERT(N * sizeof(T) <= m_used_capacity - offset, "Downloading data out of bounds.");
+
+			std::array<T, N> data;
+			get_named_buffer_sub_data(m_handle, offset, m_used_capacity, data.data());
+			return data;
+		}
 
 		// Set the section of the buffer starting at p_offset to p_data.
 		template<typename T>
@@ -177,10 +186,15 @@ namespace OpenGL
 		void shrink_to_fit();
 		// Clears the buffer object's data store. All existing data is lost.
 		void clear();
+		// Clears a section of the buffer starting at p_start_offset and p_size bytes long.
+		//@param p_start_offset The offset in bytes from the start of the buffer to the start of the data to clear.
+		//@param p_size The number of bytes to clear.
+		void clear(size_t p_start_offset, size_t p_size);
 
 		size_t capacity()           const { return m_capacity; }
 		size_t used_capacity()      const { return m_used_capacity; }
 		float used_capacity_ratio() const { return (float)m_used_capacity / (float)m_capacity; }
+		bool empty()                const { return m_used_capacity == 0; }
 		bool is_immutable()         const;
 	};
 	// Meta struct to hold information about a vertex attribute.

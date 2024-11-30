@@ -14,6 +14,16 @@
 namespace std
 {
 	template<>
+	struct formatter<std::byte>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const std::byte& v, format_context& ctx) const
+		{
+			unsigned int byte = static_cast<unsigned int>(v);
+			return format_to(ctx.out(), "{}", byte);
+		}
+	};
+	template<>
 	struct formatter<glm::vec3>
 	{
 		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -41,6 +51,16 @@ namespace Test
 	#define CHECK_TRUE(p_conditional, p_test_name) { run_unit_test(p_conditional, p_test_name, std::format("Expected: '{}' to be true\n{}", #p_conditional, to_string(std::source_location::current()))); }
 	#define CHECK_EQUAL(p_value, p_expected_value, p_test_name) { run_unit_test(p_value == p_expected_value, p_test_name, std::format("Expected {} ({}) to equal {} ({})\n{}", #p_value, p_value, #p_expected_value, p_expected_value, to_string(std::source_location::current()))); }
 	#define CHECK_EQUAL_FLOAT(p_value, p_expected_value, p_test_name, p_epsilon) { run_unit_test(glm::epsilonEqual(p_value, p_expected_value, p_epsilon), p_test_name, std::format("Expected {} ({}) to equal {} ({}) with epsilon {}\n{}", #p_value, p_value, #p_expected_value, p_expected_value, p_epsilon, to_string(std::source_location::current()))); }
+	#define CHECK_CONTAINER_EQUAL(p_container, p_expected_container, p_test_name)\
+	{\
+		if (p_container.size() != p_expected_container.size())\
+		{\
+			CHECK_EQUAL(p_container.size(), p_expected_container.size(), "Container size mismatch");\
+			return;\
+		}\
+		for (size_t i = 0; i < p_container.size(); ++i)\
+			CHECK_EQUAL(p_container[i], p_expected_container[i], std::format("{} {}", p_test_name, i));\
+	}
 	#define SCOPE_SECTION(p_section_name) auto a_random_name_that_will_never_collide_with_anything = ScopeSection(p_section_name, *this);
 
 	// A pure-virtual API for running unit tests and performance tests.

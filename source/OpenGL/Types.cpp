@@ -111,12 +111,13 @@ namespace OpenGL
 	}
 	void Buffer::shrink_to_size(size_t p_size)
 	{
-		if (p_size >= m_used_capacity)
+		if (p_size >= m_capacity)
 			return;
 
 		Buffer new_buffer{m_flags, p_size};
 		copy_named_buffer_sub_data(m_handle, new_buffer.m_handle, 0, 0, p_size);
-		new_buffer.m_used_capacity   = p_size;
+		new_buffer.m_used_capacity = std::min(m_used_capacity, p_size);
+
 		*this               = std::move(new_buffer);
 
 		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Shrinking buffer {} from {}B to {}B", m_handle, m_used_capacity, p_size);
@@ -135,10 +136,20 @@ namespace OpenGL
 	}
 	void Buffer::clear()
 	{
-		clear_named_buffer_sub_data(m_handle, GL_R8, 0, m_used_capacity, GL_R8, GL_UNSIGNED_BYTE, nullptr);
+		clear_named_buffer_sub_data(m_handle, GL_R8, 0, m_used_capacity, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 		m_used_capacity   = 0;
 
 		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Clearing {}B of buffer data from buffer {}", m_used_capacity, m_handle);
+	}
+	void Buffer::clear(size_t p_start_offset, size_t p_size)
+	{
+		clear_named_buffer_sub_data(m_handle, GL_R8, p_start_offset, p_size, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+		// Only adjust m_used_capacity if the cleared range affects the end of the buffer. Gaps in the buffer are not considered used.
+		if (p_start_offset + p_size >= m_used_capacity)
+			m_used_capacity = p_start_offset;
+
+		if constexpr (LogGLTypeEvents || LogGLBufferEvents) LOG("[OPENGL][BUFFER] Clearing {}B of buffer data from buffer {} starting at offset {}", p_size, m_handle, p_start_offset);
 	}
 	bool Buffer::is_immutable() const
 	{

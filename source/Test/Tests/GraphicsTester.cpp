@@ -20,6 +20,37 @@ namespace Test
 		Platform::Core::initialise_OpenGL();
 
 
+		{SCOPE_SECTION("Buffer")
+			{SCOPE_SECTION("Memory handling")
+				OpenGL::Buffer buffer = OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit}, 1024);
+
+				CHECK_EQUAL(buffer.capacity(), 1024, "Constructor capacity");
+				CHECK_EQUAL(buffer.used_capacity(), 0, "Constructor used capacity");
+
+				buffer.reserve(2048);
+				CHECK_EQUAL(buffer.capacity(), 2048, "Reserve capacity");
+				CHECK_EQUAL(buffer.used_capacity(), 0, "Reserve used capacity");
+
+				buffer.shrink_to_size(1024);
+				CHECK_EQUAL(buffer.capacity(), 1024, "Shrink to size capacity");
+				CHECK_EQUAL(buffer.used_capacity(), 0, "Shrink to size used capacity");
+
+				buffer.shrink_to_fit();
+				CHECK_EQUAL(buffer.capacity(), 0, "Shrink to fit capacity");
+				CHECK_EQUAL(buffer.used_capacity(), 0, "Shrink to fit used capacity");
+
+				buffer.reserve(1024);
+				CHECK_EQUAL(buffer.capacity(), 1024, "Reserve capacity");
+				CHECK_EQUAL(buffer.used_capacity(), 0, "Reserve used capacity");
+
+				test_buffer<std::byte>();
+				test_buffer<float>();
+				test_buffer<int>();
+				test_buffer<uint16_t>();
+			}
+		}
+
+
 		{SCOPE_SECTION("Compute")
 			{SCOPE_SECTION("Increment")
 				std::array<unsigned int, 8> data = { 1, 2, 3, 4, 5, 6, 7, 8 };
