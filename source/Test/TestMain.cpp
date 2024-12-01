@@ -5,6 +5,7 @@
 #include "Test/Tests/GeometryTester.hpp"
 #include "Test/Tests/ResourceManagerTester.hpp"
 #include "Test/Tests/GraphicsTester.hpp"
+#include "Test/Tests/QuadTreeTester.hpp"
 
 #include <cstring>
 #include "Utility/Stopwatch.hpp"
@@ -40,6 +41,7 @@ int main(int argc, char* argv[])
 	test_managers.emplace_back(std::make_unique<Test::ECSTester>());
 	test_managers.emplace_back(std::make_unique<Test::GeometryTester>());
 	test_managers.emplace_back(std::make_unique<Test::ResourceManagerTester>());
+	test_managers.emplace_back(std::make_unique<Test::QuadTreeTester>());
 	if (!skip_graphics_test)
 		test_managers.emplace_back(std::make_unique<Test::GraphicsTester>());
 

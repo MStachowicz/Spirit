@@ -4,6 +4,7 @@
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtc/epsilon.hpp"
 #include "Geometry/Triangle.hpp"
+#include "Geometry/AABB.hpp"
 
 #include <string>
 #include <vector>
@@ -24,6 +25,12 @@ namespace std
 		}
 	};
 	template<>
+	struct formatter<glm::vec2>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const glm::vec2& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {})", v.x, v.y); }
+	};
+	template<>
 	struct formatter<glm::vec3>
 	{
 		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -40,6 +47,18 @@ namespace std
 	{
 		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 		auto format(const Geometry::Triangle& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {}, {})", v.m_point_1, v.m_point_2, v.m_point_3); }
+	};
+	template<>
+	struct formatter<Geometry::AABB>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Geometry::AABB& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {})", v.m_min, v.m_max); }
+	};
+	template<>
+	struct formatter<Geometry::AABB2D>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Geometry::AABB2D& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {})", v.min, v.max); }
 	};
 }
 

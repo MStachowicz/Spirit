@@ -43,6 +43,8 @@ source/Test/Tests/ResourceManagerTester.hpp
 source/Test/Tests/ResourceManagerTester.cpp
 source/Test/Tests/GeometryTester.hpp
 source/Test/Tests/GeometryTester.cpp
+source/Test/Tests/QuadTreeTester.hpp
+source/Test/Tests/QuadTreeTester.cpp
 )
 target_include_directories(Test
 PRIVATE source/Test/Tests
@@ -210,6 +212,7 @@ source/Geometry/Plane.hpp
 source/Geometry/Point.hpp
 source/Geometry/Quad.hpp
 source/Geometry/Quad.cpp
+source/Geometry/QuadTree.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Sphere.cpp
