@@ -45,10 +45,9 @@ namespace Test
 		{
 			return s_constructed_count + s_copy_construct_count + s_move_construct_count - s_destroy_count;
 		}
-		static size_t count_errors()
-		{
-			return s_error_count;
-		}
+		static size_t count_errors() { return s_error_count; }
+		static size_t count_copies() { return s_copy_construct_count + s_copy_assign_count; }
+		static size_t count_moves()  { return s_move_construct_count + s_move_assign_count; }
 
 		MemoryCorrectnessItem();
 		~MemoryCorrectnessItem();
