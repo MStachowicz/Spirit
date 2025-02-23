@@ -441,3 +441,5 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	add_subdirectory(source/External/ASSIMP source/External/ASSIMP SYSTEM)
 	# ASSIMP end --------------------------------------------------------------------------------------------------------------------------
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
+
+add_custom_target(All DEPENDS Spirit Test)

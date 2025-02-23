@@ -101,7 +101,7 @@
 			"displayName": "Release",
 			"configuration": "Release",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "vs-msvc-debug",
@@ -109,7 +109,7 @@
 			"displayName": "Debug",
 			"configuration": "Debug",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "Ninja-msvc-release",
@@ -117,7 +117,7 @@
 			"displayName": "Release",
 			"configuration": "Release",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "Ninja-msvc-debug",
@@ -125,7 +125,7 @@
 			"displayName": "Debug",
 			"configuration": "Debug",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "g++-Release",
@@ -133,7 +133,7 @@
 			"configurePreset": "Ninja-GCC",
 			"configuration": "Release",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "g++-Debug",
@@ -141,7 +141,7 @@
 			"configurePreset": "Ninja-GCC",
 			"configuration": "Debug",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "clang++-Release",
@@ -149,7 +149,7 @@
 			"configurePreset": "Ninja-Clang",
 			"configuration": "Release",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
 			"name": "clang++-Debug",
@@ -157,7 +157,7 @@
 			"configurePreset": "Ninja-Clang",
 			"configuration": "Debug",
 			"verbose": false,
-			"targets": [ "Spirit", "Test" ]
+			"targets": [ "Spirit", "Test", "All" ]
 		}
 	]
 }
