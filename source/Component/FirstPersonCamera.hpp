@@ -11,8 +11,6 @@
 
 namespace Component
 {
-	class RigidBody;
-
 	// Free moving FPS camera. Functions using Pitch and Yaw to determine the View transformation.
 	// Depends on an external source for its position e.g. Component::Transform::m_position.
 	class FirstPersonCamera
@@ -38,7 +36,6 @@ namespace Component
 
 		float m_look_sensitivity;
 		float m_move_speed; // Movement speed (m/s)
-		bool m_body_move; // If a RigidBody is available, should movement use the body as opposed to incrementing position directly.
 		// If primary, this camera is used to perform the view transformation when rendering the scene.
 		// If multiple Cameras are primary, the first one encountered is used.
 		bool m_primary;
@@ -54,10 +51,6 @@ namespace Component
 		// Process mouse p_offset to apply a change to the view direction of the camera.
 		//@param p_offset XY offset to apply in raw input data. The offset angle to apply is calculated later.
 		void mouse_look(const glm::vec2& p_offset);
-
-		// Move the position of the camera. Because Camera doesnt store a position, the Transform or RigidBody will be updated instead.
-		// If m_body_move is true, the RigidBody is used if available, otherwise the position is updated directly.
-		void move(const DeltaTime& p_delta_time, Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body = nullptr);
 
 		// Focus the view direction on p_point.
 		//@param p_point The point in world-space the camera should focus on.

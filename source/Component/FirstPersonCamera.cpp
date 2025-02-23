@@ -1,5 +1,4 @@
 #include "FirstPersonCamera.hpp"
-#include "RigidBody.hpp"
 
 #include "imgui.h"
 
@@ -35,7 +34,6 @@ namespace Component
 		, m_yaw{get_pitch_yaw(p_view_direction).y}
 		, m_look_sensitivity{0.1f}
 		, m_move_speed{7.f}
-		, m_body_move{false}
 		, m_primary{p_make_primary}
 	{}
 
@@ -59,31 +57,6 @@ namespace Component
 			m_pitch = Pitch_Limit;
 		if (m_pitch < -Pitch_Limit)
 			m_pitch = -Pitch_Limit;
-	}
-
-	void FirstPersonCamera::move(const DeltaTime& p_delta_time, Transform::MoveDirection p_direction, Transform* p_transform, RigidBody* p_body)
-	{
-		// #TODO add Shift modifier = half speed.
-		float adjusted_speed = m_move_speed * p_delta_time.count();
-
-		if (p_body && m_body_move)
-		{
-			if (p_direction == Transform::MoveDirection::Forward)  p_body->apply_linear_force(forward()  * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Backward) p_body->apply_linear_force(-forward() * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Right)    p_body->apply_linear_force(right()    * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Left)     p_body->apply_linear_force(-right()   * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Up)       p_body->apply_linear_force(up()       * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Down)     p_body->apply_linear_force(-up()      * adjusted_speed);
-		}
-		else if (p_transform)
-		{
-			if (p_direction == Transform::MoveDirection::Forward)  p_transform->m_position += (forward()  * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Backward) p_transform->m_position += (-forward() * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Right)    p_transform->m_position += (right()    * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Left)     p_transform->m_position += (-right()   * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Up)       p_transform->m_position += (up()       * adjusted_speed);
-			if (p_direction == Transform::MoveDirection::Down)     p_transform->m_position += (-up()      * adjusted_speed);
-		}
 	}
 
 	void FirstPersonCamera::look_at(const glm::vec3& p_point, glm::vec3& p_current_position)
@@ -210,7 +183,6 @@ namespace Component
 			ImGui::SeparatorText("Controls");
 			ImGui::Slider("Look sensitivity", m_look_sensitivity, 0.01f, 1.f);
 			ImGui::Slider("Move speed", m_move_speed, 0.01f, 10.f);
-			ImGui::Checkbox("Body move", &m_body_move);
 
 			ImGui::SeparatorText("Info");
 			ImGui::Text("Right", right());
@@ -244,7 +216,6 @@ namespace Component
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_yaw);
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_look_sensitivity);
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_move_speed);
-		Utility::write_binary(p_out, p_version, p_first_person_camera.m_body_move);
 		Utility::write_binary(p_out, p_version, p_first_person_camera.m_primary);
 	}
 	FirstPersonCamera FirstPersonCamera::deserialise(std::istream& p_in, uint16_t p_version)
@@ -257,7 +228,6 @@ namespace Component
 		Utility::read_binary(p_in, p_version, first_person_camera.m_yaw);
 		Utility::read_binary(p_in, p_version, first_person_camera.m_look_sensitivity);
 		Utility::read_binary(p_in, p_version, first_person_camera.m_move_speed);
-		Utility::read_binary(p_in, p_version, first_person_camera.m_body_move);
 		Utility::read_binary(p_in, p_version, first_person_camera.m_primary);
 		return first_person_camera;
 	}

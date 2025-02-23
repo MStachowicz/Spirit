@@ -89,7 +89,6 @@ namespace System
 	{
 		ECS::Storage::serialise(p_out, p_version, p_Scene.m_entities);
 	}
-
 	Scene Scene::deserialise(std::istream& p_in, uint16_t p_version)
 	{
 		Scene scene;
@@ -100,17 +99,15 @@ namespace System
 
 	void SceneSystem::add_default_camera(Scene& p_scene)
 	{
-		Component::Transform camera_transform;
-		camera_transform.m_position = {0.f, 7.f, 12.5f};
-		auto camera = Component::FirstPersonCamera(glm::vec3(0.f, -0.5f, 0.5f), true);
-		camera.look_at(glm::vec3(0.f), camera_transform.m_position);
-		camera.m_move_speed = 300.f; // 300 good for testing large terrain.
+		Component::Transform transform;
+		transform.m_position = {10.f, 0.f, 75.f};
+		auto camera = Component::FirstPersonCamera(transform.forward(), true);
+		camera.m_move_speed = 75.f;
 
 		p_scene.m_entities.add_entity(
-			camera_transform,
+			transform,
 			camera,
 			Component::Label("Camera"),
-			Component::RigidBody(false),
 			Component::Input(Component::Input::Camera_Move_Look));
 	}
 
