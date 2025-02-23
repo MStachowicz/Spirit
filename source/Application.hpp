@@ -5,6 +5,7 @@
 #include "System/InputSystem.hpp"
 #include "System/PhysicsSystem.hpp"
 #include "System/SceneSystem.hpp"
+#include "System/TerrainSystem.hpp"
 
 #include "UI/Editor.hpp"
 
@@ -54,6 +55,7 @@ private:
 	System::CollisionSystem m_collision_system;
 	System::PhysicsSystem m_physics_system;
 	System::InputSystem m_input_system;
+	System::TerrainSystem m_terrain_system;
 
 	UI::Editor m_editor;
 
@@ -138,6 +140,7 @@ private:
 				// Not neccessary to decrement duration_since_last_render_tick as in physics update above as repeated draws will be identical with no data changes.
 				m_window.start_ImGui_frame();
 				m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
+				m_terrain_system.update(m_scene_system.get_current_scene(), m_window.aspect_ratio());
 
 				m_openGL_renderer.start_frame();
 				m_openGL_renderer.draw(duration_since_last_render_tick);

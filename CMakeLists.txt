@@ -168,6 +168,8 @@ source/System/InputSystem.hpp
 source/System/InputSystem.cpp
 source/System/SceneSystem.hpp
 source/System/SceneSystem.cpp
+source/System/TerrainSystem.hpp
+source/System/TerrainSystem.cpp
 )
 target_include_directories(System
 PRIVATE source/System

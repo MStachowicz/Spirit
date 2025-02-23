@@ -9,6 +9,7 @@ Application::Application(Platform::Input& p_input, Platform::Window& p_window) n
 	, m_collision_system{m_scene_system}
 	, m_physics_system{m_scene_system, m_collision_system}
 	, m_input_system{m_input, m_window, m_scene_system}
+	, m_terrain_system{}
 	, m_editor{m_input, m_window, m_asset_manager, m_scene_system, m_collision_system, m_physics_system, m_openGL_renderer}
 	, m_simulation_loop_params_changed{false}
 	, m_physics_ticks_per_second{60}

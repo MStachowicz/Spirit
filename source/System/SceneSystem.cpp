@@ -30,7 +30,7 @@ namespace System
 		add_default_camera(scene);
 		construct_2_sphere_scene(scene);
 
-		Component::Terrain terrain({0.f, 5.f, -100.f}, 100, 100, 20);
+		Component::Terrain terrain(20);
 		terrain.m_grass_tex = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Grass" / "Color.jpg");
 		terrain.m_sand_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Sand" / "Color.jpg");
 		terrain.m_snow_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Snow" / "Color.jpg");
@@ -68,19 +68,19 @@ namespace System
 		}
 		{// Update the view information
 			if (view_info_override)
-			{
 				m_view_information = *view_info_override;
-			}
 			else
 			{
+				std::optional<Component::ViewInformation> view_info;
 				m_entities.foreach([&](Component::FirstPersonCamera& p_camera, Component::Transform& p_transform)
 				{
 					if (p_camera.m_primary)
 					{
-						m_view_information = p_camera.view_information(p_transform.m_position, aspect_ratio);
+						view_info = p_camera.view_information(p_transform.m_position, aspect_ratio);
 						return;
 					}
 				});
+				m_view_information = *view_info;
 			}
 		}
 	}

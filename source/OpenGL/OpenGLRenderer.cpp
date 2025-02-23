@@ -50,7 +50,7 @@ namespace OpenGL
 		, m_screen_quad{make_screen_quad_mesh()}
 		, m_post_processing_options{}
 		, m_draw_shadows{false}
-		, m_draw_grid{true}
+		, m_draw_grid{false}
 	{
 		#ifdef Z_DEBUG // Ensure the uniform block layout matches the Component::ViewInformation struct layout for direct memory copy.
 		{
@@ -179,13 +179,18 @@ namespace OpenGL
 		{// Draw terrain
 			entities.foreach([&](Component::Terrain& p_terrain)
 			{
+				if (p_terrain.empty())
+					return;
+
 				DrawCall dc;
+				dc.m_polygon_mode = PolygonMode::Line;
+
 				dc.set_SSBO("DirectionalLightsBuffer", directional_light_buffer);
 				dc.set_SSBO("PointLightsBuffer",       point_light_buffer);
 				dc.set_SSBO("SpotLightsBuffer",        spot_light_buffer);
 				dc.set_UBO("ViewProperties",           m_view_properties_buffer);
 
-				dc.set_uniform("model",                glm::translate(glm::identity<glm::mat4>(), p_terrain.m_position));
+				dc.set_uniform("model",                glm::identity<glm::mat4>());
 				dc.set_uniform("shininess",            1000000.f); // Force terrain to not be shiny.
 				// TODO: calc instead of using amplitude... use the actual height of the terrain.
 				dc.set_uniform("min_height", -p_terrain.m_amplitude);
@@ -195,7 +200,7 @@ namespace OpenGL
 				dc.set_texture("rock",  p_terrain.m_rock_tex->m_GL_texture);
 				dc.set_texture("snow",  p_terrain.m_snow_tex->m_GL_texture);
 
-				dc.submit(m_terrain_shader, p_terrain.m_mesh.get_VAO(), m_screen_framebuffer);
+				dc.submit(m_terrain_shader, p_terrain.get_VAO(), m_screen_framebuffer);
 			});
 		}
 

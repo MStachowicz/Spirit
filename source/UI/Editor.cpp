@@ -72,9 +72,9 @@ namespace UI
 		m_input.m_mouse_scroll_event.subscribe(this, &Editor::on_mouse_scroll_event);
 
 		// TODO: Use the current scene bounds (not initialised at this point)
-		m_camera.set_orbit_point(glm::vec3(50.f, 0.f, -50.f));
+		m_camera.set_orbit_point(glm::vec3(50.f, 0.f, 50.f));
 		m_camera.set_orbit_distance(75.f);
-		m_camera.set_view_direction(glm::normalize(glm::vec3(0.5f, -0.8f, -0.5f)));
+		m_camera.set_view_direction(glm::normalize(glm::vec3(0.f, -1.f, 0.f)));
 
 		set_state(m_state, true); // Set the initial state.
 		initialiseStyling();
@@ -111,6 +111,26 @@ namespace UI
 						}
 						else
 						{
+							// const auto& view_info = m_scene_system.get_current_scene_view_info();
+							// auto cursor_ray = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+
+							// m_scene_system.get_current_scene_entities().foreach([&](Component::Terrain& terrain)
+							// {
+							// 	for (auto& node : terrain.quad_tree)
+							// 	{
+							// 		if (node.leaf())
+							// 		{
+							// 			Geometry::AABB bound_3D{glm::vec3(node.bounds.min.x, 0.f, node.bounds.min.y), glm::vec3(node.bounds.max.x, 0.f, node.bounds.max.y)};
+							// 			auto intersection = Geometry::get_intersection(bound_3D, cursor_ray);
+							// 			if (intersection)
+							// 			{
+							// 				node.
+							// 				terrain.quad_tree.subdivide(node, Component::Terrain::BufferHandle{}, Component::Terrain::BufferHandle{}, Component::Terrain::BufferHandle{}, Component::Terrain::BufferHandle{});
+							// 			}
+							// 		}
+							// 	}
+							// });
+
 							deselect_all_entity();
 						}
 					}
@@ -740,7 +760,8 @@ namespace UI
 					{
 						m_scene_system.get_current_scene_entities().add_entity(
 							Component::Label{"Terrain"},
-							Component::Terrain{*m_cursor_intersection, 10, 10, 5.f});
+							Component::Transform{*m_cursor_intersection},
+							Component::Terrain{5.f});
 					}
 					ImGui::EndMenu();
 				}
