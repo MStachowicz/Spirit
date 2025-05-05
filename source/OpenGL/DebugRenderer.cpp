@@ -137,6 +137,16 @@ namespace OpenGL
 		m_tri_mb.set_colour(p_colour);
 		m_tri_mb.add_triangle(p_triangle);
 	}
+	void DebugRenderer::add_axes(const glm::vec3& p_point, float length)
+	{
+		float scale = 0.01f * length;
+		m_tri_mb.set_colour(glm::vec4(1.f, 0.f, 0.f, 1.f));
+		m_tri_mb.add_cylinder(p_point, p_point + glm::vec3(length, 0.f, 0.f), scale, m_debug_options.m_segments);
+		m_tri_mb.set_colour(glm::vec4(0.f, 1.f, 0.f, 1.f));
+		m_tri_mb.add_cylinder(p_point, p_point + glm::vec3(0.f, length, 0.f), scale, m_debug_options.m_segments);
+		m_tri_mb.set_colour(glm::vec4(0.f, 0.f, 1.f, 1.f));
+		m_tri_mb.add_cylinder(p_point, p_point + glm::vec3(0.f, 0.f, length), scale, m_debug_options.m_segments);
+	}
 	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour, size_t segments)
 	{
 		m_tri_mb.set_colour(p_colour);
