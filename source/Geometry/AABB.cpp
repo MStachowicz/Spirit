@@ -180,4 +180,20 @@ namespace Geometry
 		ImGui::Text("Min: (%.3f, %.3f)", min.x, min.y);
 		ImGui::Text("Max: (%.3f, %.3f)", max.x, max.y);
 	}
+	float AABB2D::distance(const glm::vec2& point) const
+	{
+		glm::vec2 d = {0.f, 0.f};
+
+		if (point.x < min.x)
+			d.x = min.x - point.x;
+		else if (point.x > max.x)
+			d.x = point.x - max.x;
+
+		if (point.y < min.y)
+			d.y = min.y - point.y;
+		else if (point.y > max.y)
+			d.y = point.y - max.y;
+
+		return glm::length(d);
+	}
 } // namespace Geometry

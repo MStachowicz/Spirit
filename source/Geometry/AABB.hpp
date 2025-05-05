@@ -56,6 +56,7 @@ namespace Geometry
 		void unite(const AABB2D& AABB);
 		bool contains(const AABB2D& AABB) const;
 		bool contains(const glm::vec2& point) const;
+		float distance(const glm::vec2& point) const;
 		void draw_UI(const char* title) const;
 	};
 }// namespace Geometry
