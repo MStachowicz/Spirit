@@ -35,7 +35,13 @@ namespace Component
 		glm::vec3 position() const;
 
 		void set_orbit_point(const glm::vec3& p_orbit_point) { m_orbit_center = p_orbit_point; }
-		void set_orbit_distance(float p_orbit_distance)      { m_orbit_radius = p_orbit_distance; }
+		void set_orbit_distance(float p_orbit_distance)
+		{
+			if (m_is_orthographic)
+				m_ortho_size = p_orbit_distance * glm::tan(glm::radians(m_FOV) * 0.5f);
+			else
+				m_orbit_radius = p_orbit_distance;
+		}
 		void set_view_direction(const glm::vec3& p_view_direction);
 
 		glm::mat4 view() const;
