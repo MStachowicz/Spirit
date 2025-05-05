@@ -46,6 +46,14 @@ namespace ImGui
 	{
 		Text("%s: [%d]", p_label, p_int);
 	}
+	inline void Text(const char* p_label, const uint8_t& p_unsigned_int8)
+	{
+		Text("%s: [%u]", p_label, p_unsigned_int8);
+	}
+	inline void Text(const char* p_label, const uint16_t& p_unsigned_int16)
+	{
+		Text("%s: [%u]", p_label, p_unsigned_int16);
+	}
 	inline void Text(const char* p_label, const unsigned int& p_unsigned_int)
 	{
 		Text("%s: [%u]", p_label, p_unsigned_int);
@@ -134,6 +142,14 @@ namespace ImGui
 	inline bool Slider(const char* label, int& p_v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
 	{
 		return SliderInt(label, &p_v, v_min, v_max, format, flags);
+	}
+	inline bool Slider(const char* label, uint8_t& p_v, uint8_t v_min, uint8_t v_max, const char* format = "%u", ImGuiSliderFlags flags = 0)
+	{
+		return SliderScalar(label, ImGuiDataType_U8, &p_v, &v_min, &v_max, format, flags);
+	}
+	inline bool Slider(const char* label, uint16_t& p_v, uint16_t v_min, uint16_t v_max, const char* format = "%u", ImGuiSliderFlags flags = 0)
+	{
+		return SliderScalar(label, ImGuiDataType_U16, &p_v, &v_min, &v_max, format, flags);
 	}
 	inline bool Slider(const char* label, unsigned int& p_v, unsigned int v_min, unsigned int v_max, const char* format = "%u", ImGuiSliderFlags flags = 0)
 	{
