@@ -4,10 +4,13 @@
 #include "Utility/MeshBuilder.hpp"
 #include "Utility/PerlinNoise.hpp"
 #include "Utility/Stopwatch.hpp"
+#include "Utility/Utility.hpp"
 
-#include "Geometry/AABB.hpp"
+#include "OpenGL/DebugRenderer.hpp"
 
 #include "imgui.h"
+
+#include <bitset>
 
 namespace Component
 {
@@ -26,36 +29,72 @@ namespace Component
 	{
 		vert_buffer.clear(0, vert_buffer.used_capacity());
 		index_buffer.clear(0, index_buffer.used_capacity());
+		node_mesh_info.clear();
+		free_indices.clear();
+		LOG("[TERRAIN] Clearing all mesh data.");
 
-		for (auto& node : quad_tree)
-		{
-			if (node.leaf()) // Only add verts to leaf nodes
-				add_verts(node);
-		}
+		auto leaf_nodes = get_tree_leaf_nodes();
+		for (const auto& node : leaf_nodes)
+			add_verts(node);
 	}
-	void Terrain::clear_node_data(size_t index)
+
+	Geometry::Depth_t Terrain::required_depth(const Geometry::AABB2D& bounds)
 	{
-		const size_t vert_buff_stride  = chunk_vert_buff_stride();
-		const size_t index_buff_stride = chunk_index_buff_stride();
-		vert_buffer.clear(index * vert_buff_stride, vert_buff_stride);
-		index_buffer.clear(index  * index_buff_stride, index_buff_stride);
-		LOG("[TERRAIN] Clearing node {} data. Verts: {} ({}B), Indices: {} ({}B)", index, vert_buff_stride / sizeof(VertexType), vert_buff_stride, index_buff_stride / sizeof(unsigned int), index_buff_stride);
+		float dist       = bounds.distance(player_pos);
+		float normalized = std::exp(-decay_rate * dist);
+		return static_cast<Geometry::Depth_t>(std::round(normalized * max_depth));
 	}
-	void Terrain::add_verts(const QuadTree::Node& node)
+	std::vector<Geometry::QuadKey> Terrain::get_tree_leaf_nodes()
 	{
-		LOG("[TERRAIN] Generating terrain for node {} with bounds: {:.0f},{:.0f} -> {:.0f},{:.0f}", quad_tree.node_index(node), node.bounds.min.x, node.bounds.min.y, node.bounds.max.x, node.bounds.max.y);
+		std::vector<Geometry::QuadKey> out_keys;
+		out_keys.reserve(static_cast<size_t>(std::pow(4, max_depth)));
+		Geometry::generate_leaf_nodes(root_center, root_size, 0, 0, max_depth, out_keys, [this](const Geometry::AABB2D& bounds) { return this->required_depth(bounds); });
+		return out_keys;
+	}
+
+	void Terrain::remove_verts(const Geometry::QuadKey& key)
+	{
+		ASSERT(node_mesh_info.find(key) != node_mesh_info.end(), "Quadkey does not exist in the mesh indices map.");
+
+		size_t data_index = node_mesh_info.at(key);
+
+		if (data_index == end_index - 1)
+			end_index--;
+		else
+			free_indices.push_back(data_index);
+
+		node_mesh_info.erase(key);
+
+		size_t vert_buff_stride  = chunk_vert_buff_stride();
+		size_t index_buff_stride = chunk_index_buff_stride();
+		vert_buffer.clear(data_index * vert_buff_stride, vert_buff_stride);
+		index_buffer.clear(data_index * index_buff_stride, index_buff_stride);
+
+		// LOG("[TERRAIN] Clearing node {} vert data with bounds {}, {} -> {}, {}. Buffer section cleared from {}B to {}B", data_index, bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y, data_index * vert_buff_stride, data_index * vert_buff_stride + vert_buff_stride);
+	}
+	void Terrain::add_verts(const Geometry::QuadKey& key)
+	{
 		ASSERT(chunk_detail > 0, "Chunk detail must be greater than 0");
+		ASSERT(node_mesh_info.find(key) == node_mesh_info.end(), "Quadkey already exists in the mesh indices map.");
+
+		if (free_indices.empty())
+			node_mesh_info[key] = end_index++;
+		else
+		{
+			node_mesh_info[key] = free_indices.back(); // Reuse a free index if available
+			free_indices.pop_back();
+		}
+
+		size_t data_index   = node_mesh_info[key];
+		auto bounds         = key.get_bounds(root_size, root_center);
+
+		const auto perlin       = siv::PerlinNoise{m_seed};
+		const float chunk_step  = (bounds.max.x - bounds.min.x) / chunk_detail;
 
 		std::vector<VertexType> new_verts;
 		new_verts.reserve(chunk_vert_buff_stride() / size_of_vertex);
 		std::vector<unsigned int> new_indices;
 		new_indices.reserve(chunk_index_buff_stride() / sizeof(unsigned int));
-
-		const size_t node_index = quad_tree.node_index(node);
-		const auto& bounds      = node.bounds;
-		//const auto perlin       = siv::PerlinNoise{m_seed};
-		const float chunk_step  = (bounds.max.x - bounds.min.x) / chunk_detail;
-
 		for (uint16_t z = 0; z <= chunk_detail; ++z)
 		{
 			for (uint16_t x = 0; x <= chunk_detail; ++x)
@@ -63,7 +102,7 @@ namespace Component
 				VertexType vert;
 				float pos_x   = bounds.min.x + x * chunk_step;
 				float pos_z   = bounds.min.y + z * chunk_step;
-				float pos_y   = 0.f;//compute_height(pos_x, pos_z, perlin);
+				float pos_y   = compute_height(pos_x, pos_z, perlin);
 				vert.position = {pos_x, pos_y, pos_z};
 				vert.normal   = {0.f, 0.f, 0.f}; // Calculate normals later
 				new_verts.push_back(vert);
@@ -75,7 +114,7 @@ namespace Component
 		{
 			for (int x = 0; x < chunk_detail; ++x)
 			{
-				// Get the indices for the four corners of the current quad
+				// Get the indices for the four corners of the current_node quad
 				unsigned int top_left     = z * (chunk_detail + 1) + x;
 				unsigned int top_right    = top_left + 1;
 				unsigned int bottom_left  = (z + 1) * (chunk_detail + 1) + x;
@@ -127,7 +166,7 @@ namespace Component
 
 		{ // Push the new verts to their offset in the buffer
 			const size_t chunk_stride = chunk_vert_buff_stride();
-			const size_t chunk_offset = node_index * chunk_stride;
+			const size_t chunk_offset = data_index * chunk_stride;
 
 			if (vert_buffer.capacity() < chunk_offset + chunk_stride)
 			{
@@ -142,7 +181,7 @@ namespace Component
 
 		{ // Push the new indices to the offset in the buffer
 			const size_t chunk_stride = chunk_index_buff_stride();
-			const size_t chunk_offset = node_index * chunk_stride;
+			const size_t chunk_offset = data_index * chunk_stride;
 
 			if (index_buffer.capacity() < chunk_offset + chunk_stride)
 			{
@@ -153,7 +192,7 @@ namespace Component
 				index_buffer.reserve(new_capacity);
 			}
 			{// Offset the indices calculated by the number of unique vertices in the buffer
-				const unsigned int offset = (unsigned int)((chunk_detail + 1) * (chunk_detail + 1) * node_index);
+				const unsigned int offset = (unsigned int)((chunk_detail + 1) * (chunk_detail + 1) * data_index);
 				for (auto& index : new_indices)
 					index += offset;
 			}
@@ -162,15 +201,22 @@ namespace Component
 
 		VAO.attach_buffer(vert_buffer, 0, 0, sizeof(VertexType), (GLsizei)(vert_buffer.used_capacity() / sizeof(VertexType)));
 		VAO.attach_element_buffer(index_buffer, (GLsizei)(index_buffer.used_capacity() / sizeof(unsigned int)));
+
+		// const size_t chunk_stride = chunk_vert_buff_stride();
+		// const size_t chunk_offset = data_index * chunk_stride;
+		// LOG("[TERRAIN] Adding node {} vert data with bounds {}, {} -> {}, {}. Buffer section added from {}B to {}B", data_index, bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y, chunk_offset, chunk_offset + chunk_stride);
 	}
 
 	Terrain::Terrain(float amplitude) noexcept
 		: VAO{}
 		, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
 		, index_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
-		, quad_tree{}
-		, max_lod{0}
-		, chunk_detail{2}
+		, node_mesh_info{}
+		, root_center{50.f, 50.f}
+		, max_depth{6}
+		, chunk_detail{9}
+		, root_size{100.f}
+		, decay_rate{0.006f}
 		, m_scale_factor{0.03f}
 		, m_amplitude{amplitude}
 		, m_lacunarity{2.f}
@@ -191,17 +237,20 @@ namespace Component
 			{3, 2, OpenGL::BufferDataType::Float, offsetof(VertexType, uv),       vertex_buffer_binding_point, false},
 			{2, 4, OpenGL::BufferDataType::Float, offsetof(VertexType, colour),   vertex_buffer_binding_point, false}
 		});
-
-		quad_tree.add_root_node(Geometry::AABB2D({0, 0}, {100, 100}), BufferHandle{});
-		add_verts(quad_tree.root_node());
+		// reserve 128MB
+		vert_buffer.reserve(128 * 1024 * 1024);
+		index_buffer.reserve(128 * 1024 * 1024);
 	}
 	Terrain::Terrain(const Terrain& p_other)
 		: VAO{}
 		, vert_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
 		, index_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}}
-		, quad_tree{}
-		, max_lod{}
-		, chunk_detail{100}
+		, node_mesh_info{}
+		, root_center{}
+		, max_depth{}
+		, chunk_detail{}
+		, root_size{}
+		, decay_rate{}
 		, m_scale_factor{}
 		, m_amplitude{}
 		, m_lacunarity{}
@@ -240,80 +289,93 @@ namespace Component
 		return accumulate / max_value * m_amplitude;
 	}
 
-	void Terrain::update(const glm::vec3& player_pos, float view_distance)
-	{(void)player_pos; (void)view_distance;
-		ImGui::Begin("Terrain");
-		ImGui::Text("Chunks", quad_tree.size());
-		ImGui::Text("Depth", quad_tree.depth());
-		ImGui::Text("Max LOD", max_lod);
-		ImGui::Text("Chunk detail", (int)chunk_detail);
-		ImGui::Text("Vert count ", vert_buffer.used_capacity() / sizeof(VertexType));
-		ImGui::Text("Index count", index_buffer.used_capacity() / sizeof(unsigned int));
-		ImGui::Text("Vert buffer size", vert_buffer.used_capacity());
-		ImGui::Text("Index buffer size", index_buffer.used_capacity());
-		ImGui::Text("Draw count", VAO.draw_count());
+	void Terrain::update(const glm::vec3& player_pos_3D, float view_distance)
+	{
+		player_pos = glm::vec2{player_pos_3D.x, player_pos_3D.z};
 
-		int im_chunk_detail = chunk_detail;
-		if (ImGui::SliderInt("Chunk detail", &im_chunk_detail, 1, std::numeric_limits<uint8_t>::max()))
+		std::unordered_set<Geometry::QuadKey> to_remove_keys;
+		to_remove_keys.reserve(node_mesh_info.size());
+		for (const auto& mesh_info : node_mesh_info)
+			to_remove_keys.insert(mesh_info.first);
+
+		auto leaf_quadkeys = get_tree_leaf_nodes();
+
+		for (const auto& quadkey : leaf_quadkeys)
 		{
-			chunk_detail = (uint8_t)im_chunk_detail;
-			regenerate_mesh();
+			auto it = node_mesh_info.find(quadkey);
+
+			if (it == node_mesh_info.end())
+				add_verts(quadkey);
+			else
+				to_remove_keys.erase(quadkey);
 		}
 
-		if (ImGui::Button("Subdivide"))
+		for (const auto& quadkey : to_remove_keys)
+			remove_verts(quadkey);
+
 		{
-			quad_tree.depth_first_traversal([&](auto& node)
+			auto draw_bounds = [&](const Geometry::AABB2D& bounds, const glm::vec4& col)
 			{
-				if (node.leaf())
-				{
-					LOG("[TERRAIN] Subdividing node {} with bounds: {:.0f},{:.0f} -> {:.0f},{:.0f}", quad_tree.node_index(node), node.bounds.min.x, node.bounds.min.y, node.bounds.max.x, node.bounds.max.y);
-					size_t node_index = quad_tree.node_index(node); // Get the index of the node before add_node may invalidate the reference
-					quad_tree.subdivide(node,
-						BufferHandle{},
-						BufferHandle{},
-						BufferHandle{},
-						BufferHandle{});
+				float y_offset = -1.f;
+				OpenGL::DebugRenderer::add(Geometry::LineSegment{glm::vec3{bounds.min.x, y_offset, bounds.min.y}, glm::vec3{bounds.min.x, y_offset, bounds.max.y}}, col); // Left edge
+				OpenGL::DebugRenderer::add(Geometry::LineSegment{glm::vec3{bounds.min.x, y_offset, bounds.max.y}, glm::vec3{bounds.max.x, y_offset, bounds.max.y}}, col); // Top edge
+				OpenGL::DebugRenderer::add(Geometry::LineSegment{glm::vec3{bounds.max.x, y_offset, bounds.max.y}, glm::vec3{bounds.max.x, y_offset, bounds.min.y}}, col); // Right edge
+				OpenGL::DebugRenderer::add(Geometry::LineSegment{glm::vec3{bounds.max.x, y_offset, bounds.min.y}, glm::vec3{bounds.min.x, y_offset, bounds.min.y}}, col); // Bottom edge
+			};
 
-					auto& node_after = quad_tree[node_index];
-					quad_tree.for_each_child(node_after, [&](const auto& child) { add_verts(child); });
-					clear_node_data(node_index);
-					return true;
-				}
-				else
-					return false;
-			});
-		}
-		if (ImGui::Button("Merge"))
-		{
-			const size_t max_depth = quad_tree.depth();
+			ImGui::Begin("Terrain");
+			ImGui::Text("Active nodes", node_mesh_info.size());
 
-			if (max_depth > 0)
+			if (ImGui::TreeNode("Tree leaves"))
 			{
-				const size_t target_depth = max_depth - 1;
-
-				quad_tree.depth_first_traversal([&](auto& node)
+				for (const auto& node : node_mesh_info)
 				{
-					if (node.depth == target_depth && !node.leaf())
+					std::string node_title = std::format("Node {} - {}", node.first.key, node.first.depth);
+					if (ImGui::TreeNode(node_title.c_str()))
 					{
-						LOG("[TERRAIN] Merging node {} with bounds: {:.0f},{:.0f} -> {:.0f},{:.0f}", quad_tree.node_index(node), node.bounds.min.x, node.bounds.min.y, node.bounds.max.x, node.bounds.max.y);
-						auto child_indices = *node.children_indices;
-						quad_tree.merge(node);
-
-						for (auto& index : child_indices)
-							clear_node_data(index);
-
-						// Reconstruct the verts and indices for the parent node
-						add_verts(node);
-
-						return true;
+						Geometry::AABB2D bounds = node.first.get_bounds(root_size, root_center);
+						ImGui::Text("Bounds: Min(%.2f, %.2f), Max(%.2f, %.2f)", bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y);
+						ImGui::Text("Center: (%.2f, %.2f)", (bounds.min.x + bounds.max.x) / 2.f, (bounds.min.y + bounds.max.y) / 2.f);
+						ImGui::Text("Size: (%.2f, %.2f)", bounds.size().x, bounds.size().y);
+						ImGui::Text("Quadkey (decimal)", node.first.key);
+						ImGui::Text("Quadkey (binary)", std::bitset<64>(node.first.key).to_string().c_str());
+						draw_bounds(bounds, {1.f, 0.f, 0.f, 1.f}); // Red
+						ImGui::TreePop();
 					}
-					else
-						return false;
-				});
+				}
+				ImGui::TreePop();
 			}
-		}
 
-		ImGui::End();
+			ImGui::Text("Max depth", max_depth);
+			ImGui::Text("Per node detail", (int)chunk_detail);
+			ImGui::Text("Vert count ", Utility::format_number(vert_buffer.used_capacity() / sizeof(VertexType), 1));
+			ImGui::Text("Index count", Utility::format_number(index_buffer.used_capacity() / sizeof(unsigned int), 1));
+			ImGui::Text("Vert buffer size", Utility::format_number(vert_buffer.used_capacity(), 1) + "B");
+			ImGui::Text("Index buffer size", Utility::format_number(index_buffer.used_capacity(), 1) + "B");
+			ImGui::Text("Draw count", VAO.draw_count());
+			int im_chunk_detail = chunk_detail;
+			if (ImGui::SliderInt("Chunk detail", &im_chunk_detail, 1, std::numeric_limits<uint8_t>::max()))
+			{
+				chunk_detail = (uint8_t)im_chunk_detail;
+				regenerate_mesh();
+			}
+			ImGui::Slider("Max depth", max_depth, 0, 30);
+			ImGui::Slider("Decay rate", decay_rate, 0.001f, 1.f, "%.3f", ImGuiSliderFlags_Logarithmic);
+			if (ImGui::Button("Regenerate mesh"))
+				regenerate_mesh();
+
+			ImGui::Text("Player pos %.1f, %.1f, %.1f", player_pos_3D.x, player_pos_3D.y, player_pos_3D.z);
+
+
+			// Axes
+			OpenGL::DebugRenderer::add_axes(glm::vec3{0.f}, 25.f);
+			// Player position
+			OpenGL::DebugRenderer::add(Geometry::Sphere{player_pos_3D, 1.f}, {1.f, 1.f, 1.f, 1.f});
+			OpenGL::DebugRenderer::add(Geometry::LineSegment{player_pos_3D - (glm::vec3{1.f, 0.f, 0.f} * view_distance), player_pos_3D + (glm::vec3{1.f, 0.f, 0.f} * view_distance)}, {1.f, 0.f, 0.f, 1.f});
+			OpenGL::DebugRenderer::add(Geometry::LineSegment{player_pos_3D - (glm::vec3{0.f, 0.f, 1.f} * view_distance), player_pos_3D + (glm::vec3{0.f, 0.f, 1.f} * view_distance)}, {0.f, 0.f, 1.f, 1.f});
+
+			ImGui::End();
+		}
 	}
 
 	void Terrain::draw_UI(System::AssetManager& p_asset_manager)

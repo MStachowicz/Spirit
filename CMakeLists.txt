@@ -215,6 +215,7 @@ source/Geometry/Point.hpp
 source/Geometry/Quad.hpp
 source/Geometry/Quad.cpp
 source/Geometry/QuadTree.hpp
+source/Geometry/QuadKey.hpp
 source/Geometry/Ray.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Sphere.cpp

@@ -111,27 +111,7 @@ namespace UI
 						}
 						else
 						{
-							// const auto& view_info = m_scene_system.get_current_scene_view_info();
-							// auto cursor_ray = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
-
-							// m_scene_system.get_current_scene_entities().foreach([&](Component::Terrain& terrain)
-							// {
-							// 	for (auto& node : terrain.quad_tree)
-							// 	{
-							// 		if (node.leaf())
-							// 		{
-							// 			Geometry::AABB bound_3D{glm::vec3(node.bounds.min.x, 0.f, node.bounds.min.y), glm::vec3(node.bounds.max.x, 0.f, node.bounds.max.y)};
-							// 			auto intersection = Geometry::get_intersection(bound_3D, cursor_ray);
-							// 			if (intersection)
-							// 			{
-							// 				node.
-							// 				terrain.quad_tree.subdivide(node, Component::Terrain::BufferHandle{}, Component::Terrain::BufferHandle{}, Component::Terrain::BufferHandle{}, Component::Terrain::BufferHandle{});
-							// 			}
-							// 		}
-							// 	}
-							// });
-
-							deselect_all_entity();
+														deselect_all_entity();
 						}
 					}
 					break;
