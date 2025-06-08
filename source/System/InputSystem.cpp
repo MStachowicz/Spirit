@@ -8,7 +8,9 @@
 #include "Platform/Core.hpp"
 #include "Platform/Input.hpp"
 #include "Platform/Window.hpp"
+
 #include "Utility/Logger.hpp"
+#include "Utility/Performance.hpp"
 
 namespace System
 {
@@ -21,6 +23,8 @@ namespace System
 
 	void InputSystem::update(const DeltaTime& p_delta_time)
 	{
+		PERF(InputSystemUpdate);
+
 		m_update_count++;
 
 		if (!m_input.keyboard_captured_by_UI())

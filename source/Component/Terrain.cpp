@@ -2,6 +2,7 @@
 
 #include "System/AssetManager.hpp"
 #include "Utility/MeshBuilder.hpp"
+#include "Utility/Performance.hpp"
 #include "Utility/PerlinNoise.hpp"
 #include "Utility/Stopwatch.hpp"
 #include "Utility/Utility.hpp"
@@ -46,6 +47,7 @@ namespace Component
 	}
 	std::vector<Geometry::QuadKey> Terrain::get_tree_leaf_nodes()
 	{
+		PERF(GetTreeLeafNodes);
 		std::vector<Geometry::QuadKey> out_keys;
 		out_keys.reserve(static_cast<size_t>(std::pow(4, max_depth)));
 		Geometry::generate_leaf_nodes(root_center, root_size, 0, 0, max_depth, out_keys, [this](const Geometry::AABB2D& bounds) { return this->required_depth(bounds); });
@@ -74,6 +76,8 @@ namespace Component
 	}
 	void Terrain::add_verts(const Geometry::QuadKey& key)
 	{
+		PERF(AddVerts);
+
 		ASSERT(chunk_detail > 0, "Chunk detail must be greater than 0");
 		ASSERT(node_mesh_info.find(key) == node_mesh_info.end(), "Quadkey already exists in the mesh indices map.");
 
@@ -291,6 +295,7 @@ namespace Component
 
 	void Terrain::update(const glm::vec3& player_pos_3D, float view_distance)
 	{
+		PERF(TerrainUpdate);
 		player_pos = glm::vec2{player_pos_3D.x, player_pos_3D.z};
 
 		std::unordered_set<Geometry::QuadKey> to_remove_keys;
@@ -314,6 +319,7 @@ namespace Component
 			remove_verts(quadkey);
 
 		{
+			PERF(DrawTerrainDebug);
 			auto draw_bounds = [&](const Geometry::AABB2D& bounds, const glm::vec4& col)
 			{
 				float y_offset = -1.f;

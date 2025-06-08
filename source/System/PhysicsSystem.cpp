@@ -8,6 +8,7 @@
 #include "ECS/Storage.hpp"
 
 #include "Geometry/Geometry.hpp"
+#include "Utility/Performance.hpp"
 #include "Utility/Utility.hpp"
 
 namespace System
@@ -25,6 +26,8 @@ namespace System
 
 	void PhysicsSystem::integrate(const DeltaTime& p_delta_time)
 	{
+		PERF(PhysicsSystemIntegrate);
+
 		m_update_count++;
 		m_total_simulation_time += p_delta_time;
 

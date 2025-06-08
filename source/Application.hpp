@@ -18,6 +18,7 @@
 
 #include "Utility/File.hpp"
 #include "Utility/Logger.hpp"
+#include "Utility/Performance.hpp"
 #include "Utility/Stopwatch.hpp"
 
 #include "Component/Collider.hpp"
@@ -102,6 +103,7 @@ private:
 		// The renderer produces time and the simulation consumes it in discrete physicsTimestep sized steps
 		while (true)
 		{
+			Utility::ScopedPerformanceBench::s_performance_benchmarks.end_frame();
 			OpenGL::DebugRenderer::clear();
 
 			if (duration_since_last_input_tick >= input_timestep)

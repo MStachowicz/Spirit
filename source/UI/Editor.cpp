@@ -23,6 +23,7 @@
 #include "Platform/Input.hpp"
 #include "Platform/Window.hpp"
 #include "Utility/Logger.hpp"
+#include "Utility/Performance.hpp"
 #include "Utility/Utility.hpp"
 
 #include "imgui.h"
@@ -31,6 +32,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include <format>
+#include <numbers>
 
 namespace UI
 {
@@ -62,6 +64,7 @@ namespace UI
 		, m_debug_GJK_entity_2{}
 		, m_debug_GJK_step{0}
 		, m_show_primary_camera_frustrum{false}
+		, pie_chart_node_index{std::nullopt}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
@@ -428,6 +431,7 @@ namespace UI
 			}
 			if (ImGui::BeginMenu("Debug"))
 			{
+				ImGui::MenuItem("Performance",            NULL, &m_windows_to_display.Performance);
 				ImGui::MenuItem("Graphics",               NULL, &m_windows_to_display.Graphics_Debug);
 				ImGui::MenuItem("Physics",                NULL, &m_windows_to_display.Physics_Debug);
 				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
@@ -456,6 +460,7 @@ namespace UI
 		if (m_windows_to_display.Entity)         draw_entity_tree_window();
 		if (m_windows_to_display.Console)        draw_console_window();
 		if (m_windows_to_display.asset_browser)  m_asset_manager.draw_UI(&m_windows_to_display.asset_browser);
+		if (m_windows_to_display.Performance)    draw_performance_window();
 		if (m_windows_to_display.Graphics_Debug) draw_graphics_debug_window();
 		if (m_windows_to_display.Physics_Debug)  draw_physics_debug_window();
 		if (m_windows_to_display.ImGuiDemo)      ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
@@ -707,6 +712,226 @@ namespace UI
 	void Editor::draw_console_window()
 	{
 		m_console.draw("Console", &m_windows_to_display.Console);
+	}
+
+	void Editor::draw_pie_chart(const std::vector<PieSlice>& slices, const std::function<void()>& on_inner_circle_click, const std::function<void()>& on_inner_circle_hover, bool draw_border)
+	{
+		constexpr int num_segments = 64; // Number of segments for the pie chart
+
+		if (slices.empty())
+			return;
+
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		ImVec2 window_size    = ImGui::GetContentRegionAvail();
+		ImU32 highlight_color = IM_COL32(102, 170, 255, 255);
+
+		// Pie chart settings
+		float buffer       = 0.05f; // Buffer around the pie chart
+		float radius       = std::min(window_size.x, window_size.y) * (0.5f - buffer);
+		float inner_radius = radius * 0.03f;
+
+		// Center the chart in the available space
+		ImVec2 center = ImGui::GetCursorScreenPos();
+		center.x += window_size.x * 0.5f;
+		center.y += radius + ImGui::GetStyle().ItemSpacing.y;
+
+		// Calculate distance from mouse to center of circle
+		ImVec2 mouse_pos = ImGui::GetMousePos();
+		float distance_sq = (mouse_pos.x - center.x) * (mouse_pos.x - center.x) +
+		(mouse_pos.y - center.y) * (mouse_pos.y - center.y);
+		bool inner_circle_hovering = distance_sq <= inner_radius * inner_radius;
+
+		ImGui::Dummy(ImVec2(0, radius * 2 + ImGui::GetStyle().ItemSpacing.y * 2)); // Add some space for the pie chart
+
+		if (slices.size() == 1) // Special case for a single slice to use AddCircleFilled
+		{
+			const auto& slice = slices[0];
+			bool slice_hovered = !inner_circle_hovering && distance_sq <= radius * radius;
+
+			draw_list->AddCircleFilled(center, radius, slice_hovered ? highlight_color : IM_COL32(slice.colour.r, slice.colour.g, slice.colour.b, slice.colour.a), num_segments);
+
+			if (draw_border)
+				draw_list->AddCircle(center, radius, IM_COL32(0, 0, 0, 255), num_segments, 1.5f);
+
+			if (slice_hovered)
+			{
+				if (slice.on_click && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+					slice.on_click();
+				else if (slice.on_right_click && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+					slice.on_right_click();
+				else if (slice.on_hover)
+					slice.on_hover();
+			}
+
+			ImVec2 text_size = ImGui::CalcTextSize(slice.label.c_str());
+			ImVec2 label_pos = ImVec2(
+				center.x - text_size.x * 0.5f,
+				((center.y - inner_radius * 2.f) - text_size.y * 0.5f)
+			);
+			draw_list->AddText(label_pos, IM_COL32(255, 255, 255, 255), slice.label.c_str());
+		}
+		else
+		{
+			float angle = 0.0f;
+			for (size_t slice_index = 0; slice_index < slices.size(); ++slice_index)
+			{
+				const auto& slice = slices[slice_index];
+				float next_angle = angle + slice.percentage * 2.0f * static_cast<float>(std::numbers::pi);
+				float mid_angle = (angle + next_angle) * 0.5f;
+						// Calculate the angle of the mouse position relative to the center
+				float mouse_angle = atan2f(mouse_pos.y - center.y, mouse_pos.x - center.x);
+				if (mouse_angle < 0.0f) mouse_angle += 2.0f * static_cast<float>(std::numbers::pi); // Convert to 0-2π range (atan2 returns -π to π)
+
+				bool slice_hovered = !inner_circle_hovering && distance_sq <= radius * radius &&
+				                     mouse_angle >= angle && mouse_angle <= next_angle;
+
+				draw_list->PathClear();
+				draw_list->PathLineTo(center);
+				for (int i = 0; i <= num_segments; i++)
+				{
+					float a = angle + (next_angle - angle) * i / (float)num_segments;
+					draw_list->PathLineTo(ImVec2(
+						center.x + cosf(a) * radius,
+						center.y + sinf(a) * radius
+					));
+				}
+				draw_list->PathFillConvex(slice_hovered ? highlight_color : IM_COL32(slice.colour.r, slice.colour.g, slice.colour.b, slice.colour.a));
+
+				if (slice_hovered)
+				{
+					if (slice.on_click && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+						slice.on_click();
+					else if (slice.on_right_click && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+						slice.on_right_click();
+					else if (slice.on_hover)
+						slice.on_hover();
+				}
+
+				if (draw_border)
+				{
+					draw_list->PathClear();
+					for (int i = 0; i <= num_segments; i++)
+					{
+						float a = angle + (next_angle - angle) * i / (float)num_segments;
+						draw_list->PathLineTo(ImVec2(
+							center.x + cosf(a) * radius,
+							center.y + sinf(a) * radius
+						));
+					}
+					draw_list->PathStroke(IM_COL32(0, 0, 0, 255), ImDrawFlags_None, 1.5f);
+				}
+
+				// Draw slice label (only if slice is big enough)
+				if (slice.percentage > 0.05f) // Only show label if slice is > 5%
+				{
+					ImVec2 text_size = ImGui::CalcTextSize(slice.label.c_str());
+					float label_radius = radius * 0.7f; // Position label between center and edge
+					ImVec2 label_pos = ImVec2(
+						center.x + cosf(mid_angle) * label_radius - text_size.x * 0.5f,
+						center.y + sinf(mid_angle) * label_radius - text_size.y * 0.5f
+					);
+					draw_list->AddText(label_pos, IM_COL32(255, 255, 255, 255), slice.label.c_str());
+				}
+
+				angle = next_angle;
+			}
+		}
+
+		// Add a circle in the middle of the pie chart
+		draw_list->AddCircleFilled(center, inner_radius, inner_circle_hovering ? highlight_color : IM_COL32(255, 255, 255, 255), 32);
+
+		// Handle inner circle interaction
+		if (inner_circle_hovering)
+		{
+			if (on_inner_circle_click && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				on_inner_circle_click();
+			else if (on_inner_circle_hover)
+				on_inner_circle_hover();
+		}
+	}
+
+	void Editor::draw_performance_window()
+	{
+		if (ImGui::Begin("Performance", &m_windows_to_display.Performance))
+		{
+			ImGui::Text("Draw calls", m_draw_count);
+			ImGui::Text("FPS", ImGui::GetIO().Framerate);
+			ImGui::Separator();
+
+			std::array<glm::vec4, 9> colours = {
+				glm::vec4(150, 0, 0, 255),      // Red
+				glm::vec4(0, 150, 0, 255),      // Green
+				glm::vec4(0, 0, 255, 255),      // Blue
+				glm::vec4(255, 255, 0, 255),    // Yellow
+				glm::vec4(200, 165, 0, 255),    // Orange
+				glm::vec4(75, 0, 130, 255),     // Indigo
+				glm::vec4(238, 130, 238, 255),  // Violet
+				glm::vec4(0, 255, 255, 255),    // Cyan
+				glm::vec4(255, 192, 203, 255),  // Pink
+			};
+
+			const auto& perf_tree = Utility::ScopedPerformanceBench::s_performance_benchmarks;
+			const Utility::PerformanceTree::Node* pie_chart_node = pie_chart_node_index ? &perf_tree[pie_chart_node_index.value()] : nullptr;
+			std::vector<size_t> pie_nodes;
+
+			if (pie_chart_node_index)
+			{
+				ImGui::Text_Manual("Current layer: Root:%s", pie_chart_node->name.c_str());
+				pie_nodes = perf_tree[*pie_chart_node_index].children;
+			}
+			else
+			{
+				ImGui::Text("Current layer: Root");
+				pie_nodes = perf_tree.get_root_nodes();
+			}
+
+			if (pie_nodes.empty())
+				ImGui::Text("No performance data available for this layer.");
+			else
+			{
+				// Check if the parent node is valid before calling!
+				auto UpLayerFunc = [this, &pie_chart_node]() { pie_chart_node_index = pie_chart_node->parent; };
+
+				// Calculate total duration for the current layer
+				Utility::PerformanceTree::Duration total_duration_ms = Utility::PerformanceTree::Duration::zero();
+				for (const auto& node_index : pie_nodes)
+				{
+					const auto& node = perf_tree[node_index];
+					if (node.average_duration.count() > 0)
+						total_duration_ms += node.average_duration;
+				}
+
+				std::vector<PieSlice> slices;
+				slices.reserve(pie_nodes.size());
+				for (size_t i = 0; i < pie_nodes.size(); ++i)
+				{
+					const size_t node_index = pie_nodes[i];
+					const auto& slice_node = perf_tree[node_index];
+					float percentage = slice_node.average_duration / total_duration_ms;
+
+					PieSlice slice;
+					slice.percentage = percentage;
+					slice.colour     = colours[i % colours.size()];
+					slice.label      = slice_node.stem;
+					slice.on_hover   = [slice_node, percentage]()
+					{
+						ImGui::SetTooltip("%s (%.1f%%)\nAvg:%.3fms\nMax:%.3fms\nMin:%.3fms",
+							slice_node.stem.c_str(),
+							percentage * 100.f,
+							std::chrono::duration<float, std::milli>(slice_node.average_duration).count(),
+							std::chrono::duration<float, std::milli>(slice_node.max_duration).count(),
+							std::chrono::duration<float, std::milli>(slice_node.min_duration).count());
+					};
+					if (pie_chart_node)               slice.on_right_click = UpLayerFunc;
+					if (!slice_node.children.empty()) slice.on_click       = [this, &slice_node, node_index]() { pie_chart_node_index = node_index; };
+
+					slices.push_back(slice);
+				}
+
+				draw_pie_chart(slices, UpLayerFunc, [this](){ if (pie_chart_node_index) ImGui::SetTooltip("Click to move up a layer"); });
+			}
+		}
+		ImGui::End();
 	}
 
 	void Editor::entity_creation_popup()

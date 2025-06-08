@@ -10,6 +10,8 @@
 #include "Geometry/Ray.hpp"
 #include "Geometry/Triangle.hpp"
 
+#include "Utility/Performance.hpp"
+
 namespace System
 {
 	CollisionSystem::CollisionSystem(SceneSystem& p_scene_system) noexcept
@@ -18,6 +20,8 @@ namespace System
 
 	void CollisionSystem::update()
 	{
+		PERF(CollisionSystemUpdate);
+
 		m_scene_system.get_current_scene_entities().foreach([&](Component::Collider& p_collider)
 		{
 			p_collider.m_collided = false;

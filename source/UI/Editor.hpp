@@ -5,6 +5,8 @@
 #include "ECS/Entity.hpp"
 
 #include <chrono>
+#include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -52,6 +54,7 @@ namespace UI
 			bool ent_properties   = false;
 			bool Graphics_Debug   = false;
 			bool Physics_Debug    = false;
+			bool Performance      = true;
 			bool ImGuiDemo        = false;
 			bool ImGuiMetrics     = false;
 			bool ImGuiStack       = false;
@@ -88,8 +91,9 @@ namespace UI
 		std::optional<ECS::Entity> m_debug_GJK_entity_1;
 		std::optional<ECS::Entity> m_debug_GJK_entity_2;
 		int m_debug_GJK_step;
-
 		bool m_show_primary_camera_frustrum;
+
+		std::optional<size_t> pie_chart_node_index; // The current performance node being drawn. Nullptr = root.
 	public:
 		using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a float precision duration in seconds.
 
@@ -158,6 +162,19 @@ namespace UI
 		void draw_graphics_debug_window();
 		void draw_physics_debug_window();
 		void draw_console_window();
+		void draw_performance_window();
+
+		struct PieSlice
+		{
+			float percentage;
+			glm::vec4 colour;
+			std::string label;
+
+			std::function<void()> on_click;
+			std::function<void()> on_right_click;
+			std::function<void()> on_hover;
+		};
+		void draw_pie_chart(const std::vector<PieSlice>& slices, const std::function<void()>& on_inner_circle_click = nullptr, const std::function<void()>& on_inner_circle_hover = nullptr, bool draw_border = true);
 
 		void entity_creation_popup();
 

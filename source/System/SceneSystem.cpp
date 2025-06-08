@@ -17,6 +17,7 @@
 
 #include "Utility/Config.hpp"
 #include "Utility/MeshBuilder.hpp"
+#include "Utility/Performance.hpp"
 
 namespace System
 {
@@ -48,6 +49,8 @@ namespace System
 
 	void Scene::update(float aspect_ratio, Component::ViewInformation* view_info_override /*= nullptr*/)
 	{
+		PERF(SceneUpdate);
+
 		{// Update scene bounds
 			m_bound.m_min = glm::vec3(0.f);
 			m_bound.m_max = glm::vec3(0.f);

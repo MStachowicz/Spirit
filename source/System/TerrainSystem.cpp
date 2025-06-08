@@ -7,10 +7,14 @@
 
 #include "ECS/Storage.hpp"
 
+#include "Utility/Performance.hpp"
+
 namespace System
 {
 	void TerrainSystem::update(Scene& p_scene, float aspect_ratio)
 	{
+		PERF(TerrainSystemUpdate);
+
 		std::optional<glm::vec3> player_pos;
 		std::optional<float> view_distance;
 
@@ -26,6 +30,8 @@ namespace System
 
 		if (player_pos && view_distance)
 		{
+			PERF(UpdateTerrainComponents);
+
 			p_scene.m_entities.foreach([&](Component::Terrain& p_terrain)
 			{
 				p_terrain.update(*player_pos, *view_distance);

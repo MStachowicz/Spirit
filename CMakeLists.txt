@@ -354,6 +354,7 @@ source/Utility/File.hpp
 source/Utility/Logger.hpp
 source/Utility/Logger.cpp
 source/Utility/MeshBuilder.hpp
+source/Utility/Performance.hpp
 source/Utility/PerlinNoise.hpp
 source/Utility/Serialise.hpp
 source/Utility/Stopwatch.hpp
