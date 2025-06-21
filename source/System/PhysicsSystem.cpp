@@ -26,6 +26,8 @@ namespace System
 
 	void PhysicsSystem::integrate(const DeltaTime& p_delta_time)
 	{
+		static_assert(std::is_same_v<DeltaTime, std::chrono::duration<float, std::ratio<1>>>, "PhysicsSystem::integrate expects DeltaTime to be a duration in seconds with float precision.");
+
 		PERF(PhysicsSystemIntegrate);
 
 		m_update_count++;

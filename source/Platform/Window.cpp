@@ -20,7 +20,7 @@ namespace Platform
 		: m_last_position_windowed{0, 0} // init in body via set_position
 		, m_last_size_windowed{0, 0}     // init in body
 		, m_fullscreen{false}
-		, m_VSync{true}
+		, m_VSync{false}
 		, m_close_requested{false}
 		, m_handle{nullptr}
 		, m_input{p_input_state}
