@@ -369,6 +369,7 @@ target_link_libraries(Utility
 PUBLIC GLM
 PUBLIC Geometry
 PUBLIC OpenGL
+PUBLIC TracyClient
 PRIVATE UI # Logger.cpp uses Editor for output
 )
 target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
@@ -444,6 +445,11 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 
 	add_subdirectory(source/External/ASSIMP source/External/ASSIMP SYSTEM)
 	# ASSIMP end --------------------------------------------------------------------------------------------------------------------------
+
+	# Tracy Profiler -----------------------------------------------------------------
+	add_subdirectory(source/External/Tracy source/External/Tracy SYSTEM)
+	target_compile_definitions(TracyClient PUBLIC $<$<CONFIG:Release>:TRACY_ENABLE=0>$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE=1>)
+	# Tracy end ----------------------------------------------------------------------
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
 
 add_custom_target(All DEPENDS Spirit Test)

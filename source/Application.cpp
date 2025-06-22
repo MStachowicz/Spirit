@@ -90,6 +90,7 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 
 		Utility::ScopedPerformanceBench::s_performance_benchmarks.end_frame();
 		OpenGL::DebugRenderer::clear();
+		PERF_FRAME_END
 	}
 
 #ifndef Z_RELEASE

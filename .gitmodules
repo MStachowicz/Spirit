@@ -20,3 +20,6 @@
 [submodule "source/External/ImGuizmo"]
 	path = source/External/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "source/External/Tracy"]
+	path = source/External/Tracy
+	url = https://github.com/wolfpld/tracy.git
