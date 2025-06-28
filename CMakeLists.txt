@@ -448,7 +448,6 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 
 	# Tracy Profiler -----------------------------------------------------------------
 	add_subdirectory(source/External/Tracy source/External/Tracy SYSTEM)
-	target_compile_definitions(TracyClient PUBLIC $<$<CONFIG:Release>:TRACY_ENABLE=0>$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE=1>)
 	# Tracy end ----------------------------------------------------------------------
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
 

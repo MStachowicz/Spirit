@@ -17,6 +17,7 @@
 #include "Utility/Logger.hpp"
 #include "Utility/MeshBuilder.hpp"
 #include "Utility/Utility.hpp"
+#include "Utility/Performance.hpp"
 
 #include "imgui.h"
 
@@ -78,6 +79,8 @@ namespace OpenGL
 
 	void OpenGLRenderer::start_frame()
 	{
+		PERF(OpenGLRendererStartFrame);
+
 		m_view_properties_buffer.set_data(m_scene_system.get_current_scene_view_info(), 0);
 
 		m_shadow_mapper.shadow_pass(m_scene_system.get_current_scene());
@@ -93,6 +96,7 @@ namespace OpenGL
 
 	void OpenGLRenderer::draw(const DeltaTime& delta_time)
 	{
+		PERF(OpenGLRendererDraw);
 		auto& entities = m_scene_system.get_current_scene_entities();
 		auto& scene    = m_scene_system.get_current_scene();
 
@@ -255,6 +259,7 @@ namespace OpenGL
 
 	void OpenGLRenderer::end_frame()
 	{
+		PERF(OpenGLRendererEndFrame);
 		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_phong_renderer.get_point_lights_buffer(), m_screen_framebuffer);
 
 		// Draw the colour output from m_screen_framebuffer colour texture to the default FBO as a fullscreen quad.

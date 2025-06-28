@@ -6,6 +6,7 @@
 #include "Utility/Logger.hpp"
 #include "Utility/Utility.hpp"
 #include "Utility/Config.hpp"
+#include "Utility/Performance.hpp"
 
 #include "GLFW/glfw3.h"
 #include "backends/imgui_impl_glfw.h"
@@ -178,6 +179,7 @@ namespace Platform
 
 	void Window::swap_buffers()
 	{
+		PERF(Swap_Buffers);
 		glfwSwapBuffers(m_handle);
 	}
 
@@ -235,6 +237,7 @@ namespace Platform
 	}
 	void Window::end_ImGui_frame()
 	{
+		PERF(End_ImGui_Frame);
 		ImGui::End(); // root_dock
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

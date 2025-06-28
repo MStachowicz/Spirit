@@ -371,6 +371,8 @@ namespace UI
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
 	{
+		PERF(EditorDraw);
+
 		if (m_state == State::Playing)
 			return;
 

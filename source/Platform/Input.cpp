@@ -5,6 +5,8 @@
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 
+#include "Utility/Performance.hpp"
+
 #include <algorithm>
 
 namespace Platform
@@ -25,6 +27,8 @@ namespace Platform
 
 	void Input::update()
 	{
+		PERF(InputUpdate);
+
 		m_captured_this_frame = false;
 		m_cursor_delta = {0.f, 0.f};
 		glfwPollEvents();

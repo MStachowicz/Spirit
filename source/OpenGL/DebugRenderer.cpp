@@ -22,6 +22,8 @@
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Triangle.hpp"
 
+#include "Utility/Performance.hpp"
+
 namespace OpenGL
 {
 	static constexpr float Z_Far_Scaler = 1000.f; // Scale the geometry that extends infinitely by this to give it an infinite appearance.
@@ -63,6 +65,7 @@ namespace OpenGL
 	}
 	void DebugRenderer::render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const Buffer& p_point_lights_buffer, const FBO& p_target_FBO)
 	{
+		PERF(DebugRendererRender);
 		if (!m_line_mb.empty())
 		{
 			auto line_mesh = m_line_mb.get_mesh();

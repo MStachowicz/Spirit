@@ -203,7 +203,7 @@ namespace Utility
 #define PERF(p_name) ZoneScopedN(#p_name); Utility::ScopedPerformanceBench perf_##p_name{#p_name};
 #define PERF_FRAME_END FrameMark;
 #else
-#define PERF(p_name) (void)0;
-#define PERF_FRAME_END (void)0;
+#define PERF(p_name) ZoneScopedN(#p_name);
+#define PERF_FRAME_END FrameMark;
 
 #endif
