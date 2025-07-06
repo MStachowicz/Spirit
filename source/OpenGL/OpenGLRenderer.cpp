@@ -52,6 +52,8 @@ namespace OpenGL
 		, m_post_processing_options{}
 		, m_draw_shadows{false}
 		, m_draw_grid{false}
+		, m_draw_terrain_nodes{false}
+		, m_draw_terrain_wireframe{false}
 	{
 		#ifdef Z_DEBUG // Ensure the uniform block layout matches the Component::ViewInformation struct layout for direct memory copy.
 		{
@@ -183,11 +185,39 @@ namespace OpenGL
 		{// Draw terrain
 			entities.foreach([&](Component::Terrain& p_terrain)
 			{
+				if (m_draw_terrain_nodes)
+				{
+					std::array<glm::vec4, 8> depth_colours = {
+						glm::vec4(1.f, 0.f, 0.f, 1.f), // Red
+						glm::vec4(0.f, 1.f, 0.f, 1.f), // Green
+						glm::vec4(0.f, 0.f, 1.f, 1.f), // Blue
+						glm::vec4(1.f, 1.f, 0.f, 1.f), // Yellow
+						glm::vec4(1.f, 0.5f, 0.5f, 1.f), // Light Red
+						glm::vec4(0.5f, 1.f, 0.5f, 1.f), // Light Green
+						glm::vec4(0.5f, 0.5f, 1.f, 1.f), // Light Blue
+						glm::vec4(1.f, 0.5f, 1.f, 1.f) // Light Purple
+					};
+					std::vector<std::pair<Geometry::Depth_t, Geometry::AABB2D>> nodes_to_draw;
+					nodes_to_draw.reserve(p_terrain.node_mesh_info.size());
+					for (const auto& node : p_terrain.node_mesh_info)
+					{
+						auto node_bounds_2D = node.first.get_bounds(p_terrain.root_bounds->half_size, p_terrain.root_bounds->center);
+						nodes_to_draw.emplace_back(node.first.depth, node_bounds_2D);
+					}
+
+					std::sort(nodes_to_draw.begin(), nodes_to_draw.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+					for (const auto& [depth, bounds] : nodes_to_draw)
+						DebugRenderer::add(Geometry::AABB(glm::vec3{bounds.min.x, 0.f, bounds.min.y}, glm::vec3{bounds.max.x, 0.f, bounds.max.y}), depth_colours[depth % depth_colours.size()], false);
+
+					return;
+				}
+
 				if (p_terrain.empty())
 					return;
 
 				DrawCall dc;
-				dc.m_polygon_mode = PolygonMode::Line;
+
+				if (m_draw_terrain_wireframe) dc.m_polygon_mode = PolygonMode::Line;
 
 				dc.set_SSBO("DirectionalLightsBuffer", directional_light_buffer);
 				dc.set_SSBO("PointLightsBuffer",       point_light_buffer);
@@ -214,8 +244,10 @@ namespace OpenGL
 
 	void OpenGLRenderer::draw_UI()
 	{
-		ImGui::Checkbox("Draw shadows", &m_draw_shadows);
-		ImGui::Checkbox("Draw grid",    &m_draw_grid);
+		ImGui::Checkbox("Draw shadows",           &m_draw_shadows);
+		ImGui::Checkbox("Draw grid",              &m_draw_grid);
+		ImGui::Checkbox("Draw terrain nodes",     &m_draw_terrain_nodes);
+		ImGui::Checkbox("Draw terrain wireframe", &m_draw_terrain_wireframe);
 
 		if (ImGui::Button("Reload Shaders"))
 			reload_shaders();
@@ -241,6 +273,8 @@ namespace OpenGL
 	{
 		m_draw_shadows            = true;
 		m_draw_grid               = true;
+		m_draw_terrain_nodes      = false;
+		m_draw_terrain_wireframe  = false;
 		m_post_processing_options = {};
 	}
 	void OpenGLRenderer::reload_shaders()

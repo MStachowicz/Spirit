@@ -58,12 +58,13 @@ namespace UI
 		, m_cursor_intersection{}
 		, m_console{}
 		, m_windows_to_display{}
+		, m_player_info_window{}
 		, m_dragging{false}
+		, m_draw_axes{true}
 		, m_debug_GJK{false}
 		, m_debug_GJK_entity_1{}
 		, m_debug_GJK_entity_2{}
 		, m_debug_GJK_step{0}
-		, m_show_primary_camera_frustrum{false}
 		, pie_chart_node_index{std::nullopt}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
@@ -321,7 +322,6 @@ namespace UI
 				m_input.set_cursor_mode(Platform::CursorMode::Normal);
 				m_window.m_show_menu_bar                = true;
 				m_physics_system.m_bool_apply_kinematic = false;
-				m_show_primary_camera_frustrum          = false;
 
 				if (m_scene_before_play)
 					m_scene_system.set_current_scene(*m_scene_before_play);
@@ -340,7 +340,6 @@ namespace UI
 				play_scene          = m_scene_system.get_current_scene();
 				m_scene_system.set_current_scene(play_scene);
 				m_physics_system.m_bool_apply_kinematic = true;
-				m_show_primary_camera_frustrum          = false;
 				break;
 			}
 			case State::CameraTesting:
@@ -348,7 +347,6 @@ namespace UI
 				m_input.set_cursor_mode(Platform::CursorMode::Captured);
 				m_window.m_show_menu_bar                = true;
 				m_physics_system.m_bool_apply_kinematic = false;
-				m_show_primary_camera_frustrum          = true;
 				if (m_scene_before_play && m_state == State::Playing) // Only reset the scene if the user was playing before entering camera testing.
 					m_scene_system.set_current_scene(*m_scene_before_play);
 				break;
@@ -437,7 +435,11 @@ namespace UI
 				ImGui::MenuItem("Graphics",               NULL, &m_windows_to_display.Graphics_Debug);
 				ImGui::MenuItem("Physics",                NULL, &m_windows_to_display.Physics_Debug);
 				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
+				ImGui::MenuItem("Show Terrain Nodes",     NULL, &m_openGL_renderer.m_draw_terrain_nodes);
+				ImGui::MenuItem("Draw Terrain Wireframe", NULL, &m_openGL_renderer.m_draw_terrain_wireframe);
+				ImGui::MenuItem("Show Player info",       NULL, &m_player_info_window.open);
 				ImGui::Separator();
+
 				if (ImGui::MenuItem("Play"))
 					set_state(State::Playing);
 				if (ImGui::MenuItem("Camera Test"))
@@ -465,6 +467,7 @@ namespace UI
 		if (m_windows_to_display.Performance)    draw_performance_window();
 		if (m_windows_to_display.Graphics_Debug) draw_graphics_debug_window();
 		if (m_windows_to_display.Physics_Debug)  draw_physics_debug_window();
+		m_player_info_window.draw(*this);
 		if (m_windows_to_display.ImGuiDemo)      ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
 		if (m_windows_to_display.ImGuiMetrics)   ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
 		if (m_windows_to_display.ImGuiStack)     ImGui::ShowStackToolWindow(&m_windows_to_display.ImGuiStack);
@@ -483,24 +486,8 @@ namespace UI
 			ImGui::End();
 		}
 
-		if (m_show_primary_camera_frustrum)
-		{
-			auto& scene = m_scene_system.get_current_scene_entities();
-			scene.foreach([&](Component::FirstPersonCamera& p_camera, const Component::Transform& p_transform)
-			{
-				if (!p_camera.m_primary)
-					return;
-
-				OpenGL::DebugRenderer::add(p_camera.frustrum(m_window.aspect_ratio(), p_transform.m_position));
-
-				auto camera_view_dist = p_camera.get_maximum_view_distance(m_window.aspect_ratio());
-				//OpenGL::DebugRenderer::add(Geometry::Sphere(p_transform.m_position, camera_view_dist), glm::vec4(1.f, 1.f, 0.f, 0.25f), 3);
-				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position + p_camera.forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
-				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position - p_camera.forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
-				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position + p_camera.right() * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
-				OpenGL::DebugRenderer::add(Geometry::LineSegment(p_transform.m_position, p_transform.m_position - p_camera.right() * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
-			});
-		}
+		if (m_draw_axes)
+			OpenGL::DebugRenderer::add_axes(glm::vec3{0.f}, 25.f);
 
 		draw_entity_properties();
 		entity_creation_popup();
@@ -642,7 +629,7 @@ namespace UI
 			ImGui::Text("Proj",          m_scene_system.get_current_scene_view_info().m_projection);
 			ImGui::Separator();
 			ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
-			ImGui::Checkbox("Show camera frustrum", &m_show_primary_camera_frustrum);
+			ImGui::Checkbox("Show player frustrum", &m_player_info_window.render_player_frustrum);
 			ImGui::Checkbox("Visualise normals",    &debug_options.m_show_mesh_normals);
 			bool VSync = m_window.get_VSync();
 			if (ImGui::Checkbox("VSync", &VSync))
@@ -1067,5 +1054,62 @@ namespace UI
 
 		//auto theme_grey = ImVec4(0.174f, 0.174f, 0.174f, 1.000f);
 		//style.Colors[ImGuiCol_MenuBarBg] = theme_grey;
+	}
+	void Editor::PlayerInfoWindow::draw(Editor& p_editor)
+	{
+		const Component::Transform* player_transform      = nullptr;
+		const Component::FirstPersonCamera* player_camera = nullptr;
+
+		auto& scene = p_editor.m_scene_system.get_current_scene_entities();
+		scene.foreach([&](const Component::FirstPersonCamera& p_camera, const Component::Transform& p_transform)
+		{
+			if (p_camera.m_primary)
+			{
+				player_transform = &p_transform;
+				player_camera    = &p_camera;
+				return;
+			}
+		});
+
+		if (open)
+		{
+			if (ImGui::Begin("Player Info", &open))
+			{
+				ImGui::Text_Manual("Position: %.0f, %.0f, %.0f", player_transform->m_position.x, player_transform->m_position.y, player_transform->m_position.z);
+				ImGui::Text_Manual("Forward:  %.0f, %.0f, %.0f", player_camera->forward().x, player_camera->forward().y, player_camera->forward().z);
+				ImGui::Text_Manual("Right:    %.0f, %.0f, %.0f", player_camera->right().x,   player_camera->right().y,   player_camera->right().z);
+				ImGui::Text_Manual("Up:       %.0f, %.0f, %.0f", player_camera->up().x,      player_camera->up().y,      player_camera->up().z);
+				ImGui::Text_Manual("View distance: %.0f", player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio()));
+				ImGui::Text_Manual("Open %s", open ? "true" : "false");
+
+				ImGui::SeparatorText("Scene debug");
+				ImGui::Checkbox("Show player position", &render_player_position);
+				ImGui::Checkbox("Show player view distance", &render_player_view_distance);
+				ImGui::Checkbox("Show player frustrum", &render_player_frustrum);
+			}
+			ImGui::End();
+		}
+
+		if (player_transform)
+		{
+			auto& pos = player_transform->m_position;
+
+			if (render_player_position)
+				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, 1.f}, glm::vec4{1.f});
+			if (render_player_view_distance && player_camera)
+			{
+				auto player_view_distance = player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio());
+				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, player_view_distance}, glm::vec4{1.f, 1.f, 0.f, 0.25f}, 3);
+			}
+			if (render_player_frustrum)
+			{
+				OpenGL::DebugRenderer::add(player_camera->frustrum(p_editor.m_window.aspect_ratio(), pos));
+				auto camera_view_dist = player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio());
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos + player_camera->forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos - player_camera->forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos + player_camera->right()   * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
+				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos - player_camera->right()   * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
+			}
+		}
 	}
 } // namespace UI

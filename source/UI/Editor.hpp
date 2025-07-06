@@ -54,7 +54,7 @@ namespace UI
 			bool ent_properties   = false;
 			bool Graphics_Debug   = false;
 			bool Physics_Debug    = false;
-			bool Performance      = true;
+			bool Performance      = false;
 			bool ImGuiDemo        = false;
 			bool ImGuiMetrics     = false;
 			bool ImGuiStack       = false;
@@ -64,6 +64,22 @@ namespace UI
 			bool ImGuiStyleEditor = false;
 			bool Console          = true;
 			bool asset_browser    = false;
+		};
+
+		struct PlayerInfoWindow
+		{
+			bool open = false;
+			bool render_player_position      = false;
+			bool render_player_view_distance = false;
+			bool render_player_frustrum      = false;
+
+			void draw(Editor& p_editor);
+			void reset()
+			{
+				render_player_position      = false;
+				render_player_view_distance = false;
+				render_player_frustrum      = false;
+			}
 		};
 
 		Platform::Input&         m_input;
@@ -85,13 +101,14 @@ namespace UI
 		std::optional<glm::vec3> m_cursor_intersection;
 		Console m_console;
 		Windows m_windows_to_display; // All the windows currently being displayed
+		PlayerInfoWindow m_player_info_window;
 		bool m_dragging;              // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
 
+		bool m_draw_axes; // Whether to draw the axes in the editor.
 		bool m_debug_GJK;
 		std::optional<ECS::Entity> m_debug_GJK_entity_1;
 		std::optional<ECS::Entity> m_debug_GJK_entity_2;
 		int m_debug_GJK_step;
-		bool m_show_primary_camera_frustrum;
 
 		std::optional<size_t> pie_chart_node_index; // The current performance node being drawn. Nullptr = root.
 	public:

@@ -10,7 +10,7 @@
 #include "Geometry/LineSegment.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Triangle.hpp"
-#include "Geometry/Quadkey.hpp"
+#include "Geometry/QuadKey.hpp"
 
 #include "Utility/Utility.hpp"
 
