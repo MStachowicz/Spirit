@@ -19,5 +19,6 @@ namespace Test
 		void run_frustrum_tests();
 		void run_sphere_tests();
 		void run_point_tests();
+		void run_quad_key_tests();
 	};
 } // namespace Test

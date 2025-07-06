@@ -5,6 +5,7 @@
 #include "glm/gtc/epsilon.hpp"
 #include "Geometry/Triangle.hpp"
 #include "Geometry/AABB.hpp"
+#include "Geometry/QuadKey.hpp"
 
 #include <string>
 #include <vector>
@@ -60,6 +61,12 @@ namespace std
 		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 		auto format(const Geometry::AABB2D& v, format_context& ctx) const { return format_to(ctx.out(), "({}, {})", v.min, v.max); }
 	};
+	template<>
+	struct formatter<Geometry::QuadKey>
+	{
+		constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+		auto format(const Geometry::QuadKey& v, format_context& ctx) const { return format_to(ctx.out(), "({})", v.to_string()); }
+	};
 }
 
 namespace Test
@@ -67,8 +74,9 @@ namespace Test
 	// Modifies source_location into a IDE hyperlink friendly format
 	std::string to_string(const std::source_location& p_location);
 
-	#define CHECK_TRUE(p_conditional, p_test_name) { run_unit_test(p_conditional, p_test_name, std::format("Expected: '{}' to be true\n{}", #p_conditional, to_string(std::source_location::current()))); }
-	#define CHECK_EQUAL(p_value, p_expected_value, p_test_name) { run_unit_test(p_value == p_expected_value, p_test_name, std::format("Expected {} ({}) to equal {} ({})\n{}", #p_value, p_value, #p_expected_value, p_expected_value, to_string(std::source_location::current()))); }
+	#define CHECK_TRUE(p_conditional, p_test_name)                               { run_unit_test(p_conditional, p_test_name, std::format("Expected: '{}' to be true\n{}", #p_conditional, to_string(std::source_location::current()))); }
+	#define CHECK_EQUAL(p_value, p_expected_value, p_test_name)                  { run_unit_test(p_value == p_expected_value, p_test_name, std::format("Expected {} ({}) to equal {} ({})\n{}",     #p_value, p_value, #p_expected_value, p_expected_value, to_string(std::source_location::current()))); }
+	#define CHECK_NOT_EQUAL(p_value, p_expected_value, p_test_name)              { run_unit_test(p_value != p_expected_value, p_test_name, std::format("Expected {} ({}) to not equal {} ({})\n{}", #p_value, p_value, #p_expected_value, p_expected_value, to_string(std::source_location::current()))); }
 	#define CHECK_EQUAL_FLOAT(p_value, p_expected_value, p_test_name, p_epsilon) { run_unit_test(glm::epsilonEqual(p_value, p_expected_value, p_epsilon), p_test_name, std::format("Expected {} ({}) to equal {} ({}) with epsilon {}\n{}", #p_value, p_value, #p_expected_value, p_expected_value, p_epsilon, to_string(std::source_location::current()))); }
 	#define CHECK_CONTAINER_EQUAL(p_container, p_expected_container, p_test_name)\
 	{\

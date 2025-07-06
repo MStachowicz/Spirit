@@ -10,6 +10,7 @@
 #include "Geometry/LineSegment.hpp"
 #include "Geometry/Ray.hpp"
 #include "Geometry/Triangle.hpp"
+#include "Geometry/Quadkey.hpp"
 
 #include "Utility/Utility.hpp"
 
@@ -31,6 +32,7 @@ namespace Test
 		run_frustrum_tests();
 		run_sphere_tests();
 		run_point_tests();
+		run_quad_key_tests();
 	}
 	void GeometryTester::run_performance_tests()
 	{
@@ -522,6 +524,411 @@ namespace Test
 
 			auto point_on_ray_behind = glm::vec3(-2.f);
 			CHECK_TRUE(!Geometry::point_inside(ray, point_on_ray_behind), "Point behind ray start");
+		}
+	}
+	void GeometryTester::run_quad_key_tests()
+	{SCOPE_SECTION("QuadKey");
+		using QK   = Geometry::QuadKey;
+		using Quad = QK::Quadrant;
+
+		constexpr auto qkTL = QK({Quad::TopLeft});
+		constexpr auto qkTR = QK({Quad::TopRight});
+		constexpr auto qkBL = QK({Quad::BottomLeft});
+		constexpr auto qkBR = QK({Quad::BottomRight});
+
+		constexpr auto qkTLTL = QK({Quad::TopLeft, Quad::TopLeft});
+		constexpr auto qkTLTR = QK({Quad::TopLeft, Quad::TopRight});
+		constexpr auto qkTLBL = QK({Quad::TopLeft, Quad::BottomLeft});
+		constexpr auto qkTLBR = QK({Quad::TopLeft, Quad::BottomRight});
+
+		constexpr auto qkTRTL = QK({Quad::TopRight, Quad::TopLeft});
+		constexpr auto qkTRTR = QK({Quad::TopRight, Quad::TopRight});
+		constexpr auto qkTRBL = QK({Quad::TopRight, Quad::BottomLeft});
+		constexpr auto qkTRBR = QK({Quad::TopRight, Quad::BottomRight});
+
+		constexpr auto qkBLTL = QK({Quad::BottomLeft, Quad::TopLeft});
+		constexpr auto qkBLTR = QK({Quad::BottomLeft, Quad::TopRight});
+		constexpr auto qkBLBL = QK({Quad::BottomLeft, Quad::BottomLeft});
+		constexpr auto qkBLBR = QK({Quad::BottomLeft, Quad::BottomRight});
+
+		constexpr auto qkBRTL = QK({Quad::BottomRight, Quad::TopLeft});
+		constexpr auto qkBRTR = QK({Quad::BottomRight, Quad::TopRight});
+		constexpr auto qkBRBL = QK({Quad::BottomRight, Quad::BottomLeft});
+		constexpr auto qkBRBR = QK({Quad::BottomRight, Quad::BottomRight});
+
+		{SCOPE_SECTION("QuadKey construction");
+			{SCOPE_SECTION("Depth 1");
+				CHECK_EQUAL(qkTL.key, Geometry::Key_t(0), "TopLeft");
+				CHECK_EQUAL(qkTL.depth, 1, "TopLeft depth");
+				CHECK_EQUAL(qkTL.to_string(), "TL", "TopLeft string");
+
+				CHECK_EQUAL(qkTR.key, Geometry::Key_t(1), "TopRight");
+				CHECK_EQUAL(qkTR.depth, 1, "TopRight depth");
+				CHECK_EQUAL(qkTR.to_string(), "TR", "TopRight string");
+
+				CHECK_EQUAL(qkBL.key, Geometry::Key_t(2), "BottomLeft");
+				CHECK_EQUAL(qkBL.depth, 1, "BottomLeft depth");
+				CHECK_EQUAL(qkBL.to_string(), "BL", "BottomLeft string");
+
+				CHECK_EQUAL(qkBR.key, Geometry::Key_t(3), "BottomRight");
+				CHECK_EQUAL(qkBR.depth, 1, "BottomRight depth");
+				CHECK_EQUAL(qkBR.to_string(), "BR", "BottomRight string");
+			}
+			{SCOPE_SECTION("Depth 2");
+				{SCOPE_SECTION("TopLeft");
+					CHECK_EQUAL(qkTLTL.key, Geometry::Key_t(0), "TopLeft");
+					CHECK_EQUAL(qkTLTL.depth, 2, "TopLeft depth");
+					CHECK_EQUAL(qkTLTL.to_string(), "TL -> TL", "TopLeft string");
+
+					CHECK_EQUAL(qkTLTR.key, Geometry::Key_t(1), "TopRight");
+					CHECK_EQUAL(qkTLTR.depth, 2, "TopRight depth");
+					CHECK_EQUAL(qkTLTR.to_string(), "TL -> TR", "TopRight string");
+
+					CHECK_EQUAL(qkTLBL.key, Geometry::Key_t(2), "BottomLeft");
+					CHECK_EQUAL(qkTLBL.depth, 2, "BottomLeft depth");
+					CHECK_EQUAL(qkTLBL.to_string(), "TL -> BL", "BottomLeft string");
+
+					CHECK_EQUAL(qkTLBR.key, Geometry::Key_t(3), "BottomRight");
+					CHECK_EQUAL(qkTLBR.depth, 2, "BottomRight depth");
+					CHECK_EQUAL(qkTLBR.to_string(), "TL -> BR", "BottomRight string");
+				}
+				{SCOPE_SECTION("TopRight");
+					CHECK_EQUAL(qkTRTL.key, Geometry::Key_t(4), "TopLeft");
+					CHECK_EQUAL(qkTRTL.depth, 2, "TopLeft depth");
+					CHECK_EQUAL(qkTRTL.to_string(), "TR -> TL", "TopLeft string");
+
+					CHECK_EQUAL(qkTRTR.key, Geometry::Key_t(5), "TopRight");
+					CHECK_EQUAL(qkTRTR.depth, 2, "TopRight depth");
+					CHECK_EQUAL(qkTRTR.to_string(), "TR -> TR", "TopRight string");
+
+					CHECK_EQUAL(qkTRBL.key, Geometry::Key_t(6), "BottomLeft");
+					CHECK_EQUAL(qkTRBL.depth, 2, "BottomLeft depth");
+					CHECK_EQUAL(qkTRBL.to_string(), "TR -> BL", "BottomLeft string");
+
+					CHECK_EQUAL(qkTRBR.key, Geometry::Key_t(7), "BottomRight");
+					CHECK_EQUAL(qkTRBR.depth, 2, "BottomRight depth");
+					CHECK_EQUAL(qkTRBR.to_string(), "TR -> BR", "BottomRight string");
+				}
+			}
+		}
+		{SCOPE_SECTION("QuadKey equality")
+			// identity at depth 1
+			CHECK_EQUAL(qkTL, qkTL, "TL == TL");
+			CHECK_EQUAL(qkTR, qkTR, "TR == TR");
+			CHECK_EQUAL(qkBL, qkBL, "BL == BL");
+			CHECK_EQUAL(qkBR, qkBR, "BR == BR");
+
+			// identity at depth 2
+			CHECK_EQUAL(qkTLTL, qkTLTL, "TLTL == TLTL");
+			CHECK_EQUAL(qkTLTR, qkTLTR, "TLTR == TLTR");
+			CHECK_EQUAL(qkTRTL, qkTRTL, "TRTL == TRTL");
+			CHECK_EQUAL(qkBRBR, qkBRBR, "BRBR == BRBR");
+
+			// same‐quadrant but different depth should be unequal
+			CHECK_NOT_EQUAL(qkTL, qkTLTL, "TL (d=1) != TLTL (d=2)");
+			CHECK_NOT_EQUAL(qkTR, qkTRTL, "TR (d=1) != TRTL (d=2)");
+			CHECK_NOT_EQUAL(qkBR, qkBRBR, "BR (d=1) != BRBR (d=2)");
+
+			// different keys at same depth should be unequal
+			CHECK_NOT_EQUAL(qkTLTL, qkTLTR, "TLTL != TLTR");
+			CHECK_NOT_EQUAL(qkTLTL, qkTRTL, "TLTL != TRTL");
+			CHECK_NOT_EQUAL(qkTRTL, qkTLTR, "TRTL != TLTR");
+			CHECK_NOT_EQUAL(qkTLTR, qkBRBR, "TLTR != BRBR");
+
+			// cross‐depth, cross‐quadrant inequalities
+			CHECK_NOT_EQUAL(qkTL,   qkBRBR, "TL (d=1) != BRBR (d=2)");
+			CHECK_NOT_EQUAL(qkTRTL, qkBR,   "TRTL (d=2) != BR (d=1)");
+
+			// exhaustive inequality at depth 1
+			CHECK_NOT_EQUAL(qkTL, qkTR, "TL != TR");
+			CHECK_NOT_EQUAL(qkTL, qkBL, "TL != BL");
+			CHECK_NOT_EQUAL(qkTL, qkBR, "TL != BR");
+			CHECK_NOT_EQUAL(qkTR, qkBL, "TR != BL");
+			CHECK_NOT_EQUAL(qkTR, qkBR, "TR != BR");
+			CHECK_NOT_EQUAL(qkBL, qkBR, "BL != BR");
+		}
+		{SCOPE_SECTION("Descendant")
+			{SCOPE_SECTION("TL descendants");
+				CHECK_EQUAL(qkTLTL.isContainedBy(qkTL), true, "TL -> TL");
+				CHECK_EQUAL(qkTLTR.isContainedBy(qkTL), true, "TL -> TL");
+				CHECK_EQUAL(qkTLBL.isContainedBy(qkTL), true, "TL -> TL");
+				CHECK_EQUAL(qkTLBR.isContainedBy(qkTL), true, "TL -> TL");
+
+				CHECK_EQUAL(qkTRTL.isContainedBy(qkTL), false, "TR -> TL");
+				CHECK_EQUAL(qkTRTR.isContainedBy(qkTL), false, "TR -> TR");
+				CHECK_EQUAL(qkTRBL.isContainedBy(qkTL), false, "TR -> BL");
+				CHECK_EQUAL(qkTRBR.isContainedBy(qkTL), false, "TR -> BR");
+
+				CHECK_EQUAL(qkBLTL.isContainedBy(qkTL), false, "BL -> TL");
+				CHECK_EQUAL(qkBLTR.isContainedBy(qkTL), false, "BL -> TR");
+				CHECK_EQUAL(qkBLBL.isContainedBy(qkTL), false, "BL -> BL");
+				CHECK_EQUAL(qkBLBR.isContainedBy(qkTL), false, "BL -> BR");
+
+				CHECK_EQUAL(qkBRTL.isContainedBy(qkTL), false, "BR -> TL");
+				CHECK_EQUAL(qkBRTR.isContainedBy(qkTL), false, "BR -> TR");
+				CHECK_EQUAL(qkBRBL.isContainedBy(qkTL), false, "BR -> BL");
+				CHECK_EQUAL(qkBRBR.isContainedBy(qkTL), false, "BR -> BR");
+			}
+			{SCOPE_SECTION("TR descendants");
+				CHECK_EQUAL(qkTRTL.isContainedBy(qkTR), true, "TR -> TL");
+				CHECK_EQUAL(qkTRTR.isContainedBy(qkTR), true, "TR -> TR");
+				CHECK_EQUAL(qkTRBL.isContainedBy(qkTR), true, "TR -> BL");
+				CHECK_EQUAL(qkTRBR.isContainedBy(qkTR), true, "TR -> BR");
+
+				CHECK_EQUAL(qkTLTL.isContainedBy(qkTR), false, "TL -> TL");
+				CHECK_EQUAL(qkTLTR.isContainedBy(qkTR), false, "TL -> TR");
+				CHECK_EQUAL(qkTLBL.isContainedBy(qkTR), false, "TL -> BL");
+				CHECK_EQUAL(qkTLBR.isContainedBy(qkTR), false, "TL -> BR");
+
+				CHECK_EQUAL(qkBLTL.isContainedBy(qkTR), false, "BL -> TL");
+				CHECK_EQUAL(qkBLTR.isContainedBy(qkTR), false, "BL -> TR");
+				CHECK_EQUAL(qkBLBL.isContainedBy(qkTR), false, "BL -> BL");
+				CHECK_EQUAL(qkBLBR.isContainedBy(qkTR), false, "BL -> BR");
+
+				CHECK_EQUAL(qkBRTL.isContainedBy(qkTR), false, "BR -> TL");
+				CHECK_EQUAL(qkBRTR.isContainedBy(qkTR), false, "BR -> TR");
+				CHECK_EQUAL(qkBRBL.isContainedBy(qkTR), false, "BR -> BL");
+				CHECK_EQUAL(qkBRBR.isContainedBy(qkTR), false, "BR -> BR");
+			}
+			{SCOPE_SECTION("BL descendants");
+				CHECK_EQUAL(qkBLTL.isContainedBy(qkBL), true, "BL -> TL");
+				CHECK_EQUAL(qkBLTR.isContainedBy(qkBL), true, "BL -> TR");
+				CHECK_EQUAL(qkBLBL.isContainedBy(qkBL), true, "BL -> BL");
+				CHECK_EQUAL(qkBLBR.isContainedBy(qkBL), true, "BL -> BR");
+
+				CHECK_EQUAL(qkTLTL.isContainedBy(qkBL), false, "TL -> TL");
+				CHECK_EQUAL(qkTLTR.isContainedBy(qkBL), false, "TL -> TR");
+				CHECK_EQUAL(qkTLBL.isContainedBy(qkBL), false, "TL -> BL");
+				CHECK_EQUAL(qkTLBR.isContainedBy(qkBL), false, "TL -> BR");
+
+				CHECK_EQUAL(qkTRTL.isContainedBy(qkBL), false, "TR -> TL");
+				CHECK_EQUAL(qkTRTR.isContainedBy(qkBL), false, "TR -> TR");
+				CHECK_EQUAL(qkTRBL.isContainedBy(qkBL), false, "TR -> BL");
+				CHECK_EQUAL(qkTRBR.isContainedBy(qkBL), false, "TR -> BR");
+
+				CHECK_EQUAL(qkBRTL.isContainedBy(qkBL), false, "BR -> TL");
+				CHECK_EQUAL(qkBRTR.isContainedBy(qkBL), false, "BR -> TR");
+				CHECK_EQUAL(qkBRBL.isContainedBy(qkBL), false, "BR -> BL");
+				CHECK_EQUAL(qkBRBR.isContainedBy(qkBL), false, "BR -> BR");
+			}
+			{SCOPE_SECTION("BR descendants");
+				CHECK_EQUAL(qkBRTL.isContainedBy(qkBR), true, "BR -> TL");
+				CHECK_EQUAL(qkBRTR.isContainedBy(qkBR), true, "BR -> TR");
+				CHECK_EQUAL(qkBRBL.isContainedBy(qkBR), true, "BR -> BL");
+				CHECK_EQUAL(qkBRBR.isContainedBy(qkBR), true, "BR -> BR");
+
+				CHECK_EQUAL(qkTLTL.isContainedBy(qkBR), false, "TL -> TL");
+				CHECK_EQUAL(qkTLTR.isContainedBy(qkBR), false, "TL -> TR");
+				CHECK_EQUAL(qkTLBL.isContainedBy(qkBR), false, "TL -> BL");
+				CHECK_EQUAL(qkTLBR.isContainedBy(qkBR), false, "TL -> BR");
+
+				CHECK_EQUAL(qkTRTL.isContainedBy(qkBR), false, "TR -> TL");
+				CHECK_EQUAL(qkTRTR.isContainedBy(qkBR), false, "TR -> TR");
+				CHECK_EQUAL(qkTRBL.isContainedBy(qkBR), false, "TR -> BL");
+				CHECK_EQUAL(qkTRBR.isContainedBy(qkBR), false, "TR -> BR");
+
+				CHECK_EQUAL(qkBLTL.isContainedBy(qkBR), false, "BL -> TL");
+				CHECK_EQUAL(qkBLTR.isContainedBy(qkBR), false, "BL -> TR");
+				CHECK_EQUAL(qkBLBL.isContainedBy(qkBR), false, "BL -> BL");
+				CHECK_EQUAL(qkBLBR.isContainedBy(qkBR), false, "BL -> BR");
+			}
+		}
+		{SCOPE_SECTION("Ancestor")
+			{SCOPE_SECTION("TL as ancestor")
+				CHECK_EQUAL(qkTL.contains(qkTLTL), true, "TL -> TL");
+				CHECK_EQUAL(qkTL.contains(qkTLTR), true, "TL -> TR");
+				CHECK_EQUAL(qkTL.contains(qkTLBL), true, "TL -> BL");
+				CHECK_EQUAL(qkTL.contains(qkTLBR), true, "TL -> BR");
+
+				CHECK_EQUAL(qkTL.contains(qkTRTL), false, "TR -> TL");
+				CHECK_EQUAL(qkTL.contains(qkTRTR), false, "TR -> TR");
+				CHECK_EQUAL(qkTL.contains(qkTRBL), false, "TR -> BL");
+				CHECK_EQUAL(qkTL.contains(qkTRBR), false, "TR -> BR");
+
+				CHECK_EQUAL(qkTL.contains(qkBLTL), false, "BL -> TL");
+				CHECK_EQUAL(qkTL.contains(qkBLTR), false, "BL -> TR");
+				CHECK_EQUAL(qkTL.contains(qkBLBL), false, "BL -> BL");
+				CHECK_EQUAL(qkTL.contains(qkBLBR), false, "BL -> BR");
+
+				CHECK_EQUAL(qkTL.contains(qkBRTL), false, "BR -> TL");
+				CHECK_EQUAL(qkTL.contains(qkBRTR), false, "BR -> TR");
+				CHECK_EQUAL(qkTL.contains(qkBRBL), false, "BR -> BL");
+				CHECK_EQUAL(qkTL.contains(qkBRBR), false, "BR -> BR");
+			}
+			{SCOPE_SECTION("TR as ancestor")
+				CHECK_EQUAL(qkTR.contains(qkTRTL), true, "TR -> TL");
+				CHECK_EQUAL(qkTR.contains(qkTRTR), true, "TR -> TR");
+				CHECK_EQUAL(qkTR.contains(qkTRBL), true, "TR -> BL");
+				CHECK_EQUAL(qkTR.contains(qkTRBR), true, "TR -> BR");
+
+				CHECK_EQUAL(qkTR.contains(qkTLTL), false, "TL -> TL");
+				CHECK_EQUAL(qkTR.contains(qkTLTR), false, "TL -> TR");
+				CHECK_EQUAL(qkTR.contains(qkTLBL), false, "TL -> BL");
+				CHECK_EQUAL(qkTR.contains(qkTLBR), false, "TL -> BR");
+
+				CHECK_EQUAL(qkTR.contains(qkBLTL), false, "BL -> TL");
+				CHECK_EQUAL(qkTR.contains(qkBLTR), false, "BL -> TR");
+				CHECK_EQUAL(qkTR.contains(qkBLBL), false, "BL -> BL");
+				CHECK_EQUAL(qkTR.contains(qkBLBR), false, "BL -> BR");
+
+				CHECK_EQUAL(qkTR.contains(qkBRTL), false, "BR -> TL");
+				CHECK_EQUAL(qkTR.contains(qkBRTR), false, "BR -> TR");
+				CHECK_EQUAL(qkTR.contains(qkBRBL), false, "BR -> BL");
+				CHECK_EQUAL(qkTR.contains(qkBRBR), false, "BR -> BR");
+			}
+			{SCOPE_SECTION("BL as ancestor")
+				CHECK_EQUAL(qkBL.contains(qkBLTL), true, "BL -> TL");
+				CHECK_EQUAL(qkBL.contains(qkBLTR), true, "BL -> TR");
+				CHECK_EQUAL(qkBL.contains(qkBLBL), true, "BL -> BL");
+				CHECK_EQUAL(qkBL.contains(qkBLBR), true, "BL -> BR");
+
+				CHECK_EQUAL(qkBL.contains(qkTLTL), false, "TL -> TL");
+				CHECK_EQUAL(qkBL.contains(qkTLTR), false, "TL -> TR");
+				CHECK_EQUAL(qkBL.contains(qkTLBL), false, "TL -> BL");
+				CHECK_EQUAL(qkBL.contains(qkTLBR), false, "TL -> BR");
+
+				CHECK_EQUAL(qkBL.contains(qkTRTL), false, "TR -> TL");
+				CHECK_EQUAL(qkBL.contains(qkTRTR), false, "TR -> TR");
+				CHECK_EQUAL(qkBL.contains(qkTRBL), false, "TR -> BL");
+				CHECK_EQUAL(qkBL.contains(qkTRBR), false, "TR -> BR");
+
+				CHECK_EQUAL(qkBL.contains(qkBRTL), false, "BR -> TL");
+				CHECK_EQUAL(qkBL.contains(qkBRTR), false, "BR -> TR");
+				CHECK_EQUAL(qkBL.contains(qkBRBL), false, "BR -> BL");
+				CHECK_EQUAL(qkBL.contains(qkBRBR), false, "BR -> BR");
+			}
+			{SCOPE_SECTION("BR as ancestor")
+				CHECK_EQUAL(qkBR.contains(qkBRTL), true, "BR -> TL");
+				CHECK_EQUAL(qkBR.contains(qkBRTR), true, "BR -> TR");
+				CHECK_EQUAL(qkBR.contains(qkBRBL), true, "BR -> BL");
+				CHECK_EQUAL(qkBR.contains(qkBRBR), true, "BR -> BR");
+
+				CHECK_EQUAL(qkBR.contains(qkTLTL), false, "TL -> TL");
+				CHECK_EQUAL(qkBR.contains(qkTLTR), false, "TL -> TR");
+				CHECK_EQUAL(qkBR.contains(qkTLBL), false, "TL -> BL");
+				CHECK_EQUAL(qkBR.contains(qkTLBR), false, "TL -> BR");
+
+				CHECK_EQUAL(qkBR.contains(qkTRTL), false, "TR -> TL");
+				CHECK_EQUAL(qkBR.contains(qkTRTR), false, "TR -> TR");
+				CHECK_EQUAL(qkBR.contains(qkTRBL), false, "TR -> BL");
+				CHECK_EQUAL(qkBR.contains(qkTRBR), false, "TR -> BR");
+
+				CHECK_EQUAL(qkBR.contains(qkBLTL), false, "BL -> TL");
+				CHECK_EQUAL(qkBR.contains(qkBLTR), false, "BL -> TR");
+				CHECK_EQUAL(qkBR.contains(qkBLBL), false, "BL -> BL");
+				CHECK_EQUAL(qkBR.contains(qkBLBR), false, "BL -> BR");
+			}
+		}
+		{ SCOPE_SECTION("Remap Root Quadrant")
+			{SCOPE_SECTION("Depth 1");
+				auto mutableTL = qkTL.remap_root_quadrant(Quad::TopRight);
+				CHECK_EQUAL(mutableTL, QK({Quad::TopRight}), "TL -> TR");
+
+				auto mutableBR = qkBR.remap_root_quadrant(Quad::BottomLeft);
+				CHECK_EQUAL(mutableBR, QK({Quad::BottomLeft}), "BR -> BL");
+			}
+			{SCOPE_SECTION("Depth 2");
+				// TL -> BL becomes TR -> BL
+				auto m1 = qkTLBL.remap_root_quadrant(Quad::TopRight);
+				CHECK_EQUAL(m1, QK({Quad::TopRight, Quad::BottomLeft}), "TL,BL -> TR,BL");
+
+				// BR -> TR becomes BL -> TR
+				auto m2 = qkBRTR.remap_root_quadrant(Quad::BottomLeft);
+				CHECK_EQUAL(m2, QK({Quad::BottomLeft, Quad::TopRight}), "BR,TR -> BL,TR");
+			}
+
+			// depth‑3 mixed cases
+			{SCOPE_SECTION("Depth 3");
+				constexpr auto qk_TR_BL_BR = QK({Quad::TopRight, Quad::BottomLeft, Quad::BottomRight});
+				auto m3 = qk_TR_BL_BR.remap_root_quadrant(Quad::TopLeft);
+				// TR -> TL, BL, BR remain
+				CHECK_EQUAL(m3, QK({Quad::TopLeft, Quad::BottomLeft, Quad::BottomRight}), "TR,BL,BR -> TL,BL,BR");
+
+				constexpr auto qk_BL_TR_TL = QK({Quad::BottomLeft, Quad::TopRight, Quad::TopLeft});
+				auto m4 = qk_BL_TR_TL.remap_root_quadrant(Quad::BottomRight);
+				// BL -> BR, TR, TL remain
+				CHECK_EQUAL(m4, QK({Quad::BottomRight, Quad::TopRight, Quad::TopLeft}), "BL,TR,TL -> BR,TR,TL");
+			}
+		}
+		{SCOPE_SECTION("Generate leaf nodes");
+			constexpr glm::vec2 test_origin{0.0f, 0.0f};
+			constexpr float test_half_size    = 50.0f;
+			constexpr float test_quarter_size = test_half_size * 0.5f;
+			constexpr QK root = QK{0, 0}; // Root quadkey at depth 0
+
+			// Simple lambda for constant desired depth
+			auto constant_depth_func = [](Geometry::Depth_t d)
+			{
+				return [d](const Geometry::AABB2D&) { return d; };
+			};
+			// Convenience for comparing sets
+			auto sort_keys = [](std::vector<QK>& keys)
+			{
+				std::sort(keys.begin(), keys.end(), [](const QK& a, const QK& b)
+				{
+					return a.key < b.key || (a.key == b.key && a.depth < b.depth);
+				});
+			};
+
+			{SCOPE_SECTION("Depth 0");
+				std::vector<QK> out_keys;
+				generate_leaf_nodes(test_origin, test_half_size, 0, 0, 4, out_keys, constant_depth_func(0));
+				CHECK_EQUAL(out_keys.size(), 1, "Should produce only the root node");
+				CHECK_EQUAL(out_keys[0], root, "Root node has correct key and depth");
+				CHECK_EQUAL(out_keys[0].get_bounds(test_half_size, test_origin), Geometry::AABB2D(test_origin, test_half_size), "Root node bounds");
+			}
+			{SCOPE_SECTION("Depth 1");
+				std::vector<QK> out_keys;
+				generate_leaf_nodes(test_origin, test_half_size, 0, 0, 1, out_keys, constant_depth_func(1));
+				CHECK_EQUAL(out_keys.size(), 4, "Should produce 4 leaf nodes at depth 1");
+				std::vector<QK> expected = {
+					QK{0b00, 1},
+					QK{0b01, 1},
+					QK{0b10, 1},
+					QK{0b11, 1}
+				};
+				sort_keys(out_keys);
+				CHECK_CONTAINER_EQUAL(out_keys, expected, "Depth 1 quadkeys match expected children");
+			}
+			{SCOPE_SECTION("Depth 2");
+				std::vector<QK> out_keys;
+				generate_leaf_nodes(test_origin, test_half_size, 0, 0, 2, out_keys, constant_depth_func(2));
+				CHECK_EQUAL(out_keys.size(), 16, "Should produce 16 leaf nodes at depth 2");
+
+				std::array<std::pair<QK, Geometry::AABB2D>, 16> expected =
+				{{
+					{QK{Quad::TopLeft, Quad::TopLeft},         Geometry::AABB2D(glm::vec2(test_origin.x - test_half_size,     test_origin.y + test_quarter_size), glm::vec2(test_origin.x - test_quarter_size, test_origin.y + test_half_size))},
+					{QK{Quad::TopLeft, Quad::TopRight},        Geometry::AABB2D(glm::vec2(test_origin.x - test_quarter_size,  test_origin.y + test_quarter_size), glm::vec2(test_origin.x,                     test_origin.y + test_half_size))},
+					{QK{Quad::TopLeft, Quad::BottomLeft},      Geometry::AABB2D(glm::vec2(test_origin.x - test_half_size,     test_origin.y),                     glm::vec2(test_origin.x - test_quarter_size, test_origin.y + test_quarter_size))},
+					{QK{Quad::TopLeft, Quad::BottomRight},     Geometry::AABB2D(glm::vec2(test_origin.x - test_quarter_size,  test_origin.y),                     glm::vec2(test_origin.x,                     test_origin.y + test_quarter_size))},
+
+					{QK{Quad::TopRight, Quad::TopLeft},        Geometry::AABB2D(glm::vec2(test_origin.x,                     test_origin.y + test_quarter_size),  glm::vec2(test_origin.x + test_quarter_size, test_origin.y + test_half_size))},
+					{QK{Quad::TopRight, Quad::TopRight},       Geometry::AABB2D(glm::vec2(test_origin.x + test_quarter_size, test_origin.y + test_quarter_size),  glm::vec2(test_origin.x + test_half_size,    test_origin.y + test_half_size))},
+					{QK{Quad::TopRight, Quad::BottomLeft},     Geometry::AABB2D(glm::vec2(test_origin.x,                     test_origin.y),                      glm::vec2(test_origin.x + test_quarter_size, test_origin.y + test_quarter_size))},
+					{QK{Quad::TopRight, Quad::BottomRight},    Geometry::AABB2D(glm::vec2(test_origin.x + test_quarter_size, test_origin.y),                      glm::vec2(test_origin.x + test_half_size,    test_origin.y + test_quarter_size))},
+
+					{QK{Quad::BottomLeft, Quad::TopLeft},      Geometry::AABB2D(glm::vec2(test_origin.x - test_half_size,     test_origin.y - test_quarter_size), glm::vec2(test_origin.x - test_quarter_size, test_origin.y))},
+					{QK{Quad::BottomLeft, Quad::TopRight},     Geometry::AABB2D(glm::vec2(test_origin.x - test_quarter_size,  test_origin.y - test_quarter_size), glm::vec2(test_origin.x,                     test_origin.y))},
+					{QK{Quad::BottomLeft, Quad::BottomLeft},   Geometry::AABB2D(glm::vec2(test_origin.x - test_half_size,     test_origin.y - test_half_size),    glm::vec2(test_origin.x - test_quarter_size, test_origin.y - test_quarter_size))},
+					{QK{Quad::BottomLeft, Quad::BottomRight},  Geometry::AABB2D(glm::vec2(test_origin.x - test_quarter_size,  test_origin.y - test_half_size),    glm::vec2(test_origin.x,                     test_origin.y - test_quarter_size))},
+
+					{QK{Quad::BottomRight, Quad::TopLeft},     Geometry::AABB2D(glm::vec2(test_origin.x,                     test_origin.y - test_quarter_size),  glm::vec2(test_origin.x + test_quarter_size, test_origin.y))},
+					{QK{Quad::BottomRight, Quad::TopRight},    Geometry::AABB2D(glm::vec2(test_origin.x + test_quarter_size, test_origin.y - test_quarter_size),  glm::vec2(test_origin.x + test_half_size,    test_origin.y))},
+					{QK{Quad::BottomRight, Quad::BottomLeft},  Geometry::AABB2D(glm::vec2(test_origin.x,                     test_origin.y - test_half_size),     glm::vec2(test_origin.x + test_quarter_size, test_origin.y - test_quarter_size))},
+					{QK{Quad::BottomRight, Quad::BottomRight}, Geometry::AABB2D(glm::vec2(test_origin.x + test_quarter_size, test_origin.y - test_half_size),     glm::vec2(test_origin.x + test_half_size,    test_origin.y - test_quarter_size))},
+				}};
+				sort_keys(out_keys);
+
+				if (out_keys.size() == expected.size())
+				{
+					for (const auto& qk : out_keys)
+					{
+						CHECK_EQUAL(qk.depth, 2, "Each key has depth 2");
+						CHECK_EQUAL(qk, expected[qk.key].first, "Key matches expected for: " + qk.to_string());
+						CHECK_EQUAL(qk.get_bounds(test_half_size, test_origin), expected[qk.key].second, "Bounds match for key: " + qk.to_string());
+					}
+				}
+			}
 		}
 	}
 } // namespace Test

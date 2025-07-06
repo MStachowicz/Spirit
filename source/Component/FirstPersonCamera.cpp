@@ -29,7 +29,7 @@ namespace Component
 	FirstPersonCamera::FirstPersonCamera(const glm::vec3& p_view_direction /* = glm::vec3(0.f, 0.f, -1.f)*/, bool p_make_primary /* = false*/)
 		: m_vertical_FOV{glm::radians(45.f)}
 		, m_near{0.01f}
-		, m_far{150.f}
+		, m_far{5000.f}
 		, m_pitch{get_pitch_yaw(p_view_direction).x}
 		, m_yaw{get_pitch_yaw(p_view_direction).y}
 		, m_look_sensitivity{0.1f}

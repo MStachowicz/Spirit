@@ -28,7 +28,8 @@ namespace Component
 		size_t chunk_vert_buff_stride() const;
 		size_t chunk_index_buff_stride() const;
 		void regenerate_mesh();
-		void remove_verts(const Geometry::QuadKey& key);
+		// Remove the verts for the given quadkey and return the iterator to the next element.
+		std::unordered_map<Geometry::QuadKey, size_t>::iterator remove_verts(const Geometry::QuadKey& key);
 		void add_verts(const Geometry::QuadKey& info);
 		float compute_height(float p_x, float p_z, const siv::PerlinNoise& perlin);
 
@@ -41,12 +42,17 @@ namespace Component
 		std::vector<size_t> free_indices; // Free indices in the buffer data for the node.
 		size_t end_index = 0; // End index of the last node added to the buffer data.
 
+		struct RootInfo
+		{
+			glm::vec2 center; // Center of the root node.
+			float half_size;  // Half size of the root node.
+		};
 		// Tree params
-		glm::vec2 root_center; // Center of the root node.
-		glm::vec2 player_pos;
-		uint8_t max_depth;     // max depth of the quad tree.
-		uint8_t chunk_detail;  // Number of vertices per chunk side.
-		float root_size;       // Size of the root node.
+		// If the root_bounds is not set, there is no terrain.
+		std::optional<RootInfo> root_bounds;
+		glm::vec2 player_pos; // Player position used to center the quad tree.
+		uint8_t max_depth;    // max depth of the quad tree.
+		uint8_t chunk_detail; // Number of vertices per chunk side.
 		float decay_rate;
 
 		// Noise params
