@@ -88,6 +88,7 @@ namespace OpenGL
 		static void add(const Geometry::Ray& p_ray,           const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Sphere& p_sphere,     const glm::vec4& p_colour = glm::vec4(1.f), size_t subdivisions = m_debug_options.m_subdivisions);
 		static void add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::AABB& p_AABB,         const glm::vec4& p_colour = glm::vec4(1.f), bool fill = false);
 
 		static void add_axes(const glm::vec3& p_point, float length = 1.f);
 	};

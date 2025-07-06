@@ -140,6 +140,34 @@ namespace OpenGL
 		m_tri_mb.set_colour(p_colour);
 		m_tri_mb.add_triangle(p_triangle);
 	}
+	void DebugRenderer::add(const Geometry::AABB& p_AABB, const glm::vec4& p_colour, bool fill)
+	{
+		if (fill) add(Geometry::Cuboid(p_AABB.get_center(), p_AABB.get_size() * 0.5f), p_colour);
+
+		// Get the 8 corners of the AABB
+		auto min_x_min_y_max_z = glm::vec3(p_AABB.m_min.x, p_AABB.m_min.y, p_AABB.m_max.z);
+		auto min_x_max_y_min_z = glm::vec3(p_AABB.m_min.x, p_AABB.m_max.y, p_AABB.m_min.z);
+		auto min_x_max_y_max_z = glm::vec3(p_AABB.m_min.x, p_AABB.m_max.y, p_AABB.m_max.z);
+		auto max_x_min_y_min_z = glm::vec3(p_AABB.m_max.x, p_AABB.m_min.y, p_AABB.m_min.z);
+		auto max_x_min_y_max_z = glm::vec3(p_AABB.m_max.x, p_AABB.m_min.y, p_AABB.m_max.z);
+		auto max_x_max_y_min_z = glm::vec3(p_AABB.m_max.x, p_AABB.m_max.y, p_AABB.m_min.z);
+
+		// Bottom face edges
+		add(Geometry::LineSegment(p_AABB.m_min, max_x_min_y_min_z), p_colour);      // Bottom front edge
+		add(Geometry::LineSegment(max_x_min_y_min_z, max_x_max_y_min_z), p_colour); // Bottom right edge
+		add(Geometry::LineSegment(max_x_max_y_min_z, min_x_max_y_min_z), p_colour); // Bottom back edge
+		add(Geometry::LineSegment(min_x_max_y_min_z, p_AABB.m_min), p_colour);      // Bottom left edge
+		// Top face edges
+		add(Geometry::LineSegment(min_x_min_y_max_z, max_x_min_y_max_z), p_colour); // Top front edge
+		add(Geometry::LineSegment(max_x_min_y_max_z, p_AABB.m_max), p_colour);      // Top right edge
+		add(Geometry::LineSegment(p_AABB.m_max, min_x_max_y_max_z), p_colour);      // Top back edge
+		add(Geometry::LineSegment(min_x_max_y_max_z, min_x_min_y_max_z), p_colour); // Top left edge
+		// Vertical edges connecting bottom and top faces
+		add(Geometry::LineSegment(p_AABB.m_min, min_x_min_y_max_z), p_colour);      // Front left vertical edge
+		add(Geometry::LineSegment(max_x_min_y_min_z, max_x_min_y_max_z), p_colour); // Front right vertical edge
+		add(Geometry::LineSegment(max_x_max_y_min_z, p_AABB.m_max), p_colour);      // Back right vertical edge
+		add(Geometry::LineSegment(min_x_max_y_min_z, min_x_max_y_max_z), p_colour); // Back left vertical edge
+	}
 	void DebugRenderer::add_axes(const glm::vec3& p_point, float length)
 	{
 		float scale = 0.01f * length;

@@ -47,6 +47,7 @@ namespace Geometry
 
 		AABB2D() : min(0.f), max(0.f) {}
 		AABB2D(const glm::vec2& min, const glm::vec2& max) : min(min), max(max) {}
+		AABB2D(const glm::vec2& center, float half_size)   : min(center - glm::vec2(half_size)), max(center + glm::vec2(half_size)) {}
 		bool operator==(const AABB2D& other) const = default;
 
 		glm::vec2 size()   const { return max - min; }
