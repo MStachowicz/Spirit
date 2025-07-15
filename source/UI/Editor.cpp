@@ -1084,6 +1084,8 @@ namespace UI
 
 				ImGui::SeparatorText("Scene debug");
 				ImGui::Checkbox("Show player position", &render_player_position);
+				if (ImGui::Button("Focus camera on player"))
+					p_editor.m_camera.look_at(player_transform->m_position);
 				ImGui::Checkbox("Show player view distance", &render_player_view_distance);
 				ImGui::Checkbox("Show player frustrum", &render_player_frustrum);
 			}
@@ -1095,7 +1097,10 @@ namespace UI
 			auto& pos = player_transform->m_position;
 
 			if (render_player_position)
-				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, 1.f}, glm::vec4{1.f});
+			{
+				float camera_distance = glm::distance(pos, p_editor.m_camera.position());
+				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, camera_distance * 0.01f}, glm::vec4{1.f});
+			}
 			if (render_player_view_distance && player_camera)
 			{
 				auto player_view_distance = player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio());

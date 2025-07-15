@@ -10,11 +10,11 @@ namespace Component
 {
 	TwoAxisCamera::TwoAxisCamera()
 		: m_FOV{90.f}
-		, m_near{0.001f}
+		, m_near{0.04f}
 		, m_far{10000000.f} // Far enough to cover the entire extents of the GridRenderer grid diagonally at all angles. (1000 half size units).
 		, m_look_sensitivity{0.5f}
-		, m_zoom_sensitivity{1.f}
-		, m_pan_sensitivity{0.05f}
+		, m_zoom_sensitivity{0.5f}
+		, m_pan_sensitivity{0.005f}
 		, m_pitch{0.f}
 		, m_yaw{0.f}
 		, m_orbit_radius{10.f}
@@ -108,22 +108,30 @@ namespace Component
 	}
 	void TwoAxisCamera::pan(const glm::vec2& p_offset)
 	{
+		float distance = glm::distance(m_orbit_center, position());
+		float pan_factor = distance * m_pan_sensitivity;
+
 		glm::vec3 pan_offset = -p_offset.x * right() - p_offset.y * up();
-		m_orbit_center += pan_offset * m_pan_sensitivity;
+		m_orbit_center += pan_offset * pan_factor;
 	}
 	void TwoAxisCamera::zoom(float p_offset)
 	{
 		// Depending on the camera perspective mode, we adjust the ortho size or orbit radius and apply
 		// a constraint to prevent the camera from getting too close/moving through the orbit center.
+
+		// Use a smoother zoom factor based on the square root of the distance
+		float distance    = glm::distance(m_orbit_center, position());
+		float zoom_factor = glm::sqrt(distance) * m_zoom_sensitivity;
+
 		if (m_is_orthographic)
 		{
-			m_ortho_size -= p_offset * m_zoom_sensitivity;
+			m_ortho_size -= p_offset * zoom_factor;
 			if (m_ortho_size < zoom_near_constraint)
 				m_ortho_size = zoom_near_constraint;
 		}
 		else
 		{
-			m_orbit_radius -= p_offset * m_zoom_sensitivity;
+			m_orbit_radius -= p_offset * zoom_factor;
 			if (m_orbit_radius < zoom_near_constraint)
 				m_orbit_radius = zoom_near_constraint;
 		}

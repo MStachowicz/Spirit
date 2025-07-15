@@ -35,6 +35,7 @@ namespace Component
 		glm::vec3 position() const;
 
 		void set_orbit_point(const glm::vec3& p_orbit_point) { m_orbit_center = p_orbit_point; }
+		void look_at(const glm::vec3& p_point)               { set_orbit_point(p_point); }
 		void set_orbit_distance(float p_orbit_distance)
 		{
 			if (m_is_orthographic)
