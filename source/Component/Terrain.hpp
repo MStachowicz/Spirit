@@ -5,7 +5,7 @@
 
 #include "Geometry/QuadKey.hpp"
 
-#include "Utility/PerlinNoise.hpp"
+#include "Utility/Noise.hpp"
 
 #include <unordered_map>
 
@@ -28,10 +28,13 @@ namespace Component
 		size_t chunk_vert_buff_stride() const;
 		size_t chunk_index_buff_stride() const;
 		void regenerate_mesh();
+
+
+		using MeshIter = std::unordered_map<Geometry::QuadKey, size_t>::iterator;
+
 		// Remove the verts for the given quadkey and return the iterator to the next element.
-		std::unordered_map<Geometry::QuadKey, size_t>::iterator remove_verts(const Geometry::QuadKey& key);
-		void add_verts(const Geometry::QuadKey& info);
-		float compute_height(float p_x, float p_z, const siv::PerlinNoise& perlin);
+		void remove_verts(MeshIter& to_remove);
+		void add_verts(const Geometry::QuadKey& quad, std::optional<size_t> buffer_index_overwrite = std::nullopt);
 
 		// Given a player_pos to center around, return the quadkeys which represent the leaf nodes of the quad tree centered around that pos.
 		std::vector<Geometry::QuadKey> get_tree_leaf_nodes();
@@ -52,16 +55,12 @@ namespace Component
 		std::optional<RootInfo> root_bounds;
 		glm::vec2 player_pos; // Player position used to center the quad tree.
 		uint8_t max_depth;    // max depth of the quad tree.
-		uint8_t chunk_detail; // Number of vertices per chunk side.
+		uint16_t chunk_detail; // Number of vertices per chunk side.
 		float decay_rate;
 
-		// Noise params
 		constexpr static size_t Persistent_ID = 6;
-		float m_scale_factor;
-		float m_amplitude;
-		float m_lacunarity;
-		float m_persistence;
-		int m_octaves;
+
+		Utility::Perlin::Params noise_params;
 
 		TextureRef m_grass_tex;
 		TextureRef m_gravel_tex;
@@ -71,8 +70,9 @@ namespace Component
 		TextureRef m_snow_tex;
 
 		unsigned int m_seed; // Seed used to generate m_mesh.
+		bool gen_normals_analytically = false;
 
-		Terrain(float amplitude) noexcept;
+		Terrain(float height) noexcept;
 		Terrain& operator=(Terrain&& p_other) noexcept = default;
 		Terrain(Terrain&& p_other)            noexcept = default;
 		Terrain(const Terrain& p_other);                // = delete;

@@ -9,6 +9,8 @@ uniform sampler2D rock;
 uniform sampler2D snow;
 // uniform sampler2D sand;
 
+uniform bool debug_normals;
+
 struct DirectionalLight
 {
 	vec3 direction;
@@ -99,6 +101,12 @@ out vec4 Colour;
 
 void main()
 {
+	if (debug_normals)
+	{
+		Colour = vec4(normalize(fs_in.normal) * 0.5 + 0.5, 1.0); // * 0.5 + 0.5 to convert from [-1, 1] to [0, 1] range
+		return;
+	}
+
 	Colour = vec4(0.0, 0.0, 0.0, 1.0);
 
 	vec3 view_direction = normalize(vec3(fs_in.camera_position) - fs_in.position);

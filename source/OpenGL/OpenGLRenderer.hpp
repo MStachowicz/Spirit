@@ -65,6 +65,7 @@ namespace OpenGL
 		bool m_draw_grid;
 		bool m_draw_terrain_nodes;
 		bool m_draw_terrain_wireframe;
+		bool m_visualise_terrain_normals;
 
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
 		OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;

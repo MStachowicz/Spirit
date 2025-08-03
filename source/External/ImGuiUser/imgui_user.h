@@ -139,6 +139,10 @@ namespace ImGui
 	{
 		return SliderFloat(label, &p_float, v_min, v_max, format, flags);
 	}
+	inline bool Slider(const char* label, double& p_double, double v_min, double v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+	{
+		return SliderScalar(label, ImGuiDataType_Double, &p_double, &v_min, &v_max, format, flags);
+	}
 	inline bool Slider(const char* label, int& p_v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
 	{
 		return SliderInt(label, &p_v, v_min, v_max, format, flags);
@@ -215,5 +219,18 @@ namespace ImGui
 			EndCombo();
 		}
 		return result;
+	}
+
+	static void HelpMarker(const char* desc)
+	{
+		ImGui::SameLine();
+		ImGui::TextDisabled("(?)");
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
+		{
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(desc);
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
 	}
 }

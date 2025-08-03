@@ -54,6 +54,7 @@ namespace OpenGL
 		, m_draw_grid{false}
 		, m_draw_terrain_nodes{false}
 		, m_draw_terrain_wireframe{false}
+		, m_visualise_terrain_normals{false}
 	{
 		#ifdef Z_DEBUG // Ensure the uniform block layout matches the Component::ViewInformation struct layout for direct memory copy.
 		{
@@ -227,8 +228,10 @@ namespace OpenGL
 				dc.set_uniform("model",                glm::identity<glm::mat4>());
 				dc.set_uniform("shininess",            1000000.f); // Force terrain to not be shiny.
 				// TODO: calc instead of using amplitude... use the actual height of the terrain.
-				dc.set_uniform("min_height", -p_terrain.m_amplitude);
-				dc.set_uniform("max_height",  p_terrain.m_amplitude);
+				dc.set_uniform("min_height", -p_terrain.noise_params.height);
+				dc.set_uniform("max_height",  p_terrain.noise_params.height);
+
+				dc.set_uniform("debug_normals", m_visualise_terrain_normals);
 
 				dc.set_texture("grass", p_terrain.m_grass_tex->m_GL_texture);
 				dc.set_texture("rock",  p_terrain.m_rock_tex->m_GL_texture);
@@ -248,6 +251,7 @@ namespace OpenGL
 		ImGui::Checkbox("Draw grid",              &m_draw_grid);
 		ImGui::Checkbox("Draw terrain nodes",     &m_draw_terrain_nodes);
 		ImGui::Checkbox("Draw terrain wireframe", &m_draw_terrain_wireframe);
+		ImGui::Checkbox("Debug terrain Normals",  &m_visualise_terrain_normals);
 
 		if (ImGui::Button("Reload Shaders"))
 			reload_shaders();
@@ -271,11 +275,12 @@ namespace OpenGL
 
 	void OpenGLRenderer::reset_debug_options()
 	{
-		m_draw_shadows            = true;
-		m_draw_grid               = true;
-		m_draw_terrain_nodes      = false;
-		m_draw_terrain_wireframe  = false;
-		m_post_processing_options = {};
+		m_draw_shadows              = true;
+		m_draw_grid                 = true;
+		m_draw_terrain_nodes        = false;
+		m_draw_terrain_wireframe    = false;
+		m_visualise_terrain_normals = false;
+		m_post_processing_options   = {};
 	}
 	void OpenGLRenderer::reload_shaders()
 	{

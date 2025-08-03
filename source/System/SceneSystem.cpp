@@ -31,7 +31,7 @@ namespace System
 		add_default_camera(scene);
 		construct_2_sphere_scene(scene);
 
-		Component::Terrain terrain(20);
+		Component::Terrain terrain(2048.f);
 		terrain.m_grass_tex = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Grass" / "Color.jpg");
 		terrain.m_sand_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Sand" / "Color.jpg");
 		terrain.m_snow_tex  = m_asset_manager.get_texture(Config::Texture_PBR_Directory / "Snow" / "Color.jpg");
