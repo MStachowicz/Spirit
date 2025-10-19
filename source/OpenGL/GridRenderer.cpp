@@ -8,6 +8,9 @@ namespace OpenGL
 {
 	Data::Mesh GridRenderer::make_grid_mesh()
 	{
+		// The grid is implemented as a "bone grid" that follows the camera.
+		// The vertex shader offsets the grid position based on the camera's snapped position,
+		// creating an infinite grid effect that appears to move with the camera.
 		constexpr int Size                        = 1000; // Used for the size and number of lines to draw.
 		constexpr float transparency              = 0.7f;
 		constexpr glm::vec4 primary_line_colour   = glm::vec4{0.5f, 0.5f, 0.5f, transparency};
