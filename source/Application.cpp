@@ -54,6 +54,11 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 		duration_since_last_render_tick  += duration_since_last_frame;
 		duration_since_last_input_tick   += duration_since_last_frame;
 
+		// Check for dynamic framerate cap changes from the window
+		uint16_t current_framerate_cap = m_window.m_framerate_cap;
+		render_rate_unlimited = current_framerate_cap == 0;
+		render_timestep = render_rate_unlimited ? Duration::zero() : std::chrono::microseconds{1s} / current_framerate_cap;
+
 		if (render_rate_unlimited || duration_since_last_render_tick >= render_timestep)
 			m_window.start_ImGui_frame();
 

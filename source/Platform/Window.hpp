@@ -21,6 +21,8 @@ namespace Platform
 		Input& m_input; // Window requires access to Input to use it in GLFW callbacks from glfwGetWindowUserPointer.
 
 	public:
+		uint16_t m_framerate_cap; // Target framerate cap (0 = unlimited).
+
 		// Creates a OS window of p_width and p_height.
 		// Takes an Input and sets its GLFW callback functions. Input depends on a Window.
 		// Window construction requires GLFW and ImGui to be initialised before.
@@ -51,6 +53,7 @@ namespace Platform
 
 		// Get the max resolution of the primary monitor.
 		static glm::uvec2 get_max_resolution();
+		static uint16_t get_primary_monitor_refresh_rate();
 
 		bool m_show_menu_bar;
 	};
