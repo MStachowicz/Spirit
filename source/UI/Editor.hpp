@@ -104,7 +104,6 @@ namespace UI
 		PlayerInfoWindow m_player_info_window;
 		bool m_dragging;              // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
 
-		bool m_draw_axes; // Whether to draw the axes in the editor.
 		bool m_debug_GJK;
 		std::optional<ECS::Entity> m_debug_GJK_entity_1;
 		std::optional<ECS::Entity> m_debug_GJK_entity_2;

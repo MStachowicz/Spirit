@@ -58,11 +58,14 @@ namespace OpenGL
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;
 		Data::Mesh m_screen_quad;
+		Data::Mesh m_axis_mesh;
+
 		PostProcessingOptions m_post_processing_options;
 		bool m_draw_shadows;
 
-	public:
+		public:
 		bool m_draw_grid;
+		bool m_draw_axes;
 		bool m_draw_terrain_nodes;
 		bool m_draw_terrain_wireframe;
 		bool m_visualise_terrain_normals;

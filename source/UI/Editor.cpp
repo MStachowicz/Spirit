@@ -60,7 +60,6 @@ namespace UI
 		, m_windows_to_display{}
 		, m_player_info_window{}
 		, m_dragging{false}
-		, m_draw_axes{true}
 		, m_debug_GJK{false}
 		, m_debug_GJK_entity_1{}
 		, m_debug_GJK_entity_2{}
@@ -485,9 +484,6 @@ namespace UI
 			m_camera.draw_UI();
 			ImGui::End();
 		}
-
-		if (m_draw_axes)
-			OpenGL::DebugRenderer::add_axes(glm::vec3{0.f}, 25.f);
 
 		draw_entity_properties();
 		entity_creation_popup();
@@ -998,6 +994,8 @@ namespace UI
 			}
 			if (ImGui::MenuItem(m_openGL_renderer.m_draw_grid ? "Hide grid" : "Show grid"))
 				m_openGL_renderer.m_draw_grid = !m_openGL_renderer.m_draw_grid;
+			if (ImGui::MenuItem(m_openGL_renderer.m_draw_axes ? "Hide axis" : "Show axis"))
+				m_openGL_renderer.m_draw_axes = !m_openGL_renderer.m_draw_axes;
 			ImGui::EndPopup();
 		}
 	}

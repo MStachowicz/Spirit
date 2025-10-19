@@ -30,6 +30,18 @@ namespace OpenGL
 		return mb.get_mesh();
 	}
 
+	Data::Mesh make_axis_mesh()
+	{
+		auto mb = Utility::MeshBuilder<Data::ColourVertex, OpenGL::PrimitiveMode::Triangles>{};
+		mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
+		mb.add_cylinder(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), 0.02f, 12); // X
+		mb.set_colour(glm::vec3(0.f, 1.f, 0.f));
+		mb.add_cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 0.02f, 12); // Y
+		mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
+		mb.add_cylinder(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), 0.02f, 12); // Z
+		return mb.get_mesh();
+	}
+
 	OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept
 		: m_window{p_window}
 		, m_screen_framebuffer{m_window.size()}
@@ -49,9 +61,11 @@ namespace OpenGL
 		, m_missing_texture{m_asset_manager.get_texture("missing.png")}
 		, m_blank_texture{m_asset_manager.get_texture("black.jpg")}
 		, m_screen_quad{make_screen_quad_mesh()}
+		, m_axis_mesh{make_axis_mesh()}
 		, m_post_processing_options{}
 		, m_draw_shadows{false}
 		, m_draw_grid{false}
+		, m_draw_axes{true}
 		, m_draw_terrain_nodes{false}
 		, m_draw_terrain_wireframe{false}
 		, m_visualise_terrain_normals{false}
@@ -249,6 +263,7 @@ namespace OpenGL
 	{
 		ImGui::Checkbox("Draw shadows",           &m_draw_shadows);
 		ImGui::Checkbox("Draw grid",              &m_draw_grid);
+		ImGui::Checkbox("Draw axes",              &m_draw_axes);
 		ImGui::Checkbox("Draw terrain nodes",     &m_draw_terrain_nodes);
 		ImGui::Checkbox("Draw terrain wireframe", &m_draw_terrain_wireframe);
 		ImGui::Checkbox("Debug terrain Normals",  &m_visualise_terrain_normals);
@@ -321,5 +336,24 @@ namespace OpenGL
 		dc.set_texture("screen_texture", m_screen_framebuffer.color_attachment());
 
 		dc.submit_default(m_screen_texture_shader, m_screen_quad.get_VAO(), m_window.size());
+
+		if (m_draw_axes)
+		{
+			DrawCall axes_dc;
+			float axis_size = 20.f;
+			axes_dc.set_uniform("model", glm::scale(glm::identity<glm::mat4>(), glm::vec3(axis_size)));
+
+			// Copy and modify the view information to create an orthographic projection with no translation
+			auto view_prop = m_scene_system.get_current_scene_view_info();
+			auto view_no_translation = glm::mat4(glm::mat3(view_prop.m_view)); // Remove translation from view matrix.
+			view_prop.m_view = view_no_translation;
+			view_prop.m_projection = glm::ortho(-axis_size, axis_size, -axis_size, axis_size, -axis_size, axis_size);
+
+			m_view_properties_buffer.set_data(view_prop, 0);
+			axes_dc.set_UBO("ViewProperties", m_view_properties_buffer);
+			axes_dc.m_depth_test_enabled = false;
+			axes_dc.m_cull_face_enabled = false;
+			axes_dc.submit_default(m_colour_shader, m_axis_mesh.get_VAO(), {128, 128});
+		}
 	}
 } // namespace OpenGL
