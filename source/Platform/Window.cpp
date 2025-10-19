@@ -22,10 +22,10 @@ namespace Platform
 		, m_last_size_windowed{0, 0}     // init in body
 		, m_fullscreen{false}
 		, m_VSync{false}
-		, m_framerate_cap{0} // 0 = unlimited
 		, m_close_requested{false}
 		, m_handle{nullptr}
 		, m_input{p_input_state}
+		, m_framerate_cap{get_primary_monitor_refresh_rate()}
 		, m_show_menu_bar{false}
 	{
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
@@ -160,11 +160,6 @@ namespace Platform
 		m_VSync = p_enabled;
 	}
 
-	void Window::set_framerate_cap(uint16_t p_framerate_cap)
-	{
-		m_framerate_cap = p_framerate_cap;
-	}
-
 	void Window::toggle_fullscreen()
 	{
 		m_fullscreen = !m_fullscreen;
@@ -265,5 +260,17 @@ namespace Platform
 	{
 		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		return {static_cast<unsigned int>(mode->width), static_cast<unsigned int>(mode->height)};
+	}
+	uint16_t Window::get_primary_monitor_refresh_rate()
+	{
+		if (auto monitor = glfwGetPrimaryMonitor())
+			if (auto video_mode = glfwGetVideoMode(monitor))
+			{
+				int refresh_rate = video_mode->refreshRate;
+				if (refresh_rate > 0 && refresh_rate <= std::numeric_limits<decltype(refresh_rate)>::max())
+					return static_cast<uint16_t>(refresh_rate);
+			}
+
+		return 0;
 	}
 } // namespace Platform
