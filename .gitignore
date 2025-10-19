@@ -54,3 +54,6 @@ _deps
 
 #Generated
 Config.hpp
+
+# CodeQL
+_codeql_detected_source_root
