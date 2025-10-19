@@ -14,6 +14,14 @@ out vec4 FragmentColour;
 
 void main()
 {
-	gl_Position    = viewProperties.projection * viewProperties.view * vec4(VertexPosition, 1.0);
+	// Snap camera position to grid units to create bone grid effect
+	// This makes the grid follow the camera while maintaining grid alignment
+	vec3 camera_pos = viewProperties.camera_position.xyz;
+	vec3 snapped_camera_pos = floor(camera_pos);
+	
+	// Offset the grid position by the snapped camera position
+	vec3 world_position = VertexPosition + snapped_camera_pos;
+	
+	gl_Position    = viewProperties.projection * viewProperties.view * vec4(world_position, 1.0);
 	FragmentColour = VertexColour;
 }
