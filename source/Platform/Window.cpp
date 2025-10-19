@@ -22,6 +22,7 @@ namespace Platform
 		, m_last_size_windowed{0, 0}     // init in body
 		, m_fullscreen{false}
 		, m_VSync{false}
+		, m_framerate_cap{0} // 0 = unlimited
 		, m_close_requested{false}
 		, m_handle{nullptr}
 		, m_input{p_input_state}
@@ -157,6 +158,11 @@ namespace Platform
 		// i.e. the number of screen updates to wait from the time glfwSwapBuffers was called before swapping the buffers and returning.
 		glfwSwapInterval(p_enabled ? 1 : 0);
 		m_VSync = p_enabled;
+	}
+
+	void Window::set_framerate_cap(uint16_t p_framerate_cap)
+	{
+		m_framerate_cap = p_framerate_cap;
 	}
 
 	void Window::toggle_fullscreen()

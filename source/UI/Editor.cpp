@@ -631,6 +631,14 @@ namespace UI
 			if (ImGui::Checkbox("VSync", &VSync))
 				m_window.set_VSync(VSync);
 
+			int framerate_cap = static_cast<int>(m_window.get_framerate_cap());
+			if (ImGui::InputInt("Framerate cap (0 = unlimited)", &framerate_cap))
+			{
+				if (framerate_cap < 0)
+					framerate_cap = 0;
+				m_window.set_framerate_cap(static_cast<uint16_t>(framerate_cap));
+			}
+
 			ImGui::SeparatorText("Renderer");
 			m_openGL_renderer.draw_UI();
 
@@ -639,6 +647,7 @@ namespace UI
 				debug_options.m_show_light_positions = false;
 				debug_options.m_show_mesh_normals    = false;
 				m_window.set_VSync(true);
+				m_window.set_framerate_cap(0);
 				m_openGL_renderer.reset_debug_options();
 			}
 		}

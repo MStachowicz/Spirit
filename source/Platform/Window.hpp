@@ -16,6 +16,7 @@ namespace Platform
 
 		bool m_fullscreen;
 		bool m_VSync; // Whether VSync is on for the window.
+		uint16_t m_framerate_cap; // Target framerate cap (0 = unlimited).
 		bool m_close_requested;
 		GLFWwindow* m_handle;
 		Input& m_input; // Window requires access to Input to use it in GLFW callbacks from glfwGetWindowUserPointer.
@@ -29,6 +30,9 @@ namespace Platform
 
 		void set_VSync(bool p_enabled);
 		bool get_VSync() const { return m_VSync; };
+
+		void set_framerate_cap(uint16_t p_framerate_cap);
+		uint16_t get_framerate_cap() const { return m_framerate_cap; };
 
 		glm::uvec2 size() const;
 		void on_size_callback(const glm::uvec2& p_new_size);
