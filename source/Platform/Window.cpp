@@ -212,29 +212,7 @@ namespace Platform
 
 
 		ImGuiID root_dock_ID = ImGui::GetID("root_dock");
-		ImGui::DockSpace(root_dock_ID, ImVec2(0.f, 0.f), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
-
-		static bool first_time = true;
-		if (first_time)
-		{
-			first_time = false;
-			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-
-			// Clear the previous layout and add a root node the size of the viewport.
-			ImGui::DockBuilderRemoveNode(root_dock_ID);
-			ImGui::DockBuilderAddNode(root_dock_ID, dockspace_flags | ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_KeepAliveOnly);
-			ImGui::DockBuilderSetNodeSize(root_dock_ID, viewport->Size);
-
-			// Split the dockspace into 4 nodes by splitting root_dock_ID horizontally and then splitting the right node vertically.
-			ImGuiID dock_id_left, dock_id_right;
-			ImGui::DockBuilderSplitNode(root_dock_ID, ImGuiDir_Left, 0.2f, &dock_id_left, &dock_id_right);
-			ImGuiID dock_id_down, dock_id_up;
-			ImGui::DockBuilderSplitNode(dock_id_right, ImGuiDir_Down, 0.15f, &dock_id_down, &dock_id_up);
-			ImGui::DockBuilderFinish(root_dock_ID);
-
-			ASSERT_THROW(dock_id_left == 1 && dock_id_right == 2 && dock_id_up == 3 && dock_id_down == 4,
-				"Dock direction IDs are not as expected. We use these hard coded numbers for the layout of the editor with SetNextWindowDockID()! Can create a mapping if the order changes.");
-		}
+		ImGui::DockSpace(root_dock_ID, ImVec2(0.f, 0.f), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_AutoHideTabBar);
 	}
 	void Window::end_ImGui_frame()
 	{
