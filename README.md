@@ -1,8 +1,8 @@
+# ![](source/Resources/Textures/Icons/64.png) Spirit
+
+A 3D game engine targeting Linux and Windows. This is a hobby project evolving as I learn, build, and break things along the way.
+
 [![Build](https://github.com/MStachowicz/Spirit/actions/workflows/build.yml/badge.svg)](https://github.com/MStachowicz/Spirit/actions/workflows/build.yml)
-
-# Spirit 👻
-Spirit is a 3D game engine targetting Linux and Windows. This is a hobby project under <sup>~~slow~~</sup>active development with the intention to provide an environment as close to raw code for making games.
-
 ## Requirements
 [Git](https://git-scm.com/downloads) (Submodules)\
 [CMake 3.22](https://cmake.org/download/)\

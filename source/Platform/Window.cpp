@@ -77,12 +77,13 @@ namespace Platform
 			}
 		}
 		{ // Set the taskbar icon for the window
-			auto icon_image = Data::Image(Config::Texture_Directory / "Icons" / "Icon.png");
+			auto icon_image = Data::Image(Config::Texture_Directory / "Icons" / "32.png");
 			GLFWimage icon;
 			icon.pixels = (unsigned char*)(icon_image.data);
 			icon.width  = icon_image.width;
 			icon.height = icon_image.height;
 			glfwSetWindowIcon(m_handle, 1, &icon);
+			glfwPollEvents(); // Need to poll events to ensure the icon is set.
 		}
 
 		LOG("[WINDOW] Created Window with resolution {}x{}", size().x, size().y);
