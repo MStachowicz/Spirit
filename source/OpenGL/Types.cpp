@@ -238,13 +238,13 @@ namespace OpenGL
 		}
 	}
 
-	GLenum convert(TextureMagFunc p_magnification_function)
+	GLenum convert(InterpolationFilter p_magnification_function)
 	{
 		switch (p_magnification_function)
 		{
-			case TextureMagFunc::Nearest: return GL_NEAREST;
-			case TextureMagFunc::Linear:  return GL_LINEAR;
-			default: ASSERT(false, "Unknown TextureMagFunc function"); return 0;
+			case InterpolationFilter::Nearest: return GL_NEAREST;
+			case InterpolationFilter::Linear:  return GL_LINEAR;
+			default: ASSERT(false, "Unknown InterpolationFilter function"); return 0;
 		}
 	}
 	GLenum convert(WrappingMode p_wrapping_mode)
@@ -376,7 +376,7 @@ namespace OpenGL
 	};
 
 	Texture::Texture(const glm::uvec2& p_resolution,
-	                 TextureMagFunc p_magnification_function,
+	                 InterpolationFilter p_magnification_function,
 	                 WrappingMode p_wrapping_mode,
 	                 TextureInternalFormat p_internal_format)
 	    : m_handle{0}
@@ -394,7 +394,7 @@ namespace OpenGL
 		if constexpr (LogGLTypeEvents) LOG("Texture constructed with GLHandle {} at address {}", m_handle, (void*)(this));
 	}
 	Texture::Texture(const glm::uvec2& p_resolution,
-	                 TextureMagFunc p_magnification_function,
+	                 InterpolationFilter p_magnification_function,
 	                 WrappingMode p_wrapping_mode,
 	                 TextureInternalFormat p_internal_format,
 	                 TextureFormat p_format,
@@ -455,9 +455,18 @@ namespace OpenGL
 		return *this;
 	}
 
-
-
-
+	FBO::FBO()
+		: m_handle{0}
+		, m_resolution{0, 0}
+		, m_clear_colour{0.f, 0.f, 0.f, 1.f}
+		, m_colour_attachment{}
+		, m_depth_attachment{}
+		, m_stencil_attachment{}
+		, m_depth_stencil_attachment{}
+		, is_default_framebuffer{true}
+	{
+		if constexpr (LogGLTypeEvents) LOG("Default FBO constructed with GLHandle {} at address {}", m_handle, (void*)(this));
+	}
 	FBO::FBO(const glm::uvec2& p_resolution, bool p_colour_attachment, bool p_depth_attachment, bool p_stencil_attachment)
 		: m_handle{0}
 		, m_resolution{p_resolution}
@@ -466,13 +475,14 @@ namespace OpenGL
 		, m_depth_attachment{}
 		, m_stencil_attachment{}
 		, m_depth_stencil_attachment{}
+		, is_default_framebuffer{false}
 	{
 		glCreateFramebuffers(1, &m_handle);
 
 		constexpr GLint level = 0;
 		if (p_colour_attachment)
 		{
-			m_colour_attachment = Texture(p_resolution, TextureMagFunc::Linear, WrappingMode::ClampToBorder, TextureInternalFormat::RGBA8);
+			m_colour_attachment = Texture(p_resolution, InterpolationFilter::Linear, WrappingMode::ClampToBorder, TextureInternalFormat::RGBA8);
 			glNamedFramebufferTexture(m_handle, GL_COLOR_ATTACHMENT0, m_colour_attachment->m_handle, level);
 		}
 
@@ -480,19 +490,19 @@ namespace OpenGL
 		{
 			// If we want both depth and stencil, we use a combined depth/stencil attachment.
 			// Seems support for attaching both depth and stencil separately is not guaranteed.
-			m_depth_stencil_attachment = Texture(p_resolution, TextureMagFunc::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH32F_STENCIL8);
+			m_depth_stencil_attachment = Texture(m_resolution, InterpolationFilter::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH32F_STENCIL8);
 			glNamedFramebufferTexture(m_handle, GL_DEPTH_STENCIL_ATTACHMENT, m_depth_stencil_attachment->m_handle, level);
 		}
 		else
 		{
 			if (p_depth_attachment)
 			{
-				m_depth_attachment = Texture(p_resolution, TextureMagFunc::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH_COMPONENT32F);
+				m_depth_attachment = Texture(m_resolution, InterpolationFilter::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH_COMPONENT32F);
 				glNamedFramebufferTexture(m_handle, GL_DEPTH_ATTACHMENT, m_depth_attachment->m_handle, level);
 			}
 			if (p_stencil_attachment)
 			{
-				m_stencil_attachment = Texture(p_resolution, TextureMagFunc::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::STENCIL_INDEX8);
+				m_stencil_attachment = Texture(m_resolution, InterpolationFilter::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::STENCIL_INDEX8);
 				glNamedFramebufferTexture(m_handle, GL_STENCIL_ATTACHMENT, m_stencil_attachment->m_handle, level);
 			}
 		}
@@ -515,6 +525,7 @@ namespace OpenGL
 		, m_depth_attachment{std::move(p_other.m_depth_attachment)}
 		, m_stencil_attachment{std::move(p_other.m_stencil_attachment)}
 		, m_depth_stencil_attachment{std::move(p_other.m_depth_stencil_attachment)}
+		, is_default_framebuffer{p_other.is_default_framebuffer}
 	{
 		p_other.m_handle = 0;
 
@@ -531,18 +542,48 @@ namespace OpenGL
 			m_handle = p_other.m_handle;
 			p_other.m_handle = 0;
 
-			m_resolution         = std::move(p_other.m_resolution);
-			m_clear_colour       = std::move(p_other.m_clear_colour);
-			m_colour_attachment  = std::move(p_other.m_colour_attachment);
-			m_depth_attachment   = std::move(p_other.m_depth_attachment);
-			m_stencil_attachment = std::move(p_other.m_stencil_attachment);
+			m_resolution           = std::move(p_other.m_resolution);
+			m_clear_colour         = std::move(p_other.m_clear_colour);
+			m_colour_attachment    = std::move(p_other.m_colour_attachment);
+			m_depth_attachment     = std::move(p_other.m_depth_attachment);
+			m_stencil_attachment   = std::move(p_other.m_stencil_attachment);
+			is_default_framebuffer = p_other.is_default_framebuffer;
 		}
 
 		if constexpr (LogGLTypeEvents) LOG("FBO move-assigned with GLHandle {} at address {}", m_handle, (void*)(this));
 		return *this;
 	}
+	void FBO::blit_to_fbo(FBO& p_destination_fbo, const glm::uvec2& p_src_min, const glm::uvec2& p_src_max, const glm::uvec2& p_dst_min, const glm::uvec2& p_dst_max, bool p_colour, bool p_depth, bool p_stencil, InterpolationFilter p_interpolation_filter) const
+	{
+		// Build mask from bool flags
+		GLbitfield mask = 0;
+		if (p_colour)  mask |= GL_COLOR_BUFFER_BIT;
+		if (p_depth)   mask |= GL_DEPTH_BUFFER_BIT;
+		if (p_stencil) mask |= GL_STENCIL_BUFFER_BIT;
+		// Default to color-only if nothing is requested
+		if (mask == 0) mask = GL_COLOR_BUFFER_BIT;
+
+		glBlitNamedFramebuffer(
+			m_handle,
+			p_destination_fbo.m_handle,
+			p_src_min.x, p_src_min.y, p_src_max.x, p_src_max.y,
+			p_dst_min.x, p_dst_min.y, p_dst_max.x, p_dst_max.y,
+			mask,
+			convert(p_interpolation_filter)
+		);
+	}
 	void FBO::clear() const
 	{
+		if (is_default_framebuffer)
+		{
+			constexpr GLint drawbuffer    = 0;
+			constexpr GLfloat clear_depth = 1.0f; // Clear depth to farthest (1.0)
+			constexpr GLint clear_stencil = 0;    // Clear stencil to 0
+			glClearNamedFramebufferfv(0, GL_COLOR, drawbuffer, &m_clear_colour[0]);
+			glClearNamedFramebufferfi(0, GL_DEPTH_STENCIL, drawbuffer, clear_depth, clear_stencil);
+			return;
+		}
+
 		if (m_colour_attachment)
 		{
 			glClearNamedFramebufferfv(m_handle, GL_COLOR, 0, &m_clear_colour[0]);
@@ -570,15 +611,6 @@ namespace OpenGL
 			}
 		}
 	}
-	void FBO::clear_default_framebuffer(const glm::vec4& p_clear_colour)
-	{
-		State::Get().set_depth_write(true); // GL requires depth write to be enabled for clearing the depth buffer. oof
-		constexpr GLint drawbuffer    = 0;
-		constexpr GLfloat clear_depth = 1.0f; // Clear depth to farthest (1.0)
-		constexpr GLint clear_stencil = 0;    // Clear stencil to 0
-		glClearNamedFramebufferfv(0, GL_COLOR, drawbuffer, &p_clear_colour[0]);
-		glClearNamedFramebufferfi(0, GL_DEPTH_STENCIL, drawbuffer, clear_depth, clear_stencil);
-	}
 	void FBO::resize(const glm::uvec2& p_resolution)
 	{
 		if (p_resolution == m_resolution)
@@ -589,25 +621,25 @@ namespace OpenGL
 		constexpr GLint level = 0;
 		if (m_colour_attachment)
 		{
-			m_colour_attachment = Texture(p_resolution, TextureMagFunc::Linear, WrappingMode::ClampToBorder, TextureInternalFormat::RGBA8);
+			m_colour_attachment = Texture(m_resolution, InterpolationFilter::Linear, WrappingMode::ClampToBorder, TextureInternalFormat::RGBA8);
 			glNamedFramebufferTexture(m_handle, GL_COLOR_ATTACHMENT0, m_colour_attachment->m_handle, level);
 		}
 
 		if (m_depth_stencil_attachment)
 		{
-			m_depth_stencil_attachment = Texture(p_resolution, TextureMagFunc::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH32F_STENCIL8);
+			m_depth_stencil_attachment = Texture(m_resolution, InterpolationFilter::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH32F_STENCIL8);
 			glNamedFramebufferTexture(m_handle, GL_DEPTH_STENCIL_ATTACHMENT, m_depth_stencil_attachment->m_handle, level);
 		}
 		else
 		{
 			if (m_depth_attachment)
 			{
-				m_depth_attachment = Texture(p_resolution, TextureMagFunc::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH_COMPONENT32F);
+				m_depth_attachment = Texture(m_resolution, InterpolationFilter::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::DEPTH_COMPONENT32F);
 				glNamedFramebufferTexture(m_handle, GL_DEPTH_ATTACHMENT, m_depth_attachment->m_handle, level);
 			}
 			if (m_stencil_attachment)
 			{
-				m_stencil_attachment = Texture(p_resolution, TextureMagFunc::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::STENCIL_INDEX8);
+				m_stencil_attachment = Texture(m_resolution, InterpolationFilter::Nearest, WrappingMode::ClampToEdge, TextureInternalFormat::STENCIL_INDEX8);
 				glNamedFramebufferTexture(m_handle, GL_STENCIL_ATTACHMENT, m_stencil_attachment->m_handle, level);
 			}
 		}

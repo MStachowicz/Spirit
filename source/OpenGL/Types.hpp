@@ -263,7 +263,7 @@ namespace OpenGL
 		//@param p_wrapping_mode The wrapping mode to use for the texture.
 		//@param p_internal_format Specifies the sized internal format to be used to store texture image data.
 		Texture(const glm::uvec2& p_resolution,
-	                 TextureMagFunc p_magnification_function,
+	                 InterpolationFilter p_magnification_function,
 	                 WrappingMode p_wrapping_mode,
 	                 TextureInternalFormat p_internal_format);
 
@@ -278,7 +278,7 @@ namespace OpenGL
 		//@param generate_mip_map Whether to generate mipmaps for the texture.
 		//@param p_pixel_data The pixel data to copy to the texture.
 		Texture(const glm::uvec2& p_resolution,
-		        TextureMagFunc p_magnification_function,
+		        InterpolationFilter p_magnification_function,
 		        WrappingMode p_wrapping_mode,
 		        TextureInternalFormat p_internal_format,
 		        TextureFormat p_format,
@@ -310,10 +310,22 @@ namespace OpenGL
 		std::optional<Texture> m_depth_attachment;
 		std::optional<Texture> m_stencil_attachment;
 		std::optional<Texture> m_depth_stencil_attachment;
-	public:
-		static void clear_default_framebuffer(const glm::vec4& p_clear_colour);
+		bool is_default_framebuffer;
 
-		FBO(const glm::uvec2& p_resolution, bool p_colour_attachment = true, bool p_depth_attachment = true, bool p_stencil_attachment = true);
+		//Default framebuffer constructor for FBO::default_framebuffer()
+		explicit FBO();
+	public:
+		static FBO& default_framebuffer()
+		{
+			static auto FBO_default = FBO();
+			return FBO_default;
+		}
+		// Create an FBO with the specified resolution and attachments.
+		//@param p_resolution The resolution of the FBO.
+		//@param p_colour_attachment Whether to create a colour attachment for the FBO.
+		//@param p_depth_attachment Whether to create a depth attachment for the FBO.
+		//@param p_stencil_attachment Whether to create a stencil attachment for the FBO.
+		explicit FBO(const glm::uvec2& p_resolution, bool p_colour_attachment = true, bool p_depth_attachment = true, bool p_stencil_attachment = true);
 		~FBO();
 
 		FBO(const FBO& p_other)            = delete;
@@ -324,6 +336,23 @@ namespace OpenGL
 		const Texture& color_attachment()   const { return m_colour_attachment.value(); }
 		const Texture& depth_attachment()   const { return m_depth_stencil_attachment ? m_depth_stencil_attachment.value() : m_depth_attachment.value(); }
 		const Texture& stencil_attachment() const { return m_depth_stencil_attachment ? m_depth_stencil_attachment.value() : m_stencil_attachment.value(); }
+
+		// Blit the contents of this FBO to p_destination_fbo.
+		// @param p_destination_fbo The FBO to blit to.
+		// @param p_src_min The lower left corner of the source rectangle.
+		// @param p_src_max The upper right corner of the source rectangle.
+		// @param p_dst_min The lower left corner of the destination rectangle.
+		// @param p_dst_max The upper right corner of the destination rectangle.
+		// @param p_colour Whether to blit the colour buffer.
+		// @param p_depth Whether to blit the depth buffer.
+		// @param p_stencil Whether to blit the stencil buffer.
+		// @param p_interpolation_filter The interpolation filter to use when blitting.
+		void blit_to_fbo(FBO& p_destination_fbo,
+		                 const glm::uvec2& p_src_min, const glm::uvec2& p_src_max,
+		                 const glm::uvec2& p_dst_min, const glm::uvec2& p_dst_max,
+		                 bool p_colour = true, bool p_depth = true, bool p_stencil = true, InterpolationFilter p_interpolation_filter = InterpolationFilter::Linear) const;
+		void blit_to_fbo(FBO& p_destination_fbo, bool p_colour, bool p_depth, bool p_stencil, InterpolationFilter p_interpolation_filter) const
+		{ blit_to_fbo(p_destination_fbo, {0, 0}, m_resolution, {0, 0}, p_destination_fbo.m_resolution, p_colour, p_depth, p_stencil, p_interpolation_filter); }
 
 		void clear() const;
 		void resize(const glm::uvec2& p_resolution);

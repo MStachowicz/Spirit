@@ -3,6 +3,9 @@
 #include "UI/Console.hpp"
 #include "Component/TwoAxisCamera.hpp"
 #include "ECS/Entity.hpp"
+#include "OpenGL/Types.hpp"
+
+#include "Utility/Config.hpp"
 
 #include <chrono>
 #include <functional>
@@ -39,14 +42,13 @@ namespace UI
 	// Editor also handles the rendering of the FPS counter and the Console.
 	class Editor
 	{
-		enum class State
+		enum class State : uint8_t
 		{
 			Editing,       // The editor is active and the user is interacting with the scene.
 			Playing,       // The editor is inactive and the scene is running.
 			CameraTesting  // The editor is active and the cursor is captured.
 		};
-
-		struct Windows
+		struct Panes
 		{
 			bool Entity           = false;
 			bool FPSTimer         = true;
@@ -65,8 +67,7 @@ namespace UI
 			bool Console          = true;
 			bool asset_browser    = false;
 		};
-
-		struct PlayerInfoWindow
+		struct PlayerInfoPane
 		{
 			bool open = false;
 			bool render_player_position      = false;
@@ -81,9 +82,34 @@ namespace UI
 				render_player_frustrum      = false;
 			}
 		};
+		struct ViewportPane
+		{
+			ViewportPane();
+
+			bool open;
+			bool m_cursor_hovered;
+			bool m_focused;
+			glm::vec2 m_cursor_pos_content;
+			glm::uvec2 m_last_content_size;
+			Component::TwoAxisCamera m_camera;
+			OpenGL::FBO m_FBO;
+
+			void draw(const DeltaTime& p_delta_time, OpenGL::OpenGLRenderer& p_renderer);
+			float aspect_ratio() const
+			{
+				if (m_FBO.resolution().y == 0)
+					return 1.f;
+				else
+					return static_cast<float>(m_FBO.resolution().x) / static_cast<float>(m_FBO.resolution().y);
+			}
+			Component::ViewInformation view_information() const
+			{
+				return m_camera.view_information(aspect_ratio());
+			}
+		};
 
 		Platform::Input&         m_input;
-		Platform::Window&        m_window;
+		Platform::Window&        m_window; // Parent application level window. Editor UI is drawn into this window.
 		System::AssetManager&    m_asset_manager;
 		System::SceneSystem&     m_scene_system;
 		System::CollisionSystem& m_collision_system;
@@ -92,17 +118,17 @@ namespace UI
 
 		State m_state;                          // The current state of the editor.
 		System::Scene* m_scene_before_play;     // The scene being edited before play was pressed.
-		Component::TwoAxisCamera m_camera;      // Camera used when m_state is Editing.
-		Component::ViewInformation m_view_info; // View information for m_camera required to provide persistant memory.
 		std::vector<ECS::Entity> m_selected_entities;
 		std::optional<ECS::Entity> m_entity_to_draw_info_for; // The entity for which to draw the UI. When a new entity is selected, this is set to the new entity.
 		// The last intersection of the cursor with the scene.
 		// Sometimes we need the cursor intersection earlier in the action (e.g. add_entity_popup should interesect at the point of right click not menu selection.
 		std::optional<glm::vec3> m_cursor_intersection;
 		Console m_console;
-		Windows m_windows_to_display; // All the windows currently being displayed
-		PlayerInfoWindow m_player_info_window;
-		bool m_dragging;              // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
+		Panes m_panes_to_display; // All the panes currently being displayed
+		PlayerInfoPane m_player_info_pane;
+		ViewportPane m_viewport_pane; // The main viewport pane showing the scene being edited. Only visible when m_state != Playing.
+
+		bool m_dragging; // Is the user currently dragging the mouse. i.e. any mouse button is down while the mouse is moving.
 
 		bool m_debug_GJK;
 		std::optional<ECS::Entity> m_debug_GJK_entity_1;
@@ -110,9 +136,8 @@ namespace UI
 		int m_debug_GJK_step;
 
 		std::optional<size_t> pie_chart_node_index; // The current performance node being drawn. Nullptr = root.
-	public:
-		using DeltaTime = std::chrono::duration<float, std::ratio<1>>; // Represents a float precision duration in seconds.
 
+	public:
 		int m_draw_count;
 		DeltaTime m_time_to_average_over; // The time over which to average out the fps.
 		std::vector<DeltaTime> m_duration_between_draws;
@@ -149,9 +174,11 @@ namespace UI
 			, System::PhysicsSystem& p_physics_system
 			, OpenGL::OpenGLRenderer& p_openGL_renderer);
 
+		bool is_playing() const { return m_state == State::Playing; }
+
 		void draw(const DeltaTime& p_duration_since_last_draw);
-		//@return ViewInformation representing the state of the camera if editor is active, otherwise nullptr.
-		Component::ViewInformation* get_editor_view_info();
+		//@return ViewInformation representing the state of the camera if editor is active, otherwise nullopt.
+		std::optional<Component::ViewInformation> get_editor_view_info();
 
 		void log(const std::string& p_message);
 		void log_warning(const std::string& p_message);
@@ -172,13 +199,12 @@ namespace UI
 		// For all components of the entity, draw_component_UI.
 		void draw_entity_UI(ECS::Entity& p_entity);
 		// For all entities in the scene, draw_entity_UI.
-		void draw_entity_tree_window();
+		void draw_entity_tree_pane();
 		// If m_entity_to_draw_info_for is set, draw_entity_UI for the entity in a window.
 		void draw_entity_properties();
-		void draw_graphics_debug_window();
-		void draw_physics_debug_window();
-		void draw_console_window();
-		void draw_performance_window();
+		void draw_graphics_debug_pane();
+		void draw_physics_debug_pane();
+		void draw_performance_pane();
 
 		struct PieSlice
 		{

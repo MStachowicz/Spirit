@@ -252,10 +252,10 @@ PRIVATE source
 target_link_libraries(UI
 PUBLIC GLM
 PUBLIC ECS
+PUBLIC OpenGL
 PRIVATE Geometry
 PRIVATE System
 PRIVATE Platform
-PRIVATE OpenGL
 PRIVATE Utility
 PRIVATE ImGui
 )

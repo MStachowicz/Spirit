@@ -5,6 +5,7 @@
 #include "Component/ViewInformation.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace System
 {
@@ -19,7 +20,7 @@ namespace System
 
 		// When the state of the scene changes update the m_bound and m_view_information.
 		// Should be called when the scene is first created, when entities are added/removed/changed, when the aspect ratio changes or when the editor changes the scene.
-		void update(float aspect_ratio, Component::ViewInformation* view_info_override = nullptr);
+		void update(float aspect_ratio, std::optional<Component::ViewInformation> view_info_override = std::nullopt);
 
 		static void serialise(std::ostream& p_out, uint16_t p_version, const Scene& p_Scene);
 		static Scene deserialise(std::istream& p_in, uint16_t p_version);

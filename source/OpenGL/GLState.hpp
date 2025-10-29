@@ -118,7 +118,7 @@ namespace OpenGL
 		GLuint bitfield = 0;
 	};
 
-	enum class TextureMagFunc : uint8_t
+	enum class InterpolationFilter : uint8_t
 	{
 		Nearest, // Nearest neighbour interpolation.
 		Linear   // Linear interpolation.

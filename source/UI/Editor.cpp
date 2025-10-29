@@ -33,6 +33,7 @@
 
 #include <format>
 #include <numbers>
+#include <cstdint>
 
 namespace UI
 {
@@ -51,14 +52,13 @@ namespace UI
 		, m_openGL_renderer{p_openGL_renderer}
 		, m_state{State::Editing}
 		, m_scene_before_play{nullptr}
-		, m_camera{}
-		, m_view_info{m_camera.view_information(m_window.aspect_ratio())}
 		, m_selected_entities{}
 		, m_entity_to_draw_info_for{}
 		, m_cursor_intersection{}
 		, m_console{}
-		, m_windows_to_display{}
-		, m_player_info_window{}
+		, m_panes_to_display{}
+		, m_player_info_pane{}
+		, m_viewport_pane{}
 		, m_dragging{false}
 		, m_debug_GJK{false}
 		, m_debug_GJK_entity_1{}
@@ -74,11 +74,6 @@ namespace UI
 		m_input.m_mouse_move_event.subscribe(this,   &Editor::on_mouse_move_event);
 		m_input.m_mouse_scroll_event.subscribe(this, &Editor::on_mouse_scroll_event);
 
-		// TODO: Use the current scene bounds (not initialised at this point)
-		m_camera.set_orbit_point(glm::vec3(50.f, 0.f, 50.f));
-		m_camera.set_orbit_distance(75.f);
-		m_camera.set_view_direction(glm::normalize(glm::vec3(0.f, -1.f, 0.f)));
-
 		set_state(m_state, true); // Set the initial state.
 		initialiseStyling();
 	}
@@ -88,7 +83,7 @@ namespace UI
 		if (m_state != State::Editing)
 			return;
 
-		if (!m_input.cursor_over_UI())
+		if (m_viewport_pane.m_cursor_hovered)
 		{
 			switch (p_button)
 			{
@@ -96,8 +91,8 @@ namespace UI
 				{
 					if (p_action == Platform::Action::Press)
 					{
-						const auto& view_info = m_scene_system.get_current_scene_view_info();
-						auto cursor_ray = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+						auto view_info            = m_viewport_pane.view_information();
+						auto cursor_ray           = Utility::get_cursor_ray(m_viewport_pane.m_cursor_pos_content, m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						auto entities_under_mouse = m_collision_system.get_entities_along_ray(cursor_ray);
 
 						if (!entities_under_mouse.empty())
@@ -114,7 +109,7 @@ namespace UI
 						}
 						else
 						{
-														deselect_all_entity();
+							deselect_all_entity();
 						}
 					}
 					break;
@@ -124,10 +119,11 @@ namespace UI
 					// If the user was not dragging, open the entity creation popup.
 					if (p_action == Platform::Action::Release && !m_dragging)
 					{
-						auto cursor_ray  = Utility::get_cursor_ray(m_input.cursor_position(), m_window.size(), m_view_info.m_view_position, m_view_info.m_projection, m_view_info.m_view);
+						auto view_info   = m_scene_system.get_current_scene_view_info();
+						auto cursor_ray  = Utility::get_cursor_ray(m_input.cursor_position(), m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						auto floor_plane = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
 						if ((m_cursor_intersection = Geometry::get_intersection(cursor_ray, floor_plane)))
-							m_windows_to_display.add_entity_popup = true;
+							m_panes_to_display.add_entity_popup = true;
 					}
 
 					break;
@@ -144,20 +140,18 @@ namespace UI
 
 	void Editor::on_mouse_move_event(const glm::vec2 p_mouse_delta)
 	{
-		if (m_input.cursor_over_UI())
-			return;
-
-		if (m_state == State::Editing)
+		if (m_viewport_pane.m_cursor_hovered)
 		{
-			if (m_input.is_mouse_down(Platform::MouseButton::Right))
+			if (m_state == State::Editing)
 			{
-				m_camera.mouse_look(p_mouse_delta);
-				m_view_info = m_camera.view_information(m_window.aspect_ratio());
-			}
-			else if (m_input.is_mouse_down(Platform::MouseButton::Middle))
-			{
-				m_camera.pan(p_mouse_delta);
-				m_view_info = m_camera.view_information(m_window.aspect_ratio());
+				if (m_input.is_mouse_down(Platform::MouseButton::Right))
+				{
+					m_viewport_pane.m_camera.mouse_look(p_mouse_delta);
+				}
+				else if (m_input.is_mouse_down(Platform::MouseButton::Middle))
+				{
+					m_viewport_pane.m_camera.pan(p_mouse_delta);
+				}
 			}
 		}
 
@@ -166,17 +160,19 @@ namespace UI
 	}
 	void Editor::on_mouse_scroll_event(const glm::vec2 p_mouse_scroll)
 	{
-		if (m_input.cursor_over_UI())
-			return;
-
-		if (m_state == State::Editing)
+		if (m_viewport_pane.m_cursor_hovered)
 		{
-			m_camera.zoom(p_mouse_scroll.y);
-			m_view_info = m_camera.view_information(m_window.aspect_ratio());
+			if (m_state == State::Editing)
+			{
+				m_viewport_pane.m_camera.zoom(p_mouse_scroll.y);
+			}
 		}
 	}
 	void Editor::on_key_event(Platform::Key p_key, Platform::Action p_action)
 	{
+		if (ImGui::GetIO().WantCaptureKeyboard)
+			return;
+
 		switch (p_key)
 		{
 			case Platform::Key::Left_Arrow:
@@ -208,7 +204,7 @@ namespace UI
 			case Platform::Key::E:
 			{
 				if (p_action == Platform::Action::Release)
-					m_windows_to_display.Entity = !m_windows_to_display.Entity;
+					m_panes_to_display.Entity = !m_panes_to_display.Entity;
 				break;
 			}
 			case Platform::Key::G:
@@ -234,31 +230,34 @@ namespace UI
 			case Platform::Key::P:
 			{
 				if (p_action == Platform::Action::Release && m_state == State::Editing)
-					m_camera.toggle_orthographic();
+					if (m_viewport_pane.m_focused)
+						m_viewport_pane.m_camera.toggle_orthographic();
 				break;
 			}
 			case Platform::Key::U:
 			{
 				if (p_action == Platform::Action::Release)
-					m_windows_to_display.Console = !m_windows_to_display.Console;
+					m_panes_to_display.Console = !m_panes_to_display.Console;
 				break;
 			}
 			case Platform::Key::Escape:
 			{
 				if (p_action == Platform::Action::Release)
-				{
-					if (m_state == State::Playing || m_state == State::CameraTesting)
-						set_state(State::Editing);
-					else
-						m_window.request_close();
-				}
+					if (ImGui::GetIO().WantCaptureKeyboard == false)
+					{
+						if (m_state == State::Playing || m_state == State::CameraTesting)
+							set_state(State::Editing);
+						else
+							m_window.request_close();
+					}
 				break;
 			}
 			case Platform::Key::Space:
 			{
 				// Toggle playing and editing mode
 				if (p_action == Platform::Action::Release)
-					set_state(m_state == State::Editing ? State::Playing : State::Editing);
+					if (ImGui::GetIO().WantCaptureKeyboard == false)
+						set_state(m_state == State::Editing ? State::Playing : State::Editing);
 
 				break;
 			}
@@ -355,15 +354,12 @@ namespace UI
 
 		m_state = p_new_state;
 	}
-	Component::ViewInformation* Editor::get_editor_view_info()
+	std::optional<Component::ViewInformation> Editor::get_editor_view_info()
 	{
 		if (m_state == State::Editing || m_state == State::CameraTesting)
-		{
-			m_view_info = m_camera.view_information(m_window.aspect_ratio());
-			return &m_view_info;
-		}
+			return m_viewport_pane.view_information();
 		else
-			return nullptr;
+			return {};
 	}
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
@@ -405,38 +401,39 @@ namespace UI
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
-				ImGui::MenuItem("Entity tree", NULL, &m_windows_to_display.Entity);
+				ImGui::MenuItem("Entity tree", NULL, &m_panes_to_display.Entity);
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View"))
 			{
-				ImGui::MenuItem("Console",            NULL, &m_windows_to_display.Console);
-				ImGui::MenuItem("Asset browser",      NULL, &m_windows_to_display.asset_browser);
+				ImGui::MenuItem("Viewport",           NULL, &m_viewport_pane.open);
+				ImGui::MenuItem("Console",            NULL, &m_panes_to_display.Console);
+				ImGui::MenuItem("Asset browser",      NULL, &m_panes_to_display.asset_browser);
 				ImGui::Separator();
-				ImGui::MenuItem("Camera",             NULL, &m_windows_to_display.editor_camera);
-				ImGui::MenuItem("FPS Timer",          NULL, &m_windows_to_display.FPSTimer);
+				ImGui::MenuItem("Camera",             NULL, &m_panes_to_display.editor_camera);
+				ImGui::MenuItem("FPS Timer",          NULL, &m_panes_to_display.FPSTimer);
 				ImGui::Separator();
-				ImGui::MenuItem("Theme",              NULL, &m_windows_to_display.theme_editor);
-				ImGui::MenuItem("ImGui style editor", NULL, &m_windows_to_display.ImGuiStyleEditor);
+				ImGui::MenuItem("Theme",              NULL, &m_panes_to_display.theme_editor);
+				ImGui::MenuItem("ImGui style editor", NULL, &m_panes_to_display.ImGuiStyleEditor);
 
 				if (ImGui::BeginMenu("ImGui"))
 				{
-					ImGui::MenuItem("Demo",  NULL, &m_windows_to_display.ImGuiDemo);
-					ImGui::MenuItem("Stack", NULL, &m_windows_to_display.ImGuiStack);
-					ImGui::MenuItem("About", NULL, &m_windows_to_display.ImGuiAbout);
+					ImGui::MenuItem("Demo",  NULL, &m_panes_to_display.ImGuiDemo);
+					ImGui::MenuItem("Stack", NULL, &m_panes_to_display.ImGuiStack);
+					ImGui::MenuItem("About", NULL, &m_panes_to_display.ImGuiAbout);
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Debug"))
 			{
-				ImGui::MenuItem("Performance",            NULL, &m_windows_to_display.Performance);
-				ImGui::MenuItem("Graphics",               NULL, &m_windows_to_display.Graphics_Debug);
-				ImGui::MenuItem("Physics",                NULL, &m_windows_to_display.Physics_Debug);
-				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_windows_to_display.ImGuiMetrics);
+				ImGui::MenuItem("Performance",            NULL, &m_panes_to_display.Performance);
+				ImGui::MenuItem("Graphics",               NULL, &m_panes_to_display.Graphics_Debug);
+				ImGui::MenuItem("Physics",                NULL, &m_panes_to_display.Physics_Debug);
+				ImGui::MenuItem("ImGui Metrics/Debugger", NULL, &m_panes_to_display.ImGuiMetrics);
 				ImGui::MenuItem("Show Terrain Nodes",     NULL, &m_openGL_renderer.m_draw_terrain_nodes);
 				ImGui::MenuItem("Draw Terrain Wireframe", NULL, &m_openGL_renderer.m_draw_terrain_wireframe);
-				ImGui::MenuItem("Show Player info",       NULL, &m_player_info_window.open);
+				ImGui::MenuItem("Show Player info",       NULL, &m_player_info_pane.open);
 				ImGui::Separator();
 
 				if (ImGui::MenuItem("Play"))
@@ -445,7 +442,7 @@ namespace UI
 					set_state(State::CameraTesting);
 				ImGui::EndMenu();
 			}
-			if (m_windows_to_display.FPSTimer)
+			if (m_panes_to_display.FPSTimer)
 			{
 				auto fps = get_fps(m_duration_between_draws, m_time_to_average_over);
 				std::string fps_str = std::format("FPS: {:.1f}", fps);
@@ -460,31 +457,32 @@ namespace UI
 			}
 			ImGui::EndMenuBar();
 		}
-		if (m_windows_to_display.Entity)         draw_entity_tree_window();
-		if (m_windows_to_display.Console)        draw_console_window();
-		if (m_windows_to_display.asset_browser)  m_asset_manager.draw_UI(&m_windows_to_display.asset_browser);
-		if (m_windows_to_display.Performance)    draw_performance_window();
-		if (m_windows_to_display.Graphics_Debug) draw_graphics_debug_window();
-		if (m_windows_to_display.Physics_Debug)  draw_physics_debug_window();
-		m_player_info_window.draw(*this);
-		if (m_windows_to_display.ImGuiDemo)      ImGui::ShowDemoWindow(&m_windows_to_display.ImGuiDemo);
-		if (m_windows_to_display.ImGuiMetrics)   ImGui::ShowMetricsWindow(&m_windows_to_display.ImGuiMetrics);
-		if (m_windows_to_display.ImGuiStack)     ImGui::ShowStackToolWindow(&m_windows_to_display.ImGuiStack);
-		if (m_windows_to_display.ImGuiAbout)     ImGui::ShowAboutWindow(&m_windows_to_display.ImGuiAbout);
-		if (m_windows_to_display.theme_editor)   Platform::Core::s_theme.draw_theme_editor_UI();
-		if (m_windows_to_display.ImGuiStyleEditor)
+		if (m_panes_to_display.Entity)         draw_entity_tree_pane();
+		if (m_panes_to_display.Console)        m_console.draw("Console", &m_panes_to_display.Console);
+		if (m_panes_to_display.asset_browser)  m_asset_manager.draw_UI(&m_panes_to_display.asset_browser);
+		if (m_panes_to_display.Performance)    draw_performance_pane();
+		if (m_panes_to_display.Graphics_Debug) draw_graphics_debug_pane();
+		if (m_panes_to_display.Physics_Debug)  draw_physics_debug_pane();
+		m_player_info_pane.draw(*this);
+		if (m_panes_to_display.ImGuiDemo)      ImGui::ShowDemoWindow(&m_panes_to_display.ImGuiDemo);
+		if (m_panes_to_display.ImGuiMetrics)   ImGui::ShowMetricsWindow(&m_panes_to_display.ImGuiMetrics);
+		if (m_panes_to_display.ImGuiStack)     ImGui::ShowStackToolWindow(&m_panes_to_display.ImGuiStack);
+		if (m_panes_to_display.ImGuiAbout)     ImGui::ShowAboutWindow(&m_panes_to_display.ImGuiAbout);
+		if (m_panes_to_display.theme_editor)   Platform::Core::s_theme.draw_theme_editor_UI();
+		if (m_panes_to_display.ImGuiStyleEditor)
 		{
-			ImGui::Begin("Dear ImGui Style Editor", &m_windows_to_display.ImGuiStyleEditor);
+			ImGui::Begin("Dear ImGui Style Editor", &m_panes_to_display.ImGuiStyleEditor);
 			ImGui::ShowStyleEditor();
 			ImGui::End();
 		}
-		if (m_windows_to_display.editor_camera)
+		if (m_panes_to_display.editor_camera)
 		{
-			ImGui::Begin("Editor Camera", &m_windows_to_display.editor_camera, ImGuiWindowFlags_AlwaysAutoResize);
-			m_camera.draw_UI();
+			ImGui::Begin("Editor Camera", &m_panes_to_display.editor_camera, ImGuiWindowFlags_AlwaysAutoResize);
+			m_viewport_pane.m_camera.draw_UI();
 			ImGui::End();
 		}
 
+		m_viewport_pane.draw(p_duration_since_last_draw, m_openGL_renderer);
 		draw_entity_properties();
 		entity_creation_popup();
 
@@ -555,9 +553,9 @@ namespace UI
 			scene.delete_entity(p_entity);
 		}
 	}
-	void Editor::draw_entity_tree_window()
+	void Editor::draw_entity_tree_pane()
 	{
-		if (ImGui::Begin("Entities", &m_windows_to_display.Entity))
+		if (ImGui::Begin("Entities", &m_panes_to_display.Entity))
 		{
 			auto& scene = m_scene_system.get_current_scene_entities();
 			scene.foreach([&](ECS::Entity& p_entity)
@@ -585,7 +583,7 @@ namespace UI
 	void Editor::draw_entity_properties()
 	{
 		// If we have an entity to draw info for, draw the UI for it.
-		m_windows_to_display.ent_properties = m_entity_to_draw_info_for.has_value();
+		m_panes_to_display.ent_properties = m_entity_to_draw_info_for.has_value();
 
 		if (m_entity_to_draw_info_for)
 		{
@@ -601,30 +599,31 @@ namespace UI
 			else
 				title = "Entity " + std::to_string(ent.ID);
 
-			ImGui::Begin(title.c_str(), &m_windows_to_display.ent_properties);
+			ImGui::Begin(title.c_str(), &m_panes_to_display.ent_properties);
 			draw_entity_UI(ent);
 			ImGui::End();
 
-			if (!m_windows_to_display.ent_properties)
+			if (!m_panes_to_display.ent_properties)
 				m_entity_to_draw_info_for.reset(); // If the window is closed, reset the entity to draw info for.
 		}
 	}
-	void Editor::draw_graphics_debug_window()
+	void Editor::draw_graphics_debug_pane()
 	{
 		auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
 
-		if (ImGui::Begin("Graphics", &m_windows_to_display.Graphics_Debug))
+		if (ImGui::Begin("Graphics", &m_panes_to_display.Graphics_Debug))
 		{
-			ImGui::Text("Window size",  m_window.size());
-			ImGui::Text("Aspect ratio", m_window.aspect_ratio());
-			ImGui::Text("Frame count",  m_draw_count);
+			ImGui::Text_Manual("Window:   %dx%d (Aspect Ratio: %.2f)", m_window.size().x, m_window.size().y, m_window.aspect_ratio());
+			ImGui::Text_Manual("Viewport: %dx%d (Aspect Ratio: %.2f)", m_viewport_pane.m_FBO.resolution().x, m_viewport_pane.m_FBO.resolution().y, m_viewport_pane.aspect_ratio());
+
+			ImGui::Text("Frame count",   m_draw_count);
 			ImGui::Separator();
 			ImGui::Text("View Position", m_scene_system.get_current_scene_view_info().m_view_position);
 			ImGui::Text("View",          m_scene_system.get_current_scene_view_info().m_view);
 			ImGui::Text("Proj",          m_scene_system.get_current_scene_view_info().m_projection);
 			ImGui::Separator();
 			ImGui::Checkbox("Show light positions", &debug_options.m_show_light_positions);
-			ImGui::Checkbox("Show player frustrum", &m_player_info_window.render_player_frustrum);
+			ImGui::Checkbox("Show player frustrum", &m_player_info_pane.render_player_frustrum);
 			ImGui::Checkbox("Visualise normals",    &debug_options.m_show_mesh_normals);
 			bool VSync = m_window.get_VSync();
 			if (ImGui::Checkbox("VSync", &VSync))
@@ -652,11 +651,11 @@ namespace UI
 		}
 		ImGui::End();
 	}
-	void Editor::draw_physics_debug_window()
+	void Editor::draw_physics_debug_pane()
 	{
 		auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
 
-		if (ImGui::Begin("Physics", &m_windows_to_display.Physics_Debug))
+		if (ImGui::Begin("Physics", &m_panes_to_display.Physics_Debug))
 		{
 			{// GJK visualiser
 				if (m_selected_entities.size() != 2)
@@ -702,11 +701,6 @@ namespace UI
 				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.get_current_scene(), m_debug_GJK_step);
 		}
 	}
-	void Editor::draw_console_window()
-	{
-		m_console.draw("Console", &m_windows_to_display.Console);
-	}
-
 	void Editor::draw_pie_chart(const std::vector<PieSlice>& slices, const std::function<void()>& on_inner_circle_click, const std::function<void()>& on_inner_circle_hover, bool draw_border)
 	{
 		constexpr int num_segments = 64; // Number of segments for the pie chart
@@ -843,9 +837,9 @@ namespace UI
 		}
 	}
 
-	void Editor::draw_performance_window()
+	void Editor::draw_performance_pane()
 	{
-		if (ImGui::Begin("Performance", &m_windows_to_display.Performance))
+		if (ImGui::Begin("Performance", &m_panes_to_display.Performance))
 		{
 			ImGui::Text("Draw calls", m_draw_count);
 			ImGui::Text("FPS", ImGui::GetIO().Framerate);
@@ -930,10 +924,10 @@ namespace UI
 	void Editor::entity_creation_popup()
 	{
 		// ImGui API requires that the OpenPopup is called outside of the BeginPopup context.
-		if (m_windows_to_display.add_entity_popup)
+		if (m_panes_to_display.add_entity_popup)
 		{// On right click, open the entity creation popup
 			ImGui::OpenPopup("Create entity");
-			m_windows_to_display.add_entity_popup = false;
+			m_panes_to_display.add_entity_popup = false;
 		}
 
 		ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y), ImGuiCond_Appearing);
@@ -1061,7 +1055,7 @@ namespace UI
 		//auto theme_grey = ImVec4(0.174f, 0.174f, 0.174f, 1.000f);
 		//style.Colors[ImGuiCol_MenuBarBg] = theme_grey;
 	}
-	void Editor::PlayerInfoWindow::draw(Editor& p_editor)
+	void Editor::PlayerInfoPane::draw(Editor& p_editor)
 	{
 		const Component::Transform* player_transform      = nullptr;
 		const Component::FirstPersonCamera* player_camera = nullptr;
@@ -1085,13 +1079,13 @@ namespace UI
 				ImGui::Text_Manual("Forward:  %.0f, %.0f, %.0f", player_camera->forward().x, player_camera->forward().y, player_camera->forward().z);
 				ImGui::Text_Manual("Right:    %.0f, %.0f, %.0f", player_camera->right().x,   player_camera->right().y,   player_camera->right().z);
 				ImGui::Text_Manual("Up:       %.0f, %.0f, %.0f", player_camera->up().x,      player_camera->up().y,      player_camera->up().z);
-				ImGui::Text_Manual("View distance: %.0f", player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio()));
+				ImGui::Text_Manual("View distance: %.0f", player_camera->get_maximum_view_distance(p_editor.m_viewport_pane.aspect_ratio()));
 				ImGui::Text_Manual("Open %s", open ? "true" : "false");
 
 				ImGui::SeparatorText("Scene debug");
 				ImGui::Checkbox("Show player position", &render_player_position);
 				if (ImGui::Button("Focus camera on player"))
-					p_editor.m_camera.look_at(player_transform->m_position);
+					p_editor.m_viewport_pane.m_camera.look_at(player_transform->m_position);
 				ImGui::Checkbox("Show player view distance", &render_player_view_distance);
 				ImGui::Checkbox("Show player frustrum", &render_player_frustrum);
 			}
@@ -1104,23 +1098,66 @@ namespace UI
 
 			if (render_player_position)
 			{
-				float camera_distance = glm::distance(pos, p_editor.m_camera.position());
+				float camera_distance = glm::distance(pos, p_editor.m_viewport_pane.m_camera.position());
 				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, camera_distance * 0.01f}, glm::vec4{1.f});
 			}
 			if (render_player_view_distance && player_camera)
 			{
-				auto player_view_distance = player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio());
+				auto player_view_distance = player_camera->get_maximum_view_distance(p_editor.m_viewport_pane.aspect_ratio());
 				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, player_view_distance}, glm::vec4{1.f, 1.f, 0.f, 0.25f}, 3);
 			}
 			if (render_player_frustrum)
 			{
-				OpenGL::DebugRenderer::add(player_camera->frustrum(p_editor.m_window.aspect_ratio(), pos));
-				auto camera_view_dist = player_camera->get_maximum_view_distance(p_editor.m_window.aspect_ratio());
+				OpenGL::DebugRenderer::add(player_camera->frustrum(p_editor.m_viewport_pane.aspect_ratio(), pos));
+				auto camera_view_dist = player_camera->get_maximum_view_distance(p_editor.m_viewport_pane.aspect_ratio());
 				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos + player_camera->forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
 				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos - player_camera->forward() * camera_view_dist), glm::vec4(0.f, 0.f, 1.f, 1.f));
 				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos + player_camera->right()   * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
 				OpenGL::DebugRenderer::add(Geometry::LineSegment(pos, pos - player_camera->right()   * camera_view_dist), glm::vec4(1.f, 0.f, 0.f, 1.f));
 			}
+		}
+	}
+	Editor::ViewportPane::ViewportPane()
+		: open{true}
+		, m_cursor_hovered{false}
+		, m_focused{false}
+		, m_cursor_pos_content{-1.f}
+		, m_camera{}
+		, m_FBO{{800, 600}, true, true, false}
+	{
+		// TODO: Use the current scene bounds (not initialised at this point)
+		m_camera.set_orbit_point(glm::vec3(50.f, 0.f, 50.f));
+		m_camera.set_orbit_distance(75.f);
+		m_camera.set_view_direction(glm::normalize(glm::vec3(0.f, -1.f, 0.f)));
+	}
+	void Editor::ViewportPane::draw(const DeltaTime& p_delta_time, OpenGL::OpenGLRenderer& p_renderer)
+	{
+		if (open)
+		{
+			ImGui::SetNextWindowBgAlpha(1.f); // Opaque background for the viewport
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+			if (ImGui::Begin("Viewport", &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+			{
+				// Origin and size of the actual content area (excludes tab bar/title/menu/borders/padding)
+				ImVec2 content_pos  = ImGui::GetCursorScreenPos();
+				ImVec2 content_size = ImGui::GetContentRegionAvail();
+				ImVec2 mouse_pos    = ImGui::GetMousePos();
+
+				m_cursor_pos_content = glm::vec2(mouse_pos.x - content_pos.x, mouse_pos.y - content_pos.y);
+				m_cursor_hovered     = m_cursor_pos_content.x >= 0.f && m_cursor_pos_content.y >= 0.f &&
+				m_cursor_pos_content.x <= content_size.x && m_cursor_pos_content.y <= content_size.y;
+				m_focused            = ImGui::IsWindowFocused(ImGuiFocusedFlags_None);
+
+				m_FBO.resize({content_size.x, content_size.y});
+				p_renderer.draw(p_delta_time, m_FBO);
+				ImGui::Image(reinterpret_cast<ImTextureID>(reinterpret_cast<void*>(static_cast<std::intptr_t>(m_FBO.color_attachment().handle()))), content_size, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
+			}
+			ImGui::PopStyleVar(2);
+			ImGui::End();
+
 		}
 	}
 } // namespace UI

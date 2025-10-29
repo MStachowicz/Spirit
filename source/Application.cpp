@@ -5,7 +5,7 @@ Application::Application(Platform::Input& p_input, Platform::Window& p_window) n
 	, m_window{p_window}
 	, m_asset_manager{}
 	, m_scene_system{m_asset_manager}
-	, m_openGL_renderer{m_window, m_asset_manager, m_scene_system}
+	, m_openGL_renderer{m_asset_manager, m_scene_system}
 	, m_collision_system{m_scene_system}
 	, m_physics_system{m_scene_system, m_collision_system}
 	, m_input_system{m_input, m_window, m_scene_system}
@@ -79,14 +79,19 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 
 		if (render_rate_unlimited || duration_since_last_render_tick >= render_timestep)
 		{
+			OpenGL::FBO::default_framebuffer().clear();
+			OpenGL::FBO::default_framebuffer().resize(m_window.size());
+
 			m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
 			m_terrain_system.update(m_scene_system.get_current_scene(), m_window.aspect_ratio());
 
-			m_openGL_renderer.start_frame();
-			m_openGL_renderer.draw(duration_since_last_render_tick);
-			m_editor.draw(duration_since_last_render_tick);
+			if (!m_editor.is_playing())
+				m_editor.draw(duration_since_last_render_tick);
+			else
+				m_openGL_renderer.draw(duration_since_last_render_tick, OpenGL::FBO::default_framebuffer());
 
-			m_openGL_renderer.end_frame();
+			OpenGL::State::Get().bind_FBO(0);
+
 			m_window.end_ImGui_frame();
 			m_window.swap_buffers();
 

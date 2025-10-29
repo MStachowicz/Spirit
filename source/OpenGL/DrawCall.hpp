@@ -68,7 +68,7 @@ namespace OpenGL
 		GLuint m_UBO_count;
 
 		// Common across all drawcalls.
-		void pre_draw_call(Shader& p_shader, const VAO& p_VAO, const GLHandle& p_FBO_handle, const glm::uvec2& p_resolution) const;
+		void pre_draw_call(Shader& p_shader, const VAO& p_VAO, const GLHandle& p_FBO_handle, const glm::uvec2& p_resolution, const glm::uvec2& p_viewport_pos = {0, 0}) const;
 	public:
 		bool m_write_to_depth_buffer; // Whether to write the fragment's depth to the depth buffer.
 		bool m_depth_test_enabled;    // Whether to test fragments against the depth buffer and discard them according to the m_depth_test_type.
@@ -107,17 +107,22 @@ namespace OpenGL
 		// Submit the drawcall to the GL context using the provided p_shader and p_VAO drawing into the p_FBO.
 		//@param p_shader The shader to use for the drawcall.
 		//@param p_VAO The VAO to use for the drawcall.
-		//@param p_FBO The FBO to draw into. If nullptr, the default framebuffer is used.
+		//@param p_FBO The FBO to draw into.
 		void submit(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO) const;
+		// Submit the drawcall to the GL context using the provided p_shader and p_VAO drawing into the p_FBO with a specified viewport position and size.
+		//@param p_shader The shader to use for the drawcall.
+		//@param p_VAO The VAO to use for the drawcall.
+		//@param p_FBO The FBO to draw into.
+		//@param p_viewport_pos The position of the viewport.
+		//@param p_viewport_size The size of the viewport.
+		void submit(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO, const glm::uvec2& p_viewport_pos, const glm::uvec2& p_viewport_size) const;
 		// Submit the drawcall to the GL context using the provided p_shader and p_VAO drawing into the p_FBO.
 		//@param p_shader The shader to use for the drawcall.
 		//@param p_VAO The VAO to use for the drawcall.
 		//@param p_instanced_count The number of instances to draw.
-		//@param p_FBO The FBO to draw into. If nullptr, the default framebuffer is used.
+		//@param p_FBO The FBO to draw into.
 		void submit_instanced(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO, GLsizei p_instanced_count) const;
 
-		// Submit the drawcall to the GL context using the provided p_shader and p_VAO drawing into the default framebuffer.
-		void submit_default(Shader& p_shader, const VAO& p_VAO, const glm::uvec2& p_resolution) const;
 		// Launch a compute shader p_shader with the provided number of groups.
 		void submit_compute(Shader& p_shader, GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z) const;
 	};

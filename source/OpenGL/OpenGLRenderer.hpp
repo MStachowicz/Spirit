@@ -10,6 +10,8 @@
 #include "Component/Mesh.hpp"
 #include "Component/Texture.hpp"
 
+#include "Platform/Window.hpp"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -26,8 +28,6 @@ namespace OpenGL
 {
 	class OpenGLRenderer
 	{
-		static Data::Mesh make_screen_quad_mesh();
-
 		struct PostProcessingOptions
 		{
 			bool mInvertColours = false;
@@ -36,10 +36,10 @@ namespace OpenGL
 			bool mBlur          = false;
 			bool mEdgeDetection = false;
 			float mKernelOffset = 1.0f / 300.0f;
+
+			bool any_active() const { return mInvertColours || mGrayScale || mSharpen || mBlur || mEdgeDetection; }
 		};
 
-		Platform::Window& m_window;
-		FBO m_screen_framebuffer; // Framebuffer the scene is rendered to. We then render this texture to the screen allowing for post-processing.
 		System::AssetManager& m_asset_manager;
 		System::SceneSystem& m_scene_system;
 
@@ -50,6 +50,8 @@ namespace OpenGL
 		Shader m_screen_texture_shader;
 		Shader m_sky_box_shader;
 		Shader m_terrain_shader;
+
+		std::optional<FBO> m_post_processing_FBO;
 
 		PhongRenderer m_phong_renderer;
 		ParticleRenderer m_particle_renderer;
@@ -63,7 +65,7 @@ namespace OpenGL
 		PostProcessingOptions m_post_processing_options;
 		bool m_draw_shadows;
 
-		public:
+	public:
 		bool m_draw_grid;
 		bool m_draw_axes;
 		bool m_draw_terrain_nodes;
@@ -71,12 +73,10 @@ namespace OpenGL
 		bool m_visualise_terrain_normals;
 
 		// OpenGLRenderer reads and renders the current state of pStorage when draw() is called.
-		OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;
+		OpenGLRenderer(System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;
 
-		void start_frame();
-		void end_frame();
 		// Draw the current state of the ECS.
-		void draw(const DeltaTime& delta_time);
+		void draw(const DeltaTime& delta_time, FBO& target_FBO);
 		void draw_UI();
 		void reset_debug_options();
 		void reload_shaders();

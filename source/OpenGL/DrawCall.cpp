@@ -75,10 +75,10 @@ namespace OpenGL
 		++m_UBO_count;
 	}
 
-	void DrawCall::pre_draw_call(Shader& p_shader, const VAO& p_VAO, const GLHandle& p_FBO_handle, const glm::uvec2& p_resolution) const
+	void DrawCall::pre_draw_call(Shader& p_shader, const VAO& p_VAO, const GLHandle& p_FBO_handle, const glm::uvec2& p_viewport_pos, const glm::uvec2& p_viewport_size) const
 	{
 		State::Get().bind_FBO(p_FBO_handle);
-		State::Get().set_viewport(0, 0, p_resolution.x, p_resolution.y);
+		State::Get().set_viewport(p_viewport_pos.x, p_viewport_pos.y, p_viewport_size.x, p_viewport_size.y);
 
 		State::Get().set_depth_write(m_write_to_depth_buffer);
 		State::Get().set_depth_test(m_depth_test_enabled);
@@ -126,36 +126,30 @@ namespace OpenGL
 		}
 	}
 
-	void DrawCall::submit(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO) const
+	void DrawCall::submit(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO, const glm::uvec2& p_viewport_pos, const glm::uvec2& p_viewport_size) const
 	{
-		ASSERT(p_FBO.m_handle != 0, "Submitting a draw call with an FBO that has not been initialised.");
 		ASSERT(p_FBO.is_complete(), "Submitting a draw call with an incomplete FBO.");
 		ASSERT(p_VAO.draw_count() > 0, "Submitting a draw call with no vertices to draw.");
 
-		pre_draw_call(p_shader, p_VAO, p_FBO.m_handle, p_FBO.m_resolution);
+		pre_draw_call(p_shader, p_VAO, p_FBO.m_handle, p_viewport_pos, p_viewport_size);
 
 		if (p_VAO.is_indexed())
 			draw_elements(p_VAO.draw_primitive_mode(), p_VAO.draw_count());
 		else
 			draw_arrays(p_VAO.draw_primitive_mode(), 0, p_VAO.draw_count());
 	}
+	void DrawCall::submit(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO) const
+	{
+		submit(p_shader, p_VAO, p_FBO, {0, 0}, p_FBO.resolution());
+	}
 	void DrawCall::submit_instanced(Shader& p_shader, const VAO& p_VAO, const FBO& p_FBO, GLsizei p_instanced_count) const
 	{
-		pre_draw_call(p_shader, p_VAO, p_FBO.m_handle, p_FBO.m_resolution);
+		pre_draw_call(p_shader, p_VAO, p_FBO.m_handle, {0, 0}, p_FBO.m_resolution);
 
 		if (p_VAO.is_indexed())
 			draw_elements_instanced(p_VAO.draw_primitive_mode(), p_VAO.draw_count(), p_instanced_count);
 		else
 			draw_arrays_instanced(p_VAO.draw_primitive_mode(), 0, p_VAO.draw_count(), p_instanced_count);
-	}
-	void DrawCall::submit_default(Shader& p_shader, const VAO& p_VAO, const glm::uvec2& p_resolution) const
-	{
-		pre_draw_call(p_shader, p_VAO, 0, p_resolution);
-
-		if (p_VAO.is_indexed())
-			draw_elements(p_VAO.draw_primitive_mode(), p_VAO.draw_count());
-		else
-			draw_arrays(p_VAO.draw_primitive_mode(), 0, p_VAO.draw_count());
 	}
 	void DrawCall::submit_compute(Shader& p_shader, GLuint p_num_groups_x, GLuint p_num_groups_y, GLuint p_num_groups_z) const
 	{

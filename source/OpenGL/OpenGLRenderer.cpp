@@ -23,29 +23,28 @@
 
 namespace OpenGL
 {
-	Data::Mesh OpenGLRenderer::make_screen_quad_mesh()
+	Data::Mesh make_screen_quad_mesh()
 	{
 		auto mb = Utility::MeshBuilder<Data::TextureVertex, OpenGL::PrimitiveMode::Triangles>{};
 		mb.add_quad(glm::vec3(-1.f, 1.f, 0.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(-1.f, -1.f, 0.f), glm::vec3(1.f, -1.f, 0.f));
 		return mb.get_mesh();
 	}
-
 	Data::Mesh make_axis_mesh()
 	{
+		constexpr size_t segments_per_cylinder = 8;
+		constexpr float radius = 0.025f;
 		auto mb = Utility::MeshBuilder<Data::ColourVertex, OpenGL::PrimitiveMode::Triangles>{};
 		mb.set_colour(glm::vec3(1.f, 0.f, 0.f));
-		mb.add_cylinder(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), 0.02f, 12); // X
+		mb.add_cylinder(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), radius, segments_per_cylinder); // X
 		mb.set_colour(glm::vec3(0.f, 1.f, 0.f));
-		mb.add_cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 0.02f, 12); // Y
+		mb.add_cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), radius, segments_per_cylinder); // Y
 		mb.set_colour(glm::vec3(0.f, 0.f, 1.f));
-		mb.add_cylinder(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), 0.02f, 12); // Z
+		mb.add_cylinder(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), radius, segments_per_cylinder); // Z
 		return mb.get_mesh();
 	}
 
-	OpenGLRenderer::OpenGLRenderer(Platform::Window& p_window, System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept
-		: m_window{p_window}
-		, m_screen_framebuffer{m_window.size()}
-		, m_asset_manager{p_asset_manager}
+	OpenGLRenderer::OpenGLRenderer(System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept
+		: m_asset_manager{p_asset_manager}
 		, m_scene_system{p_scene_system}
 		, m_view_properties_buffer{{OpenGL::BufferStorageFlag::DynamicStorageBit}, sizeof(Component::ViewInformation)}
 		, m_uniform_colour_shader{"uniformColour"}
@@ -54,6 +53,7 @@ namespace OpenGL
 		, m_screen_texture_shader{"screenTexture"}
 		, m_sky_box_shader{"skybox"}
 		, m_terrain_shader{"phong_terrain"}
+		, m_post_processing_FBO{}
 		, m_phong_renderer{}
 		, m_particle_renderer{}
 		, m_grid_renderer{}
@@ -94,28 +94,24 @@ namespace OpenGL
 		LOG("[OPENGL] Constructed new OpenGLRenderer instance");
 	}
 
-	void OpenGLRenderer::start_frame()
-	{
-		PERF(OpenGLRendererStartFrame);
-
-		m_view_properties_buffer.set_data(m_scene_system.get_current_scene_view_info(), 0);
-
-		m_shadow_mapper.shadow_pass(m_scene_system.get_current_scene());
-
-		// Prepare m_screen_framebuffer for rendering
-		m_screen_framebuffer.resize(m_window.size());
-		auto clear_colour = Platform::Core::s_theme.background;
-		clear_colour.a    = 1.f;
-		m_screen_framebuffer.set_clear_colour(clear_colour); // Platform::Core::s_theme.background);
-		m_screen_framebuffer.clear();
-		ASSERT(m_screen_framebuffer.is_complete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
-	}
-
-	void OpenGLRenderer::draw(const DeltaTime& delta_time)
+	void OpenGLRenderer::draw(const DeltaTime& delta_time, FBO& target_FBO)
 	{
 		PERF(OpenGLRendererDraw);
-		auto& entities = m_scene_system.get_current_scene_entities();
-		auto& scene    = m_scene_system.get_current_scene();
+
+		auto& entities  = m_scene_system.get_current_scene_entities();
+		auto& scene     = m_scene_system.get_current_scene();
+		auto& view_info = m_scene_system.get_current_scene_view_info();
+
+		m_view_properties_buffer.set_data(view_info, 0);
+		m_shadow_mapper.shadow_pass(scene);
+
+		{ // Prepare target_FBO for rendering
+			auto clear_colour = Platform::Core::s_theme.background;
+			clear_colour.a    = 1.f;
+			target_FBO.set_clear_colour(clear_colour); // Platform::Core::s_theme.background);
+			target_FBO.clear();
+			ASSERT(target_FBO.is_complete(), "Screen framebuffer not complete, have you attached a colour or depth buffer to it?");
+		}
 
 		glm::mat4 light_proj_view = glm::identity<glm::mat4>();
 		if (m_draw_shadows)
@@ -128,9 +124,9 @@ namespace OpenGL
 		}
 
 		if (m_draw_grid)
-			m_grid_renderer.draw(m_screen_framebuffer);
+			m_grid_renderer.draw(target_FBO);
 
-		m_phong_renderer.update_light_data(m_scene_system.get_current_scene());
+		m_phong_renderer.update_light_data(scene);
 		const auto& directional_light_buffer = m_phong_renderer.get_directional_lights_buffer();
 		const auto& point_light_buffer       = m_phong_renderer.get_point_lights_buffer();
 		const auto& spot_light_buffer        = m_phong_renderer.get_spot_lights_buffer();
@@ -193,7 +189,7 @@ namespace OpenGL
 
 				dc.set_UBO("ViewProperties", m_view_properties_buffer);
 				dc.set_uniform("model", p_transform.get_model());
-				dc.submit(*mesh_shader, mesh_comp.m_mesh->get_VAO(), m_screen_framebuffer);
+				dc.submit(*mesh_shader, mesh_comp.m_mesh->get_VAO(), target_FBO);
 			}
 		});
 
@@ -251,13 +247,61 @@ namespace OpenGL
 				dc.set_texture("rock",  p_terrain.m_rock_tex->m_GL_texture);
 				dc.set_texture("snow",  p_terrain.m_snow_tex->m_GL_texture);
 
-				dc.submit(m_terrain_shader, p_terrain.get_VAO(), m_screen_framebuffer);
+				dc.submit(m_terrain_shader, p_terrain.get_VAO(), target_FBO);
 			});
 		}
 
-		m_particle_renderer.update(delta_time, m_scene_system.get_current_scene(), m_scene_system.get_current_scene_view_info().m_view_position, m_view_properties_buffer, m_screen_framebuffer);
-	}
+		m_particle_renderer.update(delta_time, scene, view_info.m_view_position, m_view_properties_buffer, target_FBO);
 
+		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_phong_renderer.get_point_lights_buffer(), target_FBO);
+
+		if (m_post_processing_options.any_active())
+		{
+			// Apply post-processing effects by rendering the current target_FBO to a screen-sized quad with the post-processing shader.
+			// First blit the current target_FBO to the intermediate post-processing FBO. Then render the post-processing FBO to the screen quad with the post-processing shader.
+			if (!m_post_processing_FBO)
+				m_post_processing_FBO = FBO{target_FBO.resolution(), true, false, false};
+			m_post_processing_FBO->resize(target_FBO.resolution());
+			target_FBO.blit_to_fbo(*m_post_processing_FBO, true, false, false, InterpolationFilter::Nearest);
+
+			DrawCall post_process_dc;
+			post_process_dc.m_depth_test_enabled    = false;
+			post_process_dc.m_cull_face_enabled     = false;
+			post_process_dc.m_polygon_mode          = PolygonMode::Fill;
+			post_process_dc.m_write_to_depth_buffer = false;
+			post_process_dc.set_uniform("invertColours", m_post_processing_options.mInvertColours);
+			post_process_dc.set_uniform("grayScale", m_post_processing_options.mGrayScale);
+			post_process_dc.set_uniform("sharpen", m_post_processing_options.mSharpen);
+			post_process_dc.set_uniform("blur", m_post_processing_options.mBlur);
+			post_process_dc.set_uniform("edgeDetection", m_post_processing_options.mEdgeDetection);
+			post_process_dc.set_uniform("offset", m_post_processing_options.mKernelOffset);
+			post_process_dc.set_texture("screen_texture", m_post_processing_FBO->color_attachment());
+			post_process_dc.submit(m_screen_texture_shader, m_screen_quad.get_VAO(), *m_post_processing_FBO);
+			m_post_processing_FBO->blit_to_fbo(target_FBO, true, false, false, InterpolationFilter::Nearest);
+		}
+		if (m_draw_axes)
+		{
+			DrawCall axes_dc;
+			float axis_size = 1.f;
+			axes_dc.set_uniform("model", glm::scale(glm::identity<glm::mat4>(), glm::vec3(axis_size)));
+
+			// Copy and modify the view information to create an orthographic projection with no translation
+			auto view_prop         = m_scene_system.get_current_scene_view_info();
+			view_prop.m_view       = glm::mat4(glm::mat3(view_prop.m_view)); // Remove translation from view matrix.
+			view_prop.m_projection = glm::ortho(-axis_size, axis_size, -axis_size, axis_size, -axis_size, axis_size);
+			m_view_properties_buffer.set_data(view_prop, 0);
+			axes_dc.set_UBO("ViewProperties", m_view_properties_buffer);
+
+			axes_dc.m_depth_test_enabled    = true;
+			axes_dc.m_write_to_depth_buffer = true;
+			axes_dc.m_cull_face_enabled     = true;
+
+			glm::uvec2 res          = target_FBO.resolution();
+			glm::uvec2 axes_size    = glm::uvec2{std::min(res.x, res.y) / 16u};
+			glm::uvec2 axes_padding = glm::uvec2{std::min(res.x, res.y) / 64u};
+			axes_dc.submit(m_colour_shader, m_axis_mesh.get_VAO(), target_FBO, axes_padding, axes_size);
+		}
+	}
 
 	void OpenGLRenderer::draw_UI()
 	{
@@ -309,51 +353,5 @@ namespace OpenGL
 		m_phong_renderer.reload_shaders();
 		m_grid_renderer.reload_shaders();
 		m_shadow_mapper.reload_shaders();
-	}
-
-	void OpenGLRenderer::end_frame()
-	{
-		PERF(OpenGLRendererEndFrame);
-		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_phong_renderer.get_point_lights_buffer(), m_screen_framebuffer);
-
-		// Draw the colour output from m_screen_framebuffer colour texture to the default FBO as a fullscreen quad.
-
-		DrawCall dc;
-		dc.m_depth_test_enabled    = false;
-		dc.m_cull_face_enabled     = false;
-		dc.m_polygon_mode          = PolygonMode::Fill;
-		dc.m_write_to_depth_buffer = false;
-
-		{ // PostProcessing setters
-			dc.set_uniform("invertColours", m_post_processing_options.mInvertColours);
-			dc.set_uniform("grayScale", m_post_processing_options.mGrayScale);
-			dc.set_uniform("sharpen", m_post_processing_options.mSharpen);
-			dc.set_uniform("blur", m_post_processing_options.mBlur);
-			dc.set_uniform("edgeDetection", m_post_processing_options.mEdgeDetection);
-			dc.set_uniform("offset", m_post_processing_options.mKernelOffset);
-		}
-
-		dc.set_texture("screen_texture", m_screen_framebuffer.color_attachment());
-
-		dc.submit_default(m_screen_texture_shader, m_screen_quad.get_VAO(), m_window.size());
-
-		if (m_draw_axes)
-		{
-			DrawCall axes_dc;
-			float axis_size = 20.f;
-			axes_dc.set_uniform("model", glm::scale(glm::identity<glm::mat4>(), glm::vec3(axis_size)));
-
-			// Copy and modify the view information to create an orthographic projection with no translation
-			auto view_prop = m_scene_system.get_current_scene_view_info();
-			auto view_no_translation = glm::mat4(glm::mat3(view_prop.m_view)); // Remove translation from view matrix.
-			view_prop.m_view = view_no_translation;
-			view_prop.m_projection = glm::ortho(-axis_size, axis_size, -axis_size, axis_size, -axis_size, axis_size);
-
-			m_view_properties_buffer.set_data(view_prop, 0);
-			axes_dc.set_UBO("ViewProperties", m_view_properties_buffer);
-			axes_dc.m_depth_test_enabled = false;
-			axes_dc.m_cull_face_enabled = false;
-			axes_dc.submit_default(m_colour_shader, m_axis_mesh.get_VAO(), {128, 128});
-		}
 	}
 } // namespace OpenGL

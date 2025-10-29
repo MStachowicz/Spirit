@@ -47,7 +47,7 @@ namespace System
 		m_current_scene_index = std::distance(m_scenes.begin(), it);
 	}
 
-	void Scene::update(float aspect_ratio, Component::ViewInformation* view_info_override /*= nullptr*/)
+	void Scene::update(float aspect_ratio, std::optional<Component::ViewInformation> view_info_override /*= nullopt*/)
 	{
 		PERF(SceneUpdate);
 

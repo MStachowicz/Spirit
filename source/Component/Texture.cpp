@@ -35,7 +35,7 @@ namespace Data
 		: m_filepath{p_filepath}
 		, m_image{p_filepath}
 		, m_GL_texture{ resolution(),
-		                OpenGL::TextureMagFunc::Linear,
+		                OpenGL::InterpolationFilter::Linear,
 		                OpenGL::WrappingMode::Repeat,
 		                internal_format_from_channels(m_image.number_of_channels),
 		                format_from_channels(m_image.number_of_channels),
