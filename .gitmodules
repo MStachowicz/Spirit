@@ -23,3 +23,6 @@
 [submodule "source/External/Tracy"]
 	path = source/External/Tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "source/External/JoltPhysics"]
+	path = source/External/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics.git
