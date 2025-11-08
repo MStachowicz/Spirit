@@ -182,6 +182,7 @@ PUBLIC ECS #SceneSystem.hpp uses ECS storage
 PUBLIC Utility
 PRIVATE Platform
 PRIVATE ImGui
+PRIVATE Jolt
 )
 target_compile_options(System PRIVATE ${WARNING_COMPILE_FLAGS})
 # System end ------------------------------------------------------------------------------------------------------------------------------
@@ -449,6 +450,11 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	# Tracy Profiler -----------------------------------------------------------------
 	add_subdirectory(source/External/Tracy source/External/Tracy SYSTEM)
 	# Tracy end ----------------------------------------------------------------------
+
+	# JoltPhysics ----------------------------------------------------------------------
+	set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+	add_subdirectory(source/External/JoltPhysics/Build ${CMAKE_BINARY_DIR}/External/JoltPhysics SYSTEM)
+	# JoltPhysics ----------------------------------------------------------------------
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
 
 add_custom_target(All DEPENDS Spirit Test)
