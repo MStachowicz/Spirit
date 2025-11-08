@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 
-void Logger::log_info(const std::string& p_message)
+void Logger::log_info(std::string_view p_message)
 {
 	const auto info_str = std::format("[INFO] {}", p_message);
 
@@ -21,9 +21,9 @@ void Logger::log_info(const std::string& p_message)
 	//if constexpr (s_log_to_file)
 		// TODO
 }
-void Logger::log_warning(const std::string& p_message, const std::source_location& p_location)
+void Logger::log_warning(std::string_view p_message, const std::source_location& p_location)
 {
-	const auto warn_str = std::format("[WARNING] {} -{}", p_message, to_string(p_location));
+	const auto warn_str = std::format("[WARNING] {}\n{} ({}:{})", p_message, p_location.function_name(), p_location.file_name(), p_location.line());
 
 	if constexpr (s_log_to_editor)
 	{
@@ -37,9 +37,9 @@ void Logger::log_warning(const std::string& p_message, const std::source_locatio
 	//if constexpr (s_log_to_file)
 		// TODO
 }
-void Logger::log_error(const std::string& p_message, const std::source_location& p_location)
+void Logger::log_error(std::string_view p_message, const std::source_location& p_location)
 {
-	const auto error_str = std::format("[ERROR] {}\n-{}", p_message, to_string(p_location));
+	const auto error_str = std::format("[ERROR] {}\n{} ({}:{})", p_message, p_location.function_name(), p_location.file_name(), p_location.line());
 
 	if constexpr (s_log_to_editor)
 	{
@@ -53,20 +53,15 @@ void Logger::log_error(const std::string& p_message, const std::source_location&
 	//if constexpr (s_log_to_file)
 		// TODO
 }
-[[noreturn]] void Logger::assert_fail(const std::string& p_conditional, const std::string& p_message, const std::source_location& p_location)
+[[noreturn]] void Logger::assert_fail(std::string_view p_conditional, std::string_view p_message, const std::source_location& p_location)
 {
 	const auto assert_fail_str = std::format("ASSERT FAILED: '{}' - {}", p_conditional, p_message);
 	log_error(assert_fail_str, p_location);
 	throw std::logic_error(assert_fail_str);
 }
-[[noreturn]] void Logger::assert_fail(const std::string& p_message, const std::source_location& p_location)
+[[noreturn]] void Logger::assert_fail(std::string_view p_message, const std::source_location& p_location)
 {
 	const auto assert_fail_str = std::format("ASSERT FAILED: '{}'", p_message);
 	log_error(assert_fail_str, p_location);
 	throw std::logic_error(assert_fail_str);
-}
-
-std::string Logger::to_string(const std::source_location& p_location)
-{
-	return std::format("SOURCE: {} ({}:{})", p_location.function_name(), p_location.file_name(), p_location.line());
 }

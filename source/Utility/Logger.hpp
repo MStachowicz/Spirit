@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <string_view>
 #include <format>
 #include <source_location>
 
@@ -11,18 +11,17 @@ namespace UI
 class Logger
 {
 public:
-	static void log_info(const std::string& p_message);
-	static void log_warning(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
-	static void log_error(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
-	[[noreturn]] static void assert_fail(const std::string& p_conditional, const std::string& p_message, const std::source_location& p_location = std::source_location::current());
-	[[noreturn]] static void assert_fail(const std::string& p_message, const std::source_location& p_location = std::source_location::current());
+	static void log_info(std::string_view p_message);
+	static void log_warning(std::string_view p_message, const std::source_location& p_location = std::source_location::current());
+	static void log_error(std::string_view p_message, const std::source_location& p_location = std::source_location::current());
+	[[noreturn]] static void assert_fail(std::string_view p_conditional, std::string_view p_message, const std::source_location& p_location = std::source_location::current());
+	[[noreturn]] static void assert_fail(std::string_view p_message, const std::source_location& p_location = std::source_location::current());
 	static inline UI::Editor* s_editor_sink = nullptr; // If pointing to an Editor && s_log_to_editor is true, the editor will output the Log message to its console.
 
 private:
 	static constexpr bool s_log_to_file    = false;
 	static constexpr bool s_log_to_console = true;
 	static constexpr bool s_log_to_editor  = true; // Warning: the editor depends on core and platform work to be done before it can be constructed, thus lots of log messages will not print until it can be assigned later into Spirit initialisation.
-	static std::string to_string(const std::source_location& p_location);
 };
 
 // Logging is implemented via macros for two reasons.
