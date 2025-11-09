@@ -31,8 +31,8 @@
 			},
 			"cacheVariables":
 			{
-				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
-				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -DJPH_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -DJPH_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
 				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE /MD /O2 /Ob2 /DNDEBUG",
 				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE /MD /O2 /Ob2 /DNDEBUG"
 			}
@@ -59,8 +59,8 @@
 			"cacheVariables": {
 				"CMAKE_C_COMPILER":        "cl.exe",
 				"CMAKE_CXX_COMPILER":      "cl.exe",
-				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
-				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -DJPH_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -DJPH_DEBUG /MDd /Zi /Ob0 /Od /RTC1",
 				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE /MD /O2 /Ob2 /DNDEBUG",
 				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE /MD /O2 /Ob2 /DNDEBUG"
 			}
@@ -73,8 +73,8 @@
 			"cacheVariables": {
 				"CMAKE_C_COMPILER":        "gcc",
 				"CMAKE_CXX_COMPILER":      "g++",
-				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -g3 -ggdb -O0",
-				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -g3 -ggdb -O0",
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -DJPH_DEBUG -g3 -ggdb -O0",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -DJPH_DEBUG -g3 -ggdb -O0",
 				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE -g0 -O3",
 				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE -g0 -O3"
 			}
@@ -87,8 +87,8 @@
 			"cacheVariables": {
 				"CMAKE_C_COMPILER":        "clang",
 				"CMAKE_CXX_COMPILER":      "clang++",
-				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -g3 -ggdb -O0",
-				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -g3 -ggdb -O0",
+				"CMAKE_CXX_FLAGS_DEBUG":   "-DZ_DEBUG -DJPH_DEBUG -g3 -ggdb -O0",
+				"CMAKE_C_FLAGS_DEBUG":     "-DZ_DEBUG -DJPH_DEBUG -g3 -ggdb -O0",
 				"CMAKE_CXX_FLAGS_RELEASE": "-DZ_RELEASE -g0 -O3",
 				"CMAKE_C_FLAGS_RELEASE":   "-DZ_RELEASE -g0 -O3"
 			}
