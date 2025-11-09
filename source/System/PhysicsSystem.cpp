@@ -209,28 +209,33 @@ public:
 		}
 	}
 };
-	void JoltTrace(const char* inFMT, ...)
-	{
-		// Format the message
-		va_list list;
-		va_start(list, inFMT);
-		char buffer[1024];
-		vsnprintf(buffer, sizeof(buffer), inFMT, list);
-		va_end(list);
-		LOG("[JOLT] {}", buffer);
-	}
-	bool JoltAssertFailed(const char* inExpression, const char* inMessage, const char* inFile, JPH::uint inLine)
+
+void JoltTrace(const char* inFMT, ...)
+{
+	// Format the message
+	va_list list;
+	va_start(list, inFMT);
+	char buffer[1024];
+	vsnprintf(buffer, sizeof(buffer), inFMT, list);
+	va_end(list);
+	LOG("[JOLT] {}", buffer);
+}
+#ifdef Z_DEBUG
+	bool JoltAssertFailed([[maybe_unused]] const char* inExpression, [[maybe_unused]] const char* inMessage, [[maybe_unused]] const char* inFile, [[maybe_unused]] JPH::uint inLine)
 	{
 		LOG_ERROR(false, "[JOLT] Assertion failed in file {} at line {}: ({}) {}", inFile, static_cast<unsigned int>(inLine), inExpression, (inMessage != nullptr ? inMessage : ""));
 		return false;
 	}
+#endif // Z_DEBUG
 
 	void PhysicsSystem::init_jolt()
 	{
 		JPH::RegisterDefaultAllocator();
 
 		JPH::Trace = JoltTrace;
+#ifdef Z_DEBUG
 		JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = JoltAssertFailed);
+#endif // Z_DEBUG
 
 		JPH::Factory::sInstance = new JPH::Factory();
 		// If you have your own custom shape types you probably need to register their handlers with the CollisionDispatch before calling this function.
@@ -331,9 +336,9 @@ public:
 			++step;
 
 			// Output current position and velocity of the sphere
-			JPH::RVec3 position = body_interface.GetCenterOfMassPosition(sphere_id);
-			JPH::Vec3 velocity = body_interface.GetLinearVelocity(sphere_id);
-			LOG("Step {}: Position = ({}, {}, {}), Velocity = ({}, {}, {})", step, position.GetX(), position.GetY(), position.GetZ(), velocity.GetX(), velocity.GetY(), velocity.GetZ());
+			LOG("Step {}: Position = ({}, {}, {}), Velocity = ({}, {}, {})", step,
+				body_interface.GetCenterOfMassPosition(sphere_id).GetX(), body_interface.GetCenterOfMassPosition(sphere_id).GetY(), body_interface.GetCenterOfMassPosition(sphere_id).GetZ(),
+				body_interface.GetLinearVelocity(sphere_id).GetX(), body_interface.GetLinearVelocity(sphere_id).GetY(), body_interface.GetLinearVelocity(sphere_id).GetZ());
 
 			// If you take larger steps than 1 / 60th of a second you need to do multiple collision steps in order to keep the simulation stable. Do 1 collision step per 1 / 60th of a second (round up).
 			const int cCollisionSteps = 1;
