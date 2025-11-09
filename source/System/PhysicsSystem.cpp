@@ -28,14 +28,14 @@
 namespace System
 {
 	PhysicsSystem::PhysicsSystem(SceneSystem& scene_system, CollisionSystem& collision_system)
-		: m_update_count{0}
-		, m_restitution{0.8f}
-		, m_apply_collision_response{true}
-		, m_bool_apply_kinematic{true}
-		, m_scene_system{scene_system}
+		: m_scene_system{scene_system}
 		, m_collision_system{collision_system}
 		, m_total_simulation_time{DeltaTime::zero()}
 		, m_gravity{glm::vec3(0.f, -9.81f, 0.f)}
+		, m_update_count{0}
+		, m_restitution{0.8f}
+		, m_apply_collision_response{true}
+		, m_bool_apply_kinematic{true}
 	{
 		init_jolt();
 	}
@@ -209,25 +209,28 @@ public:
 		}
 	}
 };
+	void JoltTrace(const char* inFMT, ...)
+	{
+		// Format the message
+		va_list list;
+		va_start(list, inFMT);
+		char buffer[1024];
+		vsnprintf(buffer, sizeof(buffer), inFMT, list);
+		va_end(list);
+		LOG("[JOLT] {}", buffer);
+	}
+	bool JoltAssertFailed(const char* inExpression, const char* inMessage, const char* inFile, JPH::uint inLine)
+	{
+		LOG_ERROR(false, "[JOLT] Assertion failed in file {} at line {}: ({}) {}", inFile, static_cast<unsigned int>(inLine), inExpression, (inMessage != nullptr ? inMessage : ""));
+		return false;
+	}
 
 	void PhysicsSystem::init_jolt()
 	{
 		JPH::RegisterDefaultAllocator();
 
-		JPH::Trace = [](const char *inFMT, ...) {
-			// Format the message
-			va_list list;
-			va_start(list, inFMT);
-			char buffer[1024];
-			vsnprintf(buffer, sizeof(buffer), inFMT, list);
-			va_end(list);
-			LOG("[JOLT] {}", buffer);
-		};
-
-		JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = [](const char *inExpression, const char *inMessage, const char *inFile, unsigned int inLine) {
-			LOG_ERROR(false, "[JOLT] Assertion failed in file {} at line {}: ({}) {}", inFile, inLine, inExpression, (inMessage != nullptr ? inMessage : ""));
-			return true;
-		});
+		JPH::Trace = JoltTrace;
+		JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = JoltAssertFailed);
 
 		JPH::Factory::sInstance = new JPH::Factory();
 		// If you have your own custom shape types you probably need to register their handlers with the CollisionDispatch before calling this function.
