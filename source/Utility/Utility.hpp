@@ -103,6 +103,28 @@ namespace Utility
 		return power;
 	}
 
+	inline void trim_trailing_zeros(std::string& str)
+	{
+		// Find the position of the decimal point
+		size_t decimal_pos = str.find('.');
+
+		// If there's no decimal point, nothing to trim
+		if (decimal_pos == std::string::npos)
+			return;
+
+		// Start from the end of the string and move backwards
+		size_t end_pos = str.size() - 1;
+		while (end_pos > decimal_pos && str[end_pos] == '0')
+			--end_pos;
+
+		// If we stopped at the decimal point, remove it as well
+		if (end_pos == decimal_pos)
+			--end_pos;
+
+		// Resize the string to remove trailing zeros
+		str.resize(end_pos + 1);
+	}
+
 	//@param value The number to format.
 	//@param decimal_places The number of decimal places to display.
 	//@returns A string representation of the number with a metric prefix.
@@ -130,15 +152,56 @@ namespace Utility
 				// Create a string stream to format the number
 				std::ostringstream out;
 				out << std::fixed << std::setprecision(decimal_places) << scaled_value << prefix.second;
-
-				return out.str();
+				auto result = out.str();
+				trim_trailing_zeros(result);
+				return result;
 			}
 		}
 
 		// If the value is extremely small (even smaller than nano)
 		std::ostringstream out;
 		out << std::fixed << std::setprecision(decimal_places) << static_cast<double>(value);
-		return out.str();
+		auto result = out.str();
+		trim_trailing_zeros(result);
+		return result;
+	}
+	// Format the number diving by 1024 for bytes
+	//@param value The number to format.
+	//@param decimal_places The number of decimal places to display.
+	//@returns A string representation of the number with a metric prefix.
+	template <typename T>
+	inline std::string format_number_bytes(T value, uint8_t decimal_places = 3)
+	{
+		const std::pair<double, const char*> metric_prefixes[] = {
+		    {1'099'511'627'776.0, "TB"}, // Tebi
+		    {1'073'741'824.0, "GB"},     // Gibi
+		    {1'048'576.0, "MB"},         // Mebi
+		    {1'024.0, "KB"},             // Kibi
+		    {1.0, "B"}                    // Bytes
+		};
+
+		// Iterate through the metric prefixes to find the appropriate scale
+		for (const auto& prefix : metric_prefixes)
+		{
+			if (value >= prefix.first)
+			{
+				double scaled_value = static_cast<double>(value) / prefix.first;
+
+				// Create a string stream to format the number
+				std::ostringstream out;
+				out << std::fixed << std::setprecision(decimal_places) << scaled_value;
+				auto result = out.str();
+				trim_trailing_zeros(result);
+				return result + prefix.second;
+			}
+		}
+
+		// If the value is less than 1 byte
+		std::ostringstream out;
+		out << std::fixed << std::setprecision(decimal_places) << static_cast<double>(value);
+		auto result = out.str();
+		trim_trailing_zeros(result);
+		return result + 'B';
 	}
 	// @param value The number to format with thousands separators.
 	// @return A string representation of the number with the appropriate thousands separator depending on locale.

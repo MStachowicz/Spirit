@@ -14,6 +14,8 @@ public:
 	static void log_info(std::string_view p_message);
 	static void log_warning(std::string_view p_message, const std::source_location& p_location = std::source_location::current());
 	static void log_error(std::string_view p_message, const std::source_location& p_location = std::source_location::current());
+	static void log_warning_no_location(std::string_view p_message);
+	static void log_error_no_location(std::string_view p_message);
 	[[noreturn]] static void assert_fail(std::string_view p_conditional, std::string_view p_message, const std::source_location& p_location = std::source_location::current());
 	[[noreturn]] static void assert_fail(std::string_view p_message, const std::source_location& p_location = std::source_location::current());
 	static inline UI::Editor* s_editor_sink = nullptr; // If pointing to an Editor && s_log_to_editor is true, the editor will output the Log message to its console.
@@ -31,13 +33,17 @@ private:
 #ifdef Z_DEBUG
 #define LOG(...)                    { Logger::log_info(std::format(__VA_ARGS__));                                         }
 #define LOG_WARN(x, ...)  if (!(x)) { Logger::log_warning(std::format(__VA_ARGS__),     std::source_location::current()); }
+#define LOG_WARN_NO_LOCATION(...)   { Logger::log_warning_no_location(std::format(__VA_ARGS__));                          }
 #define LOG_ERROR(x, ...) if (!(x)) { Logger::log_error(std::format(__VA_ARGS__),       std::source_location::current()); }
+#define LOG_ERROR_NO_LOCATION(...)  { Logger::log_error_no_location(std::format(__VA_ARGS__));                            }
 #define ASSERT(x, ...)    if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
 #else
-#define LOG(...)          (void)0;
-#define LOG_WARN(x, ...)  (void)0;
-#define LOG_ERROR(x, ...) (void)0;
-#define ASSERT(x, ...)    (void)0;
+#define LOG(...)                    (void)0;
+#define LOG_WARN(x, ...)            (void)0;
+#define LOG_ERROR(x, ...)           (void)0;
+#define LOG_WARN_NO_LOCATION(...)   (void)0;
+#define LOG_ERROR_NO_LOCATION(...)  (void)0;
+#define ASSERT(x, ...)              (void)0;
 #endif
 
 #define ASSERT_THROW(x, ...) if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }

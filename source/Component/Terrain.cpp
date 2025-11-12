@@ -421,10 +421,23 @@ namespace Component
 				if (size_change > 0 && vert_buffer.capacity() < vert_buffer.used_capacity() + size_change)
 				{
 					const size_t new_capacity = Utility::next_power_of_2(vert_buffer.used_capacity() + size_change);
-					auto current_cap          = Utility::format_number(vert_buffer.used_capacity());
-					auto new_cap_formatted    = Utility::format_number(new_capacity);
-					LOG("[TERRAIN] Resizing terrain buffer from {}B to {}B", current_cap, new_cap_formatted);
+					auto current_cap          = Utility::format_number_bytes(vert_buffer.used_capacity());
+					auto new_cap_formatted    = Utility::format_number_bytes(new_capacity);
+					LOG("[TERRAIN] Resizing terrain buffer from {} to {}", current_cap, new_cap_formatted);
 					vert_buffer.reserve(new_capacity);
+				}
+			}
+			{// Resize the index buffer to accommodate new indices.
+				PERF(ResizeIndexBuffer);
+				long long int size_change = (chunk_index_buff_stride() * to_add_quads.size()) - (to_remove_keys.size() * chunk_index_buff_stride());
+
+				if (size_change > 0 && index_buffer.capacity() < index_buffer.used_capacity() + size_change)
+				{
+					const size_t new_capacity = Utility::next_power_of_2(index_buffer.used_capacity() + size_change);
+					auto current_cap          = Utility::format_number_bytes(index_buffer.used_capacity());
+					auto new_cap_formatted    = Utility::format_number_bytes(new_capacity);
+					LOG("[TERRAIN] Resizing index buffer from {} to {}", current_cap, new_cap_formatted);
+					index_buffer.reserve(new_capacity);
 				}
 			}
 

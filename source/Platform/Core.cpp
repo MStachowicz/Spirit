@@ -85,15 +85,15 @@ namespace Platform
 				if (type == GL_DEBUG_TYPE_PERFORMANCE ||
 				    severity == GL_DEBUG_SEVERITY_NOTIFICATION || severity == GL_DEBUG_SEVERITY_LOW)
 				{
-					LOG_WARN(false, "[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					LOG_WARN_NO_LOCATION("[OpenGL][{}][{}][{}]: {}", sv, src, tp, message);
 				}
 				else if (severity == GL_DEBUG_SEVERITY_MEDIUM)
 				{
-					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", sv, src, tp, message);
 				}
 				else if (severity == GL_DEBUG_SEVERITY_HIGH)
 				{
-					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", src, sv, tp, message);
+					ASSERT_FAIL("[OpenGL][{}][{}][{}]: {}", sv, src, tp, message);
 				}
 			};
 
