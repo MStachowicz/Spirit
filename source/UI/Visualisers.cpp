@@ -4,7 +4,6 @@
 
 #include "Component/Label.hpp"
 #include "Component/Mesh.hpp"
-#include "Component/RigidBody.hpp"
 #include "Component/Transform.hpp"
 #include "System/SceneSystem.hpp"
 

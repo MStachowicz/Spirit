@@ -17,3 +17,8 @@ void Geometry::Cylinder::draw_UI() const
 	ImGui::Text("Top", m_top);
 	ImGui::Text("Radius", m_radius);
 }
+
+float Geometry::Cylinder::height() const
+{
+	return glm::length(m_top - m_base);
+}

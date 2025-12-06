@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Triangle.hpp"
+#include "Plane.hpp"
 
 #include "glm/vec3.hpp"
 #include "glm/fwd.hpp"
@@ -38,6 +39,9 @@ namespace Geometry
 
 		void transform(const glm::mat4& p_transform);
 		void draw_UI() const;
+		float half_extent() const;
+		glm::vec3 normal() const;
+		Plane get_plane() const;
 
 		// Uniformly scale the Quad by p_scale factor from its center.
 		void scale(const float p_scale);

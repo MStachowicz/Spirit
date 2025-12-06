@@ -6,11 +6,10 @@ Application::Application(Platform::Input& p_input, Platform::Window& p_window) n
 	, m_asset_manager{}
 	, m_scene_system{m_asset_manager}
 	, m_openGL_renderer{m_asset_manager, m_scene_system}
-	, m_collision_system{m_scene_system}
-	, m_physics_system{m_scene_system, m_collision_system}
+	, m_physics_system{std::make_unique<System::PhysicsSystemJolt>(m_scene_system)}
 	, m_input_system{m_input, m_window, m_scene_system}
 	, m_terrain_system{}
-	, m_editor{m_input, m_window, m_asset_manager, m_scene_system, m_collision_system, m_physics_system, m_openGL_renderer}
+	, m_editor{m_input, m_window, m_asset_manager, m_scene_system, *m_physics_system.get(), m_openGL_renderer}
 	, maxFrameDelta{std::chrono::milliseconds(250)}
 {
 	Logger::s_editor_sink = &m_editor;
@@ -66,8 +65,7 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 		while (duration_since_last_physics_tick >= physics_timestep)
 		{
 			duration_since_last_physics_tick -= physics_timestep;
-			m_physics_system.integrate(physics_timestep); // PhysicsSystem::Integrate takes a floating point rep duration, conversion here is troublesome.
-			m_collision_system.update();
+			m_physics_system->update(physics_timestep);
 		}
 
 		if (duration_since_last_input_tick >= input_timestep)
@@ -82,7 +80,7 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 			OpenGL::FBO::default_framebuffer().clear();
 			OpenGL::FBO::default_framebuffer().resize(m_window.size());
 
-			m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
+			m_scene_system.get_current_scene().update(m_physics_system->get_bounding_box(), m_window.aspect_ratio(), m_editor.get_editor_view_info());
 			m_terrain_system.update(m_scene_system.get_current_scene(), m_window.aspect_ratio());
 
 			if (!m_editor.is_playing())
@@ -106,12 +104,12 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 #ifndef Z_RELEASE
 		const auto total_time_seconds = std::chrono::duration_cast<std::chrono::seconds>(duration_application_running);
 		const float render_FPS  = static_cast<float>(m_editor.m_draw_count)           / total_time_seconds.count();
-		const float physics_FPS = static_cast<float>(m_physics_system.m_update_count) / total_time_seconds.count();
+		const float physics_FPS = static_cast<float>(m_physics_system->m_update_count) / total_time_seconds.count();
 		const float input_FPS   = static_cast<float>(m_input_system.m_update_count)   / total_time_seconds.count();
 
 		LOG("------------------------------------------------------------------------");
 		LOG("Total simulation time: {}", total_time_seconds);
-		LOG("Total physics updates: {}", m_physics_system.m_update_count);
+		LOG("Total physics updates: {}", m_physics_system->m_update_count);
 		LOG("Averaged physics updates per second: {}/s (target: {}/s)", physics_FPS, physics_ticks_per_second);
 		LOG("Total rendered frames: {}", m_editor.m_draw_count);
 		if (render_rate_unlimited) LOG("Averaged render frames per second: {}/s (No limit)", render_FPS)

@@ -25,7 +25,7 @@ namespace Platform
 		, m_close_requested{false}
 		, m_handle{nullptr}
 		, m_input{p_input_state}
-		, m_framerate_cap{get_primary_monitor_refresh_rate()}
+		, m_framerate_cap{0} // Default to unlimited framerate
 		, m_show_menu_bar{false}
 	{
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);

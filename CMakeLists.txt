@@ -124,8 +124,6 @@ source/Component/Mesh.cpp
 source/Component/Mesh.hpp
 source/Component/ParticleEmitter.hpp
 source/Component/ParticleEmitter.cpp
-source/Component/RigidBody.cpp
-source/Component/RigidBody.hpp
 source/Component/Lights.cpp
 source/Component/Lights.hpp
 source/Component/Terrain.cpp
@@ -148,6 +146,7 @@ PUBLIC OpenGL
 PUBLIC Data
 PUBLIC GLM
 PUBLIC Utility # Used in headers of Mesh, Texture, Input
+PUBLIC Jolt
 PRIVATE System
 PRIVATE Platform
 PRIVATE ImGui
@@ -160,10 +159,11 @@ target_compile_options(Component PRIVATE ${WARNING_COMPILE_FLAGS})
 add_library(System
 source/System/AssetManager.cpp
 source/System/AssetManager.hpp
-source/System/CollisionSystem.cpp
-source/System/CollisionSystem.hpp
+source/System/IPhysicsSystem.hpp
 source/System/PhysicsSystem.cpp
 source/System/PhysicsSystem.hpp
+source/System/PhysicsSystemJolt.cpp
+source/System/PhysicsSystemJolt.hpp
 source/System/InputSystem.hpp
 source/System/InputSystem.cpp
 source/System/SceneSystem.hpp
@@ -218,6 +218,7 @@ source/Geometry/Quad.cpp
 source/Geometry/QuadTree.hpp
 source/Geometry/QuadKey.hpp
 source/Geometry/Ray.hpp
+source/Geometry/Shape.hpp
 source/Geometry/Sphere.hpp
 source/Geometry/Sphere.cpp
 source/Geometry/Triangle.hpp

@@ -21,4 +21,8 @@ namespace Geometry
 		ImGui::Text("Top", m_top);
 		ImGui::Text("Base radius", m_base_radius);
 	}
+	float Cone::height() const
+	{
+		return glm::length(m_top - m_base);
+	}
 } // namespace Geometry

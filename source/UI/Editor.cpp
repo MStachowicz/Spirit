@@ -7,21 +7,23 @@
 #include "Component/Lights.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/ParticleEmitter.hpp"
-#include "Component/RigidBody.hpp"
 #include "Component/Terrain.hpp"
 #include "Component/Texture.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
 #include "System/AssetManager.hpp"
-#include "System/CollisionSystem.hpp"
 #include "System/PhysicsSystem.hpp"
 #include "System/SceneSystem.hpp"
 
 #include "OpenGL/DebugRenderer.hpp"
 #include "OpenGL/OpenGLRenderer.hpp"
+
 #include "Platform/Core.hpp"
 #include "Platform/Input.hpp"
 #include "Platform/Window.hpp"
+
+#include "Geometry/Intersect.hpp"
+
 #include "Utility/Logger.hpp"
 #include "Utility/Performance.hpp"
 #include "Utility/Utility.hpp"
@@ -40,14 +42,12 @@ namespace UI
 	Editor::Editor(Platform::Input& p_input, Platform::Window& p_window
 		, System::AssetManager& p_asset_manager
 		, System::SceneSystem& p_scene_system
-		, System::CollisionSystem& p_collision_system
-		, System::PhysicsSystem& p_physics_system
+		, System::IPhysicsSystem& p_physics_system
 		, OpenGL::OpenGLRenderer& p_openGL_renderer)
 		: m_input{p_input}
 		, m_window{p_window}
 		, m_asset_manager{p_asset_manager}
 		, m_scene_system{p_scene_system}
-		, m_collision_system{p_collision_system}
 		, m_physics_system{p_physics_system}
 		, m_openGL_renderer{p_openGL_renderer}
 		, m_state{State::Editing}
@@ -93,24 +93,18 @@ namespace UI
 					{
 						auto view_info            = m_viewport_pane.view_information();
 						auto cursor_ray           = Utility::get_cursor_ray(m_viewport_pane.m_cursor_pos_content, m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
-						auto entities_under_mouse = m_collision_system.get_entities_along_ray(cursor_ray);
 
-						if (!entities_under_mouse.empty())
+						if (auto ent = m_physics_system.cast_ray(cursor_ray))
 						{
-							std::sort(entities_under_mouse.begin(), entities_under_mouse.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
-							auto entity_collided = entities_under_mouse.front().first;
-
 							// If the entity is not already selected, select it.
-							auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), entity_collided);
+							auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), ent.value());
 							if (it == m_selected_entities.end())
-								select_entity(entity_collided);
+								select_entity(ent.value());
 							else// If the entity is already selected, deselect it.
-								deselect_entity(entity_collided);
+								deselect_entity(ent.value());
 						}
 						else
-						{
 							deselect_all_entity();
-						}
 					}
 					break;
 				}
@@ -318,8 +312,8 @@ namespace UI
 			case State::Editing:
 			{
 				m_input.set_cursor_mode(Platform::CursorMode::Normal);
-				m_window.m_show_menu_bar                = true;
-				m_physics_system.m_bool_apply_kinematic = false;
+				m_window.m_show_menu_bar            = true;
+				m_physics_system.m_pause_simulation = true;
 
 				if (m_scene_before_play)
 					m_scene_system.set_current_scene(*m_scene_before_play);
@@ -337,14 +331,14 @@ namespace UI
 				auto& play_scene    = m_scene_system.add_scene();
 				play_scene          = m_scene_system.get_current_scene();
 				m_scene_system.set_current_scene(play_scene);
-				m_physics_system.m_bool_apply_kinematic = true;
+				m_physics_system.m_pause_simulation = false;
 				break;
 			}
 			case State::CameraTesting:
 			{
 				m_input.set_cursor_mode(Platform::CursorMode::Captured);
-				m_window.m_show_menu_bar                = true;
-				m_physics_system.m_bool_apply_kinematic = false;
+				m_window.m_show_menu_bar            = true;
+				m_physics_system.m_pause_simulation = true;
 				if (m_scene_before_play && m_state == State::Playing) // Only reset the scene if the user was playing before entering camera testing.
 					m_scene_system.set_current_scene(*m_scene_before_play);
 				break;
@@ -526,8 +520,6 @@ namespace UI
 			scene.get_component<Component::Transform&>(p_entity).draw_UI();
 		if (scene.has_components<Component::Collider>(p_entity))
 			scene.get_component<Component::Collider&>(p_entity).draw_UI();
-		if (scene.has_components<Component::RigidBody>(p_entity))
-			scene.get_component<Component::RigidBody&>(p_entity).draw_UI();
 		if (scene.has_components<Component::DirectionalLight>(p_entity))
 			scene.get_component<Component::DirectionalLight&>(p_entity).draw_UI();
 		if (scene.has_components<Component::SpotLight>(p_entity))
@@ -677,7 +669,6 @@ namespace UI
 
 			if (!debug_options.m_show_bounding_box) ImGui::BeginDisabled();
 			ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
-			ImGui::ColorEdit3("Bounding box collided colour", &debug_options.m_bounding_box_collided_colour[0]);
 			if (!debug_options.m_show_bounding_box) ImGui::EndDisabled();
 
 			ImGui::Slider("Position offset factor", debug_options.m_position_offset_factor, -10.f, 10.f);
@@ -689,7 +680,6 @@ namespace UI
 				debug_options.m_show_bounding_box            = false;
 				debug_options.m_fill_bounding_box            = false;
 				debug_options.m_bounding_box_colour          = glm::vec3(0.f, 1.f, 0.f);
-				debug_options.m_bounding_box_collided_colour = glm::vec3(1.f, 0.f, 0.f);
 				debug_options.m_position_offset_factor       = 1.f;
 				debug_options.m_position_offset_units        = 0.f;
 			}
@@ -943,10 +933,9 @@ namespace UI
 					{
 						m_scene_system.get_current_scene_entities().add_entity(
 							Component::Label{"Cube"},
-							Component::RigidBody{},
 							Component::Transform{*m_cursor_intersection},
 							Component::Mesh{m_asset_manager.m_cube},
-							Component::Collider{});
+							Component::Collider{Geometry::Cuboid{*m_cursor_intersection}});
 					}
 					else if (ImGui::Button("Terrain"))
 					{
@@ -994,10 +983,14 @@ namespace UI
 				}
 				ImGui::EndMenu();
 			}
+			auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
+
 			if (ImGui::MenuItem(m_openGL_renderer.m_draw_grid ? "Hide grid" : "Show grid"))
 				m_openGL_renderer.m_draw_grid = !m_openGL_renderer.m_draw_grid;
 			if (ImGui::MenuItem(m_openGL_renderer.m_draw_axes ? "Hide axis" : "Show axis"))
 				m_openGL_renderer.m_draw_axes = !m_openGL_renderer.m_draw_axes;
+			if (ImGui::MenuItem(debug_options.m_show_bounding_box ? "Hide bounding box" : "Show bounding box"))
+				debug_options.m_show_bounding_box = !debug_options.m_show_bounding_box;
 			ImGui::EndPopup();
 		}
 	}

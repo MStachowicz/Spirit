@@ -92,8 +92,8 @@ namespace OpenGL
 		{
 			scene.foreach([&](Component::Collider& p_collider)
 			{
-				auto model = glm::translate(glm::identity<glm::mat4>(), p_collider.m_world_AABB.get_center());
-				model = glm::scale(model, p_collider.m_world_AABB.get_size());
+				auto model = glm::translate(glm::identity<glm::mat4>(), p_collider.get_bounds().get_center());
+				model = glm::scale(model, p_collider.get_bounds().get_size());
 				{
 					DrawCall dc;
 					dc.m_cull_face_enabled      = false;
@@ -101,7 +101,7 @@ namespace OpenGL
 					dc.m_polygon_offset_factor  = opt.m_position_offset_factor;
 					dc.m_polygon_offset_units   = opt.m_position_offset_units;
 					dc.set_uniform("model", model);
-					dc.set_uniform("colour", p_collider.m_collided ? glm::vec4(opt.m_bounding_box_collided_colour, 1.f) : glm::vec4(opt.m_bounding_box_colour, 1.f));
+					dc.set_uniform("colour", glm::vec4(opt.m_bounding_box_colour, 1.f));
 					dc.set_UBO("ViewProperties", p_view_properties);
 					dc.submit(*m_bound_shader, m_AABB_outline_mesh->get_VAO(), p_target_FBO);
 				}
@@ -114,7 +114,7 @@ namespace OpenGL
 					dc.m_polygon_offset_factor  = opt.m_position_offset_factor;
 					dc.m_polygon_offset_units   = opt.m_position_offset_units;
 					dc.set_uniform("model", model);
-					dc.set_uniform("colour", p_collider.m_collided ? glm::vec4(opt.m_bounding_box_collided_colour, 0.2f) : glm::vec4(opt.m_bounding_box_colour, 0.2f));
+					dc.set_uniform("colour", glm::vec4(opt.m_bounding_box_colour, 0.2f));
 					dc.set_UBO("ViewProperties", p_view_properties);
 					dc.submit(*m_bound_shader, m_AABB_filled_mesh->get_VAO(), p_target_FBO);
 				}

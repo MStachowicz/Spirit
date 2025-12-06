@@ -21,6 +21,9 @@ namespace Geometry
 		void transform(const glm::mat4& p_model, const glm::vec3& p_scale);
 		void draw_UI() const;
 
+		float height() const;
+		glm::vec3 center() const { return (m_base + m_top) / 2.0f; }
+
 		glm::vec3 m_base;
 		glm::vec3 m_top;
 		float m_base_radius;

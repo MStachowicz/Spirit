@@ -19,13 +19,13 @@ DISABLE_WARNING_UNUSED_VARIABLE // Required to stop variables being destroyed be
 
 namespace Test
 {
-	struct MyDouble : public PrimitiveTypeWrapper<double>      { static constexpr ECS::ComponentID Persistent_ID = 1; };
-	struct MyFloat  : public PrimitiveTypeWrapper<float>       { static constexpr ECS::ComponentID Persistent_ID = 2; };
-	struct MyBool   : public PrimitiveTypeWrapper<bool>        { static constexpr ECS::ComponentID Persistent_ID = 3; };
-	struct MyInt    : public PrimitiveTypeWrapper<int>         { static constexpr ECS::ComponentID Persistent_ID = 4; };
-	struct MyChar   : public PrimitiveTypeWrapper<char>        { static constexpr ECS::ComponentID Persistent_ID = 5; };
-	struct MyString : public PrimitiveTypeWrapper<std::string> { static constexpr ECS::ComponentID Persistent_ID = 6; };
-	struct MySizet  : public PrimitiveTypeWrapper<size_t>      { static constexpr ECS::ComponentID Persistent_ID = 7; };
+	struct MyDouble : public PrimitiveTypeWrapper<double>      { static constexpr size_t Persistent_ID = 1; };
+	struct MyFloat  : public PrimitiveTypeWrapper<float>       { static constexpr size_t Persistent_ID = 2; };
+	struct MyBool   : public PrimitiveTypeWrapper<bool>        { static constexpr size_t Persistent_ID = 3; };
+	struct MyInt    : public PrimitiveTypeWrapper<int>         { static constexpr size_t Persistent_ID = 4; };
+	struct MyChar   : public PrimitiveTypeWrapper<char>        { static constexpr size_t Persistent_ID = 5; };
+	struct MyString : public PrimitiveTypeWrapper<std::string> { static constexpr size_t Persistent_ID = 6; };
+	struct MySizet  : public PrimitiveTypeWrapper<size_t>      { static constexpr size_t Persistent_ID = 7; };
 } // namespace Test
 
 

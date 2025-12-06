@@ -57,7 +57,11 @@ namespace ECS
 		static inline ComponentID get_ID() // todo add consteval here
 		{
 			using Type = std::decay_t<ComponentType>;
-			//static_assert(Has_Persistent_ID<Type>, "Component does not have a persistent_ID member. Add a static constexpr ComponentID persistent_ID member to the class.");
+
+			// Check it exists AND is size_t
+			static_assert(requires { Type::Persistent_ID; } && std::is_same_v<std::remove_cv_t<decltype(Type::Persistent_ID)>, size_t>,
+			              "ComponentType must have a static member 'Persistent_ID' of type size_t.");
+
 			return std::decay_t<Type>::Persistent_ID;
 		}
 

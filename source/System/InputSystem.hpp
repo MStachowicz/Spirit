@@ -17,6 +17,7 @@ namespace Platform
 namespace System
 {
 	class SceneSystem;
+	class IPhysicsSystem;
 
 	// Listens to platform input events.
 	class InputSystem

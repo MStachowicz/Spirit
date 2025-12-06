@@ -28,8 +28,7 @@ namespace System
 	class AssetManager;
 	class SceneSystem;
 	class Scene;
-	class CollisionSystem;
-	class PhysicsSystem;
+	class IPhysicsSystem;
 }
 namespace OpenGL
 {
@@ -112,8 +111,7 @@ namespace UI
 		Platform::Window&        m_window; // Parent application level window. Editor UI is drawn into this window.
 		System::AssetManager&    m_asset_manager;
 		System::SceneSystem&     m_scene_system;
-		System::CollisionSystem& m_collision_system;
-		System::PhysicsSystem&   m_physics_system;
+		System::IPhysicsSystem&   m_physics_system;
 		OpenGL::OpenGLRenderer&  m_openGL_renderer;
 
 		State m_state;                          // The current state of the editor.
@@ -170,8 +168,7 @@ namespace UI
 		Editor(Platform::Input& p_input, Platform::Window& p_window
 			, System::AssetManager& p_asset_manager
 			, System::SceneSystem& p_scene_system
-			, System::CollisionSystem& p_collision_system
-			, System::PhysicsSystem& p_physics_system
+			, System::IPhysicsSystem& p_physics_system
 			, OpenGL::OpenGLRenderer& p_openGL_renderer);
 
 		bool is_playing() const { return m_state == State::Playing; }

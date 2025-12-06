@@ -62,7 +62,6 @@ namespace OpenGL
 			bool m_show_bounding_box                 = false; // Draw the bounding boxes of the meshes. Used for broad phase collision detection.
 			bool m_fill_bounding_box                 = false; // Fill the bounding boxes of the meshes. Only valid if m_show_bounding_box is true.
 			glm::vec3 m_bounding_box_colour          = glm::vec3(0.f, 1.f, 0.f);
-			glm::vec3 m_bounding_box_collided_colour = glm::vec3(1.f, 1.f, 0.f);
 
 			size_t m_segments     = 16;
 			size_t m_subdivisions = 4;

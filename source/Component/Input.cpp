@@ -1,6 +1,6 @@
 #include "Component/Input.hpp"
 #include "Component/FirstPersonCamera.hpp"
-#include "Component/RigidBody.hpp"
+#include "Component/Collider.hpp"
 #include "Component/Transform.hpp"
 #include "ECS/Storage.hpp"
 
@@ -30,15 +30,18 @@ namespace Component
 				if (mouse_offset.x != 0.f || mouse_offset.y != 0.f)
 					p_camera.mouse_look(mouse_offset);
 
-				if (p_storage.has_components<Component::RigidBody>(p_entity))
+				if (p_storage.has_components<Component::Collider>(p_entity))
 				{
-					Component::RigidBody* body = &p_storage.get_component<Component::RigidBody>(p_entity);
-					if (p_input.is_key_down(Platform::Key::W)) body->apply_linear_force(forward  * speed);
-					if (p_input.is_key_down(Platform::Key::S)) body->apply_linear_force(-forward * speed);
-					if (p_input.is_key_down(Platform::Key::D)) body->apply_linear_force(right    * speed);
-					if (p_input.is_key_down(Platform::Key::A)) body->apply_linear_force(-right   * speed);
-					if (p_input.is_key_down(Platform::Key::Q)) body->apply_linear_force(up       * speed);
-					if (p_input.is_key_down(Platform::Key::E)) body->apply_linear_force(-up      * speed);
+					glm::vec3 force = glm::vec3(0.f);
+					if (p_input.is_key_down(Platform::Key::W)) force += forward  * speed;
+					if (p_input.is_key_down(Platform::Key::S)) force += -forward * speed;
+					if (p_input.is_key_down(Platform::Key::D)) force += right    * speed;
+					if (p_input.is_key_down(Platform::Key::A)) force += -right   * speed;
+					if (p_input.is_key_down(Platform::Key::Q)) force += up       * speed;
+					if (p_input.is_key_down(Platform::Key::E)) force += -up      * speed;
+
+					Component::Collider* collider = &p_storage.get_component<Component::Collider>(p_entity);
+					collider->apply_force(force);
 				}
 				else
 				{

@@ -14,7 +14,6 @@ namespace ECS
 	class Entity;
 	class Storage;
 }
-
 namespace Component
 {
 	using InputFunction = std::function<void(const DeltaTime& p_delta_time, const ECS::Entity&, ECS::Storage&, Platform::Input&)>;

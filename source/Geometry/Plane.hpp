@@ -27,6 +27,8 @@ namespace Geometry
 		// @return True if the point lies on the plane, false otherwise.
 		bool point_on_plane(const glm::vec3& p_point, const float tolerance = TOLERANCE) const;
 
+		glm::vec3 get_a_point_on_surface() const { return m_normal * -m_distance; }
+
 		void normalise();
 	};
 }

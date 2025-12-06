@@ -1,9 +1,9 @@
 #pragma once
 
 #include "System/AssetManager.hpp"
-#include "System/CollisionSystem.hpp"
 #include "System/InputSystem.hpp"
 #include "System/PhysicsSystem.hpp"
+#include "System/PhysicsSystemJolt.hpp"
 #include "System/SceneSystem.hpp"
 #include "System/TerrainSystem.hpp"
 
@@ -28,12 +28,12 @@
 #include "Component/Lights.hpp"
 #include "Component/Mesh.hpp"
 #include "Component/ParticleEmitter.hpp"
-#include "Component/RigidBody.hpp"
 #include "Component/Terrain.hpp"
 #include "Component/Texture.hpp"
 #include "Component/Transform.hpp"
 
 #include <chrono>
+#include <memory>
 
 using Clock     = std::chrono::steady_clock;
 using Duration  = Clock::duration;
@@ -57,8 +57,8 @@ private:
 
 	OpenGL::OpenGLRenderer m_openGL_renderer;
 
-	System::CollisionSystem m_collision_system;
-	System::PhysicsSystem m_physics_system;
+	std::unique_ptr<System::IPhysicsSystem> m_physics_system;
+
 	System::InputSystem m_input_system;
 	System::TerrainSystem m_terrain_system;
 
@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
 		ECS::Component::set_info<Component::SpotLight>();
 		ECS::Component::set_info<Component::Mesh>();
 		ECS::Component::set_info<Component::ParticleEmitter>();
-		ECS::Component::set_info<Component::RigidBody>();
 		ECS::Component::set_info<Component::Terrain>();
 		ECS::Component::set_info<Component::Texture>();
 		ECS::Component::set_info<Component::Transform>();

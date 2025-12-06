@@ -49,6 +49,20 @@ namespace Geometry
 		ImGui::Text("Point 4", m_bottom_right);
 		ImGui::Text("Center", center());
 	}
+	float Quad::half_extent() const
+	{
+		return 0.5f * glm::length(m_top_right - m_top_left);
+	}
+	glm::vec3 Quad::normal() const
+	{
+		auto edge1 = m_top_right - m_top_left;
+		auto edge2 = m_bottom_left - m_top_left;
+		return glm::normalize(glm::cross(edge1, edge2));
+	}
+	Plane Quad::get_plane() const
+	{
+		return Plane{glm::vec4(normal(), -glm::dot(normal(), m_top_left))};
+	}
 	Quad::Quad(const Triangle& p_triangle) noexcept
 	{
 		// First find the up and right directions local to p_triangle.
