@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ViewInformation.hpp"
+#include "Geometry/AABB.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
@@ -22,10 +23,16 @@ namespace Component
 		float m_yaw;              // Yaw angle of view in radians.
 		float m_orbit_radius;     // Controls the radial distance between the camera and the point it is orbiting.
 		glm::vec3 m_orbit_center; // The world space position serving as the orbit center or target point for the camera.
+		float m_dolly_threshold;  // Minimum orbit radius before dolly-through kicks in, pushing the orbit center forward.
 
 		bool m_is_orthographic;
 		float m_ortho_size;
 		float m_ortho_distance_multipler; // Used to scale the distance of the orthographic camera.
+
+		Geometry::AABB m_refit_AABB;    // Cached AABB from the last refit call.
+		float m_refit_sphere_radius;    // Cached bounding sphere radius from the last refit call.
+		bool m_show_refit_AABB;         // Debug: draw the AABB used for the last refit.
+		bool m_show_refit_sphere;       // Debug: draw the bounding sphere used for the last refit.
 	public:
 		TwoAxisCamera();
 
@@ -44,6 +51,11 @@ namespace Component
 				m_orbit_radius = p_orbit_distance;
 		}
 		void set_view_direction(const glm::vec3& p_view_direction);
+		// Adjust the orbit center and distance to frame the given AABB in the viewport.
+		//@param p_AABB The bounding box to frame.
+		//@param p_aspect_ratio The viewport aspect ratio (width/height).
+		//@param p_padding Multiplier applied to the computed distance for a margin around the AABB.
+		void refit(const Geometry::AABB& p_AABB, float p_aspect_ratio, float p_padding = 1.f);
 
 		glm::mat4 view() const;
 		ViewInformation view_information(const float& p_aspect_ratio) const;

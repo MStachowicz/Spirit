@@ -76,6 +76,25 @@ namespace UI
 
 		set_state(m_state, true); // Set the initial state.
 		initialiseStyling();
+
+		// Refit the editor camera to the initial scene contents.
+		{
+			bool has_bounds = false;
+			Geometry::AABB scene_AABB;
+			m_scene_system.get_current_scene_entities().foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
+			{
+				auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+				if (!has_bounds)
+				{
+					scene_AABB = world_AABB;
+					has_bounds = true;
+				}
+				else
+					scene_AABB.unite(world_AABB);
+			});
+			if (has_bounds)
+				m_viewport_pane.m_camera.refit(scene_AABB, m_viewport_pane.aspect_ratio(), 1.f);
+		}
 	}
 
 	void Editor::on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action)
@@ -226,6 +245,48 @@ namespace UI
 				if (p_action == Platform::Action::Release && m_state == State::Editing)
 					if (m_viewport_pane.m_focused)
 						m_viewport_pane.m_camera.toggle_orthographic();
+				break;
+			}
+			case Platform::Key::R:
+			{
+				if (p_action == Platform::Action::Release && m_state == State::Editing && m_input.is_modifier_down(Platform::Modifier::Control))
+				{
+					auto& scene = m_scene_system.get_current_scene_entities();
+
+					if (!m_selected_entities.empty())
+					{
+						// Build a combined world-space AABB from selected entities that have Mesh+Transform.
+						bool has_bounds = false;
+						Geometry::AABB combined;
+
+						for (auto& ent : m_selected_entities)
+						{
+							if (scene.has_components<Component::Mesh, Component::Transform>(ent))
+							{
+								auto& mesh       = scene.get_component<Component::Mesh>(ent);
+								auto& transform  = scene.get_component<Component::Transform>(ent);
+								auto world_AABB  = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+
+								if (!has_bounds)
+								{
+									combined   = world_AABB;
+									has_bounds = true;
+								}
+								else
+									combined.unite(world_AABB);
+							}
+						}
+
+						if (has_bounds)
+							m_viewport_pane.m_camera.refit(combined, m_viewport_pane.aspect_ratio(), 1.f);
+					}
+					else
+					{
+						// No selection — refit to the full scene bounds.
+						auto& bounds = m_scene_system.get_current_scene().m_bound;
+						m_viewport_pane.m_camera.refit(bounds, m_viewport_pane.aspect_ratio(), 1.f);
+					}
+				}
 				break;
 			}
 			case Platform::Key::U:
@@ -388,6 +449,23 @@ namespace UI
 						auto& scene = m_scene_system.add_scene();
 						scene       = System::Scene::deserialise(file, Config::Save_Version);
 						m_scene_system.set_current_scene(scene);
+
+						// Refit the editor camera to the loaded scene contents.
+						bool has_bounds = false;
+						Geometry::AABB scene_AABB;
+						scene.m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
+						{
+							auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+							if (!has_bounds)
+							{
+								scene_AABB = world_AABB;
+								has_bounds = true;
+							}
+							else
+								scene_AABB.unite(world_AABB);
+						});
+						if (has_bounds)
+							m_viewport_pane.m_camera.refit(scene_AABB, m_viewport_pane.aspect_ratio(), 1.f);
 					}
 				}
 

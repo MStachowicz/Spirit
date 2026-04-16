@@ -1,10 +1,14 @@
 #include "TwoAxisCamera.hpp"
+#include "OpenGL/DebugRenderer.hpp"
+#include "Geometry/Sphere.hpp"
 #include "Platform/Input.hpp"
 #include "Utility/Logger.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/rotate_vector.hpp"
 #include "imgui.h"
+
+#include <cmath>
 
 namespace Component
 {
@@ -19,9 +23,14 @@ namespace Component
 		, m_yaw{0.f}
 		, m_orbit_radius{10.f}
 		, m_orbit_center{0.f, 0.f, 0.f}
+		, m_dolly_threshold{0.5f}
 		, m_is_orthographic{false}
 		, m_ortho_size{10.f}
 		, m_ortho_distance_multipler{90.f} // Could use scene bounds size to determine this value.
+		, m_refit_AABB{}
+		, m_refit_sphere_radius{0.f}
+		, m_show_refit_AABB{false}
+		, m_show_refit_sphere{false}
 	{}
 
 	glm::vec3 TwoAxisCamera::up() const
@@ -59,6 +68,38 @@ namespace Component
 		m_pitch = glm::asin(p_view_direction.y);
 		m_yaw   = glm::atan(p_view_direction.z, p_view_direction.x);
 	}
+	void TwoAxisCamera::refit(const Geometry::AABB& p_AABB, float p_aspect_ratio, float p_padding)
+	{
+		Geometry::AABB bounds = p_AABB;
+
+		m_orbit_center = bounds.get_center();
+
+		// Compute the radius of the bounding sphere circumscribing the AABB.
+		// This guarantees the AABB is visible from any view angle.
+		float radius = glm::length(bounds.get_size()) * 0.5f;
+
+		// Cache for debug visualisation.
+		m_refit_AABB          = bounds;
+		m_refit_sphere_radius = radius;
+
+		if (m_is_orthographic)
+		{
+			// In orthographic mode we need to set the ortho size so the AABB fits in the viewport.
+			// Account for the aspect ratio so the tighter axis determines the size.
+			float half_height          = radius;
+			float half_width_as_height = radius / p_aspect_ratio;
+			m_ortho_size = glm::max(half_height, half_width_as_height) * p_padding;
+		}
+		else
+		{
+			// In perspective mode compute the orbit distance so the bounding sphere fits inside the frustum.
+			float half_fov_v = glm::radians(m_FOV) * 0.5f;
+			float half_fov_h = glm::atan(glm::tan(half_fov_v) * p_aspect_ratio);
+			// Use the tighter FOV to ensure the sphere fits both horizontally and vertically.
+			float half_fov   = glm::min(half_fov_v, half_fov_h);
+			m_orbit_radius   = (radius / glm::sin(half_fov)) * p_padding;
+		}
+	}
 	glm::mat4 TwoAxisCamera::view() const
 	{
 		return glm::lookAt(position(), m_orbit_center, up());
@@ -95,7 +136,6 @@ namespace Component
 	// Don't let the camera flip upside down, cap the pitch angle at straight above and below.
 	constexpr float pitch_constaint_deg  = 90.f;
 	constexpr float pitch_constraint_rad = glm::radians(pitch_constaint_deg);
-	constexpr float zoom_near_constraint = 0.1f;
 
 	void TwoAxisCamera::mouse_look(const glm::vec2& p_offset)
 	{
@@ -116,24 +156,30 @@ namespace Component
 	}
 	void TwoAxisCamera::zoom(float p_offset)
 	{
-		// Depending on the camera perspective mode, we adjust the ortho size or orbit radius and apply
-		// a constraint to prevent the camera from getting too close/moving through the orbit center.
-
-		// Use a smoother zoom factor based on the square root of the distance
-		float distance    = glm::distance(m_orbit_center, position());
-		float zoom_factor = glm::sqrt(distance) * m_zoom_sensitivity;
+		// Exponential zoom: each scroll tick scales the distance by a constant ratio,
+		// giving a consistent feel at any distance (near or far).
+		float zoom_base = 1.f + m_zoom_sensitivity * 0.15f;
+		float scale     = std::pow(zoom_base, -p_offset);
 
 		if (m_is_orthographic)
 		{
-			m_ortho_size -= p_offset * zoom_factor;
-			if (m_ortho_size < zoom_near_constraint)
-				m_ortho_size = zoom_near_constraint;
+			m_ortho_size *= scale;
+			m_ortho_size = glm::max(m_ortho_size, 0.001f);
 		}
 		else
 		{
-			m_orbit_radius -= p_offset * zoom_factor;
-			if (m_orbit_radius < zoom_near_constraint)
-				m_orbit_radius = zoom_near_constraint;
+			float new_radius = m_orbit_radius * scale;
+
+			// Dolly-through: when the radius drops below the threshold, push the orbit
+			// center forward instead of letting the camera stall at the focus point.
+			if (new_radius < m_dolly_threshold)
+			{
+				float excess = m_dolly_threshold - new_radius;
+				m_orbit_center += forward() * excess;
+				new_radius = m_dolly_threshold;
+			}
+
+			m_orbit_radius = new_radius;
 		}
 	}
 
@@ -152,6 +198,7 @@ namespace Component
 		{
 			ImGui::Slider("FOV", m_FOV, 1.f, 90.f, "%.3f°");
 			ImGui::Slider("Orbit radius", m_orbit_radius, 0.1f, 100.f);
+			ImGui::Slider("Dolly threshold", m_dolly_threshold, 0.01f, 5.f);
 		}
 
 		ImGui::Slider("Near", m_near, 0.001f, 10.f);
@@ -170,6 +217,15 @@ namespace Component
 		ImGui::Slider("Look sensitivity", m_look_sensitivity, 0.01f, 10.f);
 		ImGui::Slider("Pan sensitivity",  m_pan_sensitivity,  0.01f, 10.f);
 		ImGui::Slider("Zoom sensitivity", m_zoom_sensitivity, 0.01f, 10.f);
+
+		ImGui::SeparatorText("Refit debug");
+		ImGui::Checkbox("Show refit AABB",   &m_show_refit_AABB);
+		ImGui::Checkbox("Show refit sphere", &m_show_refit_sphere);
+
+		if (m_show_refit_AABB)
+			OpenGL::DebugRenderer::add(m_refit_AABB, glm::vec4(1.f, 0.5f, 0.f, 1.f));
+		if (m_show_refit_sphere)
+			OpenGL::DebugRenderer::add(Geometry::Sphere{m_refit_AABB.get_center(), m_refit_sphere_radius}, glm::vec4(0.f, 0.5f, 1.f, 0.25f));
 
 		ImGui::SeparatorText("Info");
 		ImGui::Text("Position", position());
