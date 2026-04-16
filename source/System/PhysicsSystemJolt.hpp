@@ -152,7 +152,8 @@ namespace System
 		PhysicsSystemJolt(SceneSystem& scene_system);
 		~PhysicsSystemJolt();
 
-		void update(const DeltaTime& p_delta_time) override;
+		void register_pending_bodies() override;
+		void step(const DeltaTime& p_delta_time) override;
 
 		[[nodiscard]] PhysicsSystemHandle create_body(const BodySettings& p_body_settings, const ECS::Entity& p_entity) override;
 		void destroy_body(const PhysicsSystemHandle& p_handle) override;

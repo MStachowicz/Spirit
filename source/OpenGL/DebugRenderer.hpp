@@ -57,9 +57,11 @@ namespace OpenGL
 			float m_light_position_scale = 0.25f;
 			bool m_show_mesh_normals     = false;
 			bool m_show_origin_arrows    = false;
+			bool m_show_rendered_bounds  = false; // Draw the scene's rendered bounds (Mesh+Transform AABB).
+			bool m_show_physics_bounds   = false; // Draw the physics world bounds (includes infinite planes etc.).
 			// Physics
 			bool m_show_orientations                 = false; // Draw an arrow in the direction the meshes are facing.
-			bool m_show_bounding_box                 = false; // Draw the bounding boxes of the meshes. Used for broad phase collision detection.
+			bool m_show_bounding_box                 = true;  // Draw the bounding boxes of the meshes. Used for broad phase collision detection.
 			bool m_fill_bounding_box                 = false; // Fill the bounding boxes of the meshes. Only valid if m_show_bounding_box is true.
 			glm::vec3 m_bounding_box_colour          = glm::vec3(0.f, 1.f, 0.f);
 

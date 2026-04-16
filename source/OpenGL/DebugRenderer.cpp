@@ -66,24 +66,6 @@ namespace OpenGL
 	void DebugRenderer::render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const Buffer& p_point_lights_buffer, const FBO& p_target_FBO)
 	{
 		PERF(DebugRendererRender);
-		if (!m_line_mb.empty())
-		{
-			auto line_mesh = m_line_mb.get_mesh();
-			DrawCall dc;
-			dc.m_cull_face_enabled = false;
-			dc.m_blending_enabled  = line_mesh.has_alpha;
-			dc.set_UBO("ViewProperties", p_view_properties);
-			dc.submit(m_debug_shader.value(), line_mesh.get_VAO(), p_target_FBO);
-		}
-		if (!m_tri_mb.empty())
-		{
-			auto tri_mesh = m_tri_mb.get_mesh();
-			DrawCall dc;
-			dc.m_cull_face_enabled = false;
-			dc.m_blending_enabled  = tri_mesh.has_alpha;
-			dc.set_UBO("ViewProperties", p_view_properties);
-			dc.submit(m_debug_shader.value(), tri_mesh.get_VAO(), p_target_FBO);
-		}
 
 		auto& scene = p_scene.get_current_scene_entities();
 		auto& opt = m_debug_options;
@@ -92,8 +74,10 @@ namespace OpenGL
 		{
 			scene.foreach([&](Component::Collider& p_collider)
 			{
-				auto model = glm::translate(glm::identity<glm::mat4>(), p_collider.get_bounds().get_center());
-				model = glm::scale(model, p_collider.get_bounds().get_size());
+				auto bounds = p_collider.get_bounds();
+				auto model = glm::translate(glm::identity<glm::mat4>(), bounds.get_center());
+				model = glm::scale(model, bounds.get_size());
+
 				{
 					DrawCall dc;
 					dc.m_cull_face_enabled      = false;
@@ -132,6 +116,25 @@ namespace OpenGL
 				dc.set_SSBO("PointLightsBuffer", p_point_lights_buffer);
 				dc.submit_instanced(*m_light_position_shader, m_point_light_mesh->get_VAO(), p_target_FBO, point_light_count);
 			}
+		}
+
+		if (!m_line_mb.empty())
+		{
+			auto line_mesh = m_line_mb.get_mesh();
+			DrawCall dc;
+			dc.m_cull_face_enabled = false;
+			dc.m_blending_enabled  = line_mesh.has_alpha;
+			dc.set_UBO("ViewProperties", p_view_properties);
+			dc.submit(m_debug_shader.value(), line_mesh.get_VAO(), p_target_FBO);
+		}
+		if (!m_tri_mb.empty())
+		{
+			auto tri_mesh = m_tri_mb.get_mesh();
+			DrawCall dc;
+			dc.m_cull_face_enabled = false;
+			dc.m_blending_enabled  = tri_mesh.has_alpha;
+			dc.set_UBO("ViewProperties", p_view_properties);
+			dc.submit(m_debug_shader.value(), tri_mesh.get_VAO(), p_target_FBO);
 		}
 	}
 
