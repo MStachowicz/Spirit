@@ -62,7 +62,11 @@ namespace System
 		{}
 		virtual ~IPhysicsSystem() = default;
 
-		virtual void update(const DeltaTime& p_delta_time) = 0;
+		// Register any colliders that have pending body settings but no physics body yet.
+		// Called unconditionally every frame so bodies exist before the first render.
+		virtual void register_pending_bodies() = 0;
+		// Step the physics simulation forward by p_delta_time. Only called when the accumulator has enough time.
+		virtual void step(const DeltaTime& p_delta_time) = 0;
 
 		// Factory methods
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

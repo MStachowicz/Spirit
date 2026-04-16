@@ -67,7 +67,7 @@ namespace System
 	public:
 		PhysicsSystem(SceneSystem& scene_system);
 
-		void update(const DeltaTime& p_delta_time) override;
+		void step(const DeltaTime& p_delta_time) override;
 
 		[[nodiscard]] PhysicsSystemHandle create_body(const BodySettings& p_body_settings, const ECS::Entity& p_entity) override { (void)p_body_settings; (void)p_entity; throw std::runtime_error("Not implemented"); };
 		void destroy_body(const PhysicsSystemHandle& p_handle) override                             { (void)p_handle; throw std::runtime_error("Not implemented"); };

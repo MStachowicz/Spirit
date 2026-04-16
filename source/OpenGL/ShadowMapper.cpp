@@ -31,7 +31,7 @@ namespace OpenGL
 					dc.m_depth_test_enabled = true;
 					dc.m_write_to_depth_buffer = true;
 					dc.m_depth_test_type = DepthTestType::Less;
-					dc.set_uniform("light_space_mat", p_light.get_view_proj(p_scene.m_bound));
+					dc.set_uniform("light_space_mat", p_light.get_view_proj(p_scene.m_rendered_bounds));
 					dc.set_uniform("model", p_transform.get_model());
 					dc.submit(m_shadow_depth_shader, p_mesh.m_mesh->get_VAO(), m_depth_map_FBO);
 				});

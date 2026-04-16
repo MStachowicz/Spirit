@@ -23,7 +23,7 @@ namespace System
 		, m_gravity{glm::vec3(0.f, -9.81f, 0.f)}
 	{}
 
-	void PhysicsSystem::update(const DeltaTime& p_delta_time)
+	void PhysicsSystem::step(const DeltaTime& p_delta_time)
 	{
 		static_assert(std::is_same_v<DeltaTime, std::chrono::duration<float, std::ratio<1>>>, "PhysicsSystem::integrate expects DeltaTime to be a duration in seconds with float precision.");
 		PERF(PhysicsSystemIntegrate);

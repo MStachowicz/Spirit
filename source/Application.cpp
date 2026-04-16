@@ -61,11 +61,14 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 		if (render_rate_unlimited || duration_since_last_render_tick >= render_timestep)
 			m_window.start_ImGui_frame();
 
-		// Apply physics updates until accumulated time is below physics_timestep step
+		// Ensure any newly-created colliders have their physics bodies before rendering.
+		m_physics_system->register_pending_bodies();
+
+		// Step the physics simulation until accumulated time is below physics_timestep.
 		while (duration_since_last_physics_tick >= physics_timestep)
 		{
 			duration_since_last_physics_tick -= physics_timestep;
-			m_physics_system->update(physics_timestep);
+			m_physics_system->step(physics_timestep);
 		}
 
 		if (duration_since_last_input_tick >= input_timestep)
@@ -80,7 +83,7 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 			OpenGL::FBO::default_framebuffer().clear();
 			OpenGL::FBO::default_framebuffer().resize(m_window.size());
 
-			m_scene_system.get_current_scene().update(m_physics_system->get_bounding_box(), m_window.aspect_ratio(), m_editor.get_editor_view_info());
+			m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
 			m_terrain_system.update(m_scene_system.get_current_scene(), m_window.aspect_ratio());
 
 			if (!m_editor.is_playing())

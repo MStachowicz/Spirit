@@ -50,11 +50,24 @@ namespace System
 		m_current_scene_index = std::distance(m_scenes.begin(), it);
 	}
 
-	void Scene::update(const Geometry::AABB& scene_bounds, float aspect_ratio, std::optional<Component::ViewInformation> view_info_override)
+	void Scene::update(float aspect_ratio, std::optional<Component::ViewInformation> view_info_override)
 	{
 		PERF(SceneUpdate);
 
-		m_bound = scene_bounds;
+		{// Compute rendered bounds from Mesh+Transform entities (excludes physics-only colliders like infinite planes).
+			bool has_bounds = false;
+			m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
+			{
+				auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+				if (!has_bounds)
+				{
+					m_rendered_bounds = world_AABB;
+					has_bounds        = true;
+				}
+				else
+					m_rendered_bounds.unite(world_AABB);
+			});
+		}
 
 		{// Update the view information
 			if (view_info_override)
@@ -104,18 +117,18 @@ namespace System
 	// Lines up all the available primitive meshes along the x axis with the camera facing them.
 	void SceneSystem::primitives_scene(Scene& p_scene)
 	{
-		// { // Plane/quad
-		// 	auto transform     = Component::Transform{glm::vec3(0.f, 0.f, 0.f)};
-		// 	transform.m_scale  = glm::vec3(10.f, 1.f, 10.f);
+		{ // Plane/quad
+			auto transform     = Component::Transform{glm::vec3(0.f, 0.f, 0.f)};
+			transform.m_scale  = glm::vec3(10.f, 1.f, 10.f);
 
-		// 	p_scene.m_entities.add_entity(
-		// 		Component::Label{"Floor"},
-		// 		Component::Texture{m_asset_manager.get_texture(Config::Texture_Directory / "wood_floor.png")},
-		// 		transform,
-		// 		Component::Mesh{m_asset_manager.m_quad},
-		// 		Component::Collider{Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)}}
-		// 	);
-		// }
+			p_scene.m_entities.add_entity(
+				Component::Label{"Floor"},
+				Component::Texture{m_asset_manager.get_texture(Config::Texture_Directory / "wood_floor.png")},
+				transform,
+				Component::Mesh{m_asset_manager.m_quad},
+				Component::Collider{Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)}}
+			);
+		}
 
 		constexpr float mesh_count   = 5.f;
 		constexpr float mesh_width   = 2.f;
@@ -126,56 +139,56 @@ namespace System
 
 		float running_x = start_x;
 
-		// { // Textured cube
-		// 	Component::Texture texture;
-		// 	texture.m_diffuse  = m_asset_manager.get_texture(Config::Texture_Directory / "metalContainerDiffuse.png");
-		// 	texture.m_specular = m_asset_manager.get_texture(Config::Texture_Directory / "metalContainerSpecular.png");
+		{ // Textured cube
+			Component::Texture texture;
+			texture.m_diffuse  = m_asset_manager.get_texture(Config::Texture_Directory / "metalContainerDiffuse.png");
+			texture.m_specular = m_asset_manager.get_texture(Config::Texture_Directory / "metalContainerSpecular.png");
 
-		// 	auto pos = glm::vec3(running_x, start_y, -mesh_width);
-		// 	p_scene.m_entities.add_entity(
-		// 		Component::Label{"Cube"},
-		// 		Component::Transform{pos},
-		// 		Component::Mesh{m_asset_manager.m_cube},
-		// 		Component::Collider{Geometry::Cuboid{pos, glm::vec3{mesh_width / 2.f}}},
-		// 		texture);
-		// 	running_x += increment;
-		// }
-		{ // Cone - CRASH IN MASS CALCULATION
+			auto pos = glm::vec3(running_x, start_y, -mesh_width);
+			p_scene.m_entities.add_entity(
+				Component::Label{"Cube"},
+				Component::Transform{pos},
+				Component::Mesh{m_asset_manager.m_cube},
+				Component::Collider{Geometry::Cuboid{pos, glm::vec3{mesh_width / 2.f}}},
+				texture);
+			running_x += increment;
+		}
+		{ // Cone
 			auto pos = glm::vec3(running_x, start_y, -mesh_width);
 			p_scene.m_entities.add_entity(
 				Component::Label{"Cone"},
 				Component::Transform{pos},
 				Component::Mesh{m_asset_manager.m_cone},
-				Component::Collider{Geometry::Cone{pos, glm::vec3(pos.x, pos.y + mesh_width / 2.f, pos.z), mesh_width}});
+				Component::Collider{Geometry::Cone{glm::vec3(pos.x, pos.y - 1.f, pos.z), glm::vec3(pos.x, pos.y + 1.f, pos.z), 1.f}});
 			running_x += increment;
 		}
-		// { // Cylinder
-		// 	auto pos = glm::vec3(running_x, start_y, -mesh_width);
-		// 	p_scene.m_entities.add_entity(
-		// 		Component::Label{"Cylinder"},
-		// 		Component::Transform{pos},
-		// 		Component::Mesh{m_asset_manager.m_cylinder},
-		// 		Component::Collider{Geometry::Cylinder{pos, glm::vec3(pos.x, pos.y + mesh_width / 2.f, pos.z), mesh_width}});
-		// 	running_x += increment;
-		// }
-		// { // quad - ERROR with mass calc
-		// 	auto pos = glm::vec3(running_x, start_y, -mesh_width);
-		// 	p_scene.m_entities.add_entity(
-		// 		Component::Label{"Plane"},
-		// 		Component::Transform{pos},
-		// 		Component::Mesh{m_asset_manager.m_quad},
-		// 		Component::Collider{Geometry::Quad{pos, glm::vec3(0.f, 0.f, 1.f)}});
-		// 	running_x += increment;
-		// }
-		// { // Sphere
-		// 	auto pos = glm::vec3(running_x, start_y, -mesh_width);
-		// 	p_scene.m_entities.add_entity(
-		// 		Component::Label{"Sphere"},
-		// 		Component::Transform{pos},
-		// 		Component::Mesh{m_asset_manager.m_sphere},
-		// 		Component::Collider{Geometry::Sphere{pos, mesh_width / 2.f}});
-		// 	running_x += increment;
-		// }
+		{ // Cylinder
+			auto pos = glm::vec3(running_x, start_y, -mesh_width);
+			p_scene.m_entities.add_entity(
+				Component::Label{"Cylinder"},
+				Component::Transform{pos},
+				Component::Mesh{m_asset_manager.m_cylinder},
+				Component::Collider{Geometry::Cylinder{glm::vec3(pos.x, pos.y - 1.f, pos.z), glm::vec3(pos.x, pos.y + 1.f, pos.z), 1.f}});
+			running_x += increment;
+		}
+		{ // quad
+			auto pos = glm::vec3(running_x, start_y, -mesh_width);
+			p_scene.m_entities.add_entity(
+				Component::Label{"Plane"},
+				Component::Transform{pos},
+				Component::Mesh{m_asset_manager.m_quad},
+				Component::Collider{Geometry::Quad{pos, glm::vec3(0.f, 1.f, 0.f)}});
+			running_x += increment;
+		}
+		{ // Sphere
+			auto pos = glm::vec3(running_x, start_y, -mesh_width);
+			p_scene.m_entities.add_entity(
+				Component::Label{"Sphere"},
+				Component::Transform{pos},
+				Component::Mesh{m_asset_manager.m_sphere},
+				Component::Collider{Geometry::Sphere{pos, mesh_width / 2.f}});
+			running_x += increment;
+		}
 		{ // Lights
 			p_scene.m_entities.add_entity(Component::Label{"Directional light 1"}, Component::DirectionalLight{glm::vec3(0.f, -1.f, 0.f), 0.f, 0.5f});
 			p_scene.m_entities.add_entity(Component::Label{"Point light 1"}, Component::PointLight{glm::vec3(6.f, 3.2f, -4.5f)});

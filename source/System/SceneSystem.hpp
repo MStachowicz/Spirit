@@ -15,12 +15,12 @@ namespace System
 	{
 	public:
 		ECS::Storage m_entities;
-		Geometry::AABB m_bound; // The bounding box of the m_entities in the scene. Used by rendering.
+		Geometry::AABB m_rendered_bounds; // The bounding box of Mesh+Transform entities in the scene. Used by rendering (shadow maps, camera refit). This is NOT the physics world bounds — use IPhysicsSystem::get_bounding_box() for that.
 		Component::ViewInformation m_view_information; // Rendering depends on the ViewInformation of the active camera.
 
-		// When the state of the scene changes update the m_bound and m_view_information.
+		// When the state of the scene changes update the m_rendered_bounds and m_view_information.
 		// Should be called when the scene is first created, when entities are added/removed/changed, when the aspect ratio changes or when the editor changes the scene.
-		void update(const Geometry::AABB& scene_bounds, float aspect_ratio, std::optional<Component::ViewInformation> view_info_override = std::nullopt);
+		void update(float aspect_ratio, std::optional<Component::ViewInformation> view_info_override = std::nullopt);
 
 		static void serialise(std::ostream& p_out, uint16_t p_version, const Scene& p_Scene);
 		static Scene deserialise(std::istream& p_in, uint16_t p_version);
