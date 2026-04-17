@@ -97,6 +97,7 @@ namespace Test
 	{
 	public:
 		TestManager(const std::string& p_name) noexcept;
+		virtual ~TestManager() = default;
 
 		std::string m_name;
 		size_t m_unit_tests_pass_count;

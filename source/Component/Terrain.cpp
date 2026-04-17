@@ -15,7 +15,6 @@
 namespace Component
 {
 	using VertexType = Data::Vertex;
-	constexpr size_t size_of_vertex = sizeof(VertexType);
 
 	size_t Terrain::chunk_vert_buff_stride() const
 	{
@@ -316,10 +315,10 @@ namespace Component
 		// Therefore we can assert which of the corners or mid-points of the root edge we should move the root to based on the player
 		// position inside a sub-quarter of the root.
 		{
-			constexpr Geometry::QuadKey RootTopLeft     { {Geometry::QuadKey::Quadrant::TopLeft} };
-			constexpr Geometry::QuadKey RootTopRight    { {Geometry::QuadKey::Quadrant::TopRight} };
-			constexpr Geometry::QuadKey RootBottomLeft  { {Geometry::QuadKey::Quadrant::BottomLeft} };
-			constexpr Geometry::QuadKey RootBottomRight { {Geometry::QuadKey::Quadrant::BottomRight} };
+			constexpr Geometry::QuadKey RootTopLeft     {Geometry::QuadKey::Quadrant::TopLeft};
+			constexpr Geometry::QuadKey RootTopRight    {Geometry::QuadKey::Quadrant::TopRight};
+			constexpr Geometry::QuadKey RootBottomLeft  {Geometry::QuadKey::Quadrant::BottomLeft};
+			constexpr Geometry::QuadKey RootBottomRight {Geometry::QuadKey::Quadrant::BottomRight};
 
 			auto delete_contained_by = [&] (Geometry::QuadKey container)
 			{

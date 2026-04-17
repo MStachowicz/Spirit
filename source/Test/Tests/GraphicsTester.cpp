@@ -82,7 +82,7 @@ namespace Test
 				OpenGL::Buffer out_buffer = OpenGL::Buffer({OpenGL::BufferStorageFlag::DynamicStorageBit}, std::array<unsigned int, 8>{0, 0, 0, 0, 0, 0, 0, 0});
 
 				OpenGL::Shader shader                            = OpenGL::Shader("global_sum.comp");
-				std::array<std::vector<int>, 3> expected_results = {{ {{ 4, 7, 5, 9 }}, {{ 11, 14 }}, {{ 25 }} }};
+				std::array<std::vector<int>, 3> expected_results = {{ {{ 4, 7, 5, 9 }}, {{ 11, 14 }}, { 25 } }};
 
 				size_t reduction_steps = std::log2(data.size());
 				for (size_t i = 0; i < reduction_steps; ++i)

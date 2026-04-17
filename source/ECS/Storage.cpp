@@ -7,9 +7,9 @@ namespace ECS
 	// Type definitions for the saving and loading of the storage.
 	// If these types change or missmatch, saving/loading will break and needs to be handled using p_version.
 
-	using Archetype_Count_t = uint64_t;
-	using Entity_Count_t    = uint64_t;
-	using Component_Count_t = uint64_t;
+	using Archetype_Count_t = size_t;
+	using Entity_Count_t    = size_t;
+	using Component_Count_t = size_t;
 	using ComponentID_t     = uint8_t;
 
 	static_assert(std::is_same<std::vector<int>::size_type, Archetype_Count_t>::value, "Archetype_Count_t doesn't match Vector::size_type. Update save/load type used.");

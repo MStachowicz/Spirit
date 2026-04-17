@@ -81,7 +81,6 @@ namespace OpenGL
 	{ (void)p_camera_position;
 		p_scene.m_entities.foreach([&](Component::ParticleEmitter& p_emitter)
 		{
-			constexpr auto zero_seconds = std::chrono::seconds(0);
 			p_emitter.spawn_debt += p_delta_time.count() * p_emitter.spawn_per_second;
 
 			if (p_emitter.spawn_debt > 1.f)

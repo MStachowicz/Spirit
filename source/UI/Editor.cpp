@@ -978,7 +978,7 @@ namespace UI
 							std::chrono::duration<float, std::milli>(slice_node.min_duration).count());
 					};
 					if (pie_chart_node)               slice.on_right_click = UpLayerFunc;
-					if (!slice_node.children.empty()) slice.on_click       = [this, &slice_node, node_index]() { pie_chart_node_index = node_index; };
+					if (!slice_node.children.empty()) slice.on_click       = [this, node_index]() { pie_chart_node_index = node_index; };
 
 					slices.push_back(slice);
 				}

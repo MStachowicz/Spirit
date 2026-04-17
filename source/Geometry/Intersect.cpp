@@ -18,8 +18,6 @@
 namespace Geometry
 {
 	static constexpr float Epsilon        = std::numeric_limits<float>::epsilon();
-	// Enabling this adds robustness checks that account for the floating-point margin of error.
-	static constexpr bool  Use_Epsilon_Test = true;
 
 // ==============================================================================================================================
 // UTILITIY FUNCTIONS

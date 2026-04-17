@@ -96,7 +96,7 @@
 	],
 	"buildPresets": [
 		{
-			"name": "vs-msvc-release",
+			"name": "vs-msvc-Release",
 			"configurePreset": "visual-studio-17-2022",
 			"displayName": "Release",
 			"configuration": "Release",
@@ -104,7 +104,7 @@
 			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
-			"name": "vs-msvc-debug",
+			"name": "vs-msvc-Debug",
 			"configurePreset": "visual-studio-17-2022",
 			"displayName": "Debug",
 			"configuration": "Debug",
@@ -112,7 +112,7 @@
 			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
-			"name": "Ninja-msvc-release",
+			"name": "Ninja-msvc-Release",
 			"configurePreset": "Ninja-MSVC",
 			"displayName": "Release",
 			"configuration": "Release",
@@ -120,7 +120,7 @@
 			"targets": [ "Spirit", "Test", "All" ]
 		},
 		{
-			"name": "Ninja-msvc-debug",
+			"name": "Ninja-msvc-Debug",
 			"configurePreset": "Ninja-MSVC",
 			"displayName": "Debug",
 			"configuration": "Debug",

@@ -3,47 +3,133 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build_linux:
-    name: Linux - ${{ matrix.buildPreset }}
+    name: Linux ${{ matrix.compiler.name }} - ${{ matrix.buildConfig }}
     runs-on: ubuntu-24.04
+    env:
+      CC: ${{ matrix.compiler.cc }}
+      CXX: ${{ matrix.compiler.cxx }}
     strategy:
       fail-fast: false
       matrix:
-        buildPreset: [Release, Debug]
+        buildConfig: [Release, Debug]
+        compiler:
+          - name: GCC
+            cc: gcc-13
+            cxx: g++-13
+            packages: "gcc-13 g++-13"
+            configurePreset: Ninja-GCC
+            buildPrefix: g++
+          - name: Clang
+            cc: clang-18
+            cxx: clang++-18
+            packages: clang-18
+            configurePreset: Ninja-Clang
+            buildPrefix: clang++
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev ninja-build -y gcc-13 g++-13
+          sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev ninja-build -y ${{ matrix.compiler.packages }}
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: build/${{ matrix.compiler.configurePreset }}/External
+          key: v2-linux-${{ matrix.compiler.name }}-external-${{ hashFiles('source/External/**', 'CMakeLists.txt') }}
+          restore-keys: v2-linux-${{ matrix.compiler.name }}-external-
       - name: Configure CMake
-        run: cmake --preset Ninja-GCC
+        run: cmake --preset ${{ matrix.compiler.configurePreset }}
       - name: Build
-        run: cmake --build . --preset g++-${{ matrix.buildPreset }}
-        working-directory: ${{ github.workspace }}
+        run: cmake --build --preset ${{ matrix.compiler.buildPrefix }}-${{ matrix.buildConfig }}
       - name: Test
+        timeout-minutes: 5
         run: ./Test --no-graphics
-        working-directory: ${{ github.workspace }}/build/Ninja-GCC/${{ matrix.buildPreset }}
+        working-directory: build/${{ matrix.compiler.configurePreset }}/${{ matrix.buildConfig }}
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.compiler.name }}-${{ matrix.buildConfig }}-logs
+          path: build/${{ matrix.compiler.configurePreset }}/
+
   build_windows:
-    name: Windows - ${{ matrix.buildPreset }}
+    name: Windows ${{ matrix.compiler.name }} - ${{ matrix.buildConfig }}
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        buildPreset: [release, debug]
+        buildConfig: [Release, Debug]
+        compiler:
+          - name: MSVC
+            configurePreset: Ninja-MSVC
+            buildPrefix: Ninja-msvc
+            setup-msvc: true
+          - name: GCC
+            configurePreset: Ninja-GCC
+            buildPrefix: g++
+            setup-msvc: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup MSVC
+        if: matrix.compiler.setup-msvc
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Dependencies
+        run: choco install ninja
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: build/${{ matrix.compiler.configurePreset }}/External
+          key: v2-windows-${{ matrix.compiler.name }}-external-${{ hashFiles('source/External/**', 'CMakeLists.txt') }}
+          restore-keys: v2-windows-${{ matrix.compiler.name }}-external-
+      - name: Configure CMake
+        run: cmake --preset ${{ matrix.compiler.configurePreset }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.compiler.buildPrefix }}-${{ matrix.buildConfig }}
+      - name: Test
+        timeout-minutes: 5
+        run: ./Test --no-graphics
+        working-directory: build/${{ matrix.compiler.configurePreset }}/${{ matrix.buildConfig }}
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.compiler.name }}-${{ matrix.buildConfig }}-logs
+          path: build/${{ matrix.compiler.configurePreset }}/
+
+  build_macos:
+    name: macOS Clang - ${{ matrix.buildConfig }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        buildConfig: [Release, Debug]
+    steps:
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install Dependencies
-        run: |
-          choco install ninja
+        run: brew install ninja
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: build/Ninja-Clang/External
+          key: v2-macos-clang-external-${{ hashFiles('source/External/**', 'CMakeLists.txt') }}
+          restore-keys: v2-macos-clang-external-
       - name: Configure CMake
-        run: cmake --preset visual-studio-17-2022
+        run: cmake --preset Ninja-Clang
       - name: Build
-        run: cmake --build . --preset vs-msvc-${{ matrix.buildPreset }}
-        working-directory: ${{ github.workspace }}
+        run: cmake --build --preset clang++-${{ matrix.buildConfig }}
       - name: Test
+        timeout-minutes: 5
         run: ./Test --no-graphics
-        working-directory: ${{ github.workspace }}/build/visual-studio-17-2022/${{ matrix.buildPreset }}
+        working-directory: build/Ninja-Clang/${{ matrix.buildConfig }}
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.buildConfig }}-logs
+          path: build/Ninja-Clang/

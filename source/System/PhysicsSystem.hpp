@@ -81,7 +81,7 @@ namespace System
 		void set_rotation(const PhysicsSystemHandle& p_ID, const glm::quat& p_rotation) override { (void)p_ID; (void)p_rotation; throw std::runtime_error("Not implemented"); };
 		glm::quat get_rotation(const PhysicsSystemHandle& p_ID) const override                   { (void)p_ID; throw std::runtime_error("Not implemented"); };
 
-		Geometry::AABB get_bounding_box() const;
+		Geometry::AABB get_bounding_box() const override;
 		std::optional<ECS::Entity> cast_ray(const Geometry::Ray& p_ray) const override { (void)p_ray; throw std::runtime_error("Not implemented"); };
 	};
 } // namespace System

@@ -453,7 +453,12 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	# Tracy end ----------------------------------------------------------------------
 
 	# JoltPhysics ----------------------------------------------------------------------
-	set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+	if (IS_MSVC)
+		set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+	endif()
+	if (IS_CLANG)
+		set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE) # Clang LTO produces LLVM bitcode that GNU ld cannot link
+	endif()
 	add_subdirectory(source/External/JoltPhysics/Build ${CMAKE_BINARY_DIR}/External/JoltPhysics SYSTEM)
 	# JoltPhysics ----------------------------------------------------------------------
 # EXTERNAL LIBRARIES ***********************************************************************************************************************
