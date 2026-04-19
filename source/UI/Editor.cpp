@@ -64,6 +64,8 @@ namespace UI
 		, m_debug_GJK_entity_1{}
 		, m_debug_GJK_entity_2{}
 		, m_debug_GJK_step{0}
+		, m_show_selection_ray{false}
+		, m_debug_selection_ray{std::nullopt}
 		, pie_chart_node_index{std::nullopt}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
@@ -112,6 +114,7 @@ namespace UI
 					{
 						auto view_info            = m_viewport_pane.view_information();
 						auto cursor_ray           = Utility::get_cursor_ray(m_viewport_pane.m_cursor_pos_content, m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
+						m_debug_selection_ray     = cursor_ray;
 
 						if (auto ent = m_physics_system.cast_ray(cursor_ray))
 						{
@@ -218,6 +221,30 @@ namespace UI
 			{
 				if (p_action == Platform::Action::Release)
 					m_panes_to_display.Entity = !m_panes_to_display.Entity;
+				break;
+			}
+			case Platform::Key::F:
+			{
+				if (p_action == Platform::Action::Release && m_state == State::Editing && m_viewport_pane.m_focused)
+				{
+					if (m_entity_to_draw_info_for)
+					{
+						auto& scene = m_scene_system.get_current_scene_entities();
+						auto& ent   = *m_entity_to_draw_info_for;
+						if (scene.has_components<Component::Mesh, Component::Transform>(ent))
+						{
+							auto& mesh      = scene.get_component<Component::Mesh>(ent);
+							auto& transform = scene.get_component<Component::Transform>(ent);
+							auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+							m_viewport_pane.m_camera.refit(world_AABB, m_viewport_pane.aspect_ratio(), 1.f);
+						}
+						else if (scene.has_components<Component::Transform>(ent))
+						{
+							auto& transform = scene.get_component<Component::Transform>(ent);
+							m_viewport_pane.m_camera.set_orbit_point(transform.m_position);
+						}
+					}
+				}
 				break;
 			}
 			case Platform::Key::G:
@@ -426,6 +453,7 @@ namespace UI
 
 		m_duration_between_draws.push_back(p_duration_since_last_draw);
 
+		bool open_fps_popup = false;
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -520,14 +548,51 @@ namespace UI
 				std::string fps_str = std::format("FPS: {:.1f}", fps);
 				ImGui::SameLine((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(fps_str.c_str()).x - ImGui::GetStyle().ItemSpacing.x) / 2.f);
 
+				const float monitor_hz = static_cast<float>(Platform::Window::get_primary_monitor_refresh_rate());
+				const float target_fps = (m_window.m_framerate_cap > 0) ? static_cast<float>(m_window.m_framerate_cap) : monitor_hz;
 				glm::vec4 colour;
-				if      (fps > 60.f) colour = Platform::Core::s_theme.success_text;
-				else if (fps > 30.f) colour = Platform::Core::s_theme.warning_text;
-				else                 colour = Platform::Core::s_theme.error_text;
+				if (fps >= target_fps * 0.95f)     colour = Platform::Core::s_theme.success_text;
+				else if (fps >= target_fps * 0.5f) colour = Platform::Core::s_theme.warning_text;
+				else                               colour = Platform::Core::s_theme.error_text;
 
 				ImGui::TextColored(colour, "%s", fps_str.c_str());
+				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+					open_fps_popup = true;
 			}
 			ImGui::EndMenuBar();
+		}
+		if (open_fps_popup)
+			ImGui::OpenPopup("fps_limit_popup");
+		if (ImGui::BeginPopup("fps_limit_popup"))
+		{
+			const uint16_t monitor_hz_u = Platform::Window::get_primary_monitor_refresh_rate();
+			ImGui::SeparatorText("Framerate limit");
+			if (ImGui::MenuItem("Unlimited", nullptr, m_window.m_framerate_cap == 0))
+			{
+				m_window.m_framerate_cap = 0;
+				m_duration_between_draws.clear();
+			}
+			const auto native_label = std::format("Native ({} Hz)", monitor_hz_u);
+			if (ImGui::MenuItem(native_label.c_str(), nullptr, m_window.m_framerate_cap == monitor_hz_u))
+			{
+				m_window.m_framerate_cap = monitor_hz_u;
+				m_duration_between_draws.clear();
+			}
+			ImGui::Separator();
+			static constexpr uint16_t presets[] = {240, 165, 144, 120, 90, 75, 60, 30};
+			for (const uint16_t preset : presets)
+			{
+				if (preset < monitor_hz_u)
+				{
+					const auto label = std::format("{}", preset);
+					if (ImGui::MenuItem(label.c_str(), nullptr, m_window.m_framerate_cap == preset))
+					{
+						m_window.m_framerate_cap = preset;
+						m_duration_between_draws.clear();
+					}
+				}
+			}
+			ImGui::EndPopup();
 		}
 		if (m_panes_to_display.Entity)         draw_entity_tree_pane();
 		if (m_panes_to_display.Console)        m_console.draw("Console", &m_panes_to_display.Console);
@@ -669,6 +734,7 @@ namespace UI
 			else
 				title = "Entity " + std::to_string(ent.ID);
 
+			ImGui::SetNextWindowPos(ImGui::GetMousePos(), ImGuiCond_Appearing);
 			ImGui::Begin(title.c_str(), &m_panes_to_display.ent_properties);
 			draw_entity_UI(ent);
 			ImGui::End();
@@ -749,6 +815,17 @@ namespace UI
 			ImGui::ColorEdit3("Bounding box colour",          &debug_options.m_bounding_box_colour[0]);
 			if (!debug_options.m_show_bounding_box) ImGui::EndDisabled();
 
+			{// Selection ray debug
+				if (!m_debug_selection_ray) ImGui::BeginDisabled();
+				ImGui::Checkbox("Show selection ray", &m_show_selection_ray);
+				if (!m_debug_selection_ray)
+				{
+					ImGui::EndDisabled();
+					ImGui::SameLine();
+					ImGui::HelpMarker("No ray cast yet — left-click in the viewport to cast one.");
+				}
+			}
+
 			ImGui::Slider("Position offset factor", debug_options.m_position_offset_factor, -10.f, 10.f);
 			ImGui::Slider("Position offset units",  debug_options.m_position_offset_units,  -10.f, 10.f);
 
@@ -767,6 +844,8 @@ namespace UI
 		{// Regardless of the debug window being displayed, we want to display or do certain things related to the options.
 			if (m_debug_GJK && m_debug_GJK_entity_1 && m_debug_GJK_entity_2)
 				draw_GJK_debugger(*m_debug_GJK_entity_1, *m_debug_GJK_entity_2, m_scene_system.get_current_scene(), m_debug_GJK_step);
+			if (m_show_selection_ray && m_debug_selection_ray)
+				OpenGL::DebugRenderer::add(*m_debug_selection_ray, glm::vec4(1.f, 1.f, 0.f, 1.f));
 		}
 	}
 	void Editor::draw_pie_chart(const std::vector<PieSlice>& slices, const std::function<void()>& on_inner_circle_click, const std::function<void()>& on_inner_circle_hover, bool draw_border)

@@ -212,8 +212,6 @@ namespace System
 			else static_assert(false, "non-exhaustive visitor!");
 		}, p_body_settings.m_shape);
 
-		body_shape_settings->mUserData = p_entity.ID;
-
 		auto result = body_shape_settings->Create();
 		ASSERT_THROW(result.IsValid(), "Failed to create Jolt shape for entity ID {}: {}", p_entity.ID, result.GetError());
 
@@ -223,6 +221,7 @@ namespace System
 			to_JPH(p_body_settings.m_rotation),
 			to_JPH(p_body_settings.m_motion_type),
 			p_body_settings.m_motion_type == BodySettings::MotionType::Static ? Layers::NON_MOVING : Layers::MOVING);
+		body_create_settings.mUserData = static_cast<JPH::uint64>(p_entity.ID);
 
 		auto& body_interface = get_body_interface_no_lock();
 		auto body_ID = body_interface.CreateAndAddBody(body_create_settings, JPH::EActivation::DontActivate);
@@ -355,7 +354,10 @@ namespace System
 
 	std::optional<ECS::Entity> PhysicsSystemJolt::cast_ray(const Geometry::Ray& p_ray) const
 	{
-		JPH::RRayCast ray = JPH::RRayCast(to_JPH(p_ray));
+		// Jolt direction is a displacement to the endpoint, not a unit direction.
+		// Scale the normalised direction to cover the full visible range.
+		constexpr float ray_length = 10000.f;
+		JPH::RRayCast ray{ to_JPH(p_ray.m_start), to_JPH(p_ray.m_direction) * ray_length };
 		JPH::RayCastResult result;
 		if (physics_system.GetNarrowPhaseQuery().CastRay(ray, result))
 		{

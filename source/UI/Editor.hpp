@@ -3,6 +3,7 @@
 #include "UI/Console.hpp"
 #include "Component/TwoAxisCamera.hpp"
 #include "ECS/Entity.hpp"
+#include "Geometry/Ray.hpp"
 #include "OpenGL/Types.hpp"
 
 #include "Utility/Config.hpp"
@@ -132,6 +133,9 @@ namespace UI
 		std::optional<ECS::Entity> m_debug_GJK_entity_1;
 		std::optional<ECS::Entity> m_debug_GJK_entity_2;
 		int m_debug_GJK_step;
+
+		bool m_show_selection_ray;                          // Whether to render the last selection ray each frame.
+		std::optional<Geometry::Ray> m_debug_selection_ray; // The ray cast on the last left click in the viewport.
 
 		std::optional<size_t> pie_chart_node_index; // The current performance node being drawn. Nullptr = root.
 
