@@ -51,6 +51,17 @@ namespace Utility
 		{
 			return data.empty();
 		}
+		Geometry::AABB get_bounds() const
+		{
+			Geometry::AABB bounds;
+			if (!data.empty())
+			{
+				bounds = Geometry::AABB(data[0].position, data[0].position);
+				for (size_t i = 1; i < data.size(); ++i)
+					bounds.unite(data[i].position);
+			}
+			return bounds;
+		}
 		void set_colour(const glm::vec4& colour)
 		{
 			static_assert(Data::has_colour_member<VertexType>, "VertexType must have a colour member.");

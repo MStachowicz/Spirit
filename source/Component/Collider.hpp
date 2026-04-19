@@ -33,7 +33,48 @@ namespace Component
 			: m_physics_system_handle{std::nullopt}
 			, m_body_settings_cache{System::BodySettings{p_shape, glm::identity<glm::quat>(), p_motion_type}}
 		{}
-		~Collider() = default;
+		~Collider()
+		{
+			if (m_physics_system_handle)
+				m_physics_system_handle->m_system->destroy_body(*m_physics_system_handle);
+		}
+
+		// Move constructor: transfer ownership, prevent double-destroy.
+		Collider(Collider&& p_other) noexcept
+			: m_physics_system_handle{std::exchange(p_other.m_physics_system_handle, std::nullopt)}
+			, m_body_settings_cache{std::move(p_other.m_body_settings_cache)}
+		{}
+		// Move assignment: destroy our current body if any, then take ownership.
+		Collider& operator=(Collider&& p_other) noexcept
+		{
+			if (this != &p_other)
+			{
+				if (m_physics_system_handle)
+					m_physics_system_handle->m_system->destroy_body(*m_physics_system_handle);
+
+				m_physics_system_handle = std::exchange(p_other.m_physics_system_handle, std::nullopt);
+				m_body_settings_cache   = std::move(p_other.m_body_settings_cache);
+			}
+			return *this;
+		}
+
+		// Copying a Collider does NOT copy the runtime Jolt body — the copy gets a fresh settings cache to be registered on next update.
+		Collider(const Collider& p_other)
+			: m_physics_system_handle{std::nullopt}
+			, m_body_settings_cache{p_other.m_body_settings_cache}
+		{}
+		Collider& operator=(const Collider& p_other)
+		{
+			if (this != &p_other)
+			{
+				if (m_physics_system_handle)
+					m_physics_system_handle->m_system->destroy_body(*m_physics_system_handle);
+
+				m_physics_system_handle = std::nullopt;
+				m_body_settings_cache   = p_other.m_body_settings_cache;
+			}
+			return *this;
+		}
 
 		void draw_UI();
 		auto get_Jolt_ID() const { return m_physics_system_handle->m_jolt_body_ID; }

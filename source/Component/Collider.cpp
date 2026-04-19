@@ -11,6 +11,13 @@ namespace Component
 	{
 		if (ImGui::TreeNode("Collider"))
 		{
+			if (!m_physics_system_handle)
+			{
+				ImGui::Text("Awaiting physics body creation...");
+				ImGui::TreePop();
+				return;
+			}
+
 			auto body_ID = m_physics_system_handle->m_jolt_body_ID;
 			ImGui::Text("Jolt Body ID", body_ID.GetIndexAndSequenceNumber());
 

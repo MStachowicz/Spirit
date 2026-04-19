@@ -320,7 +320,7 @@ namespace UI
 					else
 					{
 						// No selection — refit to the full scene bounds.
-						auto& bounds = m_scene_system.get_current_scene().m_bound;
+						auto& bounds = m_scene_system.get_current_scene().m_rendered_bounds;
 						m_viewport_pane.m_camera.refit(bounds, m_viewport_pane.aspect_ratio(), 1.f);
 					}
 				}
@@ -654,7 +654,20 @@ namespace UI
 						glm::value_ptr(model));
 
 					if (ImGuizmo::IsUsing())
+					{
 						transform.set_model(model);
+
+						// Push the transform change into the physics body so it stays in sync during editing.
+						if (m_scene_system.get_current_scene_entities().has_components<Component::Collider>(*it))
+						{
+							auto& collider = m_scene_system.get_current_scene_entities().get_component<Component::Collider>(*it);
+							if (collider.m_physics_system_handle)
+							{
+								collider.set_position(transform.m_position);
+								collider.set_rotation(transform.m_orientation);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -782,16 +795,29 @@ namespace UI
 			ImGui::SeparatorText("Renderer");
 			m_openGL_renderer.draw_UI();
 
+			ImGui::SeparatorText("Scene Bounds");
+			ImGui::Checkbox("Show rendered bounds", &debug_options.m_show_rendered_bounds);
+			ImGui::Checkbox("Show physics bounds",  &debug_options.m_show_physics_bounds);
+
 			if (ImGui::Button("Reset"))
 			{
 				debug_options.m_show_light_positions = false;
 				debug_options.m_show_mesh_normals    = false;
+				debug_options.m_show_rendered_bounds  = false;
+				debug_options.m_show_physics_bounds   = false;
 				m_window.set_VSync(true);
 				m_window.m_framerate_cap = 0;
 				m_openGL_renderer.reset_debug_options();
 			}
 		}
 		ImGui::End();
+
+		{// Scene bounds debug visualisation (drawn regardless of window visibility so toggling persists).
+			if (debug_options.m_show_rendered_bounds)
+				OpenGL::DebugRenderer::add(m_scene_system.get_current_scene().m_rendered_bounds, glm::vec4(1.f, 0.5f, 0.f, 1.f));
+			if (debug_options.m_show_physics_bounds)
+				OpenGL::DebugRenderer::add(m_physics_system.get_bounding_box(), glm::vec4(0.f, 0.5f, 1.f, 1.f));
+		}
 	}
 	void Editor::draw_physics_debug_pane()
 	{
@@ -1302,8 +1328,7 @@ namespace UI
 				ImVec2 mouse_pos    = ImGui::GetMousePos();
 
 				m_cursor_pos_content = glm::vec2(mouse_pos.x - content_pos.x, mouse_pos.y - content_pos.y);
-				m_cursor_hovered     = m_cursor_pos_content.x >= 0.f && m_cursor_pos_content.y >= 0.f &&
-				m_cursor_pos_content.x <= content_size.x && m_cursor_pos_content.y <= content_size.y;
+				m_cursor_hovered     = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
 				m_focused            = ImGui::IsWindowFocused(ImGuiFocusedFlags_None);
 
 				m_FBO.resize({content_size.x, content_size.y});

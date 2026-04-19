@@ -56,16 +56,16 @@ namespace UI
 			bool add_entity_popup = false;
 			bool ent_properties   = false;
 			bool Graphics_Debug   = false;
-			bool Physics_Debug    = false;
+			bool Physics_Debug    = true;
 			bool Performance      = false;
 			bool ImGuiDemo        = false;
 			bool ImGuiMetrics     = false;
 			bool ImGuiStack       = false;
 			bool ImGuiAbout       = false;
 			bool theme_editor     = false;
-			bool editor_camera    = false;
+			bool editor_camera    = true;
 			bool ImGuiStyleEditor = false;
-			bool Console          = true;
+			bool Console          = false;
 			bool asset_browser    = false;
 		};
 		struct PlayerInfoPane

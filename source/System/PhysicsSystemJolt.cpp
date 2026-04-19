@@ -118,6 +118,12 @@ namespace System
 
 	PhysicsSystemJolt::~PhysicsSystemJolt()
 	{
+		m_scene_system.get_current_scene_entities().foreach([&](Component::Collider& collider)
+		{
+			if (collider.m_physics_system_handle->m_system == this)
+				collider.m_physics_system_handle.reset();
+		});
+
 		// Unregisters all types with the factory and cleans up the default material
 		JPH::UnregisterTypes();
 
@@ -126,39 +132,38 @@ namespace System
 		JPH::Factory::sInstance = nullptr;
 	}
 
-	void PhysicsSystemJolt::update(const DeltaTime& p_delta_time)
+	void PhysicsSystemJolt::register_pending_bodies()
 	{
-		static_assert(std::is_same_v<DeltaTime, std::chrono::duration<float, std::ratio<1>>>, "PhysicsSystemJolt::integrate expects DeltaTime to be a duration in seconds with float precision.");
-		PERF(PhysicsSystemJoltIntegrate);
+		PERF(PhysicsSystemJoltRegisterBodies);
 
-		//if (m_pause_simulation)
-		//	return;
-		m_update_count++;
-
-		// A body activation listener gets notified when bodies activate and go to sleep
-		// Note that this is called from a job so whatever you do here needs to be thread safe.
-		// Registering one is entirely optional.
-		//MyBodyActivationListener body_activation_listener;
-		//physics_system.SetBodyActivationListener(&body_activation_listener);
-		// A contact listener gets notified when bodies (are about to) collide, and when they separate again.
-		// Note that this is called from a job so whatever you do here needs to be thread safe.
-		// Registering one is entirely optional.
-		//MyContactListener contact_listener;
-		//physics_system.SetContactListener(&contact_listener);
-
-		// Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
-		// You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
-		// Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
-		physics_system.OptimizeBroadPhase();
-
-		m_scene_system.get_current_scene_entities().foreach([&](ECS::Entity& p_entity, Component::Collider& collider)
+		bool bodies_created = false;
+		m_scene_system.get_current_scene_entities().foreach([&](ECS::Entity& p_entity, Component::Collider& collider, Component::Transform& transform)
 		{
 			if (!collider.m_physics_system_handle && collider.m_body_settings_cache)
 			{
 				collider.m_physics_system_handle = create_body(collider.m_body_settings_cache.value(), p_entity);
-				collider.m_body_settings_cache.reset();
+				// Keep m_body_settings_cache as persistent blueprint data so scene copies can recreate bodies.
+
+				// Ensure the Jolt body position matches the ECS Transform, not just the shape's embedded center.
+				set_position(collider.m_physics_system_handle.value(), transform.m_position);
+				set_rotation(collider.m_physics_system_handle.value(), transform.m_orientation);
+				bodies_created = true;
 			}
 		});
+
+		// Only optimize broad phase after batch insertions, not every frame.
+		if (bodies_created)
+			physics_system.OptimizeBroadPhase();
+	}
+
+	void PhysicsSystemJolt::step(const DeltaTime& p_delta_time)
+	{
+		static_assert(std::is_same_v<DeltaTime, std::chrono::duration<float, std::ratio<1>>>, "PhysicsSystemJolt::step expects DeltaTime to be a duration in seconds with float precision.");
+		PERF(PhysicsSystemJoltStep);
+
+		if (m_pause_simulation)
+			return;
+		m_update_count++;
 
 		const int cCollisionSteps = 1;
 		physics_system.Update(p_delta_time.count(), cCollisionSteps, &temp_allocator, &job_system);
@@ -166,8 +171,11 @@ namespace System
 		// Update all transforms in the scene system to match the physics simulation.
 		m_scene_system.get_current_scene_entities().foreach([&](Component::Collider& collider, Component::Transform& transform)
 		{
-			transform.m_position    = get_position(collider.m_physics_system_handle.value());
-			transform.m_orientation = get_rotation(collider.m_physics_system_handle.value());
+			if (collider.m_physics_system_handle)
+			{
+				transform.m_position    = get_position(collider.m_physics_system_handle.value());
+				transform.m_orientation = get_rotation(collider.m_physics_system_handle.value());
+			}
 		});
 	}
 
@@ -175,7 +183,8 @@ namespace System
 	{
 		std::unique_ptr<JPH::ShapeSettings> body_shape_settings = nullptr;
 		JPH::Vec3 pos(0.0f, 0.0f, 0.0f);
-		std::visit([&body_shape_settings, &pos](auto&& arg)
+		JPH::Quat shape_rotation = JPH::Quat::sIdentity();
+		std::visit([&body_shape_settings, &pos, &shape_rotation](auto&& arg)
 		{
 			using T = std::decay_t<decltype(arg)>;
 
@@ -197,17 +206,26 @@ namespace System
 			{
 				pos = to_JPH(arg.center());
 				body_shape_settings = std::make_unique<JPH::TaperedCylinderShapeSettings>(arg.height() / 2.f, 0.f, arg.m_base_radius);
+				auto dir = glm::normalize(arg.m_top - arg.m_base);
+				shape_rotation = to_JPH(Utility::get_rotation(glm::vec3(0.f, 1.f, 0.f), dir));
 			}
 			else if constexpr (std::is_same_v<T, Geometry::Cylinder>)
 			{
 				pos = to_JPH(arg.center());
 				body_shape_settings = std::make_unique<JPH::CylinderShapeSettings>(arg.height() / 2.f, arg.m_radius);
+				auto dir = glm::normalize(arg.m_top - arg.m_base);
+				shape_rotation = to_JPH(Utility::get_rotation(glm::vec3(0.f, 1.f, 0.f), dir));
 			}
 			else if constexpr (std::is_same_v<T, Geometry::Quad>)
 			{
 				pos = to_JPH(arg.center());
-				auto plane = arg.get_plane();
-				body_shape_settings = std::make_unique<JPH::PlaneShapeSettings>(JPH::Plane{to_JPH(plane.m_normal), plane.m_distance}, new JPH::PhysicsMaterial(), arg.half_extent());
+				// Use a thin box instead of PlaneShape — PlaneShape is an infinite half-space whose AABB
+				// extends half_extent deep behind the surface, making it unsuitable for finite quads.
+				constexpr float thin_half_thickness = 0.01f;
+				float he = arg.half_extent();
+				body_shape_settings = std::make_unique<JPH::BoxShapeSettings>(JPH::Vec3(he, thin_half_thickness, he));
+				auto dir = arg.normal();
+				shape_rotation = to_JPH(Utility::get_rotation(glm::vec3(0.f, 1.f, 0.f), dir));
 			}
 			else static_assert(false, "non-exhaustive visitor!");
 		}, p_body_settings.m_shape);
@@ -218,13 +236,16 @@ namespace System
 		auto body_create_settings = JPH::BodyCreationSettings(
 			body_shape_settings.release(), // Transfer ownership to BodyCreationSettings, Jolt will take care of deleting it.
 			pos,
-			to_JPH(p_body_settings.m_rotation),
+			to_JPH(p_body_settings.m_rotation) * shape_rotation,
 			to_JPH(p_body_settings.m_motion_type),
 			p_body_settings.m_motion_type == BodySettings::MotionType::Static ? Layers::NON_MOVING : Layers::MOVING);
 		body_create_settings.mUserData = static_cast<JPH::uint64>(p_entity.ID);
 
 		auto& body_interface = get_body_interface_no_lock();
-		auto body_ID = body_interface.CreateAndAddBody(body_create_settings, JPH::EActivation::DontActivate);
+		auto activation = (p_body_settings.m_motion_type == BodySettings::MotionType::Static)
+			? JPH::EActivation::DontActivate
+			: JPH::EActivation::Activate;
+		auto body_ID = body_interface.CreateAndAddBody(body_create_settings, activation);
 		ASSERT_THROW(!body_ID.IsInvalid(), "Failed to create physics body for entity ID {}", p_entity.ID);
 
 		return PhysicsSystemHandle(this, body_ID);

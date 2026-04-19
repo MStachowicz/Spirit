@@ -118,7 +118,7 @@ namespace OpenGL
 		{
 			entities.foreach([&](Component::DirectionalLight& p_light)
 			{
-				light_proj_view = p_light.get_view_proj(scene.m_bound);
+				light_proj_view = p_light.get_view_proj(scene.m_rendered_bounds);
 				return;
 			});
 		}
