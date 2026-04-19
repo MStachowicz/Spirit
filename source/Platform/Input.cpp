@@ -14,6 +14,7 @@ namespace Platform
 	Input::Input() noexcept
 		: m_keys_pressed{false}
 		, m_mouse_buttons_pressed{false}
+		, m_modifiers_pressed{false}
 		, m_cursor_position{0.f, 0.f} // Initial value set in Window constructor.
 		, m_cursor_delta{0.f, 0.f}
 		, m_cursor_mode{CursorMode::Normal}

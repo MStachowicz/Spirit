@@ -3,6 +3,7 @@
 #include "GridRenderer.hpp"
 #include "ParticleRenderer.hpp"
 #include "PhongRenderer.hpp"
+#include "SelectionRenderer.hpp"
 #include "Shader.hpp"
 #include "ShadowMapper.hpp"
 #include "Types.hpp"
@@ -15,6 +16,12 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include <span>
+
+namespace ECS
+{
+	class Entity;
+}
 namespace System
 {
 	class AssetManager;
@@ -57,6 +64,7 @@ namespace OpenGL
 		ParticleRenderer m_particle_renderer;
 		GridRenderer m_grid_renderer;
 		ShadowMapper m_shadow_mapper;
+		SelectionRenderer m_selection_renderer;
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;
 		Data::Mesh m_screen_quad;
@@ -76,7 +84,7 @@ namespace OpenGL
 		OpenGLRenderer(System::AssetManager& p_asset_manager, System::SceneSystem& p_scene_system) noexcept;
 
 		// Draw the current state of the ECS.
-		void draw(const DeltaTime& delta_time, FBO& target_FBO);
+		void draw(const DeltaTime& delta_time, FBO& target_FBO, std::span<const ECS::Entity> p_selected_entities = {});
 		void draw_UI();
 		void reset_debug_options();
 		void reload_shaders();

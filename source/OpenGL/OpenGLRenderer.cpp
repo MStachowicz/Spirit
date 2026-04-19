@@ -94,7 +94,7 @@ namespace OpenGL
 		LOG("[OPENGL] Constructed new OpenGLRenderer instance");
 	}
 
-	void OpenGLRenderer::draw(const DeltaTime& delta_time, FBO& target_FBO)
+	void OpenGLRenderer::draw(const DeltaTime& delta_time, FBO& target_FBO, std::span<const ECS::Entity> p_selected_entities)
 	{
 		PERF(OpenGLRendererDraw);
 
@@ -253,6 +253,8 @@ namespace OpenGL
 
 		m_particle_renderer.update(delta_time, scene, view_info.m_view_position, m_view_properties_buffer, target_FBO);
 
+		m_selection_renderer.selection_pass(p_selected_entities, entities, m_view_properties_buffer, target_FBO);
+
 		OpenGL::DebugRenderer::render(m_scene_system, m_view_properties_buffer, m_phong_renderer.get_point_lights_buffer(), target_FBO);
 
 		if (m_post_processing_options.any_active())
@@ -330,6 +332,8 @@ namespace OpenGL
 				ImGui::SliderFloat("Kernel offset", &m_post_processing_options.mKernelOffset, -1.f, 1.f);
 			if (!post_processing_active) ImGui::EndDisabled();
 		}
+
+		m_selection_renderer.draw_UI();
 	}
 
 	void OpenGLRenderer::reset_debug_options()
@@ -353,5 +357,6 @@ namespace OpenGL
 		m_phong_renderer.reload_shaders();
 		m_grid_renderer.reload_shaders();
 		m_shadow_mapper.reload_shaders();
+		m_selection_renderer.reload_shaders();
 	}
 } // namespace OpenGL

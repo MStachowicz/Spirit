@@ -116,16 +116,26 @@ namespace UI
 						auto cursor_ray           = Utility::get_cursor_ray(m_viewport_pane.m_cursor_pos_content, m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						m_debug_selection_ray     = cursor_ray;
 
+						const bool ctrl_held = m_input.is_modifier_down(Platform::Modifier::Control);
 						if (auto ent = m_physics_system.cast_ray(cursor_ray))
 						{
-							// If the entity is not already selected, select it.
-							auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), ent.value());
-							if (it == m_selected_entities.end())
+							if (ctrl_held)
+							{
+								// Ctrl held: toggle this entity in/out of the selection.
+								auto it = std::find(m_selected_entities.begin(), m_selected_entities.end(), ent.value());
+								if (it == m_selected_entities.end())
+									select_entity(ent.value());
+								else
+									deselect_entity(ent.value());
+							}
+							else
+							{
+								// No Ctrl: replace the entire selection with only this entity.
+								deselect_all_entity();
 								select_entity(ent.value());
-							else// If the entity is already selected, deselect it.
-								deselect_entity(ent.value());
+							}
 						}
-						else
+						else if (!ctrl_held)
 							deselect_all_entity();
 					}
 					break;
@@ -329,6 +339,8 @@ namespace UI
 					{
 						if (m_state == State::Playing || m_state == State::CameraTesting)
 							set_state(State::Editing);
+						else if (!m_selected_entities.empty())
+							deselect_all_entity();
 						else
 							m_window.request_close();
 					}
@@ -361,8 +373,8 @@ namespace UI
 		if (it == m_selected_entities.end())
 		{
 			m_selected_entities.push_back(p_entity);
-			m_entity_to_draw_info_for = p_entity;
-			LOG("[EDITOR] Entity {} has been selected", p_entity.ID);
+			// Only show properties popup for a single selection.
+			m_entity_to_draw_info_for = (m_selected_entities.size() == 1) ? p_entity : std::optional<ECS::Entity>{};
 		}
 	}
 	void Editor::deselect_entity(ECS::Entity& p_entity)
@@ -373,21 +385,15 @@ namespace UI
 		if (it != m_selected_entities.end())
 		{
 			m_selected_entities.erase(it);
-			if (m_entity_to_draw_info_for == p_entity)
+			// Don't reopen the popup when going from multi-select down to one.
+			if (m_selected_entities.empty())
 				m_entity_to_draw_info_for.reset();
-
-			LOG("[EDITOR] Entity {} has been deselected", p_entity.ID);
 		}
 	}
 	void Editor::deselect_all_entity()
 	{
-		if (!m_selected_entities.empty())
-		{
-			m_selected_entities.clear();
-			m_entity_to_draw_info_for.reset();
-
-			LOG("[EDITOR] Deselected all entities");
-		}
+		m_selected_entities.clear();
+		m_entity_to_draw_info_for.reset();
 	}
 
 	void Editor::set_state(State p_new_state, bool p_force /*= false*/)
@@ -619,7 +625,7 @@ namespace UI
 			ImGui::End();
 		}
 
-		m_viewport_pane.draw(p_duration_since_last_draw, m_openGL_renderer);
+		m_viewport_pane.draw(p_duration_since_last_draw, m_openGL_renderer, m_selected_entities);
 		draw_entity_properties();
 		entity_creation_popup();
 
@@ -1273,14 +1279,14 @@ namespace UI
 		, m_focused{false}
 		, m_cursor_pos_content{-1.f}
 		, m_camera{}
-		, m_FBO{{800, 600}, true, true, false}
+		, m_FBO{{800, 600}, true, true, true}
 	{
 		// TODO: Use the current scene bounds (not initialised at this point)
 		m_camera.set_orbit_point(glm::vec3(50.f, 0.f, 50.f));
 		m_camera.set_orbit_distance(75.f);
 		m_camera.set_view_direction(glm::normalize(glm::vec3(0.f, -1.f, 0.f)));
 	}
-	void Editor::ViewportPane::draw(const DeltaTime& p_delta_time, OpenGL::OpenGLRenderer& p_renderer)
+	void Editor::ViewportPane::draw(const DeltaTime& p_delta_time, OpenGL::OpenGLRenderer& p_renderer, std::span<const ECS::Entity> p_selected_entities)
 	{
 		if (open)
 		{
@@ -1301,7 +1307,7 @@ namespace UI
 				m_focused            = ImGui::IsWindowFocused(ImGuiFocusedFlags_None);
 
 				m_FBO.resize({content_size.x, content_size.y});
-				p_renderer.draw(p_delta_time, m_FBO);
+				p_renderer.draw(p_delta_time, m_FBO, p_selected_entities);
 				ImGui::Image(reinterpret_cast<ImTextureID>(reinterpret_cast<void*>(static_cast<std::intptr_t>(m_FBO.color_attachment().handle()))), content_size, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
 
 			}

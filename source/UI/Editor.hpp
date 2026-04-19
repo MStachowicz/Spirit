@@ -11,6 +11,7 @@
 #include <chrono>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -94,7 +95,7 @@ namespace UI
 			Component::TwoAxisCamera m_camera;
 			OpenGL::FBO m_FBO;
 
-			void draw(const DeltaTime& p_delta_time, OpenGL::OpenGLRenderer& p_renderer);
+			void draw(const DeltaTime& p_delta_time, OpenGL::OpenGLRenderer& p_renderer, std::span<const ECS::Entity> p_selected_entities);
 			float aspect_ratio() const
 			{
 				if (m_FBO.resolution().y == 0)
