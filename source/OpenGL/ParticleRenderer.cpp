@@ -200,7 +200,7 @@ namespace OpenGL
 						dc.set_texture("end_diffuse", p_emitter.end_texture->m_GL_texture);
 						break;
 					default:
-						ASSERT_FAIL("Unknown colour source")
+						ASSERT_FAIL("Unknown colour source");
 				}
 				switch (size_source)
 				{
@@ -212,7 +212,7 @@ namespace OpenGL
 						dc.set_uniform("end_size", p_emitter.end_size.value());
 						break;
 					default:
-						ASSERT_FAIL("Unknown size source")
+						ASSERT_FAIL("Unknown size source");
 				}
 
 				constexpr GLuint vertex_buffer_binding_point = 0;
@@ -241,7 +241,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_constant_colour_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::ConstantTexture:
 							switch (p_size_source)
@@ -251,7 +251,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_constant_texture_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::ConstantColourAndTexture:
 							switch (p_size_source)
@@ -261,7 +261,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_constant_colour_and_texture_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::VaryingColour:
 							switch (p_size_source)
@@ -271,7 +271,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_varying_colour_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::VaryingTexture:
 							switch (p_size_source)
@@ -281,7 +281,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_varying_texture_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::VaryingColourConstantTexture:
 							switch (p_size_source)
@@ -291,7 +291,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_varying_colour_constant_texture_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::ConstantColourVaryingTexture:
 							switch (p_size_source)
@@ -301,7 +301,7 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_constant_colour_varying_texture_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						case Component::ParticleEmitter::ColourSource::VaryingColourAndTexture:
 							switch (p_size_source)
@@ -311,10 +311,10 @@ namespace OpenGL
 								case Component::ParticleEmitter::SizeSource::Varying:
 									return m_particle_draw_varying_colour_and_texture_varying_size;
 								default:
-									ASSERT_FAIL("Unknown size source")
+									ASSERT_FAIL("Unknown size source");
 							}
 						default:
-							ASSERT_FAIL("Unknown colour source")
+							ASSERT_FAIL("Unknown colour source");
 					}
 				};
 

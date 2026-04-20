@@ -27,27 +27,27 @@ private:
 };
 
 // Logging is implemented via macros for two reasons.
-// 1. The syntax makes very clear the LOG is seperate to the functional code.
+// 1. The syntax makes very clear the LOG is separate to the functional code.
 // 2. It allows __VA_ARGS__ / parameter packs to be passed as the non-terminal parameter.
 //    This is required to make the defaulted source_location::current() param to be at the end.
 #ifdef Z_DEBUG
-#define LOG(...)                    { Logger::log_info(std::format(__VA_ARGS__));                                         }
-#define LOG_WARN(x, ...)  if (!(x)) { Logger::log_warning(std::format(__VA_ARGS__),     std::source_location::current()); }
-#define LOG_WARN_NO_LOCATION(...)   { Logger::log_warning_no_location(std::format(__VA_ARGS__));                          }
-#define LOG_ERROR(x, ...) if (!(x)) { Logger::log_error(std::format(__VA_ARGS__),       std::source_location::current()); }
-#define LOG_ERROR_NO_LOCATION(...)  { Logger::log_error_no_location(std::format(__VA_ARGS__));                            }
-#define ASSERT(x, ...)    if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
+#define LOG(...)                    do { Logger::log_info(std::format(__VA_ARGS__));                                         } while(0)
+#define LOG_WARN(x, ...)  if (!(x)) do { Logger::log_warning(std::format(__VA_ARGS__),     std::source_location::current()); } while(0)
+#define LOG_WARN_NO_LOCATION(...)   do { Logger::log_warning_no_location(std::format(__VA_ARGS__));                          } while(0)
+#define LOG_ERROR(x, ...) if (!(x)) do { Logger::log_error(std::format(__VA_ARGS__),       std::source_location::current()); } while(0)
+#define LOG_ERROR_NO_LOCATION(...)  do { Logger::log_error_no_location(std::format(__VA_ARGS__));                            } while(0)
+#define ASSERT(x, ...)    if (!(x)) do { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); } while(0)
 #else
-#define LOG(...)                    (void)0;
-#define LOG_WARN(x, ...)            (void)0;
-#define LOG_ERROR(x, ...)           (void)0;
-#define LOG_WARN_NO_LOCATION(...)   (void)0;
-#define LOG_ERROR_NO_LOCATION(...)  (void)0;
-#define ASSERT(x, ...)              (void)0;
+#define LOG(...)                    do {} while(0)
+#define LOG_WARN(x, ...)            do {} while(0)
+#define LOG_ERROR(x, ...)           do {} while(0)
+#define LOG_WARN_NO_LOCATION(...)   do {} while(0)
+#define LOG_ERROR_NO_LOCATION(...)  do {} while(0)
+#define ASSERT(x, ...)              do {} while(0)
 #endif
 
-#define ASSERT_THROW(x, ...) if (!(x)) { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); }
-#define ASSERT_FAIL(...)               { Logger::assert_fail(std::format(__VA_ARGS__), std::source_location::current());     }
+#define ASSERT_THROW(x, ...) if (!(x)) do { Logger::assert_fail(#x, std::format(__VA_ARGS__), std::source_location::current()); } while(0)
+#define ASSERT_FAIL(...)               do { Logger::assert_fail(std::format(__VA_ARGS__), std::source_location::current());     } while(0)
 
 
 #if defined(_MSC_VER)

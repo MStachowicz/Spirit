@@ -29,8 +29,8 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 
 	LOG("Target physics ticks per second: 1/{} ({}ms)", physics_ticks_per_second, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(physics_timestep).count());
 	LOG("Target input ticks per second:   1/{} ({}ms)", input_ticks_per_second,   std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(input_timestep).count());
-	if (render_rate_unlimited) LOG("Target render ticks per second:  No limit (unlimited framerate)")
-	else                       LOG("Target render ticks per second:  1/{} ({}ms)", render_ticks_per_second, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(render_timestep).count())
+	if (render_rate_unlimited) LOG("Target render ticks per second:  No limit (unlimited framerate)");
+	else                       LOG("Target render ticks per second:  1/{} ({}ms)", render_ticks_per_second, std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(render_timestep).count());
 
 	Duration duration_since_last_physics_tick = Duration::zero(); // Accumulated time since the last physics update.
 	Duration duration_since_last_render_tick  = Duration::zero(); // Accumulated time since the last render.
@@ -115,7 +115,7 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 		LOG("Total physics updates: {}", m_physics_system->m_update_count);
 		LOG("Averaged physics updates per second: {}/s (target: {}/s)", physics_FPS, physics_ticks_per_second);
 		LOG("Total rendered frames: {}", m_editor.m_draw_count);
-		if (render_rate_unlimited) LOG("Averaged render frames per second: {}/s (No limit)", render_FPS)
+		if (render_rate_unlimited) LOG("Averaged render frames per second: {}/s (No limit)", render_FPS);
 		else                       LOG("Averaged render frames per second: {}/s (target: {}/s)", render_FPS, render_ticks_per_second);
 
 		LOG("Total input updates: {}", m_input_system.m_update_count);
