@@ -26,6 +26,7 @@
 
 #include "Utility/Logger.hpp"
 #include "Utility/Performance.hpp"
+#include "Utility/Screenshot.hpp"
 #include "Utility/Utility.hpp"
 
 #include "imgui.h"
@@ -67,6 +68,7 @@ namespace UI
 		, m_show_selection_ray{false}
 		, m_debug_selection_ray{std::nullopt}
 		, pie_chart_node_index{std::nullopt}
+		, m_screenshot_pending{false}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
@@ -112,6 +114,10 @@ namespace UI
 				{
 					if (p_action == Platform::Action::Press)
 					{
+						// If cursor pos has negative coordinates, it means the cursor is in the viewport but outside the content area (e.g. in the letterbox area when the viewport is not fullscreen). In this case we should not select anything.
+						if (m_viewport_pane.m_cursor_pos_content.x < 0.f || m_viewport_pane.m_cursor_pos_content.y < 0.f)
+							break;
+
 						auto view_info            = m_viewport_pane.view_information();
 						auto cursor_ray           = Utility::get_cursor_ray(m_viewport_pane.m_cursor_pos_content, m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						m_debug_selection_ray     = cursor_ray;
@@ -148,8 +154,8 @@ namespace UI
 						auto view_info   = m_scene_system.get_current_scene_view_info();
 						auto cursor_ray  = Utility::get_cursor_ray(m_input.cursor_position(), m_viewport_pane.m_FBO.resolution(), view_info.m_view_position, view_info.m_projection, view_info.m_view);
 						auto floor_plane = Geometry::Plane{glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)};
-						if ((m_cursor_intersection = Geometry::get_intersection(cursor_ray, floor_plane)))
-							m_panes_to_display.add_entity_popup = true;
+						m_cursor_intersection = Geometry::get_intersection(cursor_ray, floor_plane);
+						m_panes_to_display.add_entity_popup = true;
 					}
 
 					break;
@@ -355,6 +361,15 @@ namespace UI
 
 				break;
 			}
+			case Platform::Key::F2:
+			{
+				if (p_action == Platform::Action::Release)
+				{
+					if (!Utility::screenshot_directory().empty())
+						m_screenshot_pending = true;
+				}
+				break;
+			}
 			case Platform::Key::F11:
 			{
 				if (p_action == Platform::Action::Release)
@@ -448,6 +463,31 @@ namespace UI
 			return m_viewport_pane.view_information();
 		else
 			return {};
+	}
+
+	void Editor::end_frame()
+	{
+		if (m_screenshot_pending)
+		{
+			m_screenshot_pending = false;
+			auto& dir = Utility::screenshot_directory();
+			if (!dir.empty())
+			{
+				auto pixels = OpenGL::FBO::default_framebuffer().read_pixels();
+				if (!pixels.empty())
+				{
+					const auto resolution = OpenGL::FBO::default_framebuffer().resolution();
+					Utility::save_pixels_to_file(
+						dir,
+						pixels,
+						static_cast<int>(resolution.x),
+						static_cast<int>(resolution.y),
+						OpenGL::FBO::default_framebuffer().channel_count(),
+						true,
+						"screenshot");
+				}
+			}
+		}
 	}
 
 	void Editor::draw(const DeltaTime& p_duration_since_last_draw)
@@ -1112,65 +1152,71 @@ namespace UI
 		ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y), ImGuiCond_Appearing);
 		if (ImGui::BeginPopup("Create entity"))
 		{
-			ASSERT(m_cursor_intersection.has_value(), "Cursor intersection should have a value when the entity creation popup is open.");
+			// Close the popup if the user presses any mouse button outside it (e.g. to pan or rotate the camera).
+			if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows)
+				&& (ImGui::IsMouseClicked(ImGuiMouseButton_Middle) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)))
+				ImGui::CloseCurrentPopup();
 
-			if (ImGui::BeginMenu("Add"))
+			if (m_cursor_intersection.has_value())
 			{
-				if (ImGui::BeginMenu("Shape"))
+				if (ImGui::BeginMenu("Add"))
 				{
-					if (ImGui::Button("Cube"))
+					if (ImGui::BeginMenu("Shape"))
 					{
-						m_scene_system.get_current_scene_entities().add_entity(
-							Component::Label{"Cube"},
-							Component::Transform{*m_cursor_intersection},
-							Component::Mesh{m_asset_manager.m_cube},
-							Component::Collider{Geometry::Cuboid{*m_cursor_intersection}});
+						if (ImGui::Button("Cube"))
+						{
+							m_scene_system.get_current_scene_entities().add_entity(
+							    Component::Label{"Cube"},
+							    Component::Transform{*m_cursor_intersection},
+							    Component::Mesh{m_asset_manager.m_cube},
+							    Component::Collider{Geometry::Cuboid{*m_cursor_intersection}});
+						}
+						else if (ImGui::Button("Terrain"))
+						{
+							m_scene_system.get_current_scene_entities().add_entity(
+							    Component::Label{"Terrain"},
+							    Component::Transform{*m_cursor_intersection},
+							    Component::Terrain{5.f});
+						}
+						ImGui::EndMenu();
 					}
-					else if (ImGui::Button("Terrain"))
+					if (ImGui::BeginMenu("Light"))
 					{
-						m_scene_system.get_current_scene_entities().add_entity(
-							Component::Label{"Terrain"},
-							Component::Transform{*m_cursor_intersection},
-							Component::Terrain{5.f});
+						if (ImGui::Button("Point light"))
+						{
+							m_scene_system.get_current_scene_entities().add_entity(
+							    Component::Label{"Light"},
+							    Component::Transform{*m_cursor_intersection},
+							    Component::PointLight{*m_cursor_intersection});
+						}
+						ImGui::EndMenu();
 					}
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Light"))
-				{
-					if (ImGui::Button("Point light"))
+					if (ImGui::BeginMenu("Particle"))
 					{
-						m_scene_system.get_current_scene_entities().add_entity(
-							Component::Label{"Light"},
-							Component::Transform{*m_cursor_intersection},
-							Component::PointLight{*m_cursor_intersection});
-					}
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Particle"))
-				{
-					if (ImGui::Button("Smoke"))
-					{
-						auto emitter = Component::ParticleEmitter{m_asset_manager.get_texture(Config::Texture_Directory / "smoke.png")};
-						emitter.emit_position_min  = *m_cursor_intersection;
-						emitter.emit_position_max  = *m_cursor_intersection;
-						emitter.start_colour       = glm::vec4(1.f);
-						emitter.end_colour         = glm::vec4(0.f);
-						emitter.start_size         = 0.15f;
-						emitter.end_size           = 5.f;
-						emitter.spawn_per_second   = 50.f;
-						emitter.lifetime_min       = DeltaTime{10.f};
-						emitter.lifetime_max       = DeltaTime{20.f};
-						emitter.max_particle_count = 65'000;
-						emitter.acceleration       = glm::vec3(0.f, -0.05f, 0.f);
+						if (ImGui::Button("Smoke"))
+						{
+							auto emitter = Component::ParticleEmitter{m_asset_manager.get_texture(Config::Texture_Directory / "smoke.png")};
+							emitter.emit_position_min  = *m_cursor_intersection;
+							emitter.emit_position_max  = *m_cursor_intersection;
+							emitter.start_colour       = glm::vec4(1.f);
+							emitter.end_colour         = glm::vec4(0.f);
+							emitter.start_size         = 0.15f;
+							emitter.end_size           = 5.f;
+							emitter.spawn_per_second   = 50.f;
+							emitter.lifetime_min       = DeltaTime{10.f};
+							emitter.lifetime_max       = DeltaTime{20.f};
+							emitter.max_particle_count = 65'000;
+							emitter.acceleration       = glm::vec3(0.f, -0.05f, 0.f);
 
-						m_scene_system.get_current_scene_entities().add_entity(
-							Component::Label{"Particle Emitter"},
-							Component::Transform{*m_cursor_intersection},
-							std::move(emitter));
+							m_scene_system.get_current_scene_entities().add_entity(
+							    Component::Label{"Particle Emitter"},
+							    Component::Transform{*m_cursor_intersection},
+							    std::move(emitter));
+						}
+						ImGui::EndMenu();
 					}
 					ImGui::EndMenu();
 				}
-				ImGui::EndMenu();
 			}
 			auto& debug_options = OpenGL::DebugRenderer::m_debug_options;
 
@@ -1180,6 +1226,29 @@ namespace UI
 				m_openGL_renderer.m_draw_axes = !m_openGL_renderer.m_draw_axes;
 			if (ImGui::MenuItem(debug_options.m_show_bounding_box ? "Hide bounding box" : "Show bounding box"))
 				debug_options.m_show_bounding_box = !debug_options.m_show_bounding_box;
+			ImGui::Separator();
+			if (ImGui::MenuItem("Save as PNG"))
+			{
+				auto& dir = Utility::screenshot_directory();
+				if (!dir.empty())
+				{
+					auto pixels = m_viewport_pane.m_FBO.read_pixels();
+					if (!pixels.empty())
+					{
+						const auto resolution = m_viewport_pane.m_FBO.resolution();
+						Utility::save_pixels_to_file(
+							dir,
+							pixels,
+							static_cast<int>(resolution.x),
+							static_cast<int>(resolution.y),
+							m_viewport_pane.m_FBO.channel_count(),
+							true,
+							"viewport");
+					}
+				}
+				else
+					log_error("Screenshot cancelled: Screenshot directory not set.");
+			}
 			ImGui::EndPopup();
 		}
 	}

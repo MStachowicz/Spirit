@@ -3,6 +3,7 @@
 #include "glm/vec4.hpp"
 
 #include <filesystem>
+#include <string_view>
 
 namespace Platform
 {
@@ -29,6 +30,12 @@ namespace Platform
 		FileDialogFilter p_filter,
 		const char* p_title,
 		const std::filesystem::path& p_start_path = {});
+
+	// Open a native folder picker dialog.
+	//@param p_title The title of the dialog.
+	//@param p_start_path The initial directory to open the dialog in. If empty, the default directory is used.
+	//@return The path to the folder selected by the user. If the user cancels the dialog, an empty path is returned.
+	std::filesystem::path folder_dialog(std::string_view p_title, const std::filesystem::path& p_start_path = {});
 
 	class Core // Working name
 	{

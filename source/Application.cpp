@@ -94,6 +94,7 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 			OpenGL::State::Get().bind_FBO(0);
 
 			m_window.end_ImGui_frame();
+			m_editor.end_frame();
 			m_window.swap_buffers();
 
 			duration_since_last_render_tick = Duration::zero();

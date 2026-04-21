@@ -140,6 +140,8 @@ namespace UI
 
 		std::optional<size_t> pie_chart_node_index; // The current performance node being drawn. Nullptr = root.
 
+		bool m_screenshot_pending; // Whether a screenshot should be taken at the end of this frame.
+
 	public:
 		int m_draw_count;
 		DeltaTime m_time_to_average_over; // The time over which to average out the fps.
@@ -179,6 +181,8 @@ namespace UI
 		bool is_playing() const { return m_state == State::Playing; }
 
 		void draw(const DeltaTime& p_duration_since_last_draw);
+		// Called after ImGui has rendered but before buffer swap. Handles deferred operations like screenshots.
+		void end_frame();
 		//@return ViewInformation representing the state of the camera if editor is active, otherwise nullopt.
 		std::optional<Component::ViewInformation> get_editor_view_info();
 

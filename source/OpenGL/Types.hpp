@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <vector>
@@ -359,5 +361,13 @@ namespace OpenGL
 		void set_clear_colour(const glm::vec4& p_clear_colour) { m_clear_colour = p_clear_colour; }
 		bool is_complete() const;
 		const glm::uvec2& resolution() const { return m_resolution; }
+
+		// FBO colour readback currently assumes an RGBA colour attachment.
+		// If the attachment format becomes configurable, derive this from the texture format instead.
+		static constexpr uint8_t ColourAttachmentChannelCount = 4;
+		uint8_t channel_count() const { return ColourAttachmentChannelCount; }
+
+		// Read the RGBA colour buffer into CPU memory in native OpenGL bottom-to-top row order.
+		std::vector<std::byte> read_pixels() const;
 	};
 } // namespace OpenGL

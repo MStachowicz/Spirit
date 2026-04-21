@@ -5,6 +5,7 @@
 
 #include "glad/glad.h"
 
+#include <cstring>
 #include <utility>
 
 using Buffer = OpenGL::Buffer;
@@ -651,5 +652,32 @@ namespace OpenGL
 	{
 		// https://www.khronos.org/opengl/wiki/Framebuffer_Object#Framebuffer_Completeness
 		return glCheckNamedFramebufferStatus(m_handle, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+	}
+
+	std::vector<std::byte> FBO::read_pixels() const
+	{
+		const int width    = static_cast<int>(m_resolution.x);
+		const int height   = static_cast<int>(m_resolution.y);
+		const int channels = channel_count();
+
+		if (width <= 0 || height <= 0)
+			return {};
+
+		std::vector<std::byte> pixels(static_cast<size_t>(width) * height * channels);
+
+		if (is_default_framebuffer)
+		{
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+			glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		}
+		else if (m_colour_attachment)
+		{
+			glGetTextureImage(color_attachment().handle(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
+				static_cast<GLsizei>(pixels.size()), pixels.data());
+		}
+		else
+			return {};
+
+		return pixels;
 	}
 } // namespace OpenGL

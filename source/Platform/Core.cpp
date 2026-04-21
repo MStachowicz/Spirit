@@ -8,6 +8,7 @@
 
 #ifdef _WIN32
 	#include <Windows.h> // MSVC requires Windows.h to be included before glfw headers
+	#include <shobjidl.h>
 #endif
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -237,6 +238,86 @@ namespace Platform
 		#else
 			(void)p_type; (void)p_filter; (void)p_title; (void)p_start_path;
 			ASSERT_FAIL("file_dialog not implemented for this platform");
+		#endif
+	}
+
+	std::filesystem::path folder_dialog(std::string_view p_title, const std::filesystem::path& p_start_path)
+	{
+		#ifdef _WIN32
+			std::filesystem::path selected_path;
+
+			HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+			if (FAILED(hr))
+				return selected_path;
+
+			IFileOpenDialog* pDialog = nullptr;
+			hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pDialog));
+			if (SUCCEEDED(hr))
+			{
+				pDialog->SetOptions(FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+
+				// Convert title to wide string for SetTitle.
+				if (p_title.empty())
+					pDialog->SetTitle(L"");
+				else
+				{
+					const int title_len = MultiByteToWideChar(CP_UTF8, 0, p_title.data(), static_cast<int>(p_title.size()), NULL, 0);
+					if (title_len > 0)
+					{
+						std::wstring wide_title(title_len, L'\0');
+						MultiByteToWideChar(CP_UTF8, 0, p_title.data(), static_cast<int>(p_title.size()), wide_title.data(), title_len);
+						pDialog->SetTitle(wide_title.c_str());
+					}
+					else
+					{
+						pDialog->SetTitle(L"");
+					}
+				}
+
+				// Set the initial directory if provided.
+				if (!p_start_path.empty())
+				{
+					// Normalize to native Windows separators before passing the path to the shell API.
+					auto start_path = p_start_path;
+					start_path.make_preferred();
+
+					if (!std::filesystem::exists(start_path))
+						std::filesystem::create_directories(start_path);
+
+					IShellItem* pStartFolder = nullptr;
+					hr = SHCreateItemFromParsingName(start_path.c_str(), NULL, IID_IShellItem, reinterpret_cast<void**>(&pStartFolder));
+					if (SUCCEEDED(hr))
+					{
+						pDialog->SetFolder(pStartFolder);
+						pStartFolder->Release();
+					}
+				}
+
+				hr = pDialog->Show(NULL);
+				if (SUCCEEDED(hr))
+				{
+					IShellItem* pItem = nullptr;
+					hr = pDialog->GetResult(&pItem);
+					if (SUCCEEDED(hr))
+					{
+						LPWSTR pPath = nullptr;
+						hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pPath);
+						if (SUCCEEDED(hr))
+						{
+							selected_path = std::filesystem::path(pPath);
+							CoTaskMemFree(pPath);
+						}
+						pItem->Release();
+					}
+				}
+				pDialog->Release();
+			}
+
+			CoUninitialize();
+			return selected_path;
+		#else
+			(void)p_title; (void)p_start_path;
+			ASSERT_FAIL("folder_dialog not implemented for this platform");
 		#endif
 	}
 } // namespace Platform

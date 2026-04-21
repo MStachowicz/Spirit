@@ -362,6 +362,8 @@ source/Utility/Performance.hpp
 source/Utility/PerlinNoise.hpp
 source/Utility/Serialise.hpp
 source/Utility/Stopwatch.hpp
+source/Utility/Screenshot.hpp
+source/Utility/Screenshot.cpp
 source/Utility/Utility.cpp
 source/Utility/Utility.hpp
 )
@@ -375,6 +377,8 @@ PUBLIC Geometry
 PUBLIC OpenGL
 PUBLIC TracyClient
 PRIVATE UI # Logger.cpp uses Editor for output
+PRIVATE Platform # Screenshot.cpp uses folder_dialog
+PRIVATE STB
 )
 target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 # Utility end -----------------------------------------------------------------------------------------------------------------------------
