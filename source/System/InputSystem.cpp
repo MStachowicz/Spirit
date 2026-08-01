@@ -7,17 +7,15 @@
 #include "ECS/Storage.hpp"
 #include "Platform/Core.hpp"
 #include "Platform/Input.hpp"
-#include "Platform/Window.hpp"
 
 #include "Utility/Logger.hpp"
 #include "Utility/Performance.hpp"
 
 namespace System
 {
-	InputSystem::InputSystem(Platform::Input& p_input, Platform::Window& p_window, System::SceneSystem& p_scene_system)
+	InputSystem::InputSystem(Platform::Input& p_input, System::SceneSystem& p_scene_system)
 		: m_update_count{0}
 		, m_input{p_input}
-		, m_window{p_window}
 		, m_scene_system{p_scene_system}
 	{}
 

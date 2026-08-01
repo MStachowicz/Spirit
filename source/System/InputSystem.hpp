@@ -10,8 +10,6 @@ namespace Platform
 	enum class MouseButton : uint8_t;
 	enum class Action : uint8_t;
 	enum class CursorMode : uint8_t;
-
-	class Window;
 	class Input;
 }
 namespace System
@@ -23,14 +21,12 @@ namespace System
 	class InputSystem
 	{
 	public:
-		InputSystem(Platform::Input& p_input, Platform::Window& p_window, SceneSystem& p_scene_system);
+		InputSystem(Platform::Input& p_input, SceneSystem& p_scene_system);
 		void update(const DeltaTime& p_delta_time);
 
 		size_t m_update_count;
 	private:
 		Platform::Input& m_input;
-		Platform::Window& m_window;
-
 		SceneSystem& m_scene_system;
 	};
 }

@@ -7,7 +7,7 @@ Application::Application(Platform::Input& p_input, Platform::Window& p_window) n
 	, m_scene_system{m_asset_manager}
 	, m_openGL_renderer{m_asset_manager, m_scene_system}
 	, m_physics_system{std::make_unique<System::PhysicsSystemJolt>(m_scene_system)}
-	, m_input_system{m_input, m_window, m_scene_system}
+	, m_input_system{m_input, m_scene_system}
 	, m_terrain_system{}
 	, m_editor{m_input, m_window, m_asset_manager, m_scene_system, *m_physics_system.get(), m_openGL_renderer}
 	, maxFrameDelta{std::chrono::milliseconds(250)}
