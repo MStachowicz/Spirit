@@ -439,17 +439,21 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	# STB end -----------------------------------------------------------------------------------------------------------------------------
 
 	# ASSIMP ------------------------------------------------------------------------------------------------------------------------------
-	set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
 	if (WIN32)
+		set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
 		# Remove all supported filetypes for import and export.
 		# Enable only OBJ files for import.
 		set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
 		set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
 		set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
 		set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-	else()
+	elseif (APPLE)
+		set(ASSIMP_BUILD_ZLIB OFF CACHE BOOL "" FORCE)
 		set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
-	endif (WIN32)
+	else()
+		set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+		set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+	endif()
 
 	add_subdirectory(source/External/ASSIMP source/External/ASSIMP SYSTEM)
 	# ASSIMP end --------------------------------------------------------------------------------------------------------------------------

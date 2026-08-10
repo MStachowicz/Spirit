@@ -26,7 +26,7 @@ namespace Platform
 		// Creates a OS window of p_width and p_height.
 		// Takes an Input and sets its GLFW callback functions. Input depends on a Window.
 		// Window construction requires GLFW and ImGui to be initialised before.
-		Window(const glm::vec2& p_screen_factor, Input& p_input_state) noexcept;
+		Window(const glm::vec2& p_screen_factor, Input& p_input_state);
 		~Window() noexcept;
 
 		void set_VSync(bool p_enabled);

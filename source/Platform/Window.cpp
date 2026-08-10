@@ -17,7 +17,7 @@
 
 namespace Platform
 {
-	Window::Window(const glm::vec2& p_screen_factor, Input& p_input_state) noexcept
+	Window::Window(const glm::vec2& p_screen_factor, Input& p_input_state)
 		: m_last_position_windowed{0, 0} // init in body via set_position
 		, m_last_size_windowed{0, 0}     // init in body
 		, m_fullscreen{false}
