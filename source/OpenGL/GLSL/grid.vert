@@ -1,19 +1,21 @@
 #version 460 core
 
 layout (location = 0) in vec3 VertexPosition;
-layout (location = 2) in vec4 VertexColour;
 
-layout(shared) uniform ViewProperties
+uniform mat4 invViewProj;
+
+out vec3 nearPoint;
+out vec3 rayPoint;
+
+vec3 unproject(vec2 position, float depth)
 {
-	mat4 view;
-	mat4 projection;
-	vec4 camera_position; // w component unused
-} viewProperties;
-
-out vec4 FragmentColour;
+	vec4 point = invViewProj * vec4(position, depth, 1.0);
+	return point.xyz / point.w;
+}
 
 void main()
 {
-	gl_Position    = viewProperties.projection * viewProperties.view * vec4(VertexPosition, 1.0);
-	FragmentColour = VertexColour;
+	gl_Position = vec4(VertexPosition, 1.0);
+	nearPoint = unproject(VertexPosition.xy, -1.0);
+	rayPoint = unproject(VertexPosition.xy, 0.0);
 }

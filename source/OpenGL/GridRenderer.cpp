@@ -2,49 +2,17 @@
 #include "DrawCall.hpp"
 #include "DebugRenderer.hpp"
 
+#include "Component/ViewInformation.hpp"
 #include "Utility/MeshBuilder.hpp"
+
+#include <cmath>
 
 namespace OpenGL
 {
-	Data::Mesh GridRenderer::make_grid_mesh()
+	Data::Mesh GridRenderer::make_screen_triangle()
 	{
-		constexpr int Size                        = 1000; // Used for the size and number of lines to draw.
-		constexpr float transparency              = 0.7f;
-		constexpr glm::vec4 primary_line_colour   = glm::vec4{0.5f, 0.5f, 0.5f, transparency};
-		constexpr glm::vec4 secondary_line_colour = glm::vec4{0.2f, 0.2f, 0.2f, transparency};
-		constexpr glm::vec4 red                   = glm::vec4{1.f, 0.f, 0.f, transparency};
-		constexpr glm::vec4 green                 = glm::vec4{0.f, 1.f, 0.f, transparency};
-		constexpr glm::vec4 blue                  = glm::vec4{0.f, 0.f, 1.f, transparency};
-
-		auto mb = Utility::MeshBuilder<Data::ColourVertex, PrimitiveMode::Lines>{};
-		mb.reserve((Size * 2 * 8) + 6);
-
-		{ // Cardinal axis lines
-			mb.set_colour(red);
-			mb.add_line(glm::vec3{-Size, 0.f, 0.f}, glm::vec3{Size, 0.f, 0.f});
-			mb.set_colour(green);
-			mb.add_line(glm::vec3{0.f, -Size, 0.f}, glm::vec3{0.f, Size, 0.f});
-			mb.set_colour(blue);
-			mb.add_line(glm::vec3{0.f, 0.f, -Size},  glm::vec3{0.f, 0.f, Size});
-		}
-
-		// XZ-plane lines
-		for (int i = -Size; i <= Size; i++)
-		{
-			if (i % 10 == 0)
-			{
-				mb.set_colour(primary_line_colour);
-				mb.add_line(glm::vec3{-Size, 0.f, i}, glm::vec3{Size, 0.f, i});
-				mb.add_line(glm::vec3{i, 0.f, Size},  glm::vec3{i, 0.f, -Size});
-			}
-			else if (i != 0) // Ignore 0, cardinal axis lines are added above.
-			{
-				mb.set_colour(secondary_line_colour);
-				mb.add_line(glm::vec3{-Size, 0.f, i}, glm::vec3{Size, 0.f, i});
-				mb.add_line(glm::vec3{i, 0.f, Size},  glm::vec3{i, 0.f, -Size});
-			}
-		}
-
+		auto mb = Utility::MeshBuilder<Data::ColourVertex, PrimitiveMode::Triangles>{};
+		mb.add_triangle(glm::vec3{-1.f, -1.f, 0.f}, glm::vec3{3.f, -1.f, 0.f}, glm::vec3{-1.f, 3.f, 0.f});
 		return mb.get_mesh();
 	}
 	Data::Mesh GridRenderer::make_origin_arrows_mesh()
@@ -63,19 +31,29 @@ namespace OpenGL
 
 	GridRenderer::GridRenderer() noexcept
 		: m_grid_shader{"grid"}
-		, m_grid{make_grid_mesh()}
+		, m_origin_shader{"colour"}
+		, m_screen_triangle{make_screen_triangle()}
 		, m_origin_arrows{make_origin_arrows_mesh()}
 	{}
 
-	void GridRenderer::draw(const FBO& target_FBO)
+	void GridRenderer::draw(const FBO& p_target_FBO, const Component::ViewInformation& p_view_info, const Buffer& p_view_properties)
 	{
+		const auto view_projection = p_view_info.m_projection * glm::mat4(glm::mat3(p_view_info.m_view));
+		const auto inverse_view_projection = glm::inverse(view_projection);
+		const auto far_point = inverse_view_projection * glm::vec4(0.f, 0.f, 1.f, 1.f);
+
 		{
 			DrawCall dc;
 			dc.m_cull_face_enabled     = false;
 			dc.m_depth_test_type       = DepthTestType::Less;
 			dc.m_depth_test_enabled    = true;
-			dc.m_write_to_depth_buffer = true;
-			dc.submit(m_grid_shader, m_grid.get_VAO(), target_FBO);
+			dc.m_write_to_depth_buffer = false;
+			dc.m_blending_enabled      = true;
+			dc.set_uniform("viewProjection", view_projection);
+			dc.set_uniform("invViewProj", inverse_view_projection);
+			dc.set_uniform("cameraPosition", glm::vec3(p_view_info.m_view_position));
+			dc.set_uniform("farClip", glm::length(glm::vec3(far_point)) / std::abs(far_point.w));
+			dc.submit(m_grid_shader, m_screen_triangle.get_VAO(), p_target_FBO);
 		}
 		if (OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows)
 		{
@@ -84,11 +62,14 @@ namespace OpenGL
 			dc.m_depth_test_type       = DepthTestType::Less;
 			dc.m_depth_test_enabled    = true;
 			dc.m_write_to_depth_buffer = true;
-			dc.submit(m_grid_shader, m_origin_arrows.get_VAO(), target_FBO);
+			dc.set_UBO("ViewProperties", p_view_properties);
+			dc.set_uniform("model", glm::identity<glm::mat4>());
+			dc.submit(m_origin_shader, m_origin_arrows.get_VAO(), p_target_FBO);
 		}
 	}
 	void GridRenderer::reload_shaders()
 	{
 		m_grid_shader.reload();
+		m_origin_shader.reload();
 	}
 } // namespace OpenGL

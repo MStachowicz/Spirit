@@ -58,6 +58,7 @@ PRIVATE OpenGL
 PRIVATE Geometry
 PRIVATE GLM
 PRIVATE ImGui
+PRIVATE glad
 )
 target_compile_options(Test PRIVATE ${WARNING_COMPILE_FLAGS})
 include(CTest)

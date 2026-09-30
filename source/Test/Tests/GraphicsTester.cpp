@@ -4,10 +4,18 @@
 #include "OpenGL/Shader.hpp"
 #include "OpenGL/GLState.hpp"
 #include "OpenGL/DrawCall.hpp"
+#include "OpenGL/GridRenderer.hpp"
+#include "OpenGL/DebugRenderer.hpp"
+
+#include "Component/ViewInformation.hpp"
 
 #include "Platform/Core.hpp"
 #include "Platform/Input.hpp"
 #include "Platform/Window.hpp"
+
+#include <glad/glad.h>
+
+#include <algorithm>
 
 namespace Test
 {
@@ -185,6 +193,106 @@ namespace Test
 					}
 				}
 			}
+		}
+
+		// Renders the procedural grid into a 128x128 offscreen framebuffer using the GPU.
+		// Checks visibility and adaptive density across perspective/orthographic zoom levels,
+		// including positions beyond the old finite grid boundary.
+		// Verifies scene depth occludes the grid while grid rendering leaves depth unchanged.
+		// Covers horizon, parallel-ray, looking-away and underside views, plus shader reload.
+		// These catch shader and render-state regressions that a C++ build cannot detect.
+		// Pixel counts allow driver variation; they do not prove visual quality or performance.
+		{SCOPE_SECTION("Procedural grid")
+			constexpr unsigned int resolution = 128;
+			constexpr size_t pixel_count = resolution * resolution;
+			OpenGL::FBO target({resolution, resolution}, true, true, false);
+			target.set_clear_colour(glm::vec4(0.f, 0.f, 0.f, 1.f));
+			OpenGL::GridRenderer grid;
+			OpenGL::Buffer view_properties({OpenGL::BufferStorageFlag::DynamicStorageBit}, sizeof(Component::ViewInformation));
+			const bool show_origin_arrows = OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows;
+			OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows = false;
+
+			auto visible_pixels = [](const std::vector<std::byte>& p_pixels)
+			{
+				size_t count = 0;
+				for (size_t offset = 0; offset < p_pixels.size(); offset += 4)
+					if (p_pixels[offset] > std::byte{2} || p_pixels[offset + 1] > std::byte{2} || p_pixels[offset + 2] > std::byte{2})
+						++count;
+				return count;
+			};
+			auto render_grid = [&](const Component::ViewInformation& p_view, float p_scene_depth = 1.f)
+			{
+				view_properties.set_data(p_view, 0);
+				target.clear();
+				glClearTexImage(target.depth_attachment().handle(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, &p_scene_depth);
+				grid.draw(target, p_view, view_properties);
+				return target.read_pixels();
+			};
+
+			Component::ViewInformation view;
+			view.m_view_position = glm::vec4(0.f, 100.f, 0.f, 1.f);
+			view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(0.f), glm::vec3(0.f, 0.f, -1.f));
+			view.m_projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, 0.1f, 100000.f);
+			const auto initial_view = view;
+			const auto reference_pixels = render_grid(view);
+			const auto reference_count = visible_pixels(reference_pixels);
+			CHECK_TRUE(reference_count > pixel_count / 20 && reference_count < pixel_count * 3 / 4, "Orthographic grid is visible and sparse");
+
+			std::array<float, pixel_count> depth_pixels;
+			glGetTextureImage(target.depth_attachment().handle(), 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+				static_cast<GLsizei>(sizeof(depth_pixels)), depth_pixels.data());
+			CHECK_TRUE(std::all_of(depth_pixels.begin(), depth_pixels.end(), [](float p_depth) { return p_depth == 1.f; }), "Grid does not write scene depth");
+
+			for (float extent : {0.1f, 1.f, 100.f, 1000.f, 10000.f})
+			{
+				view.m_projection = glm::ortho(-extent, extent, -extent, extent, 0.1f, 100000.f);
+				const auto count = visible_pixels(render_grid(view));
+				const auto difference = std::max(count, reference_count) - std::min(count, reference_count);
+				CHECK_TRUE(difference < pixel_count / 20, std::format("Stable grid density at orthographic extent {}", extent));
+			}
+
+			view = initial_view;
+			const auto plane_clip = view.m_projection * view.m_view * glm::vec4(0.f, 0.f, 0.f, 1.f);
+			const float plane_depth = plane_clip.z / plane_clip.w * 0.5f + 0.5f;
+			CHECK_EQUAL(visible_pixels(render_grid(view, plane_depth - 0.0001f)), 0, "Geometry in front occludes the grid");
+			CHECK_TRUE(visible_pixels(render_grid(view, plane_depth + 0.0001f)) > 0, "Geometry behind does not occlude the grid");
+
+			view.m_view_position = glm::vec4(20000.f, 100.f, 20000.f, 1.f);
+			view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(20000.f, 0.f, 20000.f), glm::vec3(0.f, 0.f, -1.f));
+			CHECK_TRUE(visible_pixels(render_grid(view)) > pixel_count / 20, "Grid continues beyond the old mesh boundary");
+
+			view.m_projection = glm::perspective(glm::radians(60.f), 1.f, 0.1f, 100000.f);
+			for (float distance : {1.f, 10.f, 10000.f})
+			{
+				view.m_view_position = glm::vec4(distance, distance, distance, 1.f);
+				view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+				const auto count = visible_pixels(render_grid(view));
+				CHECK_TRUE(count > pixel_count / 20 && count < pixel_count * 3 / 4, std::format("Readable perspective grid at distance {}", distance));
+			}
+
+			view.m_view_position = glm::vec4(0.f, 10.f, 10.f, 1.f);
+			view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(0.f, 10.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+			const auto horizon_pixels = render_grid(view);
+			CHECK_TRUE(visible_pixels(horizon_pixels) > 0, "Ground remains visible below the horizon");
+			bool sky_clear = true;
+			for (size_t offset = pixel_count * 2; offset < horizon_pixels.size(); offset += 4)
+				sky_clear &= horizon_pixels[offset] == std::byte{0} && horizon_pixels[offset + 1] == std::byte{0} && horizon_pixels[offset + 2] == std::byte{0};
+			CHECK_TRUE(sky_clear, "Grid does not render behind the camera or above the horizon");
+
+			view.m_projection = initial_view.m_projection;
+			CHECK_EQUAL(visible_pixels(render_grid(view)), 0, "Parallel orthographic rays do not render a grid");
+			view.m_view_position = initial_view.m_view_position;
+			view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(0.f, 200.f, 0.f), glm::vec3(0.f, 0.f, -1.f));
+			CHECK_EQUAL(visible_pixels(render_grid(view)), 0, "Looking away from the plane produces no grid");
+
+			view = initial_view;
+			view.m_view_position = glm::vec4(0.f, -100.f, 0.f, 1.f);
+			view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(0.f), glm::vec3(0.f, 0.f, -1.f));
+			CHECK_TRUE(visible_pixels(render_grid(view)) > 0, "Grid is visible from below");
+
+			grid.reload_shaders();
+			CHECK_TRUE(visible_pixels(render_grid(initial_view)) > 0, "Grid renders after shader reload");
+			OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows = show_origin_arrows;
 		}
 
 		Platform::Core::deinitialise_GLFW();

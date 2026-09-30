@@ -64,7 +64,7 @@ namespace OpenGL
 		, m_axis_mesh{make_axis_mesh()}
 		, m_post_processing_options{}
 		, m_draw_shadows{false}
-		, m_draw_grid{false}
+		, m_draw_grid{true}
 		, m_draw_axes{true}
 		, m_draw_terrain_nodes{false}
 		, m_draw_terrain_wireframe{false}
@@ -122,9 +122,6 @@ namespace OpenGL
 				return;
 			});
 		}
-
-		if (m_draw_grid)
-			m_grid_renderer.draw(target_FBO);
 
 		m_phong_renderer.update_light_data(scene);
 		const auto& directional_light_buffer = m_phong_renderer.get_directional_lights_buffer();
@@ -250,6 +247,9 @@ namespace OpenGL
 				dc.submit(m_terrain_shader, p_terrain.get_VAO(), target_FBO);
 			});
 		}
+
+		if (m_draw_grid)
+			m_grid_renderer.draw(target_FBO, view_info, m_view_properties_buffer);
 
 		m_particle_renderer.update(delta_time, scene, view_info.m_view_position, m_view_properties_buffer, target_FBO);
 
