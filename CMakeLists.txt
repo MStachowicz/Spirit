@@ -319,6 +319,8 @@ source/OpenGL/ShadowMapper.hpp
 source/OpenGL/ShadowMapper.cpp
 source/OpenGL/SelectionRenderer.hpp
 source/OpenGL/SelectionRenderer.cpp
+source/OpenGL/PickRenderer.hpp
+source/OpenGL/PickRenderer.cpp
 source/OpenGL/GLState.hpp
 source/OpenGL/GLState.cpp
 source/OpenGL/PhongRenderer.hpp

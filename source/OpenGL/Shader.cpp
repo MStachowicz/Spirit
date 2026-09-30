@@ -372,7 +372,7 @@ namespace OpenGL
 		{
 			std::string trimmed_line = line;
 			// trim all whitespace inside the line (spaces, tabs, newlines, etc.)
-			trimmed_line.erase(std::remove_if(trimmed_line.begin(), trimmed_line.end(), ::isspace), trimmed_line.end());
+			trimmed_line.erase(std::remove_if(trimmed_line.begin(), trimmed_line.end(), [](unsigned char c) { return std::isspace(c); }), trimmed_line.end());
 
 			if (trimmed_line.starts_with("#ifdef"))
 			{

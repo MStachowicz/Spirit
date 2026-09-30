@@ -114,8 +114,11 @@ namespace UI
 				{
 					if (p_action == Platform::Action::Press)
 					{
-						// If cursor pos has negative coordinates, it means the cursor is in the viewport but outside the content area (e.g. in the letterbox area when the viewport is not fullscreen). In this case we should not select anything.
-						if (m_viewport_pane.m_cursor_pos_content.x < 0.f || m_viewport_pane.m_cursor_pos_content.y < 0.f)
+						const auto viewport_resolution = m_viewport_pane.m_FBO.resolution();
+						if (m_viewport_pane.m_cursor_pos_content.x < 0.f
+							|| m_viewport_pane.m_cursor_pos_content.y < 0.f
+							|| m_viewport_pane.m_cursor_pos_content.x >= static_cast<float>(viewport_resolution.x)
+							|| m_viewport_pane.m_cursor_pos_content.y >= static_cast<float>(viewport_resolution.y))
 							break;
 
 						auto view_info            = m_viewport_pane.view_information();
@@ -123,7 +126,7 @@ namespace UI
 						m_debug_selection_ray     = cursor_ray;
 
 						const bool ctrl_held = m_input.is_modifier_down(Platform::Modifier::Control);
-						if (auto ent = m_physics_system.cast_ray(cursor_ray))
+						if (auto ent = m_openGL_renderer.pick_entity(m_viewport_pane.m_cursor_pos_content, viewport_resolution, view_info))
 						{
 							if (ctrl_held)
 							{
@@ -1397,12 +1400,12 @@ namespace UI
 				ImVec2 mouse_pos    = ImGui::GetMousePos();
 
 				m_cursor_pos_content = glm::vec2(mouse_pos.x - content_pos.x, mouse_pos.y - content_pos.y);
-				m_cursor_hovered     = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
 				m_focused            = ImGui::IsWindowFocused(ImGuiFocusedFlags_None);
 
 				m_FBO.resize({content_size.x, content_size.y});
 				p_renderer.draw(p_delta_time, m_FBO, p_selected_entities);
 				ImGui::Image(reinterpret_cast<ImTextureID>(reinterpret_cast<void*>(static_cast<std::intptr_t>(m_FBO.color_attachment().handle()))), content_size, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+				m_cursor_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
 
 			}
 			ImGui::PopStyleVar(2);

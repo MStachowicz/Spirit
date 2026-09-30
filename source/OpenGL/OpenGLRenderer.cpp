@@ -305,6 +305,22 @@ namespace OpenGL
 		}
 	}
 
+	std::optional<ECS::Entity> OpenGLRenderer::pick_entity(const glm::vec2& p_cursor_pos, const glm::uvec2& p_viewport_resolution, const Component::ViewInformation& p_view_info)
+	{
+		auto& entities = m_scene_system.get_current_scene_entities();
+		auto& opt      = DebugRenderer::m_debug_options;
+		m_view_properties_buffer.set_data(p_view_info, 0);
+
+		return m_pick_renderer.pick(
+			p_cursor_pos,
+			p_viewport_resolution,
+			entities,
+			m_view_properties_buffer,
+			!m_draw_terrain_nodes,
+			opt.m_light_position_scale,
+			opt.m_show_light_positions);
+	}
+
 	void OpenGLRenderer::draw_UI()
 	{
 		ImGui::Checkbox("Draw shadows",           &m_draw_shadows);
@@ -334,6 +350,7 @@ namespace OpenGL
 		}
 
 		m_selection_renderer.draw_UI();
+		m_pick_renderer.draw_UI();
 	}
 
 	void OpenGLRenderer::reset_debug_options()
@@ -358,5 +375,6 @@ namespace OpenGL
 		m_grid_renderer.reload_shaders();
 		m_shadow_mapper.reload_shaders();
 		m_selection_renderer.reload_shaders();
+		m_pick_renderer.reload_shaders();
 	}
 } // namespace OpenGL

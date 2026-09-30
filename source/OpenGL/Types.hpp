@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <variant>
 #include <vector>
 
 namespace OpenGL
@@ -304,14 +305,16 @@ namespace OpenGL
 	class FBO
 	{
 		friend class DrawCall;
+		friend class PickRenderer;
 
 		GLHandle m_handle;
 		glm::uvec2 m_resolution;
-		glm::vec4 m_clear_colour;
+		std::variant<glm::vec4, glm::ivec4, glm::uvec4> m_clear_colour;
 		std::optional<Texture> m_colour_attachment;
 		std::optional<Texture> m_depth_attachment;
 		std::optional<Texture> m_stencil_attachment;
 		std::optional<Texture> m_depth_stencil_attachment;
+		TextureInternalFormat m_colour_internal_format; // Internal format used when creating the colour attachment.
 		bool is_default_framebuffer;
 
 		//Default framebuffer constructor for FBO::default_framebuffer()
@@ -327,7 +330,8 @@ namespace OpenGL
 		//@param p_colour_attachment Whether to create a colour attachment for the FBO.
 		//@param p_depth_attachment Whether to create a depth attachment for the FBO.
 		//@param p_stencil_attachment Whether to create a stencil attachment for the FBO.
-		explicit FBO(const glm::uvec2& p_resolution, bool p_colour_attachment = true, bool p_depth_attachment = true, bool p_stencil_attachment = true);
+		//@param p_colour_internal_format The internal format to use for the colour attachment texture.
+		explicit FBO(const glm::uvec2& p_resolution, bool p_colour_attachment = true, bool p_depth_attachment = true, bool p_stencil_attachment = true, TextureInternalFormat p_colour_internal_format = TextureInternalFormat::RGBA8);
 		~FBO();
 
 		FBO(const FBO& p_other)            = delete;
@@ -358,12 +362,13 @@ namespace OpenGL
 
 		void clear() const;
 		void resize(const glm::uvec2& p_resolution);
-		void set_clear_colour(const glm::vec4& p_clear_colour) { m_clear_colour = p_clear_colour; }
+		void set_clear_colour(const glm::vec4& p_clear_colour);
+		void set_clear_colour(const glm::ivec4& p_clear_colour);
+		void set_clear_colour(const glm::uvec4& p_clear_colour);
 		bool is_complete() const;
 		const glm::uvec2& resolution() const { return m_resolution; }
 
-		// FBO colour readback currently assumes an RGBA colour attachment.
-		// If the attachment format becomes configurable, derive this from the texture format instead.
+		// Screenshot readback currently supports RGBA8 colour attachments only.
 		static constexpr uint8_t ColourAttachmentChannelCount = 4;
 		uint8_t channel_count() const { return ColourAttachmentChannelCount; }
 

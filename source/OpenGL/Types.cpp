@@ -12,6 +12,58 @@ using Buffer = OpenGL::Buffer;
 
 namespace OpenGL
 {
+	static bool is_signed_integer_format(TextureInternalFormat p_format)
+	{
+		switch (p_format)
+		{
+			case TextureInternalFormat::R8I:
+			case TextureInternalFormat::R16I:
+			case TextureInternalFormat::R32I:
+			case TextureInternalFormat::RG8I:
+			case TextureInternalFormat::RG16I:
+			case TextureInternalFormat::RG32I:
+			case TextureInternalFormat::RGB8I:
+			case TextureInternalFormat::RGB16I:
+			case TextureInternalFormat::RGB32I:
+			case TextureInternalFormat::RGBA8I:
+			case TextureInternalFormat::RGBA16I:
+			case TextureInternalFormat::RGBA32I:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	static bool is_unsigned_integer_format(TextureInternalFormat p_format)
+	{
+		switch (p_format)
+		{
+			case TextureInternalFormat::R8UI:
+			case TextureInternalFormat::R16UI:
+			case TextureInternalFormat::R32UI:
+			case TextureInternalFormat::RG8UI:
+			case TextureInternalFormat::RG16UI:
+			case TextureInternalFormat::RG32UI:
+			case TextureInternalFormat::RGB8UI:
+			case TextureInternalFormat::RGB16UI:
+			case TextureInternalFormat::RGB32UI:
+			case TextureInternalFormat::RGBA8UI:
+			case TextureInternalFormat::RGBA16UI:
+			case TextureInternalFormat::RGBA32UI:
+			case TextureInternalFormat::RGB10_A2UI:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	static InterpolationFilter colour_attachment_filter(TextureInternalFormat p_format)
+	{
+		return is_signed_integer_format(p_format) || is_unsigned_integer_format(p_format)
+			? InterpolationFilter::Nearest
+			: InterpolationFilter::Linear;
+	}
+
 	Buffer::Buffer(BufferStorageBitfield p_flags, size_t p_capacity)
 		: m_handle{State::Get().create_buffer()}
 		, m_capacity{p_capacity}
@@ -459,31 +511,38 @@ namespace OpenGL
 	FBO::FBO()
 		: m_handle{0}
 		, m_resolution{0, 0}
-		, m_clear_colour{0.f, 0.f, 0.f, 1.f}
+		, m_clear_colour{glm::vec4{0.f, 0.f, 0.f, 1.f}}
 		, m_colour_attachment{}
 		, m_depth_attachment{}
 		, m_stencil_attachment{}
 		, m_depth_stencil_attachment{}
+		, m_colour_internal_format{TextureInternalFormat::RGBA8}
 		, is_default_framebuffer{true}
 	{
 		if constexpr (LogGLTypeEvents) LOG("Default FBO constructed with GLHandle {} at address {}", m_handle, (void*)(this));
 	}
-	FBO::FBO(const glm::uvec2& p_resolution, bool p_colour_attachment, bool p_depth_attachment, bool p_stencil_attachment)
+	FBO::FBO(const glm::uvec2& p_resolution, bool p_colour_attachment, bool p_depth_attachment, bool p_stencil_attachment, TextureInternalFormat p_colour_internal_format)
 		: m_handle{0}
 		, m_resolution{p_resolution}
-		, m_clear_colour{0.f, 0.f, 0.f, 1.f}
+		, m_clear_colour{glm::vec4{0.f, 0.f, 0.f, 1.f}}
 		, m_colour_attachment{}
 		, m_depth_attachment{}
 		, m_stencil_attachment{}
 		, m_depth_stencil_attachment{}
+		, m_colour_internal_format{p_colour_internal_format}
 		, is_default_framebuffer{false}
 	{
+		if (is_signed_integer_format(m_colour_internal_format))
+			m_clear_colour = glm::ivec4{0, 0, 0, 1};
+		else if (is_unsigned_integer_format(m_colour_internal_format))
+			m_clear_colour = glm::uvec4{0u, 0u, 0u, 1u};
+
 		glCreateFramebuffers(1, &m_handle);
 
 		constexpr GLint level = 0;
 		if (p_colour_attachment)
 		{
-			m_colour_attachment = Texture(p_resolution, InterpolationFilter::Linear, WrappingMode::ClampToBorder, TextureInternalFormat::RGBA8);
+			m_colour_attachment = Texture(p_resolution, colour_attachment_filter(m_colour_internal_format), WrappingMode::ClampToBorder, m_colour_internal_format);
 			glNamedFramebufferTexture(m_handle, GL_COLOR_ATTACHMENT0, m_colour_attachment->m_handle, level);
 		}
 
@@ -526,6 +585,7 @@ namespace OpenGL
 		, m_depth_attachment{std::move(p_other.m_depth_attachment)}
 		, m_stencil_attachment{std::move(p_other.m_stencil_attachment)}
 		, m_depth_stencil_attachment{std::move(p_other.m_depth_stencil_attachment)}
+		, m_colour_internal_format{p_other.m_colour_internal_format}
 		, is_default_framebuffer{p_other.is_default_framebuffer}
 	{
 		p_other.m_handle = 0;
@@ -548,6 +608,7 @@ namespace OpenGL
 			m_colour_attachment    = std::move(p_other.m_colour_attachment);
 			m_depth_attachment     = std::move(p_other.m_depth_attachment);
 			m_stencil_attachment   = std::move(p_other.m_stencil_attachment);
+			m_colour_internal_format = p_other.m_colour_internal_format;
 			is_default_framebuffer = p_other.is_default_framebuffer;
 		}
 
@@ -573,6 +634,21 @@ namespace OpenGL
 			convert(p_interpolation_filter)
 		);
 	}
+	void FBO::set_clear_colour(const glm::vec4& p_clear_colour)
+	{
+		ASSERT_THROW(!is_signed_integer_format(m_colour_internal_format) && !is_unsigned_integer_format(m_colour_internal_format), "Floating-point clear colour cannot be used with an integer framebuffer attachment.");
+		m_clear_colour = p_clear_colour;
+	}
+	void FBO::set_clear_colour(const glm::ivec4& p_clear_colour)
+	{
+		ASSERT_THROW(is_signed_integer_format(m_colour_internal_format), "Signed integer clear colour requires a signed integer framebuffer attachment.");
+		m_clear_colour = p_clear_colour;
+	}
+	void FBO::set_clear_colour(const glm::uvec4& p_clear_colour)
+	{
+		ASSERT_THROW(is_unsigned_integer_format(m_colour_internal_format), "Unsigned integer clear colour requires an unsigned integer framebuffer attachment.");
+		m_clear_colour = p_clear_colour;
+	}
 	void FBO::clear() const
 	{
 		if (is_default_framebuffer)
@@ -580,14 +656,29 @@ namespace OpenGL
 			constexpr GLint drawbuffer    = 0;
 			constexpr GLfloat clear_depth = 1.0f; // Clear depth to farthest (1.0)
 			constexpr GLint clear_stencil = 0;    // Clear stencil to 0
-			glClearNamedFramebufferfv(0, GL_COLOR, drawbuffer, &m_clear_colour[0]);
+			const auto& clear_colour = std::get<glm::vec4>(m_clear_colour);
+			glClearNamedFramebufferfv(0, GL_COLOR, drawbuffer, &clear_colour[0]);
 			glClearNamedFramebufferfi(0, GL_DEPTH_STENCIL, drawbuffer, clear_depth, clear_stencil);
 			return;
 		}
 
 		if (m_colour_attachment)
 		{
-			glClearNamedFramebufferfv(m_handle, GL_COLOR, 0, &m_clear_colour[0]);
+			if (is_unsigned_integer_format(m_colour_internal_format))
+			{
+				const auto& clear_colour = std::get<glm::uvec4>(m_clear_colour);
+				glClearNamedFramebufferuiv(m_handle, GL_COLOR, 0, &clear_colour[0]);
+			}
+			else if (is_signed_integer_format(m_colour_internal_format))
+			{
+				const auto& clear_colour = std::get<glm::ivec4>(m_clear_colour);
+				glClearNamedFramebufferiv(m_handle, GL_COLOR, 0, &clear_colour[0]);
+			}
+			else
+			{
+				const auto& clear_colour = std::get<glm::vec4>(m_clear_colour);
+				glClearNamedFramebufferfv(m_handle, GL_COLOR, 0, &clear_colour[0]);
+			}
 		}
 
 		if (m_depth_stencil_attachment)
@@ -622,7 +713,7 @@ namespace OpenGL
 		constexpr GLint level = 0;
 		if (m_colour_attachment)
 		{
-			m_colour_attachment = Texture(m_resolution, InterpolationFilter::Linear, WrappingMode::ClampToBorder, TextureInternalFormat::RGBA8);
+			m_colour_attachment = Texture(m_resolution, colour_attachment_filter(m_colour_internal_format), WrappingMode::ClampToBorder, m_colour_internal_format);
 			glNamedFramebufferTexture(m_handle, GL_COLOR_ATTACHMENT0, m_colour_attachment->m_handle, level);
 		}
 
@@ -656,6 +747,8 @@ namespace OpenGL
 
 	std::vector<std::byte> FBO::read_pixels() const
 	{
+		ASSERT_THROW(m_colour_internal_format == TextureInternalFormat::RGBA8, "Framebuffer pixel readback currently supports RGBA8 colour attachments only.");
+
 		const int width    = static_cast<int>(m_resolution.x);
 		const int height   = static_cast<int>(m_resolution.y);
 		const int channels = channel_count();

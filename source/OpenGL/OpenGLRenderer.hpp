@@ -3,6 +3,7 @@
 #include "GridRenderer.hpp"
 #include "ParticleRenderer.hpp"
 #include "PhongRenderer.hpp"
+#include "PickRenderer.hpp"
 #include "SelectionRenderer.hpp"
 #include "Shader.hpp"
 #include "ShadowMapper.hpp"
@@ -21,6 +22,10 @@
 namespace ECS
 {
 	class Entity;
+}
+namespace Component
+{
+	struct ViewInformation;
 }
 namespace System
 {
@@ -65,6 +70,7 @@ namespace OpenGL
 		GridRenderer m_grid_renderer;
 		ShadowMapper m_shadow_mapper;
 		SelectionRenderer m_selection_renderer;
+		PickRenderer m_pick_renderer;
 		TextureRef m_missing_texture;
 		TextureRef m_blank_texture;
 		Data::Mesh m_screen_quad;
@@ -85,6 +91,10 @@ namespace OpenGL
 
 		// Draw the current state of the ECS.
 		void draw(const DeltaTime& delta_time, FBO& target_FBO, std::span<const ECS::Entity> p_selected_entities = {});
+
+		// Render a pick pass and return the entity under the cursor, or std::nullopt.
+		std::optional<ECS::Entity> pick_entity(const glm::vec2& p_cursor_pos, const glm::uvec2& p_viewport_resolution, const Component::ViewInformation& p_view_info);
+
 		void draw_UI();
 		void reset_debug_options();
 		void reload_shaders();
