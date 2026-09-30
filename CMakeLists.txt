@@ -60,6 +60,8 @@ PRIVATE GLM
 PRIVATE ImGui
 )
 target_compile_options(Test PRIVATE ${WARNING_COMPILE_FLAGS})
+include(CTest)
+add_test(NAME SpiritTests COMMAND Test)
 # Test end --------------------------------------------------------------------------------------------------------------------------------
 
 # Set variables after project() so we can use CMAKE_CXX_COMPILER_ID -----------------------------------------------------------------------
