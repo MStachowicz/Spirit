@@ -134,6 +134,12 @@ namespace Component
 		view_info.m_projection    = projection(p_aspect_ratio);
 		return view_info;
 	}
+	void FirstPersonCamera::update_clipping_planes(const Geometry::AABB& p_bounds, const glm::vec3& p_eye_position)
+	{
+		const auto planes = ClippingPlanes::fit_to_bounds(p_bounds, p_eye_position, forward());
+		m_near = planes.m_near;
+		m_far = planes.m_far;
+	}
 	glm::mat4 FirstPersonCamera::projection(const float p_aspect_ratio) const
 	{
 		return glm::perspective(m_vertical_FOV, p_aspect_ratio, m_near, m_far);
@@ -169,8 +175,8 @@ namespace Component
 			auto fov_degrees = glm::degrees(m_vertical_FOV);
 			if (ImGui::Slider("FOV", fov_degrees, 1.f, 90.f, "%.3f °"))
 				m_vertical_FOV = glm::radians(fov_degrees);
-			ImGui::Slider("Near", m_near, 0.01f, 10.f);
-			ImGui::Slider("Far", m_far, 10.f, 300.f);
+			ImGui::Text_Manual("Near: %.6g", m_near);
+			ImGui::Text_Manual("Far: %.6g", m_far);
 
 			ImGui::SeparatorText("View");
 			auto pitch_degrees = glm::degrees(m_pitch);

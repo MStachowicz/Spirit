@@ -83,8 +83,11 @@ void Application::simulation_loop(uint16_t physics_ticks_per_second, uint16_t re
 			OpenGL::FBO::default_framebuffer().clear();
 			OpenGL::FBO::default_framebuffer().resize(m_window.size());
 
-			m_scene_system.get_current_scene().update(m_window.aspect_ratio(), m_editor.get_editor_view_info());
-			m_terrain_system.update(m_scene_system.get_current_scene(), m_window.aspect_ratio());
+			auto& scene = m_scene_system.get_current_scene();
+			scene.update(m_window.aspect_ratio());
+			if (const auto editor_view_info = m_editor.get_editor_view_info())
+				scene.m_view_information = *editor_view_info;
+			m_terrain_system.update(scene, m_window.aspect_ratio());
 
 			if (!m_editor.is_playing())
 				m_editor.draw(duration_since_last_render_tick);

@@ -463,7 +463,10 @@ namespace UI
 	std::optional<Component::ViewInformation> Editor::get_editor_view_info()
 	{
 		if (m_state == State::Editing || m_state == State::CameraTesting)
+		{
+			m_viewport_pane.m_camera.update_clipping_planes(m_scene_system.get_current_scene().m_rendered_bounds);
 			return m_viewport_pane.view_information();
+		}
 		else
 			return {};
 	}

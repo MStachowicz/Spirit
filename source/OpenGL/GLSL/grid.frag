@@ -5,7 +5,7 @@ in vec3 rayPoint;
 
 uniform mat4 viewProjection;
 uniform vec3 cameraPosition;
-uniform float farClip;
+uniform float fadeDistance;
 
 out vec4 Colour;
 
@@ -27,8 +27,8 @@ void main()
 
 	vec4 clip_position = viewProjection * vec4(relative_position, 1.0);
 	float depth = clip_position.z / clip_position.w;
-	if (abs(ray_direction.y) <= 0.000001 || plane_distance <= 0.0
-		|| clip_position.w <= 0.0 || depth < -1.0 || depth > 1.0)
+	if (abs(ray_direction.y) <= 0.000001 || (viewProjection[3][3] != 0.0 && plane_distance <= 0.0)
+		|| clip_position.w <= 0.0)
 		discard;
 
 	float level = log(max(footprint.x, footprint.y) * 12.0) / log(10.0);
@@ -46,8 +46,8 @@ void main()
 	colour = mix(colour, vec3(0.9, 0.2, 0.2), axes.y);
 	alpha = max(alpha, max(axes.x, axes.y) * 0.85);
 	alpha *= smoothstep(0.015, 0.1, abs(ray_direction.y));
-	alpha *= 1.0 - smoothstep(farClip * 0.65, farClip * 0.95, plane_distance);
+	alpha *= 1.0 - smoothstep(fadeDistance * 0.65, fadeDistance * 0.95, length(relative_position));
 
 	Colour = vec4(colour, alpha);
-	gl_FragDepth = depth * 0.5 + 0.5;
+	gl_FragDepth = clamp(depth * 0.5 + 0.5, 0.0, 0.9999999);
 }

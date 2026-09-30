@@ -55,6 +55,7 @@ namespace System
 		PERF(SceneUpdate);
 
 		{// Compute rendered bounds from Mesh+Transform entities (excludes physics-only colliders like infinite planes).
+			m_rendered_bounds = {};
 			bool has_bounds = false;
 			m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
 			{
@@ -70,21 +71,15 @@ namespace System
 		}
 
 		{// Update the view information
-			if (view_info_override)
-				m_view_information = *view_info_override;
-			else
+			auto view_info = view_info_override;
+			m_entities.foreach([&](Component::FirstPersonCamera& p_camera, Component::Transform& p_transform)
 			{
-				std::optional<Component::ViewInformation> view_info;
-				m_entities.foreach([&](Component::FirstPersonCamera& p_camera, Component::Transform& p_transform)
-				{
-					if (p_camera.m_primary)
-					{
-						view_info = p_camera.view_information(p_transform.m_position, aspect_ratio);
-						return;
-					}
-				});
+				p_camera.update_clipping_planes(m_rendered_bounds, p_transform.m_position);
+				if (!view_info_override && p_camera.m_primary)
+					view_info = p_camera.view_information(p_transform.m_position, aspect_ratio);
+			});
+			if (view_info)
 				m_view_information = *view_info;
-			}
 		}
 	}
 

@@ -40,7 +40,10 @@ namespace OpenGL
 	{
 		const auto view_projection = p_view_info.m_projection * glm::mat4(glm::mat3(p_view_info.m_view));
 		const auto inverse_view_projection = glm::inverse(view_projection);
-		const auto far_point = inverse_view_projection * glm::vec4(0.f, 0.f, 1.f, 1.f);
+		const float orthographic_extent = p_view_info.m_projection[3][3] != 0.f
+			? glm::max(1.f / std::abs(p_view_info.m_projection[0][0]), 1.f / std::abs(p_view_info.m_projection[1][1]))
+			: 0.f;
+		const float grid_scale = glm::max(0.001f, glm::max(std::abs(p_view_info.m_view_position.y), orthographic_extent));
 
 		{
 			DrawCall dc;
@@ -52,7 +55,7 @@ namespace OpenGL
 			dc.set_uniform("viewProjection", view_projection);
 			dc.set_uniform("invViewProj", inverse_view_projection);
 			dc.set_uniform("cameraPosition", glm::vec3(p_view_info.m_view_position));
-			dc.set_uniform("farClip", glm::length(glm::vec3(far_point)) / std::abs(far_point.w));
+			dc.set_uniform("fadeDistance", grid_scale * 100.f);
 			dc.submit(m_grid_shader, m_screen_triangle.get_VAO(), p_target_FBO);
 		}
 		if (OpenGL::DebugRenderer::m_debug_options.m_show_origin_arrows)

@@ -59,6 +59,7 @@ namespace Component
 
 		glm::mat4 view() const;
 		ViewInformation view_information(const float& p_aspect_ratio) const;
+		void update_clipping_planes(const Geometry::AABB& p_bounds);
 		// Set the camera to orthographic or perspective projection.
 		void set_orthographic(bool p_orthographic);
 		void toggle_orthographic() { set_orthographic(!m_is_orthographic); }

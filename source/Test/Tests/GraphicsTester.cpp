@@ -8,6 +8,7 @@
 #include "OpenGL/DebugRenderer.hpp"
 
 #include "Component/ViewInformation.hpp"
+#include "Component/TwoAxisCamera.hpp"
 
 #include "Platform/Core.hpp"
 #include "Platform/Input.hpp"
@@ -289,6 +290,21 @@ namespace Test
 			view.m_view_position = glm::vec4(0.f, -100.f, 0.f, 1.f);
 			view.m_view = glm::lookAt(glm::vec3(view.m_view_position), glm::vec3(0.f), glm::vec3(0.f, 0.f, -1.f));
 			CHECK_TRUE(visible_pixels(render_grid(view)) > 0, "Grid is visible from below");
+
+			const Geometry::AABB scene_bounds(glm::vec3(-1.f), glm::vec3(1.f));
+			Component::TwoAxisCamera editor_camera;
+			editor_camera.mouse_look(glm::vec2(0.f, -90.f));
+			for (bool orthographic : {false, true})
+			{
+				editor_camera.set_orthographic(orthographic);
+				for (float distance : {0.001f, 1.f, 10.f, 10000.f})
+				{
+					editor_camera.set_orbit_distance(distance);
+					editor_camera.update_clipping_planes(scene_bounds);
+					const auto count = visible_pixels(render_grid(editor_camera.view_information(1.f)));
+					CHECK_TRUE(count > pixel_count / 20, std::format("Readable grid with adaptive {} clipping at distance {}", orthographic ? "orthographic" : "perspective", distance));
+				}
+			}
 
 			grid.reload_shaders();
 			CHECK_TRUE(visible_pixels(render_grid(initial_view)) > 0, "Grid renders after shader reload");

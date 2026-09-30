@@ -65,6 +65,7 @@ namespace Component
 		//@param p_aspect_ratio Aspect ratio of the parent window (width / height).
 		//@return ViewInformation representing the state of the camera.
 		ViewInformation view_information(const glm::vec3& p_eye_position, const float& p_aspect_ratio) const;
+		void update_clipping_planes(const Geometry::AABB& p_bounds, const glm::vec3& p_eye_position);
 
 		//@param p_aspect_ratio Aspect ratio of the parent window (width / height).
 		//@return The projection matrix. Used to transform points into clip-space.

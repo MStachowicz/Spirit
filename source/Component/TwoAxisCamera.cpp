@@ -15,7 +15,7 @@ namespace Component
 	TwoAxisCamera::TwoAxisCamera()
 		: m_FOV{90.f}
 		, m_near{0.04f}
-		, m_far{10000000.f} // Far enough to cover the entire extents of the GridRenderer grid diagonally at all angles. (1000 half size units).
+		, m_far{1000.f}
 		, m_look_sensitivity{0.5f}
 		, m_zoom_sensitivity{0.5f}
 		, m_pan_sensitivity{0.005f}
@@ -117,6 +117,12 @@ namespace Component
 
 		return view_info;
 	}
+	void TwoAxisCamera::update_clipping_planes(const Geometry::AABB& p_bounds)
+	{
+		const auto planes = ClippingPlanes::fit_to_bounds(p_bounds, position(), forward(), m_is_orthographic);
+		m_near = planes.m_near;
+		m_far = planes.m_far;
+	}
 
 	void TwoAxisCamera::set_orthographic(bool p_orthographic)
 	{
@@ -201,8 +207,8 @@ namespace Component
 			ImGui::Slider("Dolly threshold", m_dolly_threshold, 0.01f, 5.f);
 		}
 
-		ImGui::Slider("Near", m_near, 0.001f, 10.f);
-		ImGui::Slider("Far",  m_far,  1.f,    10000000.f);
+		ImGui::Text_Manual("Near: %.6g", m_near);
+		ImGui::Text_Manual("Far: %.6g", m_far);
 		ImGui::Slider("Orbit center", m_orbit_center, -100.f, 100.f);
 
 		// For displaying in UI we convert the angles to degrees and back again after.
