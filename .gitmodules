@@ -11,15 +11,12 @@
 	path = source/External/ImGui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
-[submodule "source/External/ASSIMP"]
-	path = source/External/ASSIMP
-	url = https://github.com/assimp/assimp.git
 [submodule "source/External/GLAD"]
 	path = source/External/GLAD
 	url = https://github.com/kieranvs/GLAD.git
 [submodule "source/External/ImGuizmo"]
 	path = source/External/ImGuizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo.git
+	url = https://github.com/MStachowicz/ImGuizmo.git
 [submodule "source/External/Tracy"]
 	path = source/External/Tracy
 	url = https://github.com/wolfpld/tracy.git

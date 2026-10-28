@@ -140,7 +140,7 @@ namespace System
 					if (i >= m_available_textures.size())
 						break;
 
-					ImTextureID texture_id = (void*)(intptr_t)m_available_textures[i].thumbnail.m_GL_texture.handle();
+					ImTextureID texture_id = static_cast<ImTextureID>(m_available_textures[i].thumbnail.m_GL_texture.handle());
 					if (ImGui::ImageButton(m_available_textures[i].path.filename().stem().string().c_str(),
 										texture_id, button_size))
 					{
@@ -169,7 +169,7 @@ namespace System
 					if (i >= m_available_PBR_textures.size())
 						break;
 
-					ImTextureID texture_id = (void*)(intptr_t)m_available_PBR_textures[i].thumbnail.m_GL_texture.handle();
+					ImTextureID texture_id = static_cast<ImTextureID>(m_available_PBR_textures[i].thumbnail.m_GL_texture.handle());
 					if (ImGui::ImageButton(m_available_PBR_textures[i].path.filename().stem().string().c_str(), texture_id, button_size))
 					{
 						LOG("Selected PBR texture: {}", m_available_PBR_textures[i].path.string());

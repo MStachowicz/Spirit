@@ -226,7 +226,7 @@ namespace Platform
 	void Window::on_content_scale_callback(float new_scale)
 	{
 		if (ImGui::IsInitialised())
-			ImGui::GetIO().FontGlobalScale = new_scale;
+			ImGui::GetStyle().FontScaleDpi = new_scale;
 	}
 	float Window::content_scale() const
 	{

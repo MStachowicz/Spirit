@@ -112,8 +112,8 @@ namespace Platform
 		ImGui_ImplGlfw_InitForOpenGL(p_window.m_handle, true);
 		ImGui_ImplOpenGL3_Init(Config::GLSL_Version_String);
 
+		ImGui::GetStyle().FontScaleDpi = p_window.content_scale();
 		ImGuiIO& io        = ImGui::GetIO();
-		io.FontGlobalScale = p_window.content_scale();
 		glm::uvec2 size    = p_window.size();
 		io.DisplaySize     = ImVec2(static_cast<float>(size.x), static_cast<float>(size.y));
 		io.ConfigFlags    |= ImGuiConfigFlags_DockingEnable;

@@ -25,6 +25,8 @@
 
 #include "ECS/Storage.hpp"
 
+#include <cstdarg>
+#include <cstdio>
 #include <thread>
 
 namespace System
@@ -59,10 +61,10 @@ namespace System
 	void JoltTrace(const char* inFMT, ...)
 	{
 		// Format the message
-		va_list list;
+		std::va_list list;
 		va_start(list, inFMT);
 		char buffer[1024];
-		vsnprintf(buffer, sizeof(buffer), inFMT, list);
+		std::vsnprintf(buffer, sizeof(buffer), inFMT, list);
 		va_end(list);
 		LOG("[JOLT] {}", buffer);
 	}

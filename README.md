@@ -21,11 +21,13 @@ Open in an editor supporting [CMakePresets.json](https://github.com/MStachowicz/
 
 ## Dependencies
 A list of the [submodules](https://github.com/MStachowicz/Spirit/blob/master/.gitmodules) used:\
-[GLFW](https://github.com/glfw/glfw) - GL/GLES/Vulkan API for creating windows, contexts, reading input, handling events.\
-[GLAD](https://github.com/kieranvs/glad) - GL/GLES/EGL/GLX/WGL Loader/Generator.\
-[GLM](https://github.com/g-truc/glm.git) - Math library.\
-[ImGui](https://github.com/ocornut/imgui) - Immediate mode data-centric UI to display the editing interface in debug builds.\
-[STB](https://github.com/nothings/stb.git) - Image file loading utility.\
-[ASSIMP](https://github.com/assimp/assimp.git) - Model file loading utility.
+[GLFW 3.5.1](https://github.com/glfw/glfw) - GL/GLES/Vulkan API for creating windows, contexts, reading input, handling events.\
+[GLAD 0.1.29](https://github.com/kieranvs/glad) - GL/GLES/EGL/GLX/WGL Loader/Generator.\
+[GLM 1.0.3](https://github.com/g-truc/glm) - Math library.\
+[ImGui 1.93.0-docking](https://github.com/ocornut/imgui) - Immediate mode data-centric UI to display the editing interface in debug builds.\
+[ImGuizmo 1.92.5](https://github.com/CedricGuillemet/ImGuizmo) - Transform manipulation gizmos.\
+[STB (stb_image 2.30, stb_image_write 1.16)](https://github.com/nothings/stb) - Image file loading utility.\
+[Tracy 0.14.1](https://github.com/wolfpld/tracy) - Profiler.\
+[Jolt Physics 5.6.0](https://github.com/jrouwe/JoltPhysics) - Rigid-body physics.
 
 The single root [CMakeLists.txt](https://github.com/MStachowicz/Spirit/blob/master/source/CMakeLists.txt) is responsible for building all the dependencies.

@@ -197,7 +197,7 @@ namespace OpenGL
 					height = content_size.y;
 					width  = height * aspect;
 				}
-				ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(m_debug_FBO->color_attachment().handle())), ImVec2(width, height), ImVec2(0, 1), ImVec2(1, 0));
+				ImGui::Image(static_cast<ImTextureID>(m_debug_FBO->color_attachment().handle()), ImVec2(width, height), ImVec2(0, 1), ImVec2(1, 0));
 				if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
 				{
 					ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);

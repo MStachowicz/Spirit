@@ -655,7 +655,7 @@ namespace UI
 		m_player_info_pane.draw(*this);
 		if (m_panes_to_display.ImGuiDemo)      ImGui::ShowDemoWindow(&m_panes_to_display.ImGuiDemo);
 		if (m_panes_to_display.ImGuiMetrics)   ImGui::ShowMetricsWindow(&m_panes_to_display.ImGuiMetrics);
-		if (m_panes_to_display.ImGuiStack)     ImGui::ShowStackToolWindow(&m_panes_to_display.ImGuiStack);
+		if (m_panes_to_display.ImGuiStack)     ImGui::ShowIDStackToolWindow(&m_panes_to_display.ImGuiStack);
 		if (m_panes_to_display.ImGuiAbout)     ImGui::ShowAboutWindow(&m_panes_to_display.ImGuiAbout);
 		if (m_panes_to_display.theme_editor)   Platform::Core::s_theme.draw_theme_editor_UI();
 		if (m_panes_to_display.ImGuiStyleEditor)
@@ -1030,7 +1030,7 @@ namespace UI
 							center.y + sinf(a) * radius
 						));
 					}
-					draw_list->PathStroke(IM_COL32(0, 0, 0, 255), ImDrawFlags_None, 1.5f);
+					draw_list->PathStroke(IM_COL32(0, 0, 0, 255), 1.5f, ImDrawFlags_None);
 				}
 
 				// Draw slice label (only if slice is big enough)
@@ -1407,7 +1407,7 @@ namespace UI
 
 				m_FBO.resize({content_size.x, content_size.y});
 				p_renderer.draw(p_delta_time, m_FBO, p_selected_entities);
-				ImGui::Image(reinterpret_cast<ImTextureID>(reinterpret_cast<void*>(static_cast<std::intptr_t>(m_FBO.color_attachment().handle()))), content_size, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+				ImGui::Image(static_cast<ImTextureID>(m_FBO.color_attachment().handle()), content_size, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
 				m_cursor_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
 
 			}

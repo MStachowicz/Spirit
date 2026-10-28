@@ -33,8 +33,8 @@ namespace Component
 	{
 		if(ImGui::TreeNode("Directional light"))
 		{
-			if (ImGui::SliderFloat3("Direction", &m_direction.x, -1.f, 1.f))
-				glm::normalize(m_direction);
+			if (ImGui::SliderFloat3("Direction", &m_direction.x, -1.f, 1.f) && glm::dot(m_direction, m_direction) > 0.f)
+				m_direction = glm::normalize(m_direction);
 
 			ImGui::ColorEdit3("Colour", &m_colour.x);
 			ImGui::SliderFloat("Ambient intensity", &m_ambient_intensity, 0.f, 1.f);
@@ -171,8 +171,8 @@ namespace Component
 		if(ImGui::TreeNode("SpotLight"))
 		{
 			ImGui::SliderFloat3("Position", &m_position.x, -1.f, 1.f);
-			if (ImGui::SliderFloat3("Direction", &m_direction.x, -1.f, 1.f))
-				glm::normalize(m_direction);
+			if (ImGui::SliderFloat3("Direction", &m_direction.x, -1.f, 1.f) && glm::dot(m_direction, m_direction) > 0.f)
+				m_direction = glm::normalize(m_direction);
 			ImGui::ColorEdit3("Colour", &m_colour.x);
 			ImGui::SliderFloat("Ambient intensity", &m_ambient_intensity, 0.f, 1.f);
 			ImGui::SliderFloat("Diffuse intensity", &m_diffuse_intensity, 0.f, 1.f);

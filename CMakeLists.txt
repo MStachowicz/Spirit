@@ -399,19 +399,20 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	source/External/ImGui/imgui.cpp
 	source/External/ImGui/backends/imgui_impl_opengl3.cpp
 	source/External/ImGui/backends/imgui_impl_glfw.cpp
-	source/External/ImGuizmo/ImGuizmo.h
-	source/External/ImGuizmo/ImGuizmo.cpp
+	source/External/ImGuizmo/src/ImGuizmo.h
+	source/External/ImGuizmo/src/ImGuizmo.cpp
 	source/External/ImGuiUser/imgui_user.h
 	source/External/ImGuiUser/imgui_user_config.h
 	)
 	target_include_directories(ImGui SYSTEM
 	PUBLIC source/External/ImGui
-	PUBLIC source/External/ImGuizmo
+	PUBLIC source/External/ImGuizmo/src
 	PUBLIC source/External/ImGuiUser # Seperate folder to avoid comitting to ImGui
 	PRIVATE source/External/GLFW/include
+	PRIVATE source
 	)
 	target_compile_definitions(ImGui
-	INTERFACE IMGUI_USER_CONFIG="imgui_user_config.h")
+	PUBLIC IMGUI_USER_CONFIG="imgui_user_config.h")
 
 	target_link_libraries(ImGui
 	PUBLIC GLM
@@ -435,6 +436,7 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	add_library(GLM INTERFACE)
 	target_include_directories(GLM SYSTEM
 	INTERFACE source/External/GLM)
+	target_compile_definitions(GLM INTERFACE GLM_ENABLE_EXPERIMENTAL)
 	# GLM end -----------------------------------------------------------------------------------------------------------------------------
 
 	# STB ---------------------------------------------------------------------------------------------------------------------------------
@@ -442,26 +444,6 @@ target_compile_options(Utility PRIVATE ${WARNING_COMPILE_FLAGS})
 	target_include_directories(STB SYSTEM
 	INTERFACE source/External/stb)
 	# STB end -----------------------------------------------------------------------------------------------------------------------------
-
-	# ASSIMP ------------------------------------------------------------------------------------------------------------------------------
-	if (WIN32)
-		set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
-		# Remove all supported filetypes for import and export.
-		# Enable only OBJ files for import.
-		set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
-		set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
-		set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
-		set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-	elseif (APPLE)
-		set(ASSIMP_BUILD_ZLIB OFF CACHE BOOL "" FORCE)
-		set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
-	else()
-		set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
-		set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
-	endif()
-
-	add_subdirectory(source/External/ASSIMP source/External/ASSIMP SYSTEM)
-	# ASSIMP end --------------------------------------------------------------------------------------------------------------------------
 
 	# Tracy Profiler -----------------------------------------------------------------
 	add_subdirectory(source/External/Tracy source/External/Tracy SYSTEM)

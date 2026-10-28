@@ -45,7 +45,8 @@ namespace UI
 						ImGui::TableSetColumnIndex(1);
 						ImGui::Text("Filter");
 						ImGui::SameLine();
-						m_filter.Draw("##ConsoleFilter", ImGui::GetContentRegionAvail().x);
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+						m_filter.Draw("##ConsoleFilter");
 					}
 
 					ImGui::EndTable();

@@ -15,6 +15,7 @@
 #include "Platform/Window.hpp"
 
 #include <glad/glad.h>
+#include <imgui.h>
 
 #include <algorithm>
 
@@ -28,6 +29,39 @@ namespace Test
 		Platform::Window window = Platform::Window({0.5, 0.5}, input);
 		Platform::Core::initialise_OpenGL();
 
+		{SCOPE_SECTION("ImGui rendering")
+			Platform::Core::initialise_ImGui(window);
+			auto& io = ImGui::GetIO();
+			io.IniFilename = nullptr;
+			CHECK_EQUAL((io.ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0, true, "Docking enabled");
+			CHECK_EQUAL((io.BackendFlags & ImGuiBackendFlags_RendererHasTextures) != 0, true, "Dynamic texture support");
+
+			for (const float scale : {1.0f, 1.5f, 2.0f})
+			{
+				window.on_content_scale_callback(scale);
+				for (int frame = 0; frame < 2; ++frame)
+				{
+					window.start_ImGui_frame();
+					ImGui::SetNextWindowPos(ImVec2(16.f, 16.f), ImGuiCond_Always);
+					ImGui::SetNextWindowSize(ImVec2(320.f, 160.f), ImGuiCond_Always);
+					ImGui::Begin("ImGui smoke test");
+					ImGui::TextUnformatted("Dynamic font rendering at different DPI scales");
+					ImGui::End();
+					window.end_ImGui_frame();
+				}
+
+				CHECK_EQUAL(ImGui::GetStyle().FontScaleDpi, scale, "DPI scale applied");
+				CHECK_EQUAL(ImGui::GetDrawData()->TotalVtxCount > 0, true, "Frame contains geometry");
+				CHECK_EQUAL(io.Fonts->TexData != nullptr, true, "Font texture created");
+				if (io.Fonts->TexData)
+				{
+					CHECK_EQUAL(io.Fonts->TexData->Status == ImTextureStatus_OK, true, "Font texture uploaded");
+					CHECK_EQUAL(glIsTexture(static_cast<GLuint>(io.Fonts->TexData->GetTexID())) == GL_TRUE, true, "Font texture exists in OpenGL");
+				}
+				CHECK_EQUAL(glGetError(), static_cast<GLenum>(GL_NO_ERROR), "ImGui render has no OpenGL errors");
+			}
+			Platform::Core::deinitialise_ImGui();
+		}
 
 		{SCOPE_SECTION("Buffer")
 			{SCOPE_SECTION("Memory handling")
