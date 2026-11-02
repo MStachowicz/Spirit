@@ -214,7 +214,6 @@ namespace OpenGL
 							auto pixels = m_debug_FBO->read_pixels();
 							if (!pixels.empty())
 							{
-								const auto resolution = m_debug_FBO->resolution();
 								Utility::save_pixels_to_file(
 									dir,
 									pixels,
