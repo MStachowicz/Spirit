@@ -4,7 +4,7 @@
 #include "glm/vec3.hpp"
 #include "glm/vec2.hpp"
 
-#include <iostream>
+#include "Utility/Serialise.hpp"
 
 namespace Geometry
 {
@@ -34,8 +34,8 @@ namespace Geometry
 		// Returns an encompassing AABB after translating and transforming p_AABB.
 		static AABB transform(const AABB& p_AABB, const glm::vec3& p_position, const glm::mat4& p_rotation, const glm::vec3& p_scale);
 
-		static void serialise(std::ostream& p_out, uint16_t p_version, const AABB& p_AABB);
-		static AABB deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const AABB& p_AABB);
+		static AABB deserialise(Utility::BinaryReader& p_in);
 	};
 
 	// Axis alligned 2-dimensional bounding box

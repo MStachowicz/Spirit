@@ -52,29 +52,29 @@ namespace Component
 		}
 	}
 
-	void DirectionalLight::serialise(std::ostream& p_out, uint16_t p_version, const DirectionalLight& p_light)
+	void DirectionalLight::serialise(Utility::BinaryWriter& p_out, const DirectionalLight& p_light)
 	{
-		Utility::write_binary(p_out, p_version, p_light.m_direction);
-		Utility::write_binary(p_out, p_version, p_light.m_colour);
-		Utility::write_binary(p_out, p_version, p_light.m_ambient_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_diffuse_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_specular_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_shadow_near_plane);
-		Utility::write_binary(p_out, p_version, p_light.m_shadow_far_plane);
-		Utility::write_binary(p_out, p_version, p_light.m_ortho_size);
+		p_out.write(p_light.m_direction);
+		p_out.write(p_light.m_colour);
+		p_out.write(p_light.m_ambient_intensity);
+		p_out.write(p_light.m_diffuse_intensity);
+		p_out.write(p_light.m_specular_intensity);
+		p_out.write(p_light.m_shadow_near_plane);
+		p_out.write(p_light.m_shadow_far_plane);
+		p_out.write(p_light.m_ortho_size);
 	}
 
-	DirectionalLight DirectionalLight::deserialise(std::istream& p_in, uint16_t p_version)
+	DirectionalLight DirectionalLight::deserialise(Utility::BinaryReader& p_in)
 	{
 		DirectionalLight light;
-		Utility::read_binary(p_in, p_version, light.m_direction);
-		Utility::read_binary(p_in, p_version, light.m_colour);
-		Utility::read_binary(p_in, p_version, light.m_ambient_intensity);
-		Utility::read_binary(p_in, p_version, light.m_diffuse_intensity);
-		Utility::read_binary(p_in, p_version, light.m_specular_intensity);
-		Utility::read_binary(p_in, p_version, light.m_shadow_near_plane);
-		Utility::read_binary(p_in, p_version, light.m_shadow_far_plane);
-		Utility::read_binary(p_in, p_version, light.m_ortho_size);
+		p_in.read(light.m_direction);
+		p_in.read(light.m_colour);
+		p_in.read(light.m_ambient_intensity);
+		p_in.read(light.m_diffuse_intensity);
+		p_in.read(light.m_specular_intensity);
+		p_in.read(light.m_shadow_near_plane);
+		p_in.read(light.m_shadow_far_plane);
+		p_in.read(light.m_ortho_size);
 		return light;
 	}
 	static_assert(Utility::Is_Serializable_v<DirectionalLight>, "DirectionalLight is not serializable, check that the required functions are implemented.");
@@ -127,28 +127,28 @@ namespace Component
 		}
 	}
 
-	void PointLight::serialise(std::ostream& p_out, uint16_t p_version, const PointLight& p_light)
+	void PointLight::serialise(Utility::BinaryWriter& p_out, const PointLight& p_light)
 	{
-		Utility::write_binary(p_out, p_version, p_light.m_position);
-		Utility::write_binary(p_out, p_version, p_light.m_colour);
-		Utility::write_binary(p_out, p_version, p_light.m_ambient_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_diffuse_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_specular_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_constant);
-		Utility::write_binary(p_out, p_version, p_light.m_linear);
-		Utility::write_binary(p_out, p_version, p_light.m_quadratic);
+		p_out.write(p_light.m_position);
+		p_out.write(p_light.m_colour);
+		p_out.write(p_light.m_ambient_intensity);
+		p_out.write(p_light.m_diffuse_intensity);
+		p_out.write(p_light.m_specular_intensity);
+		p_out.write(p_light.m_constant);
+		p_out.write(p_light.m_linear);
+		p_out.write(p_light.m_quadratic);
 	}
-	PointLight PointLight::deserialise(std::istream& p_in, uint16_t p_version)
+	PointLight PointLight::deserialise(Utility::BinaryReader& p_in)
 	{
 		PointLight light;
-		Utility::read_binary(p_in, p_version, light.m_position);
-		Utility::read_binary(p_in, p_version, light.m_colour);
-		Utility::read_binary(p_in, p_version, light.m_ambient_intensity);
-		Utility::read_binary(p_in, p_version, light.m_diffuse_intensity);
-		Utility::read_binary(p_in, p_version, light.m_specular_intensity);
-		Utility::read_binary(p_in, p_version, light.m_constant);
-		Utility::read_binary(p_in, p_version, light.m_linear);
-		Utility::read_binary(p_in, p_version, light.m_quadratic);
+		p_in.read(light.m_position);
+		p_in.read(light.m_colour);
+		p_in.read(light.m_ambient_intensity);
+		p_in.read(light.m_diffuse_intensity);
+		p_in.read(light.m_specular_intensity);
+		p_in.read(light.m_constant);
+		p_in.read(light.m_linear);
+		p_in.read(light.m_quadratic);
 		return light;
 	}
 	static_assert(Utility::Is_Serializable_v<PointLight>, "PointLight is not serializable, check that the required functions are implemented.");
@@ -185,34 +185,34 @@ namespace Component
 			ImGui::TreePop();
 		}
 	}
-	void SpotLight::serialise(std::ostream& p_out, uint16_t p_version, const SpotLight& p_light)
+	void SpotLight::serialise(Utility::BinaryWriter& p_out, const SpotLight& p_light)
 	{
-		Utility::write_binary(p_out, p_version, p_light.m_position);
-		Utility::write_binary(p_out, p_version, p_light.m_direction);
-		Utility::write_binary(p_out, p_version, p_light.m_colour);
-		Utility::write_binary(p_out, p_version, p_light.m_ambient_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_diffuse_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_specular_intensity);
-		Utility::write_binary(p_out, p_version, p_light.m_constant);
-		Utility::write_binary(p_out, p_version, p_light.m_linear);
-		Utility::write_binary(p_out, p_version, p_light.m_quadratic);
-		Utility::write_binary(p_out, p_version, p_light.m_cutoff);
-		Utility::write_binary(p_out, p_version, p_light.m_outer_cutoff);
+		p_out.write(p_light.m_position);
+		p_out.write(p_light.m_direction);
+		p_out.write(p_light.m_colour);
+		p_out.write(p_light.m_ambient_intensity);
+		p_out.write(p_light.m_diffuse_intensity);
+		p_out.write(p_light.m_specular_intensity);
+		p_out.write(p_light.m_constant);
+		p_out.write(p_light.m_linear);
+		p_out.write(p_light.m_quadratic);
+		p_out.write(p_light.m_cutoff);
+		p_out.write(p_light.m_outer_cutoff);
 	}
-	SpotLight SpotLight::deserialise(std::istream& p_in, uint16_t p_version)
+	SpotLight SpotLight::deserialise(Utility::BinaryReader& p_in)
 	{
 		SpotLight light;
-		Utility::read_binary(p_in, p_version, light.m_position);
-		Utility::read_binary(p_in, p_version, light.m_direction);
-		Utility::read_binary(p_in, p_version, light.m_colour);
-		Utility::read_binary(p_in, p_version, light.m_ambient_intensity);
-		Utility::read_binary(p_in, p_version, light.m_diffuse_intensity);
-		Utility::read_binary(p_in, p_version, light.m_specular_intensity);
-		Utility::read_binary(p_in, p_version, light.m_constant);
-		Utility::read_binary(p_in, p_version, light.m_linear);
-		Utility::read_binary(p_in, p_version, light.m_quadratic);
-		Utility::read_binary(p_in, p_version, light.m_cutoff);
-		Utility::read_binary(p_in, p_version, light.m_outer_cutoff);
+		p_in.read(light.m_position);
+		p_in.read(light.m_direction);
+		p_in.read(light.m_colour);
+		p_in.read(light.m_ambient_intensity);
+		p_in.read(light.m_diffuse_intensity);
+		p_in.read(light.m_specular_intensity);
+		p_in.read(light.m_constant);
+		p_in.read(light.m_linear);
+		p_in.read(light.m_quadratic);
+		p_in.read(light.m_cutoff);
+		p_in.read(light.m_outer_cutoff);
 		return light;
 	}
 	static_assert(Utility::Is_Serializable_v<SpotLight>, "SpotLight is not serializable, check that the required functions are implemented.");

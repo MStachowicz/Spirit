@@ -128,17 +128,16 @@ namespace Geometry
 		ImGui::Text("Max: (%.3f, %.3f, %.3f)", m_max.x, m_max.y, m_max.z);
 	}
 
-	void AABB::serialise(std::ostream& p_out, uint16_t p_version, const AABB& p_AABB)
+	void AABB::serialise(Utility::BinaryWriter& p_out, const AABB& p_AABB)
 	{
-		Utility::write_binary(p_out, p_version, p_AABB.m_min);
-		Utility::write_binary(p_out, p_version, p_AABB.m_max);
+		p_out.write(p_AABB.m_min);
+		p_out.write(p_AABB.m_max);
 	}
-	AABB AABB::deserialise(std::istream& p_in, uint16_t p_version)
+	AABB AABB::deserialise(Utility::BinaryReader& p_in)
 	{
-		AABB out_AABB;
-		Utility::read_binary(p_in, p_version, out_AABB.m_min);
-		Utility::read_binary(p_in, p_version, out_AABB.m_max);
-		return out_AABB;
+		const auto min = p_in.read<glm::vec3>();
+		const auto max = p_in.read<glm::vec3>();
+		return AABB{min, max};
 	}
 	static_assert(Utility::Is_Serializable_v<AABB>, "AABB is not serializable. Check that the required functions are implemented.");
 

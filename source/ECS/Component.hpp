@@ -9,7 +9,8 @@
 #include <array>
 #include <bitset>
 #include <cstdint>
-#include <fstream>
+#include <limits>
+#include <new>
 #include <optional>
 #include <type_traits>
 
@@ -40,9 +41,9 @@ namespace ECS
 		// placement-new copy-construct the object pointed to by p_source_address into the memory pointed to by p_destination_address.
 		void (*CopyConstruct)(void* p_destination_address, const void* p_source_address);
 		// Serialise the object at p_address into p_out. (Optional function)
-		void (*Serialise)(void* p_address, std::ostream& p_out, uint16_t p_version);
+		void (*Serialise)(const void* p_address, Utility::BinaryWriter& p_out);
 		// Deserialise the object into p_destination_address from p_in. (Optional function)
-		void (*Deserialise)(void* p_destination_address, std::istream& p_in, uint16_t p_version);
+		void (*Deserialise)(void* p_destination_address, Utility::BinaryReader& p_in);
 	};
 
 	// API for interfacing with Component's types/data after type erasure.
@@ -127,32 +128,17 @@ namespace ECS
 			using Type = std::decay_t<ComponentType>;
 			new (p_destination_address) Type(*static_cast<const Type*>(p_source_address));
 		}}
-		, Serialise{[](void* p_address, std::ostream& p_out, uint16_t p_version)
+		, Serialise{[](const void* p_address, Utility::BinaryWriter& p_out)
 		{
 			using Type = std::decay_t<ComponentType>;
 			if constexpr (Utility::Is_Serializable_v<Type>)
-				Utility::write_binary(p_out, p_version, *static_cast<Type*>(p_address));
+				p_out.write(*static_cast<const Type*>(p_address));
 		}}
-		, Deserialise{[](void* p_destination_address, std::istream& p_in, uint16_t p_version)
+		, Deserialise{[](void* p_destination_address, Utility::BinaryReader& p_in)
 		{
 			using Type = std::decay_t<ComponentType>;
 			if constexpr (Utility::Is_Serializable_v<Type>)
-			{
-				// Static_Func_Custom_Serialisation API returns a T, we can directly placement new move construct the object.
-				// Otherwise we need to default construct the object and then deserialise into it.
-				if constexpr (Utility::Has_Static_Func_Custom_Serialisation<Type>)
-				{
-					new (p_destination_address) Type(std::move(Type::deserialise(p_in, p_version)));
-				}
-				else if constexpr (std::is_default_constructible_v<Type>)
-				{
-					Type destination;
-					Utility::read_binary(p_in, p_version, destination);
-					new (p_destination_address) Type(std::move(destination));
-				}
-				else
-					[]<bool flag=false>(){ static_assert(flag, "Passed Is_Serializable_v check but no Serialise or Deserialise function found. Missing case here for a serialisable function."); }(); // #CPP23 P2593R0 swap for static_assert(false)
-			}
+				new (p_destination_address) Type(p_in.read<Type>());
 		}}
 	{}
 

@@ -8,7 +8,6 @@
 #include "glm/vec3.hpp"
 #include "glm/mat3x3.hpp"
 
-#include <iostream>
 #include <optional>
 
 namespace Component
@@ -110,7 +109,7 @@ namespace Component
 
 		void apply_force(const glm::vec3& p_force) { m_physics_system_handle->m_system->apply_impulse(*m_physics_system_handle, p_force); }
 
-		static void serialise(std::ostream& p_out, uint16_t p_version, const Collider& p_collider);
-		static Collider deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const Collider& p_collider);
+		static Collider deserialise(Utility::BinaryReader& p_in);
 	};
 } // namespace Component

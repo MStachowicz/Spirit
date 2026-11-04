@@ -22,8 +22,8 @@ namespace System
 		// Should be called when the scene is first created, when entities are added/removed/changed, when the aspect ratio changes or when the editor changes the scene.
 		void update(float aspect_ratio, std::optional<Component::ViewInformation> view_info_override = std::nullopt);
 
-		static void serialise(std::ostream& p_out, uint16_t p_version, const Scene& p_Scene);
-		static Scene deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const Scene& p_Scene);
+		static Scene deserialise(Utility::BinaryReader& p_in);
 	};
 
 	class SceneSystem

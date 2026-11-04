@@ -59,18 +59,18 @@ namespace Component
 			ImGui::TreePop();
 		}
 	}
-	void Transform::serialise(std::ostream& p_out, uint16_t p_version, const Transform& p_transform)
+	void Transform::serialise(Utility::BinaryWriter& p_out, const Transform& p_transform)
 	{
-		Utility::write_binary(p_out, p_version, p_transform.m_position);
-		Utility::write_binary(p_out, p_version, p_transform.m_scale);
-		Utility::write_binary(p_out, p_version, p_transform.m_orientation);
+		p_out.write(p_transform.m_position);
+		p_out.write(p_transform.m_scale);
+		p_out.write(p_transform.m_orientation);
 	}
-	Transform Transform::deserialise(std::istream& p_in, uint16_t p_version)
+	Transform Transform::deserialise(Utility::BinaryReader& p_in)
 	{
 		Transform transform;
-		Utility::read_binary(p_in, p_version, transform.m_position);
-		Utility::read_binary(p_in, p_version, transform.m_scale);
-		Utility::read_binary(p_in, p_version, transform.m_orientation);
+		p_in.read(transform.m_position);
+		p_in.read(transform.m_scale);
+		p_in.read(transform.m_orientation);
 		return transform;
 	}
 } // namespace Component

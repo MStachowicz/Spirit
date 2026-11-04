@@ -3,9 +3,9 @@
 #include "glm/gtx/quaternion.hpp"
 #include "glm/mat4x4.hpp"
 #include "glm/vec3.hpp"
+#include "Utility/Serialise.hpp"
 
 #include <array>
-#include <fstream>
 
 namespace Component
 {
@@ -42,7 +42,7 @@ namespace Component
 		std::array<glm::vec3, 3> get_local_axes() const { return {right(), up(), forward()}; };
 
 		void draw_UI();
-		static void serialise(std::ostream& p_out, uint16_t p_version, const Transform& p_transform);
-		static Transform deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const Transform& p_transform);
+		static Transform deserialise(Utility::BinaryReader& p_in);
 	};
 }

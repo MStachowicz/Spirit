@@ -83,14 +83,14 @@ namespace System
 		}
 	}
 
-	void Scene::serialise(std::ostream& p_out, uint16_t p_version, const Scene& p_Scene)
+	void Scene::serialise(Utility::BinaryWriter& p_out, const Scene& p_Scene)
 	{
-		ECS::Storage::serialise(p_out, p_version, p_Scene.m_entities);
+		p_out.write(p_Scene.m_entities);
 	}
-	Scene Scene::deserialise(std::istream& p_in, uint16_t p_version)
+	Scene Scene::deserialise(Utility::BinaryReader& p_in)
 	{
 		Scene scene;
-		scene.m_entities = ECS::Storage::deserialise(p_in, p_version);
+		scene.m_entities = p_in.read<ECS::Storage>();
 		// TODO: Update the scene bounds and view information after deserialising
 		return scene;
 	}

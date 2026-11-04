@@ -3,7 +3,7 @@
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
 
-#include <fstream>
+#include "Utility/Serialise.hpp"
 
 namespace Geometry
 {
@@ -34,8 +34,8 @@ namespace Component
 		glm::mat4 get_view_proj(const Geometry::AABB& scene_AABB);
 
 		void draw_UI();
-		static void serialise(std::ostream& p_out, uint16_t p_version, const DirectionalLight& p_light);
-		static DirectionalLight deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const DirectionalLight& p_light);
+		static DirectionalLight deserialise(Utility::BinaryReader& p_in);
 	};
 
 	class PointLight
@@ -58,8 +58,8 @@ namespace Component
 		float m_quadratic;
 
 		void draw_UI();
-		static void serialise(std::ostream& p_out, uint16_t p_version, const PointLight& p_light);
-		static PointLight deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const PointLight& p_light);
+		static PointLight deserialise(Utility::BinaryReader& p_in);
 	};
 
 	class SpotLight
@@ -84,7 +84,7 @@ namespace Component
 		float m_outer_cutoff;
 
 		void draw_UI();
-		static void serialise(std::ostream& p_out, uint16_t p_version, const SpotLight& p_light);
-		static SpotLight deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const SpotLight& p_light);
+		static SpotLight deserialise(Utility::BinaryReader& p_in);
 	};
 }

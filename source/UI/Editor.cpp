@@ -24,8 +24,10 @@
 
 #include "Geometry/Intersect.hpp"
 
+#include "Utility/File.hpp"
 #include "Utility/Logger.hpp"
 #include "Utility/Performance.hpp"
+#include "Utility/Serialise.hpp"
 #include "Utility/Screenshot.hpp"
 #include "Utility/Utility.hpp"
 
@@ -515,9 +517,17 @@ namespace UI
 					auto file_path = Platform::file_dialog(Platform::FileDialogType::Save, Platform::FileDialogFilter::Scene, "Save scene", Config::Scene_Save_Directory);
 					if (!file_path.empty())
 					{
-						std::ofstream file(file_path);
-						auto& scene = m_scene_system.get_current_scene();
-						System::Scene::serialise(file, Config::Save_Version, scene);
+						try
+						{
+							std::vector<std::byte> bytes;
+							Utility::BinaryWriter writer{bytes};
+							writer.write(m_scene_system.get_current_scene());
+							Utility::File::write_bytes(file_path, bytes);
+						}
+						catch (const std::exception& e)
+						{
+							LOG_ERROR(false, "Could not save scene {}: {}", file_path.string(), e.what());
+						}
 					}
 				}
 				if (ImGui::MenuItem("Load"))
@@ -525,27 +535,36 @@ namespace UI
 					auto file_path = Platform::file_dialog(Platform::FileDialogType::Open, Platform::FileDialogFilter::Scene, "Load scene", Config::Scene_Save_Directory);
 					if (!file_path.empty())
 					{
-						std::ifstream file(file_path);
-						auto& scene = m_scene_system.add_scene();
-						scene       = System::Scene::deserialise(file, Config::Save_Version);
-						m_scene_system.set_current_scene(scene);
-
-						// Refit the editor camera to the loaded scene contents.
-						bool has_bounds = false;
-						Geometry::AABB scene_AABB;
-						scene.m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
+						try
 						{
-							auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
-							if (!has_bounds)
+							const auto bytes = Utility::File::read_bytes(file_path);
+							Utility::BinaryReader reader{bytes};
+							auto loaded = reader.read<System::Scene>();
+							auto& scene = m_scene_system.add_scene();
+							scene = std::move(loaded);
+							m_scene_system.set_current_scene(scene);
+
+							// Refit the editor camera to the loaded scene contents.
+							bool has_bounds = false;
+							Geometry::AABB scene_AABB;
+							scene.m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
 							{
-								scene_AABB = world_AABB;
-								has_bounds = true;
-							}
-							else
-								scene_AABB.unite(world_AABB);
-						});
-						if (has_bounds)
-							m_viewport_pane.m_camera.refit(scene_AABB, m_viewport_pane.aspect_ratio(), 1.f);
+								auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+								if (!has_bounds)
+								{
+									scene_AABB = world_AABB;
+									has_bounds = true;
+								}
+								else
+									scene_AABB.unite(world_AABB);
+							});
+							if (has_bounds)
+								m_viewport_pane.m_camera.refit(scene_AABB, m_viewport_pane.aspect_ratio(), 1.f);
+						}
+						catch (const std::exception& e)
+						{
+							LOG_ERROR(false, "Could not load scene {}: {}", file_path.string(), e.what());
+						}
 					}
 				}
 

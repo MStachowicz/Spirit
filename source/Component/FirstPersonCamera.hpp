@@ -7,8 +7,6 @@
 
 #include "glm/glm.hpp"
 
-#include <iostream>
-
 namespace Component
 {
 	// Free moving FPS camera. Functions using Pitch and Yaw to determine the View transformation.
@@ -84,7 +82,7 @@ namespace Component
 		float get_maximum_view_distance(float aspect_ratio) const;
 
 		void draw_UI(Component::Transform* p_transform = nullptr);
-		static void serialise(std::ostream& p_out, uint16_t p_version, const FirstPersonCamera& p_first_person_camera);
-		static FirstPersonCamera deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const FirstPersonCamera& p_first_person_camera);
+		static FirstPersonCamera deserialise(Utility::BinaryReader& p_in);
 	};
 } // namespace Component

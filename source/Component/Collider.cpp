@@ -47,11 +47,11 @@ namespace Component
 		}
 	}
 
-	void Collider::serialise(std::ostream& p_out, uint16_t p_version, const Collider& p_collider)
-	{ UNUSED(p_out); UNUSED(p_version); UNUSED(p_collider);
+	void Collider::serialise(Utility::BinaryWriter& p_out, const Collider& p_collider)
+	{ UNUSED(p_out); UNUSED(p_collider);
 	}
-	Collider Collider::deserialise(std::istream& p_in, uint16_t p_version)
-	{ UNUSED(p_in); UNUSED(p_version);
+	Collider Collider::deserialise(Utility::BinaryReader& p_in)
+	{ UNUSED(p_in);
 		throw std::runtime_error("Not implemented yet.");
 	}
 	static_assert(Utility::Is_Serializable_v<Collider>, "Collider is not serializable, check that the required functions are implemented.");

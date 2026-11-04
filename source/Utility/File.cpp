@@ -3,9 +3,41 @@
 
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
+#include <utility>
 
 namespace Utility
 {
+	std::vector<std::byte> File::read_bytes(const std::filesystem::path& p_path)
+	{
+		std::ifstream file;
+		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		file.open(p_path, std::ios::binary | std::ios::ate);
+		const auto size = static_cast<std::streamoff>(file.tellg());
+		if (!std::in_range<std::size_t>(size) || !std::in_range<std::streamsize>(size))
+			throw std::length_error("Binary file size is not representable.");
+
+		std::vector<std::byte> bytes(static_cast<std::size_t>(size));
+		file.seekg(0, std::ios::beg);
+		if (!bytes.empty())
+			file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+		file.close();
+		return bytes;
+	}
+
+	void File::write_bytes(const std::filesystem::path& p_path, std::span<const std::byte> p_bytes)
+	{
+		if (!std::in_range<std::streamsize>(p_bytes.size()))
+			throw std::length_error("Binary buffer size is not representable.");
+
+		std::ofstream file;
+		file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+		file.open(p_path, std::ios::binary | std::ios::trunc);
+		if (!p_bytes.empty())
+			file.write(reinterpret_cast<const char*>(p_bytes.data()), static_cast<std::streamsize>(p_bytes.size()));
+		file.close();
+	}
+
 	std::string File::read_from_file(const std::filesystem::path& p_path)
 	{
 		if (!exists(p_path))

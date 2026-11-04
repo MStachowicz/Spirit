@@ -5,7 +5,7 @@
 namespace ECS
 {
 	// Type definitions for the saving and loading of the storage.
-	// If these types change or missmatch, saving/loading will break and needs to be handled using p_version.
+	// Changes to these types require migrating existing save files externally.
 
 	using Archetype_Count_t = size_t;
 	using Entity_Count_t    = size_t;
@@ -17,7 +17,7 @@ namespace ECS
 	static_assert(std::is_same<std::vector<int>::size_type, Component_Count_t>::value, "Component_Count_t doesn't match Vector::size_type. Update save/load type used.");
 	static_assert(std::is_same<ComponentID_t, ComponentID_t>::value,                   "ComponentID_t doesn't match ComponentID. Update save/load type used.");
 
-	void Storage::serialise(std::ostream& p_out, uint16_t p_version, const Storage& p_storage)
+	void Storage::serialise(Utility::BinaryWriter& p_out, const Storage& p_storage)
 	{
 		//{ECS::Storage save format
 		//uint16_t : archetypes count (only serialisable ones with entity count > 0 are saved)
@@ -44,7 +44,7 @@ namespace ECS
 		Archetype_Count_t archetype_count = std::count_if(p_storage.m_archetypes.begin(), p_storage.m_archetypes.end(), [&](const Archetype& p_archetype)
 			{ return should_save(p_archetype); });
 
-		Utility::write_binary(p_out, p_version, archetype_count); // Even if there are no archetypes to save, we still need to save the count to deserialise correctly.
+		p_out.write(archetype_count); // Even if there are no archetypes to save, we still need to save the count to deserialise correctly.
 		if (archetype_count == 0) // No archetypes to deserialise, return early.
 			return;
 
@@ -54,11 +54,11 @@ namespace ECS
 				continue;
 
 			Entity_Count_t entity_count = archetype.m_entities.size();
-			Utility::write_binary(p_out, p_version, entity_count);
+			p_out.write(entity_count);
 
 			// Count the number of serialisable components in the archetype.
 			Component_Count_t component_count = archetype.m_components.size();
-			Utility::write_binary(p_out, p_version, component_count);
+			p_out.write(component_count);
 
 			// Save the ComponentIDs of the serialisable components in the archetype.
 			for (const auto& component_layout : archetype.m_components)
@@ -66,7 +66,7 @@ namespace ECS
 				ASSERT(component_layout.type_info.is_serialisable, "Only serialisable components should be saved.");
 
 				ComponentID_t component_ID = component_layout.type_info.ID;
-				Utility::write_binary(p_out, p_version, component_ID);
+				p_out.write(component_ID);
 			}
 
 			// Save the entities in the archetype.
@@ -77,13 +77,13 @@ namespace ECS
 				for (const auto& component_layout : archetype.m_components)
 				{
 					BufferPosition component_start_pos = index_start_pos + component_layout.offset;
-					component_layout.type_info.Serialise(&archetype.m_data[component_start_pos], p_out, p_version);
+					component_layout.type_info.Serialise(&archetype.m_data[component_start_pos], p_out);
 				}
 			}
 		}
 	}
 
-	Storage Storage::deserialise(std::istream& p_in, uint16_t p_version)
+	Storage Storage::deserialise(Utility::BinaryReader& p_in)
 	{
 		//{ECS::Storage save format
 		//uint16_t : archetypes to load (always non-zero)
@@ -102,7 +102,7 @@ namespace ECS
 		Storage storage;
 
 		Archetype_Count_t archetype_count;
-		Utility::read_binary(p_in, p_version, archetype_count);
+		p_in.read(archetype_count);
 
 		// No archetypes to deserialise, return early.
 		if (archetype_count == 0)
@@ -113,10 +113,10 @@ namespace ECS
 		for (Archetype_Count_t i = 0; i < archetype_count; ++i)
 		{
 			Entity_Count_t entity_count; // Number of entities in the archetype.
-			Utility::read_binary(p_in, p_version, entity_count);
+			p_in.read(entity_count);
 
 			Component_Count_t component_count; // Number of components in the archetype.
-			Utility::read_binary(p_in, p_version, component_count);
+			p_in.read(component_count);
 
 			ComponentBitset component_bitset; // Bitset of the components in the archetype.
 			// Used to keep the order of the components. We need to know the order of the components in the file to Deserialise them correctly.
@@ -126,7 +126,7 @@ namespace ECS
 			for (Component_Count_t j = 0; j < component_count; ++j)
 			{
 				ComponentID_t component_ID;
-				Utility::read_binary(p_in, p_version, component_ID);
+				p_in.read(component_ID);
 				component_bitset.set(component_ID);
 				component_IDs.push_back(component_ID);
 			}
@@ -154,7 +154,7 @@ namespace ECS
 					for (const auto& component_layout : components)
 					{
 						const BufferPosition component_start_pos = index_start_pos + component_layout.offset;
-						component_layout.type_info.Deserialise(&archetype.m_data[component_start_pos], p_in, p_version);
+						component_layout.type_info.Deserialise(&archetype.m_data[component_start_pos], p_in);
 					}
 
 					archetype.m_entities.push_back(new_entity);

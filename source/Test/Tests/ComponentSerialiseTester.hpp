@@ -15,8 +15,6 @@ namespace Test
 
 	private:
 		// Used only inside ComponentSerialiseTester.cpp, no need to expose it to the public.
-		template<typename ComponentType>
-		bool test_serialisation(const ComponentType& p_to_serialise, ComponentType& p_deserialised);
 		template <typename T>
 		bool test_serialisation_utility(const T& p_to_serialise, T& p_deserialised);
 	};

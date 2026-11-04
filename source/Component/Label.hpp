@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Utility/Serialise.hpp"
+
 #include <string>
-#include <iostream>
-#include <cstdint>
 
 namespace Component
 {
@@ -15,8 +15,8 @@ namespace Component
 			: m_name{p_name}
 		{}
 
-		static void serialise(std::ostream& p_out, uint16_t p_version, const Label& p_label);
-		static Label deserialise(std::istream& p_in, uint16_t p_version);
+		static void serialise(Utility::BinaryWriter& p_out, const Label& p_label);
+		static Label deserialise(Utility::BinaryReader& p_in);
 
 		std::string m_name;
 	};

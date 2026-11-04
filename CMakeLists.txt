@@ -369,6 +369,8 @@ source/Utility/Serialise.hpp
 source/Utility/Stopwatch.hpp
 source/Utility/Screenshot.hpp
 source/Utility/Screenshot.cpp
+source/Utility/UndoRedo.hpp
+source/Utility/UndoRedo.cpp
 source/Utility/Utility.cpp
 source/Utility/Utility.hpp
 )
