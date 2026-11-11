@@ -20,5 +20,6 @@ namespace Utility
 	//@param p_channels Number of channels (e.g. 4 for RGBA).
 	//@param p_flip_y Whether to vertically flip the image while encoding the PNG.
 	//@param p_prefix Filename prefix before the timestamp (e.g. "screenshot", "pick_debug").
-	void save_pixels_to_file(const std::filesystem::path& p_directory, const std::vector<std::byte>& p_pixels, int p_width, int p_height, int p_channels, bool p_flip_y = false, const char* p_prefix = "screenshot");
+	//@return True only if a PNG was written, so commands can report write failures instead of claiming success.
+	bool save_pixels_to_file(const std::filesystem::path& p_directory, const std::vector<std::byte>& p_pixels, int p_width, int p_height, int p_channels, bool p_flip_y = false, const char* p_prefix = "screenshot");
 } // namespace Utility

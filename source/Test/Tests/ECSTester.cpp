@@ -610,6 +610,10 @@ namespace Test
 				auto has_components = storage.has_components<MyString, MySizet>(double_float_bool_ent);
 				CHECK_EQUAL(has_components, false, "no match multiple types");
 			}
+			{// Entity IDs typed into the console may never have been created, which must report false rather than read out of bounds.
+				auto has_components = storage.has_components<MyDouble>(ECS::Entity{1000});
+				CHECK_EQUAL(has_components, false, "entity never created");
+			}
 		}
 
 		{SCOPE_SECTION("foreach");
@@ -825,8 +829,7 @@ namespace Test
 			ECS::Storage storage_deserialised;
 			ECS::Storage storage_serialised;
 			auto entity             = storage_serialised.add_entity(MyDouble{42.0}, MyFloat{13.f}, MyBool{true}, MyInt{69});
-			auto test_ecs_save_file = Config::Scene_Save_Directory / "serialisation_test.ecs"; // TODO: Make sure this is unique.
-			std::filesystem::create_directories(test_ecs_save_file.parent_path());
+			std::vector<std::byte> buffer;
 			bool serialised_successfully = true;
 
 			static_assert(Utility::Is_Serializable_v<MyDouble>, "MyDouble is not serializable");
@@ -836,15 +839,12 @@ namespace Test
 
 			{SCOPE_SECTION("Save")
 				ASSERT_THROW(storage_serialised.count_entities() == 1, "To retrieve components after load, we reuse the same entity ID. So we need to make sure we only have 1 entity in the storage.");
-				std::ofstream ostrm;
-				ostrm.exceptions(std::ofstream::failbit | std::ofstream::badbit);
 				try
 				{
-					ostrm.open(test_ecs_save_file, std::ios::binary);
-					ECS::Storage::serialise(ostrm, Config::Save_Version, storage_serialised);
-					ostrm.close();
+					Utility::BinaryWriter writer{buffer};
+					ECS::Storage::serialise(writer, storage_serialised);
 				}
-				catch (std::ofstream::failure& e)
+				catch (const std::exception& e)
 				{
 					CHECK_TRUE(false, e.what());
 					serialised_successfully = false;
@@ -853,15 +853,12 @@ namespace Test
 
 			if (serialised_successfully)
 			{SCOPE_SECTION("Load")
-				std::ifstream istrm;
-				istrm.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 				try
 				{
-					istrm.open(test_ecs_save_file, std::ios::binary);
-					storage_deserialised = ECS::Storage::deserialise(istrm, Config::Save_Version);
-					istrm.close();
+					Utility::BinaryReader reader{buffer};
+					storage_deserialised = ECS::Storage::deserialise(reader);
 				}
-				catch (std::ifstream::failure& e)
+				catch (const std::exception& e)
 				{
 					CHECK_TRUE(false, e.what());
 					serialised_successfully = false;
@@ -887,9 +884,6 @@ namespace Test
 				CHECK_EQUAL(storage_serialised.get_component<MyBool>(entity), storage_deserialised.get_component<MyBool>(entity), "MyBool value");
 				CHECK_EQUAL(storage_serialised.get_component<MyInt>(entity), storage_deserialised.get_component<MyInt>(entity), "MyInt value");
 			}
-
-			// Cleanup the test file
-			std::filesystem::remove(test_ecs_save_file);
 		}
 	}
 } // namespace Test

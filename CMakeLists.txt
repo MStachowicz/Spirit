@@ -33,6 +33,8 @@ source/Test/TestManager.hpp
 source/Test/TestManager.cpp
 source/Test/Tests/CameraTester.hpp
 source/Test/Tests/CameraTester.cpp
+source/Test/Tests/CommandTester.hpp
+source/Test/Tests/CommandTester.cpp
 source/Test/Tests/ComponentSerialiseTester.hpp
 source/Test/Tests/ComponentSerialiseTester.cpp
 source/Test/Tests/ECSTester.hpp
@@ -45,6 +47,8 @@ source/Test/Tests/GeometryTester.hpp
 source/Test/Tests/GeometryTester.cpp
 source/Test/Tests/QuadTreeTester.hpp
 source/Test/Tests/QuadTreeTester.cpp
+source/Test/Tests/UndoRedoTester.hpp
+source/Test/Tests/UndoRedoTester.cpp
 )
 target_include_directories(Test
 PRIVATE source/Test/Tests
@@ -247,6 +251,8 @@ source/UI/Console.hpp
 source/UI/Console.cpp
 source/UI/Editor.hpp
 source/UI/Editor.cpp
+source/UI/EditorCommands.hpp
+source/UI/EditorCommands.cpp
 source/UI/Visualisers.hpp
 source/UI/Visualisers.cpp
 )
@@ -355,6 +361,7 @@ target_compile_options(OpenGL PRIVATE ${WARNING_COMPILE_FLAGS})
 configure_file(source/Utility/Config.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/source/Utility/Config.hpp)
 
 add_library(Utility
+source/Utility/Command.hpp
 source/Utility/EventDispatcher.hpp
 source/Utility/ResourceManager.hpp
 source/Utility/FunctionTraits.hpp
@@ -370,7 +377,6 @@ source/Utility/Stopwatch.hpp
 source/Utility/Screenshot.hpp
 source/Utility/Screenshot.cpp
 source/Utility/UndoRedo.hpp
-source/Utility/UndoRedo.cpp
 source/Utility/Utility.cpp
 source/Utility/Utility.hpp
 )

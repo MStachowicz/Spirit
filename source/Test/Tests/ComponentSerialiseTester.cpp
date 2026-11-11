@@ -12,65 +12,28 @@
 
 namespace Test
 {
-	// Helper function to serialise and deserialise a component into a file.
-	//@param p_to_serialise The component to serialise.
-	//@param p_deserialised The component to deserialise into.
-	//@return True if the serialisation and deserialisation was successful, false otherwise.
-	template<typename ComponentType>
-	bool ComponentSerialiseTester::test_serialisation(const ComponentType& p_to_serialise, ComponentType& p_deserialised)
-	{
-		try
-		{
-			std::ofstream out("test.bin", std::ios::binary);
-			out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-			ComponentType::serialise(out, 0, p_to_serialise);
-			out.close();
-
-			std::ifstream in("test.bin", std::ios::binary);
-			in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-			p_deserialised = ComponentType::deserialise(in, 0);
-			in.close();
-		}
-		catch (std::exception& e)
-		{
-			CHECK_TRUE(false, e.what());
-			std::remove("test.bin");
-			return false;
-		}
-
-		std::remove("test.bin");
-		return true;
-	}
-
-	// Helper function to test the serialisation and deserialisation of a value.
-	//@param p_to_serialise The value to write to a binary file.
-	//@param test_name The name of the test.
+	// Helper function to test the serialisation and deserialisation of a value through an in-memory buffer.
+	//@param p_to_serialise The value to serialise.
+	//@param p_deserialised The value to deserialise into.
 	//@return True if the serialisation and deserialisation was successful, false otherwise.
 	template <typename T>
 	bool ComponentSerialiseTester::test_serialisation_utility(const T& p_to_serialise, T& p_deserialised)
 	{
 		try
 		{
-			// Write the value to a binary file.
-			std::ofstream out("test.bin", std::ios::binary);
-			out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-			Utility::write_binary(out, 0, p_to_serialise);
-			out.close();
+			std::vector<std::byte> buffer;
+			Utility::BinaryWriter writer{buffer};
+			writer.write(p_to_serialise);
 
-			// Read the value back from the binary file.
-			std::ifstream in("test.bin", std::ios::binary);
-			in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-			Utility::read_binary(in, 0, p_deserialised);
-			in.close();
+			Utility::BinaryReader reader{buffer};
+			reader.read(p_deserialised);
 		}
 		catch (std::exception& e)
 		{
 			CHECK_TRUE(false, e.what());
-			std::remove("test.bin");
 			return false;
 		}
 
-		std::remove("test.bin");
 		return true;
 	}
 
@@ -491,8 +454,8 @@ namespace Test
 				struct Custom_Serialisation_POD
 				{
 					int i;
-					void write_binary(std::ostream& p_out, uint16_t p_version) const { Utility::write_binary(p_out, p_version, i); }
-					void read_binary(std::istream& p_in, uint16_t p_version)         { Utility::read_binary(p_in, p_version, i);   }
+					void write_binary(Utility::BinaryWriter& p_out) const { p_out.write(i); }
+					void read_binary(Utility::BinaryReader& p_in)         { p_in.read(i);   }
 				};
 				static_assert(Utility::Is_Trivially_Serializable<Custom_Serialisation_POD>, "Custom_Serialisation_POD must be trivially serializable");
 				static_assert(Utility::Has_Custom_Serialisation<Custom_Serialisation_POD>, "Custom_Serialisation_POD must have custom serialisation");
@@ -546,8 +509,8 @@ namespace Test
 				struct Custom_serialisation_Non_POD
 				{
 					std::string c;
-					void write_binary(std::ostream& p_out, uint16_t p_version) const { Utility::write_binary(p_out, p_version, c); }
-					void read_binary(std::istream& p_in, uint16_t p_version)         { Utility::read_binary(p_in, p_version, c);   }
+					void write_binary(Utility::BinaryWriter& p_out) const { p_out.write(c); }
+					void read_binary(Utility::BinaryReader& p_in)         { p_in.read(c);   }
 				};
 				static_assert(!Utility::Is_Trivially_Serializable<Custom_serialisation_Non_POD>, "Custom_serialisation_Non_POD must not be trivially serializable");
 				static_assert(Utility::Has_Custom_Serialisation<Custom_serialisation_Non_POD>, "Custom_serialisation_Non_POD must have custom serialisation");
@@ -609,7 +572,7 @@ namespace Test
 				serialised_light.m_ortho_size         = 0.7f;
 
 				Component::DirectionalLight deserialised_light;
-				if (test_serialisation(serialised_light, deserialised_light))
+				if (test_serialisation_utility(serialised_light, deserialised_light))
 				{
 					CHECK_EQUAL(serialised_light.m_direction, deserialised_light.m_direction, "Direction");
 					CHECK_EQUAL(serialised_light.m_colour, deserialised_light.m_colour, "Colour");
@@ -636,7 +599,7 @@ namespace Test
 				serialised_light.m_quadratic          = 0.7f;
 
 				Component::PointLight deserialised_light;
-				if (test_serialisation(serialised_light, deserialised_light))
+				if (test_serialisation_utility(serialised_light, deserialised_light))
 				{
 					CHECK_EQUAL(serialised_light.m_position, deserialised_light.m_position, "Position");
 					CHECK_EQUAL(serialised_light.m_colour, deserialised_light.m_colour, "Colour");
@@ -666,7 +629,7 @@ namespace Test
 				serialised_light.m_outer_cutoff       = 0.7f;
 
 				Component::SpotLight deserialised_light;
-				if (test_serialisation(serialised_light, deserialised_light))
+				if (test_serialisation_utility(serialised_light, deserialised_light))
 				{
 					CHECK_EQUAL(serialised_light.m_position, deserialised_light.m_position, "Position");
 					CHECK_EQUAL(serialised_light.m_direction, deserialised_light.m_direction, "Direction");
@@ -691,7 +654,7 @@ namespace Test
 				serialised_transform.m_orientation    = glm::quat(3.8f, 2.5f, 4.4f, 0.5f);
 
 				Component::Transform deserialised_transform;
-				if (test_serialisation(serialised_transform, deserialised_transform))
+				if (test_serialisation_utility(serialised_transform, deserialised_transform))
 				{
 					CHECK_EQUAL(serialised_transform.m_position, deserialised_transform.m_position, "Position");
 					CHECK_EQUAL(serialised_transform.m_scale, deserialised_transform.m_scale, "Scale");

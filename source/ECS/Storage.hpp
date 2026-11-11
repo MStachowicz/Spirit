@@ -859,7 +859,8 @@ namespace ECS
 		{
 			static_assert(sizeof...(ComponentTypes) != 0, "Cannot query has_components with 0 types.");
 
-			if (!m_entity_to_archetype_ID[p_entity.ID].has_value()) // p_entity has been deleted
+			// p_entity was never created (e.g. an ID typed into the console) or has been deleted.
+			if (p_entity.ID >= m_entity_to_archetype_ID.size() || !m_entity_to_archetype_ID[p_entity.ID].has_value())
 				return false;
 
 			if constexpr (sizeof...(ComponentTypes) > 1)

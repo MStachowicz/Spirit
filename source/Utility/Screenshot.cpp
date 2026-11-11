@@ -59,10 +59,13 @@ namespace Utility
 		return s_directory;
 	}
 
-	void save_pixels_to_file(const std::filesystem::path& p_directory, const std::vector<std::byte>& p_pixels, int p_width, int p_height, int p_channels, bool p_flip_y, const char* p_prefix)
+	bool save_pixels_to_file(const std::filesystem::path& p_directory, const std::vector<std::byte>& p_pixels, int p_width, int p_height, int p_channels, bool p_flip_y, const char* p_prefix)
 	{
 		if (p_width <= 0 || p_height <= 0 || p_pixels.empty())
-			return;
+		{
+			LOG_ERROR_NO_LOCATION("Cannot save screenshot: No valid pixel data was supplied.");
+			return false;
+		}
 
 		const std::string timestamp = screenshot_timestamp();
 		const int stride            = p_width * p_channels;
@@ -84,6 +87,8 @@ namespace Utility
 		if (write_succeeded)
 			LOG("Screenshot saved: {}", filepath.string());
 		else
-			LOG("Failed to save screenshot to: {}", filepath.string());
+			LOG_ERROR_NO_LOCATION("Failed to save screenshot to: {}", filepath.string());
+
+		return write_succeeded != 0;
 	}
 } // namespace Utility

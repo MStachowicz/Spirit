@@ -1,11 +1,13 @@
 #include "Test/TestManager.hpp"
 #include "Test/Tests/CameraTester.hpp"
+#include "Test/Tests/CommandTester.hpp"
 #include "Test/Tests/ComponentSerialiseTester.hpp"
 #include "Test/Tests/ECSTester.hpp"
 #include "Test/Tests/GeometryTester.hpp"
 #include "Test/Tests/ResourceManagerTester.hpp"
 #include "Test/Tests/GraphicsTester.hpp"
 #include "Test/Tests/QuadTreeTester.hpp"
+#include "Test/Tests/UndoRedoTester.hpp"
 
 #include <cstring>
 #include "Utility/Stopwatch.hpp"
@@ -27,7 +29,7 @@ int main(int argc, char* argv[])
 	{
 		printf("Usage: %s [flags]\n", argv[0]);
 		printf("\nFlags:\n");
-		printf("  --performance            Additionally run performance tests\n");
+		printf("  --performance            Run the performance tests instead of the unit tests\n");
 		printf("  --no-graphics            Skip graphics tests\n");
 		printf("\n");
 		exit(1);
@@ -37,13 +39,24 @@ int main(int argc, char* argv[])
 
 	std::vector<std::unique_ptr<Test::TestManager>> test_managers;
 	test_managers.emplace_back(std::make_unique<Test::CameraTester>());
+	test_managers.emplace_back(std::make_unique<Test::CommandTester>());
 	test_managers.emplace_back(std::make_unique<Test::ComponentSerialiseTester>());
 	test_managers.emplace_back(std::make_unique<Test::ECSTester>());
 	test_managers.emplace_back(std::make_unique<Test::GeometryTester>());
 	test_managers.emplace_back(std::make_unique<Test::ResourceManagerTester>());
 	test_managers.emplace_back(std::make_unique<Test::QuadTreeTester>());
+	test_managers.emplace_back(std::make_unique<Test::UndoRedoTester>());
 	if (!skip_graphics_test)
 		test_managers.emplace_back(std::make_unique<Test::GraphicsTester>());
+
+	if (should_run_perf_tests)
+	{
+		printf("***************** PERFORMANCE TESTS *****************\n");
+		for (auto& tester : test_managers)
+			tester->run_performance_tests();
+		printf("%s", seperator);
+		return 0;
+	}
 
 	size_t unit_test_overall_pass_count    = 0;
 	size_t unit_test_overall_fail_count    = 0;

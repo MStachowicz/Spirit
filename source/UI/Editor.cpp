@@ -36,6 +36,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <filesystem>
 #include <format>
 #include <numbers>
 #include <cstdint>
@@ -71,6 +72,9 @@ namespace UI
 		, m_debug_selection_ray{std::nullopt}
 		, pie_chart_node_index{std::nullopt}
 		, m_screenshot_pending{false}
+		, m_history{}
+		, m_context{*this, m_scene_system, m_history}
+		, m_commands{m_context}
 		, m_draw_count{0}
 		, m_time_to_average_over{std::chrono::seconds(1)}
 		, m_duration_between_draws{}
@@ -370,8 +374,9 @@ namespace UI
 			{
 				if (p_action == Platform::Action::Release)
 				{
-					if (!Utility::screenshot_directory().empty())
-						m_screenshot_pending = true;
+					const auto result = m_commands.execute<Commands::TakeScreenshot>({.include_ui = true});
+					if (!result.success)
+						log_error(result.message);
 				}
 				break;
 			}
@@ -473,28 +478,63 @@ namespace UI
 			return {};
 	}
 
+	Utility::CommandResult Editor::request_screenshot(bool p_include_ui)
+	{
+		if (!p_include_ui)
+		{
+			if (is_playing())
+				return Utility::CommandResult::fail("Viewport screenshots are unavailable in Play mode because the editor viewport is not rendered.");
+
+			return capture_screenshot(m_viewport_pane.m_FBO, "viewport");
+		}
+
+		try
+		{
+			if (Utility::screenshot_directory().empty())
+				return Utility::CommandResult::fail("Screenshot cancelled: Screenshot directory not set.");
+		}
+		catch (const std::filesystem::filesystem_error& error)
+		{
+			return Utility::CommandResult::fail(std::format("Unable to select screenshot directory: {}", error.what()));
+		}
+
+		m_screenshot_pending = true;
+		return Utility::CommandResult::ok("Screenshot scheduled for the end of the frame.");
+	}
+
+	Utility::CommandResult Editor::capture_screenshot(const OpenGL::FBO& p_framebuffer, const char* p_prefix)
+	{
+		try
+		{
+			const auto& directory = Utility::screenshot_directory();
+			if (directory.empty())
+				return Utility::CommandResult::fail("Screenshot cancelled: Screenshot directory not set.");
+
+			const auto pixels = p_framebuffer.read_pixels();
+			if (pixels.empty())
+				return Utility::CommandResult::fail("Screenshot failed: No framebuffer pixels could be read.");
+
+			const auto resolution = p_framebuffer.resolution();
+			if (!Utility::save_pixels_to_file(directory, pixels, static_cast<int>(resolution.x), static_cast<int>(resolution.y),
+				p_framebuffer.channel_count(), true, p_prefix))
+				return Utility::CommandResult::fail("Screenshot failed: Unable to write the PNG file.");
+
+			return Utility::CommandResult::ok();
+		}
+		catch (const std::filesystem::filesystem_error& error)
+		{
+			return Utility::CommandResult::fail(std::format("Screenshot failed: {}", error.what()));
+		}
+	}
+
 	void Editor::end_frame()
 	{
 		if (m_screenshot_pending)
 		{
 			m_screenshot_pending = false;
-			auto& dir = Utility::screenshot_directory();
-			if (!dir.empty())
-			{
-				auto pixels = OpenGL::FBO::default_framebuffer().read_pixels();
-				if (!pixels.empty())
-				{
-					const auto resolution = OpenGL::FBO::default_framebuffer().resolution();
-					Utility::save_pixels_to_file(
-						dir,
-						pixels,
-						static_cast<int>(resolution.x),
-						static_cast<int>(resolution.y),
-						OpenGL::FBO::default_framebuffer().channel_count(),
-						true,
-						"screenshot");
-				}
-			}
+			const auto result = capture_screenshot(OpenGL::FBO::default_framebuffer(), "screenshot");
+			if (!result.success)
+				log_error(result.message);
 		}
 	}
 
@@ -543,6 +583,7 @@ namespace UI
 							auto& scene = m_scene_system.add_scene();
 							scene = std::move(loaded);
 							m_scene_system.set_current_scene(scene);
+							m_history.clear(); // Recorded entity IDs belong to the previous scene.
 
 							// Refit the editor camera to the loaded scene contents.
 							bool has_bounds = false;
@@ -572,6 +613,11 @@ namespace UI
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
+				if (ImGui::MenuItem("Undo", NULL, false, m_history.can_undo()))
+					m_commands.execute<Commands::Undo>();
+				if (ImGui::MenuItem("Redo", NULL, false, m_history.can_redo()))
+					m_commands.execute<Commands::Redo>();
+				ImGui::Separator();
 				ImGui::MenuItem("Entity tree", NULL, &m_panes_to_display.Entity);
 				ImGui::EndMenu();
 			}
@@ -585,6 +631,14 @@ namespace UI
 				ImGui::MenuItem("FPS Timer",          NULL, &m_panes_to_display.FPSTimer);
 				ImGui::Separator();
 				ImGui::MenuItem("Theme",              NULL, &m_panes_to_display.theme_editor);
+				if (ImGui::MenuItem("Dark mode", NULL, Platform::Core::s_theme.dark_mode))
+					m_commands.execute<Commands::SetDarkMode>({.enabled = !Platform::Core::s_theme.dark_mode});
+
+				auto& entities = m_scene_system.get_current_scene_entities();
+				const bool one_transform_selected = m_selected_entities.size() == 1 && entities.has_components<Component::Transform>(m_selected_entities.front());
+				if (ImGui::MenuItem("Reset selected scale", NULL, false, one_transform_selected))
+					m_commands.execute<Commands::ResetScale>({.entity = m_selected_entities.front().ID});
+
 				ImGui::MenuItem("ImGui style editor", NULL, &m_panes_to_display.ImGuiStyleEditor);
 
 				if (ImGui::BeginMenu("ImGui"))
@@ -1254,25 +1308,9 @@ namespace UI
 			ImGui::Separator();
 			if (ImGui::MenuItem("Save as PNG"))
 			{
-				auto& dir = Utility::screenshot_directory();
-				if (!dir.empty())
-				{
-					auto pixels = m_viewport_pane.m_FBO.read_pixels();
-					if (!pixels.empty())
-					{
-						const auto resolution = m_viewport_pane.m_FBO.resolution();
-						Utility::save_pixels_to_file(
-							dir,
-							pixels,
-							static_cast<int>(resolution.x),
-							static_cast<int>(resolution.y),
-							m_viewport_pane.m_FBO.channel_count(),
-							true,
-							"viewport");
-					}
-				}
-				else
-					log_error("Screenshot cancelled: Screenshot directory not set.");
+				const auto result = m_commands.execute<Commands::TakeScreenshot>({.include_ui = false});
+				if (!result.success)
+					log_error(result.message);
 			}
 			ImGui::EndPopup();
 		}

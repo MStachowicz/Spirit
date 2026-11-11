@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UI/Console.hpp"
+#include "UI/EditorCommands.hpp"
 #include "Component/TwoAxisCamera.hpp"
 #include "ECS/Entity.hpp"
 #include "Geometry/Ray.hpp"
@@ -142,6 +143,11 @@ namespace UI
 
 		bool m_screenshot_pending; // Whether a screenshot should be taken at the end of this frame.
 
+		// Declared in this order as each refers to the one before.
+		EditorHistory m_history;    // User-authored edits from the UI, console and MCP. Simulation changes never enter it.
+		EditorContext m_context;    // What commands and their undo and redo functions operate on.
+		CommandExecutor m_commands; // Runs every command so the Play mode rule and undo grouping always apply.
+
 	public:
 		int m_draw_count;
 		DeltaTime m_time_to_average_over; // The time over which to average out the fps.
@@ -190,7 +196,21 @@ namespace UI
 		void log_warning(const std::string& p_message);
 		void log_error(const std::string& p_message);
 
+		// Applies the current theme, Platform::Core::s_theme, to ImGui's style. Commands::SetDarkMode calls it after changing the theme,
+		// use the command for an undoable switch.
+		void initialiseStyling();
+
+		// Used by Commands::TakeScreenshot; reuses the shared save directory and preserves the existing capture timing.
+		//@param p_include_ui True schedules the full window after ImGui rendering; false saves the editor viewport immediately.
+		//@return Whether the capture was scheduled or saved. Deferred failures are reported by end_frame.
+		Utility::CommandResult request_screenshot(bool p_include_ui);
+
 	private:
+		// Reads and saves one framebuffer, shared by immediate viewport captures and deferred full-window captures.
+		//@param p_framebuffer The rendered image to read, without changing its contents.
+		//@param p_prefix Filename prefix before the timestamp, distinguishing window and viewport captures.
+		Utility::CommandResult capture_screenshot(const OpenGL::FBO& p_framebuffer, const char* p_prefix);
+
 		void on_mouse_move_event(const glm::vec2 p_mouse_delta);
 		void on_mouse_scroll_event(const glm::vec2 p_mouse_scroll);
 		void on_mouse_button_event(Platform::MouseButton p_button, Platform::Action p_action);
@@ -225,7 +245,5 @@ namespace UI
 		void draw_pie_chart(const std::vector<PieSlice>& slices, const std::function<void()>& on_inner_circle_click = nullptr, const std::function<void()>& on_inner_circle_hover = nullptr, bool draw_border = true);
 
 		void entity_creation_popup();
-
-		void initialiseStyling();
 	};
 } // namespace UI
