@@ -1,22 +1,14 @@
 #pragma once
 
-#include "glm/vec3.hpp"
-#include "glm/fwd.hpp"
-
 namespace Geometry
 {
+	// A sphere centred on the origin of its own space. Where it sits is passed separately, e.g. from a Transform, so a shape never
+	// holds a second copy of an entity's position that could disagree with it.
 	class Sphere
 	{
 	public:
-		Sphere(const glm::vec3& p_position, const float& p_radius)
-			: m_center{p_position}
-			, m_radius{p_radius}
-		{}
-
-		void transform(const glm::mat4& p_transform, const glm::vec3& p_scale);
 		void draw_UI() const;
 
-		glm::vec3 m_center;
 		float m_radius;
 	};
 }

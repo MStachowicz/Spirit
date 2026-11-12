@@ -5,12 +5,12 @@
 #include "Geometry/Plane.hpp"
 #include "Geometry/Sphere.hpp"
 #include "Geometry/Cylinder.hpp"
-#include "Geometry/Quad.hpp"
 
 #include <variant>
 
 namespace Geometry
 {
-	// A general shape that can be any supported geometry type.
-	using Shape = std::variant<Sphere, Plane, Cuboid, Cone, Cylinder, Quad>;
+	// A shape in its owner's own space, placed by e.g. the owner's Transform. A Plane here is relative to that placement.
+	// Quad is not one: it is four world-space corners, a polygon like Triangle, so a quad collider is a thin Cuboid.
+	using Shape = std::variant<Sphere, Plane, Cuboid, Cone, Cylinder>;
 }

@@ -231,7 +231,7 @@ namespace Component
 		if (m_show_refit_AABB)
 			OpenGL::DebugRenderer::add(m_refit_AABB, glm::vec4(1.f, 0.5f, 0.f, 1.f));
 		if (m_show_refit_sphere)
-			OpenGL::DebugRenderer::add(Geometry::Sphere{m_refit_AABB.get_center(), m_refit_sphere_radius}, glm::vec4(0.f, 0.5f, 1.f, 0.25f));
+			OpenGL::DebugRenderer::add(Geometry::Sphere{m_refit_sphere_radius}, m_refit_AABB.get_center(), glm::vec4(0.f, 0.5f, 1.f, 0.25f));
 
 		ImGui::SeparatorText("Info");
 		ImGui::Text("Position", position());

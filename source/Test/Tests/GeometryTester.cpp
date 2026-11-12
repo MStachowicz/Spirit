@@ -17,6 +17,7 @@
 #include "glm/glm.hpp"
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 #include <array>
 
@@ -301,13 +302,15 @@ namespace Test
 	void GeometryTester::run_sphere_tests()
 	{SCOPE_SECTION("Sphere v Sphere");
 		{SCOPE_SECTION("Touching");
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f);
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
+			auto sphere   = Geometry::Sphere{1.f};
+			auto sphere_2 = Geometry::Sphere{1.f};
+			auto center   = glm::vec3(0.f, 0.f, 0.f);
+			auto center_2 = glm::vec3(2.f, 0.f, 0.f);
 
-			CHECK_TRUE(Geometry::intersecting(sphere, sphere_2), "intersecting");
+			CHECK_TRUE(Geometry::intersecting(sphere, center, sphere_2, center_2), "intersecting");
 
 			{SCOPE_SECTION("Sphere 1");
-				auto intersection = Geometry::get_intersection(sphere, sphere_2);
+				auto intersection = Geometry::get_intersection(sphere, center, sphere_2, center_2);
 				CHECK_TRUE(intersection.has_value(), "get_intersection");
 
 				if (intersection.has_value())
@@ -316,7 +319,7 @@ namespace Test
 				}
 			}
 			{SCOPE_SECTION("Sphere 2"); // Swap the spheres around, should get the same result with the normals flipped
-				auto intersection = Geometry::get_intersection(sphere_2, sphere);
+				auto intersection = Geometry::get_intersection(sphere_2, center_2, sphere, center);
 				CHECK_TRUE(intersection.has_value(), "get_intersection");
 
 				if (intersection.has_value())
@@ -327,25 +330,30 @@ namespace Test
 		}
 		{SCOPE_SECTION("Not intersecting epsilon");
 			// Reduce the size of one of the spheres touching by epsilon, should not intersect anymore
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f - std::numeric_limits<float>::epsilon());
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.f);
+			auto sphere   = Geometry::Sphere{1.f - std::numeric_limits<float>::epsilon()};
+			auto sphere_2 = Geometry::Sphere{1.f};
+			auto center   = glm::vec3(0.f, 0.f, 0.f);
+			auto center_2 = glm::vec3(2.f, 0.f, 0.f);
 
-			CHECK_TRUE(!Geometry::intersecting(sphere, sphere_2), "intersecting");
-			auto intersection = Geometry::get_intersection(sphere, sphere_2);
+			CHECK_TRUE(!Geometry::intersecting(sphere, center, sphere_2, center_2), "intersecting");
+			auto intersection = Geometry::get_intersection(sphere, center, sphere_2, center_2);
 			CHECK_TRUE(!intersection.has_value(), "get_intersection");
 		}
 		{SCOPE_SECTION("Overlapping");
 			// Without information about the spheres movement, there is no 'correct' answer for this case.
 			// We expect the resolution to result in the minimum penetration depth displacement.
 
-			auto sphere_1 = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.25f);
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 1.25f);
-			auto sphere_3 = Geometry::Sphere(glm::vec3(5.f, 0.f, 0.f), 6.f);
+			auto sphere_1 = Geometry::Sphere{1.25f};
+			auto sphere_2 = Geometry::Sphere{1.25f};
+			auto sphere_3 = Geometry::Sphere{6.f};
+			auto center_1 = glm::vec3(0.f, 0.f, 0.f);
+			auto center_2 = glm::vec3(2.f, 0.f, 0.f);
+			auto center_3 = glm::vec3(5.f, 0.f, 0.f);
 
-			CHECK_TRUE(Geometry::intersecting(sphere_1, sphere_2), "intersecting");
+			CHECK_TRUE(Geometry::intersecting(sphere_1, center_1, sphere_2, center_2), "intersecting");
 
 			{SCOPE_SECTION("Sphere 1");
-				auto intersection = Geometry::get_intersection(sphere_1, sphere_2);
+				auto intersection = Geometry::get_intersection(sphere_1, center_1, sphere_2, center_2);
 				CHECK_TRUE(intersection.has_value(), "get_intersection");
 
 				if (intersection.has_value())
@@ -354,7 +362,7 @@ namespace Test
 				}
 			}
 			{SCOPE_SECTION("Sphere 2");
-				auto intersection = Geometry::get_intersection(sphere_2, sphere_1);
+				auto intersection = Geometry::get_intersection(sphere_2, center_2, sphere_1, center_1);
 				CHECK_TRUE(intersection.has_value(), "get_intersection");
 
 				if (intersection.has_value())
@@ -364,7 +372,7 @@ namespace Test
 			}
 			{SCOPE_SECTION("Sphere overlaps past half way");
 				{SCOPE_SECTION("Sphere 1");
-					auto intersection = Geometry::get_intersection(sphere_1, sphere_3);
+					auto intersection = Geometry::get_intersection(sphere_1, center_1, sphere_3, center_3);
 					CHECK_TRUE(intersection.has_value(), "get_intersection");
 
 					if (intersection.has_value())
@@ -373,7 +381,7 @@ namespace Test
 					}
 				}
 				{SCOPE_SECTION("Sphere 3");
-					auto intersection = Geometry::get_intersection(sphere_3, sphere_1);
+					auto intersection = Geometry::get_intersection(sphere_3, center_3, sphere_1, center_1);
 					CHECK_TRUE(intersection.has_value(), "get_intersection");
 
 					if (intersection.has_value())
@@ -384,22 +392,25 @@ namespace Test
 			}
 		}
 		{SCOPE_SECTION("Not intersecting");
-			auto sphere   = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 0.5f);
-			auto sphere_2 = Geometry::Sphere(glm::vec3(2.f, 0.f, 0.f), 0.5f);
+			auto sphere   = Geometry::Sphere{0.5f};
+			auto sphere_2 = Geometry::Sphere{0.5f};
+			auto center   = glm::vec3(0.f, 0.f, 0.f);
+			auto center_2 = glm::vec3(2.f, 0.f, 0.f);
 
-			CHECK_TRUE(!Geometry::intersecting(sphere, sphere_2), "intersecting");
+			CHECK_TRUE(!Geometry::intersecting(sphere, center, sphere_2, center_2), "intersecting");
 
-			auto intersection = Geometry::get_intersection(sphere, sphere_2);
+			auto intersection = Geometry::get_intersection(sphere, center, sphere_2, center_2);
 			CHECK_TRUE(!intersection.has_value(), "get_intersection");
 		}
 		{SCOPE_SECTION("Same sphere - overlapping spheres");
 			// There is no 'correct' answer for this case, without information about the spheres movement.
 			// The current implementation returns the first sphere's contact point as its bottom and resolves the normal as 'up'.
-			auto sphere = Geometry::Sphere(glm::vec3(0.f, 0.f, 0.f), 1.f);
+			auto sphere = Geometry::Sphere{1.f};
+			auto center = glm::vec3(0.f, 0.f, 0.f);
 
-			CHECK_TRUE(Geometry::intersecting(sphere, sphere), "intersecting");
+			CHECK_TRUE(Geometry::intersecting(sphere, center, sphere, center), "intersecting");
 
-			auto intersection = Geometry::get_intersection(sphere, sphere);
+			auto intersection = Geometry::get_intersection(sphere, center, sphere, center);
 			CHECK_TRUE(intersection.has_value(), "intersection");
 			if (intersection.has_value())
 			{SCOPE_SECTION("Contact Info");
@@ -429,40 +440,72 @@ namespace Test
 			CHECK_TRUE(Geometry::point_inside(AABB, point_on_min_edge), "Point on min edge of AABB");
 		}
 		{SCOPE_SECTION("Point v Cone");
-			const auto cone = Geometry::Cone(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
+			// Base at the origin and apex at (0, 1, 0): a cone of half height 0.5 placed at its middle.
+			const auto cone        = Geometry::Cone{.m_half_height = 0.5f, .m_base_radius = 1.f};
+			const auto position    = glm::vec3(0.f, 0.5f, 0.f);
+			const auto orientation = glm::identity<glm::quat>();
 
 			auto point_inside = glm::vec3(0.f, 0.5f, 0.f);
-			CHECK_TRUE(Geometry::point_inside(cone, point_inside), "Point inside cone");
+			CHECK_TRUE(Geometry::point_inside(cone, position, orientation, point_inside), "Point inside cone");
 
 			auto point_outside = glm::vec3(0.f, 1.5f, 0.f);
-			CHECK_TRUE(!Geometry::point_inside(cone, point_outside), "Point outside");
+			CHECK_TRUE(!Geometry::point_inside(cone, position, orientation, point_outside), "Point outside");
 
 			auto point_on_surface_top = glm::vec3(0.f, 1.f, 0.f);
-			CHECK_TRUE(Geometry::point_inside(cone, point_on_surface_top), "Point on Surface top");
+			CHECK_TRUE(Geometry::point_inside(cone, position, orientation, point_on_surface_top), "Point on Surface top");
 
 			auto point_on_surface_base = glm::vec3(0.f);
-			CHECK_TRUE(Geometry::point_inside(cone, point_on_surface_base), "Point on surface base");
+			CHECK_TRUE(Geometry::point_inside(cone, position, orientation, point_on_surface_base), "Point on surface base");
 
 			auto point_on_surface_side = glm::vec3(0.f, 0.5f, 0.5f);
-			CHECK_TRUE(Geometry::point_inside(cone, point_on_surface_side), "Point on surface side");
+			CHECK_TRUE(Geometry::point_inside(cone, position, orientation, point_on_surface_side), "Point on surface side");
+
+			{SCOPE_SECTION("Moved and turned");
+				// The cone holds no pose, so check the position and orientation passed in are both applied: placed at (5, 0, 0) and
+				// turned so its axis runs along +X, base at x = 4 and apex at x = 6. The first three points give the opposite answer
+				// if the orientation were ignored. The last checks the cone ends at the apex along the turned axis.
+				const auto turned_cone     = Geometry::Cone{.m_half_height = 1.f, .m_base_radius = 1.f};
+				const auto turned_position = glm::vec3(5.f, 0.f, 0.f);
+				const auto turned          = glm::angleAxis(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f)); // +Y onto +X.
+
+				CHECK_TRUE(Geometry::point_inside(turned_cone, turned_position, turned, glm::vec3(4.1f, 0.8f, 0.f)), "Point inside near the base");
+				CHECK_TRUE(Geometry::point_inside(turned_cone, turned_position, turned, glm::vec3(5.5f, 0.2f, 0.f)), "Point inside near the apex");
+				CHECK_TRUE(!Geometry::point_inside(turned_cone, turned_position, turned, glm::vec3(5.5f, -0.9f, 0.f)), "Point outside the narrowing side");
+				CHECK_TRUE(!Geometry::point_inside(turned_cone, turned_position, turned, glm::vec3(6.1f, 0.f, 0.f)), "Point outside past the apex");
+			}
 		}
 		{SCOPE_SECTION("Point v Cylinder");
-			const auto cylinder = Geometry::Cylinder(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), 1.f);
+			// Base at the origin and top at (0, 1, 0): a cylinder of half height 0.5 placed at its middle.
+			const auto cylinder    = Geometry::Cylinder{.m_half_height = 0.5f, .m_radius = 1.f};
+			const auto position    = glm::vec3(0.f, 0.5f, 0.f);
+			const auto orientation = glm::identity<glm::quat>();
 
 			auto point_inside = glm::vec3(0.5f, 0.5f, 0.5f);
-			CHECK_TRUE(Geometry::point_inside(cylinder, point_inside), "Point inside cylinder");
+			CHECK_TRUE(Geometry::point_inside(cylinder, position, orientation, point_inside), "Point inside cylinder");
 
 			auto point_outside = glm::vec3(0.5f, 1.5f, 0.5f);
-			CHECK_TRUE(!Geometry::point_inside(cylinder, point_outside), "Point outside cylinder");
+			CHECK_TRUE(!Geometry::point_inside(cylinder, position, orientation, point_outside), "Point outside cylinder");
 
 			auto point_on_surface_top = glm::vec3(0.f, 1.f, 0.f);
-			CHECK_TRUE(Geometry::point_inside(cylinder, point_on_surface_top), "Point on surface top");
+			CHECK_TRUE(Geometry::point_inside(cylinder, position, orientation, point_on_surface_top), "Point on surface top");
 
 			auto point_on_surface_base = glm::vec3(0.f);
-			CHECK_TRUE(Geometry::point_inside(cylinder, point_on_surface_base), "Point on surface base");
+			CHECK_TRUE(Geometry::point_inside(cylinder, position, orientation, point_on_surface_base), "Point on surface base");
 
 			auto point_on_surface_side = glm::vec3(0.f, 0.5f, 0.5f);
-			CHECK_TRUE(Geometry::point_inside(cylinder, point_on_surface_side), "Point on surface side");
+			CHECK_TRUE(Geometry::point_inside(cylinder, position, orientation, point_on_surface_side), "Point on surface side");
+
+			{SCOPE_SECTION("Moved and turned");
+				// As for the cone: placed at (5, 0, 0) with its axis along +X, from x = 4 to x = 6. The first two points give the
+				// opposite answer if the orientation were ignored. The last checks the cylinder ends along the turned axis.
+				const auto turned_cylinder = Geometry::Cylinder{.m_half_height = 1.f, .m_radius = 0.5f};
+				const auto turned_position = glm::vec3(5.f, 0.f, 0.f);
+				const auto turned          = glm::angleAxis(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f)); // +Y onto +X.
+
+				CHECK_TRUE(Geometry::point_inside(turned_cylinder, turned_position, turned, glm::vec3(5.9f, 0.4f, 0.f)), "Point inside near the end");
+				CHECK_TRUE(!Geometry::point_inside(turned_cylinder, turned_position, turned, glm::vec3(5.f, 0.6f, 0.f)), "Point outside the side");
+				CHECK_TRUE(!Geometry::point_inside(turned_cylinder, turned_position, turned, glm::vec3(6.1f, 0.f, 0.f)), "Point outside past the end");
+			}
 		}
 		{SCOPE_SECTION("Point v Line");
 			const auto line = Geometry::Line(glm::vec3(-1.f), glm::vec3(1.f));

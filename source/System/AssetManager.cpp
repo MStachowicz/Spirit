@@ -26,7 +26,7 @@ namespace System
 			case ShapeType::Cuboid:
 			{
 				auto mb = Utility::MeshBuilder<Data::Vertex, OpenGL::PrimitiveMode::Triangles, true>{};
-				mb.add_cuboid(Geometry::Cuboid(glm::vec3(0.f)));
+				mb.add_cuboid(Geometry::Cuboid{glm::vec3(1.f)}, glm::vec3(0.f), glm::identity<glm::quat>());
 				return mb.get_mesh();
 			}
 			case ShapeType::Cylinder:

@@ -8,9 +8,7 @@
 #include "ECS/Storage.hpp"
 #include "System/SceneSystem.hpp"
 
-#include "Geometry/Cone.hpp"
 #include "Geometry/Cuboid.hpp"
-#include "Geometry/Cylinder.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Geometry.hpp"
 #include "Geometry/Intersect.hpp"
@@ -39,12 +37,12 @@ namespace OpenGL
 		{// Create a cube meshes to represent AABBs.
 			{
 				auto mb = Utility::MeshBuilder<Data::PositionVertex, PrimitiveMode::Lines>{};
-				mb.add_cuboid(Geometry::Cuboid(glm::vec3(0.f), glm::vec3(0.5f)));
+				mb.add_cuboid(Geometry::Cuboid{glm::vec3(0.5f)}, glm::vec3(0.f), glm::identity<glm::quat>());
 				m_AABB_outline_mesh = mb.get_mesh();
 			}
 			{
 				auto mb = Utility::MeshBuilder<Data::PositionVertex, PrimitiveMode::Triangles>{};
-				mb.add_cuboid(Geometry::Cuboid(glm::vec3(0.f), glm::vec3(0.5f)));
+				mb.add_cuboid(Geometry::Cuboid{glm::vec3(0.5f)}, glm::vec3(0.f), glm::identity<glm::quat>());
 				m_AABB_filled_mesh = mb.get_mesh();
 			}
 		}
@@ -145,7 +143,7 @@ namespace OpenGL
 	}
 	void DebugRenderer::add(const Geometry::AABB& p_AABB, const glm::vec4& p_colour, bool fill)
 	{
-		if (fill) add(Geometry::Cuboid(p_AABB.get_center(), p_AABB.get_size() * 0.5f), p_colour);
+		if (fill) add(Geometry::Cuboid{p_AABB.get_size() * 0.5f}, p_AABB.get_center(), glm::identity<glm::quat>(), p_colour);
 
 		// Get the 8 corners of the AABB
 		auto min_x_min_y_max_z = glm::vec3(p_AABB.m_min.x, p_AABB.m_min.y, p_AABB.m_max.z);
@@ -181,20 +179,15 @@ namespace OpenGL
 		m_tri_mb.set_colour(glm::vec4(0.f, 0.f, 1.f, 1.f));
 		m_tri_mb.add_cylinder(p_point, p_point + glm::vec3(0.f, 0.f, length), scale, m_debug_options.m_segments);
 	}
-	void DebugRenderer::add(const Geometry::Cone& p_cone, const glm::vec4& p_colour, size_t segments)
+	void DebugRenderer::add_cylinder(const glm::vec3& p_base, const glm::vec3& p_top, float p_radius, const glm::vec4& p_colour, size_t segments)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cone(p_cone.m_base, p_cone.m_top, p_cone.m_base_radius, segments);
+		m_tri_mb.add_cylinder(p_base, p_top, p_radius, segments);
 	}
-	void DebugRenderer::add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour, size_t segments)
+	void DebugRenderer::add(const Geometry::Cuboid& p_cuboid, const glm::vec3& p_position, const glm::quat& p_orientation, const glm::vec4& p_colour)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cylinder(p_cylinder.m_base, p_cylinder.m_top, p_cylinder.m_radius, segments);
-	}
-	void DebugRenderer::add(const Geometry::Cuboid& p_cuboid, const glm::vec4& p_colour)
-	{
-		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_cuboid(p_cuboid);
+		m_tri_mb.add_cuboid(p_cuboid, p_position, p_orientation);
 	}
 	void DebugRenderer::add(const Geometry::Quad& p_quad, const glm::vec4& p_colour)
 	{
@@ -212,10 +205,10 @@ namespace OpenGL
 		m_line_mb.set_colour(p_colour);
 		m_line_mb.add_line(p_ray.m_start, p_ray.m_start + (p_ray.m_direction * Z_Far_Scaler));
 	}
-	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec4& p_colour, size_t subdivisions)
+	void DebugRenderer::add(const Geometry::Sphere& p_sphere, const glm::vec3& p_center, const glm::vec4& p_colour, size_t subdivisions)
 	{
 		m_tri_mb.set_colour(p_colour);
-		m_tri_mb.add_icosphere(p_sphere.m_center, p_sphere.m_radius, subdivisions);
+		m_tri_mb.add_icosphere(p_center, p_sphere.m_radius, subdivisions);
 	}
 	void DebugRenderer::add(const Geometry::Frustrum& frustrum, float alpha)
 	{
@@ -239,14 +232,15 @@ namespace OpenGL
 		}
 		{// Draw corners
 			float sphere_radius = glm::distance(*near_top_left, *far_bottom_right) * 0.001f;
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_top_left,     sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_top_right,    sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_bottom_left,  sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*near_bottom_right, sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_top_left,      sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_top_right,     sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_bottom_left,   sphere_radius));
-			OpenGL::DebugRenderer::add(Geometry::Sphere(*far_bottom_right,  sphere_radius));
+			const auto corner = Geometry::Sphere{sphere_radius};
+			OpenGL::DebugRenderer::add(corner, *near_top_left);
+			OpenGL::DebugRenderer::add(corner, *near_top_right);
+			OpenGL::DebugRenderer::add(corner, *near_bottom_left);
+			OpenGL::DebugRenderer::add(corner, *near_bottom_right);
+			OpenGL::DebugRenderer::add(corner, *far_top_left);
+			OpenGL::DebugRenderer::add(corner, *far_top_right);
+			OpenGL::DebugRenderer::add(corner, *far_bottom_left);
+			OpenGL::DebugRenderer::add(corner, *far_bottom_right);
 		}
 		{// Draw connecting line segments
 			OpenGL::DebugRenderer::add(Geometry::LineSegment(*near_top_left,     *far_top_left),     glm::vec4(1.f, 1.f, 1.f, alpha));
@@ -272,6 +266,6 @@ namespace OpenGL
 	}
 	void DebugRenderer::add(const Geometry::Point& p_point, const glm::vec4& p_colour)
 	{
-		add(Geometry::Sphere(p_point.m_position, 0.05f), p_colour);
+		add(Geometry::Sphere{0.05f}, p_point.m_position, p_colour);
 	}
 }

@@ -7,21 +7,15 @@
 
 namespace Geometry
 {
+	// A box centred on the origin of its own space and aligned with its axes. Where it sits and how it is turned are passed
+	// separately, e.g. from a Transform, so a shape never holds a second copy of an entity's pose that could disagree with it.
 	class Cuboid
 	{
 	public:
-		constexpr Cuboid(const glm::vec3& p_center, const glm::vec3& p_half_extents = glm::vec3(1.f), const glm::quat& p_rotation = glm::identity<glm::quat>()) noexcept
-			: m_center{p_center}
-			, m_half_extents{p_half_extents}
-			, m_rotation{p_rotation}
-		{}
-
-		void transform(const glm::vec3& p_translation, const glm::quat& p_rotation, const glm::vec3& p_scale) noexcept;
 		void draw_UI() const;
-		std::array<glm::vec3, 8> get_vertices() const noexcept;
+		// The corners of the cuboid placed at p_position and turned by p_orientation.
+		std::array<glm::vec3, 8> get_vertices(const glm::vec3& p_position, const glm::quat& p_orientation) const noexcept;
 
-		glm::vec3 m_center;
 		glm::vec3 m_half_extents;
-		glm::quat m_rotation;
 	};
 }

@@ -557,17 +557,10 @@ namespace UI
 					auto file_path = Platform::file_dialog(Platform::FileDialogType::Save, Platform::FileDialogFilter::Scene, "Save scene", Config::Scene_Save_Directory);
 					if (!file_path.empty())
 					{
-						try
-						{
-							std::vector<std::byte> bytes;
-							Utility::BinaryWriter writer{bytes};
-							writer.write(m_scene_system.get_current_scene());
-							Utility::File::write_bytes(file_path, bytes);
-						}
-						catch (const std::exception& e)
-						{
-							LOG_ERROR(false, "Could not save scene {}: {}", file_path.string(), e.what());
-						}
+						std::vector<std::byte> bytes;
+						Utility::BinaryWriter writer{bytes};
+						writer.write(m_scene_system.get_current_scene());
+						Utility::File::write_bytes(file_path, bytes);
 					}
 				}
 				if (ImGui::MenuItem("Load"))
@@ -575,37 +568,30 @@ namespace UI
 					auto file_path = Platform::file_dialog(Platform::FileDialogType::Open, Platform::FileDialogFilter::Scene, "Load scene", Config::Scene_Save_Directory);
 					if (!file_path.empty())
 					{
-						try
-						{
-							const auto bytes = Utility::File::read_bytes(file_path);
-							Utility::BinaryReader reader{bytes};
-							auto loaded = reader.read<System::Scene>();
-							auto& scene = m_scene_system.add_scene();
-							scene = std::move(loaded);
-							m_scene_system.set_current_scene(scene);
-							m_history.clear(); // Recorded entity IDs belong to the previous scene.
+						const auto bytes = Utility::File::read_bytes(file_path);
+						Utility::BinaryReader reader{bytes};
+						auto loaded = reader.read<System::Scene>();
+						auto& scene = m_scene_system.add_scene();
+						scene = std::move(loaded);
+						m_scene_system.set_current_scene(scene);
+						m_history.clear(); // Recorded entity IDs belong to the previous scene.
 
-							// Refit the editor camera to the loaded scene contents.
-							bool has_bounds = false;
-							Geometry::AABB scene_AABB;
-							scene.m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
-							{
-								auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
-								if (!has_bounds)
-								{
-									scene_AABB = world_AABB;
-									has_bounds = true;
-								}
-								else
-									scene_AABB.unite(world_AABB);
-							});
-							if (has_bounds)
-								m_viewport_pane.m_camera.refit(scene_AABB, m_viewport_pane.aspect_ratio(), 1.f);
-						}
-						catch (const std::exception& e)
+						// Refit the editor camera to the loaded scene contents.
+						bool has_bounds = false;
+						Geometry::AABB scene_AABB;
+						scene.m_entities.foreach([&](const Component::Mesh& mesh, const Component::Transform& transform)
 						{
-							LOG_ERROR(false, "Could not load scene {}: {}", file_path.string(), e.what());
-						}
+							auto world_AABB = Geometry::AABB::transform(mesh.m_mesh->AABB, transform.m_position, glm::mat4_cast(transform.m_orientation), transform.m_scale);
+							if (!has_bounds)
+							{
+								scene_AABB = world_AABB;
+								has_bounds = true;
+							}
+							else
+								scene_AABB.unite(world_AABB);
+						});
+						if (has_bounds)
+							m_viewport_pane.m_camera.refit(scene_AABB, m_viewport_pane.aspect_ratio(), 1.f);
 					}
 				}
 
@@ -1248,7 +1234,7 @@ namespace UI
 							    Component::Label{"Cube"},
 							    Component::Transform{*m_cursor_intersection},
 							    Component::Mesh{m_asset_manager.m_cube},
-							    Component::Collider{Geometry::Cuboid{*m_cursor_intersection}});
+							    Component::Collider{Geometry::Cuboid{glm::vec3(1.f)}});
 						}
 						else if (ImGui::Button("Terrain"))
 						{
@@ -1413,12 +1399,12 @@ namespace UI
 			if (render_player_position)
 			{
 				float camera_distance = glm::distance(pos, p_editor.m_viewport_pane.m_camera.position());
-				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, camera_distance * 0.01f}, glm::vec4{1.f});
+				OpenGL::DebugRenderer::add(Geometry::Sphere{camera_distance * 0.01f}, pos, glm::vec4{1.f});
 			}
 			if (render_player_view_distance && player_camera)
 			{
 				auto player_view_distance = player_camera->get_maximum_view_distance(p_editor.m_viewport_pane.aspect_ratio());
-				OpenGL::DebugRenderer::add(Geometry::Sphere{pos, player_view_distance}, glm::vec4{1.f, 1.f, 0.f, 0.25f}, 3);
+				OpenGL::DebugRenderer::add(Geometry::Sphere{player_view_distance}, pos, glm::vec4{1.f, 1.f, 0.f, 0.25f}, 3);
 			}
 			if (render_player_frustrum)
 			{

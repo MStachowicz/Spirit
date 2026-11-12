@@ -1,31 +1,16 @@
 #pragma once
 
-#include "glm/vec3.hpp"
-#include "glm/fwd.hpp"
-
 namespace Geometry
 {
-	// A cone is shape that tapers from a circular base centered at m_base to a point m_top.
-	// Cone is assumed to be right-circular meaning the base is always a circle.
+	// A right circular cone centred on the origin of its own space with its axis along +Y: the circular base at
+	// y = -m_half_height tapers to the apex at y = +m_half_height. Where it sits and how it is turned are passed separately,
+	// e.g. from a Transform, so a shape never holds a second copy of an entity's pose that could disagree with it.
 	class Cone
 	{
 	public:
-		constexpr Cone(const glm::vec3& p_base, const glm::vec3& p_top, float p_radius) noexcept
-			: m_base{p_base}
-			, m_top{p_top}
-			, m_base_radius{p_radius}
-		{}
-
-		// Transforms the cone by the given model matrix and scale.
-		// The scaling in x and z axis must be equal because the cone is a circular cone.
-		void transform(const glm::mat4& p_model, const glm::vec3& p_scale);
 		void draw_UI() const;
 
-		float height() const;
-		glm::vec3 center() const { return (m_base + m_top) / 2.0f; }
-
-		glm::vec3 m_base;
-		glm::vec3 m_top;
+		float m_half_height;
 		float m_base_radius;
 	};
 }

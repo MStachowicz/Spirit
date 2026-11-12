@@ -5,6 +5,7 @@
 #include "Geometry/Constants.hpp"
 #include "Utility/Logger.hpp"
 
+#include "glm/fwd.hpp"
 #include "glm/vec3.hpp"
 #include <optional>
 
@@ -29,9 +30,11 @@ namespace Geometry
 //==============================================================================================================================
 // Point inside
 //==============================================================================================================================
+// Sphere, Cuboid, Cylinder and Cone are in their own space, so functions taking one also take where it sits: a centre for a Sphere,
+// and a position and orientation for the others, e.g. a Transform's m_position and m_orientation.
 	bool point_inside(const AABB& AABB,               const glm::vec3& point);
-	bool point_inside(const Cone& cone,               const glm::vec3& point);
-	bool point_inside(const Cylinder& cylinder,       const glm::vec3& point);
+	bool point_inside(const Cone& cone,               const glm::vec3& position, const glm::quat& orientation, const glm::vec3& point);
+	bool point_inside(const Cylinder& cylinder,       const glm::vec3& position, const glm::quat& orientation, const glm::vec3& point);
 	bool point_inside(const Line& line,               const glm::vec3& point);
 	bool point_inside(const LineSegment& lineSegment, const glm::vec3& point);
 	bool point_inside(const Ray& ray,                 const glm::vec3& point);
@@ -88,10 +91,10 @@ namespace Geometry
 	std::optional<glm::vec3> get_intersection(const Line& line, const Triangle& triangle);
 	//@returns If the planes are parallel, std::nullopt is returned. If there is an intersection, the Line of intersection is returned.
 	std::optional<Line> get_intersection(const Plane& plane_1, const Plane& plane_2);
-	std::optional<glm::vec3> get_intersection(const Plane& plane, const Sphere& sphere);
+	std::optional<glm::vec3> get_intersection(const Plane& plane, const Sphere& sphere, const glm::vec3& sphere_center);
 	//@returns The point of intersection between the three planes. If the planes are parallel, std::nullopt is returned.
 	std::optional<glm::vec3> get_intersection(const Plane& plane_1, const Plane& plane_2, const Plane& plane_3);
-	std::optional<glm::vec3> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2);
+	std::optional<glm::vec3> get_intersection(const Sphere& sphere_1, const glm::vec3& center_1, const Sphere& sphere_2, const glm::vec3& center_2);
 	// Computes the LineSegment of intersection of the two triangles if it exists.
 	//@param triangle_1,triangle_2 The triangles to test for intersection.
 	//@param is_coplanar Optional out param set to true if the triangles are coplanar.
@@ -105,9 +108,9 @@ namespace Geometry
 	bool intersecting(const AABB& AABB,           const Ray& ray);
 	bool intersecting(const Line& line,           const Triangle& triangle);
 	bool intersecting(const Plane& plane_1,       const Plane& plane_2);
-	bool intersecting(const Plane& plane,         const Sphere& sphere);
+	bool intersecting(const Plane& plane,         const Sphere& sphere, const glm::vec3& sphere_center);
 	bool intersecting(const Plane& plane,         const glm::vec3& point, float tolerance = TOLERANCE);
-	bool intersecting(const Sphere& sphere_1,     const Sphere& sphere_2);
+	bool intersecting(const Sphere& sphere_1,     const glm::vec3& center_1, const Sphere& sphere_2, const glm::vec3& center_2);
 	bool intersecting(const Triangle& triangle_1, const Triangle& triangle_2);
 
 } // namespace Geometry

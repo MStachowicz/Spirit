@@ -10,9 +10,7 @@
 
 namespace Geometry
 {
-	class Cone;
 	struct ContactPoint;
-	class Cylinder;
 	class Cuboid;
 	class Frustrum;
 	class Plane;
@@ -78,19 +76,19 @@ namespace OpenGL
 		static void clear();
 		static void render(System::SceneSystem& p_scene, const Buffer& p_view_properties, const Buffer& p_point_lights_buffer, const FBO& p_target_FBO);
 
-		static void add(const Geometry::Cone& p_cone,         const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
-		static void add(const Geometry::Cylinder& p_cylinder, const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
-		static void add(const Geometry::Cuboid& p_cuboid,     const glm::vec4& p_colour = glm::vec4(1.f));
+		static void add(const Geometry::Cuboid& p_cuboid,     const glm::vec3& p_position, const glm::quat& p_orientation, const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Frustrum& p_frustrum, float alpha = 0.5f);
 		static void add(const Geometry::LineSegment& p_line,  const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Plane& p_plane,       const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Point& p_point,       const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Quad& p_quad,         const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::Ray& p_ray,           const glm::vec4& p_colour = glm::vec4(1.f));
-		static void add(const Geometry::Sphere& p_sphere,     const glm::vec4& p_colour = glm::vec4(1.f), size_t subdivisions = m_debug_options.m_subdivisions);
+		static void add(const Geometry::Sphere& p_sphere,     const glm::vec3& p_center, const glm::vec4& p_colour = glm::vec4(1.f), size_t subdivisions = m_debug_options.m_subdivisions);
 		static void add(const Geometry::Triangle& p_triangle, const glm::vec4& p_colour = glm::vec4(1.f));
 		static void add(const Geometry::AABB& p_AABB,         const glm::vec4& p_colour = glm::vec4(1.f), bool fill = false);
 
 		static void add_axes(const glm::vec3& p_point, float length = 1.f);
+		// A cylinder from p_base to p_top, e.g. to draw a line with thickness.
+		static void add_cylinder(const glm::vec3& p_base, const glm::vec3& p_top, float p_radius, const glm::vec4& p_colour = glm::vec4(1.f), size_t segments = m_debug_options.m_segments);
 	};
 }

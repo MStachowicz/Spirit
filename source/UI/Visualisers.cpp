@@ -10,6 +10,7 @@
 #include "Geometry/GJK.hpp"
 #include "Geometry/Frustrum.hpp"
 #include "Geometry/Intersect.hpp"
+#include "Geometry/Sphere.hpp"
 
 #include "Platform/Core.hpp"
 
@@ -181,10 +182,7 @@ namespace UI
 				OpenGL::DebugRenderer::add(t2, glm::vec4(intersected_colour, shape_alpha));
 
 				if (!coplanar)
-				{
-					Geometry::Cylinder cylinder = Geometry::Cylinder(optional_line_segment->m_start, optional_line_segment->m_end, intersection_shape_thickness);
-					OpenGL::DebugRenderer::add(cylinder, glm::vec4(intersection_shape_colour, 1.f));
-				}
+					OpenGL::DebugRenderer::add_cylinder(optional_line_segment->m_start, optional_line_segment->m_end, intersection_shape_thickness, glm::vec4(intersection_shape_colour, 1.f));
 			}
 			else
 			{
@@ -218,36 +216,36 @@ namespace UI
 				{
 					case 1: // Draw the point
 						ImGui::Text("Simplex is a point");
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[0], glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
 						break;
 					case 2: // Draw the points and edge
 						ImGui::Text("Simplex is a line");
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[1], result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[1], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[0], glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[1], glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[0], p_simplex[1], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
 						break;
 					case 3: // Draw the points, edges and face of the triangle
 						ImGui::Text("Simplex is a triangle");
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[1], result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[2], result_point_size), glm::vec4(0.f, 0.f, 1.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[1], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[1], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[0], glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[1], glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[2], glm::vec4(0.f, 0.f, 1.f, 1.f), 0);
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[0], p_simplex[1], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[0], p_simplex[2], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[1], p_simplex[2], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
 						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[1], p_simplex[2]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
 						break;
 					case 4: // Draw the points, edges and face of the tetrahedron
 						ImGui::Text("Simplex is a tetrahedron");
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[0], result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[1], result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[2], result_point_size), glm::vec4(0.f, 0.f, 1.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Sphere(p_simplex[3], result_point_size), glm::vec4(0.f, 1.f, 1.f, 1.f), 0);
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[1], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[0], p_simplex[3], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[1], p_simplex[2], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[1], p_simplex[3], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
-						OpenGL::DebugRenderer::add(Geometry::Cylinder(p_simplex[2], p_simplex[3], line_thickness), glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[0], glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[1], glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[2], glm::vec4(0.f, 0.f, 1.f, 1.f), 0);
+						OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, p_simplex[3], glm::vec4(0.f, 1.f, 1.f, 1.f), 0);
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[0], p_simplex[1], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[0], p_simplex[2], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[0], p_simplex[3], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[1], p_simplex[2], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[1], p_simplex[3], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
+						OpenGL::DebugRenderer::add_cylinder(p_simplex[2], p_simplex[3], line_thickness, glm::vec4(0.f, 1.f, 0.f, 1.f));
 						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[1], p_simplex[2]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
 						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[1], p_simplex[3]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
 						OpenGL::DebugRenderer::add(Geometry::Triangle(p_simplex[0], p_simplex[2], p_simplex[3]), glm::vec4(0.f, 0.8f, 0.f, 0.5f));
@@ -277,7 +275,7 @@ namespace UI
 						{
 							auto vertex_1_world_space = glm::vec3(entity_1_transform->get_model() * glm::vec4(vertex_1, 1.f));
 							auto vertex_2_world_space = glm::vec3(entity_2_transform->get_model() * glm::vec4(vertex_2, 1.f));
-							OpenGL::DebugRenderer::add(Geometry::Sphere(vertex_1_world_space - vertex_2_world_space, cloud_points_size), glm::vec4(1.f, 1.f, 1.f, 1.f), 0);
+							OpenGL::DebugRenderer::add(Geometry::Sphere{cloud_points_size}, vertex_1_world_space - vertex_2_world_space, glm::vec4(1.f, 1.f, 1.f, 1.f), 0);
 						}
 				}
 
@@ -343,9 +341,9 @@ namespace UI
 							cp.A = glm::vec3(entity_1_transform->get_model() * glm::vec4(cp.A, 1.f));
 							cp.B = glm::vec3(entity_2_transform->get_model() * glm::vec4(cp.B, 1.f));
 
-							OpenGL::DebugRenderer::add(Geometry::Sphere(cp.A, result_point_size), glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
-							OpenGL::DebugRenderer::add(Geometry::Sphere(cp.B, result_point_size), glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
-							OpenGL::DebugRenderer::add(Geometry::Cylinder(cp.A, cp.B, line_thickness), glm::vec4(0.5f, 0.5f, 0.5f, 1.f));
+							OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, cp.A, glm::vec4(1.f, 0.f, 0.f, 1.f), 0);
+							OpenGL::DebugRenderer::add(Geometry::Sphere{result_point_size}, cp.B, glm::vec4(0.f, 1.f, 0.f, 1.f), 0);
+							OpenGL::DebugRenderer::add_cylinder(cp.A, cp.B, line_thickness, glm::vec4(0.5f, 0.5f, 0.5f, 1.f));
 
 							ImGui::SeparatorText("EPA");
 							ImGui::Text("A: [%.3f, %.3f, %.3f]", cp.A.x, cp.A.y, cp.A.z);

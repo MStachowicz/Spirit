@@ -183,52 +183,23 @@ namespace System
 
 	PhysicsSystemHandle PhysicsSystemJolt::create_body(const BodySettings& p_body_settings, const ECS::Entity& p_entity)
 	{
+		// Geometry shapes are in their own space, centred on the origin with cylinders and cones along +Y as Jolt's are, so they map
+		// straight onto Jolt shapes. The body's pose comes from the entity's Transform, set by register_pending_bodies.
 		std::unique_ptr<JPH::ShapeSettings> body_shape_settings = nullptr;
-		JPH::Vec3 pos(0.0f, 0.0f, 0.0f);
-		JPH::Quat shape_rotation = JPH::Quat::sIdentity();
-		std::visit([&body_shape_settings, &pos, &shape_rotation](auto&& arg)
+		std::visit([&body_shape_settings](auto&& arg)
 		{
 			using T = std::decay_t<decltype(arg)>;
 
 			if constexpr (std::is_same_v<T, Geometry::Sphere>)
-			{
-				pos = to_JPH(arg.m_center);
 				body_shape_settings = std::make_unique<JPH::SphereShapeSettings>(arg.m_radius);
-			}
 			else if constexpr (std::is_same_v<T, Geometry::Plane>)
-			{
 				body_shape_settings = std::make_unique<JPH::PlaneShapeSettings>(JPH::Plane{to_JPH(arg.m_normal), arg.m_distance});
-			}
 			else if constexpr (std::is_same_v<T, Geometry::Cuboid>)
-			{
-				pos = to_JPH(arg.m_center);
 				body_shape_settings = std::make_unique<JPH::BoxShapeSettings>(to_JPH(arg.m_half_extents));
-			}
 			else if constexpr (std::is_same_v<T, Geometry::Cone>)
-			{
-				pos = to_JPH(arg.center());
-				body_shape_settings = std::make_unique<JPH::TaperedCylinderShapeSettings>(arg.height() / 2.f, 0.f, arg.m_base_radius);
-				auto dir = glm::normalize(arg.m_top - arg.m_base);
-				shape_rotation = to_JPH(Utility::get_rotation(glm::vec3(0.f, 1.f, 0.f), dir));
-			}
+				body_shape_settings = std::make_unique<JPH::TaperedCylinderShapeSettings>(arg.m_half_height, 0.f, arg.m_base_radius);
 			else if constexpr (std::is_same_v<T, Geometry::Cylinder>)
-			{
-				pos = to_JPH(arg.center());
-				body_shape_settings = std::make_unique<JPH::CylinderShapeSettings>(arg.height() / 2.f, arg.m_radius);
-				auto dir = glm::normalize(arg.m_top - arg.m_base);
-				shape_rotation = to_JPH(Utility::get_rotation(glm::vec3(0.f, 1.f, 0.f), dir));
-			}
-			else if constexpr (std::is_same_v<T, Geometry::Quad>)
-			{
-				pos = to_JPH(arg.center());
-				// Use a thin box instead of PlaneShape — PlaneShape is an infinite half-space whose AABB
-				// extends half_extent deep behind the surface, making it unsuitable for finite quads.
-				constexpr float thin_half_thickness = 0.01f;
-				float he = arg.half_extent();
-				body_shape_settings = std::make_unique<JPH::BoxShapeSettings>(JPH::Vec3(he, thin_half_thickness, he));
-				auto dir = arg.normal();
-				shape_rotation = to_JPH(Utility::get_rotation(glm::vec3(0.f, 1.f, 0.f), dir));
-			}
+				body_shape_settings = std::make_unique<JPH::CylinderShapeSettings>(arg.m_half_height, arg.m_radius);
 			else static_assert(false, "non-exhaustive visitor!");
 		}, p_body_settings.m_shape);
 
@@ -237,8 +208,8 @@ namespace System
 
 		auto body_create_settings = JPH::BodyCreationSettings(
 			body_shape_settings.release(), // Transfer ownership to BodyCreationSettings, Jolt will take care of deleting it.
-			pos,
-			to_JPH(p_body_settings.m_rotation) * shape_rotation,
+			JPH::Vec3::sZero(),
+			to_JPH(p_body_settings.m_rotation),
 			to_JPH(p_body_settings.m_motion_type),
 			p_body_settings.m_motion_type == BodySettings::MotionType::Static ? Layers::NON_MOVING : Layers::MOVING);
 		body_create_settings.mUserData = static_cast<JPH::uint64>(p_entity.ID);

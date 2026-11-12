@@ -5,10 +5,7 @@
 #include "Component/Mesh.hpp"
 #include "Geometry/LineSegment.hpp"
 #include "Geometry/Quad.hpp"
-#include "Geometry/Cone.hpp"
 #include "Geometry/Cuboid.hpp"
-#include "Geometry/Cylinder.hpp"
-#include "Geometry/Sphere.hpp"
 #include "Geometry/Triangle.hpp"
 #include "Geometry/AABB.hpp"
 
@@ -346,10 +343,6 @@ namespace Utility
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cone for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
 		}
-		void add_cone(const Geometry::Cone& cone, size_t segments = 16)
-		{
-			add_cone(cone.m_base, cone.m_top, cone.m_base_radius, segments);
-		}
 		void add_cylinder(const glm::vec3& base, const glm::vec3& top, float radius, size_t segments = 16)
 		{
 			if (base == top)
@@ -421,10 +414,6 @@ namespace Utility
 				[]<bool flag=false>(){ static_assert(flag, "Not implemented add_cylinder for this primitive_mode."); }(); // #CPP23 P2593R0 swap for static_assert(false)
 
 		}
-		void add_cylinder(const Geometry::Cylinder& cylinder, size_t segments = 16)
-		{
-			add_cylinder(cylinder.m_base, cylinder.m_top, cylinder.m_radius, segments);
-		}
 		void add_arrow(const glm::vec3& base, const glm::vec3& top, size_t segments = 16)
 		{
 			const auto base_to_top        = top - base;
@@ -491,15 +480,11 @@ namespace Utility
 
 			// A low subdivision icosphere only approximates a sphere. While we add a sphere here, below a certain subdivision level we could push just the faces.
 		}
-		void add_sphere(const Geometry::Sphere sphere, size_t subdivisions)
-		{
-			add_icosphere(sphere.m_center, sphere.m_radius, subdivisions);
-		}
-		void add_cuboid(const Geometry::Cuboid& cuboid)
+		void add_cuboid(const Geometry::Cuboid& cuboid, const glm::vec3& position, const glm::quat& orientation)
 		{
 			if constexpr (primitive_mode == OpenGL::PrimitiveMode::Triangles || primitive_mode == OpenGL::PrimitiveMode::Lines)
 			{
-				const auto vertices = cuboid.get_vertices();
+				const auto vertices = cuboid.get_vertices(position, orientation);
 				add_quad_impl(vertices[3], vertices[1], vertices[2], vertices[0]); // Top
 				add_quad_impl(vertices[6], vertices[4], vertices[7], vertices[5]); // Bottom
 				add_quad_impl(vertices[3], vertices[2], vertices[7], vertices[6]); // Left

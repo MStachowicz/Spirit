@@ -144,7 +144,7 @@ namespace System
 				Component::Label{"Cube"},
 				Component::Transform{pos},
 				Component::Mesh{m_asset_manager.m_cube},
-				Component::Collider{Geometry::Cuboid{pos, glm::vec3{mesh_width / 2.f}}},
+				Component::Collider{Geometry::Cuboid{glm::vec3{mesh_width / 2.f}}},
 				texture);
 			running_x += increment;
 		}
@@ -154,7 +154,7 @@ namespace System
 				Component::Label{"Cone"},
 				Component::Transform{pos},
 				Component::Mesh{m_asset_manager.m_cone},
-				Component::Collider{Geometry::Cone{glm::vec3(pos.x, pos.y - 1.f, pos.z), glm::vec3(pos.x, pos.y + 1.f, pos.z), 1.f}});
+				Component::Collider{Geometry::Cone{.m_half_height = 1.f, .m_base_radius = 1.f}});
 			running_x += increment;
 		}
 		{ // Cylinder
@@ -163,7 +163,7 @@ namespace System
 				Component::Label{"Cylinder"},
 				Component::Transform{pos},
 				Component::Mesh{m_asset_manager.m_cylinder},
-				Component::Collider{Geometry::Cylinder{glm::vec3(pos.x, pos.y - 1.f, pos.z), glm::vec3(pos.x, pos.y + 1.f, pos.z), 1.f}});
+				Component::Collider{Geometry::Cylinder{.m_half_height = 1.f, .m_radius = 1.f}});
 			running_x += increment;
 		}
 		{ // quad
@@ -172,7 +172,9 @@ namespace System
 				Component::Label{"Plane"},
 				Component::Transform{pos},
 				Component::Mesh{m_asset_manager.m_quad},
-				Component::Collider{Geometry::Quad{pos, glm::vec3(0.f, 1.f, 0.f)}});
+				// A thin box matching the quad mesh. A Quad is a polygon rather than a Shape, and Jolt's PlaneShape is an infinite
+				// half-space whose bounds extend deep behind the surface, so neither suits a finite quad.
+				Component::Collider{Geometry::Cuboid{glm::vec3(1.f, 0.01f, 1.f)}});
 			running_x += increment;
 		}
 		{ // Sphere
@@ -181,7 +183,7 @@ namespace System
 				Component::Label{"Sphere"},
 				Component::Transform{pos},
 				Component::Mesh{m_asset_manager.m_sphere},
-				Component::Collider{Geometry::Sphere{pos, mesh_width / 2.f}});
+				Component::Collider{Geometry::Sphere{mesh_width / 2.f}});
 			running_x += increment;
 		}
 		{ // Lights
@@ -226,7 +228,7 @@ namespace System
 					Component::Label("Cube " + std::to_string((i / 2) + 1)),
 					Component::Mesh(m_asset_manager.m_cube),
 					Component::Transform{glm::vec3(i, 0.f, 0.f)},
-					Component::Collider{Geometry::Cuboid{glm::vec3(i, 0.f, 0.f), glm::vec3{1.f}}},
+					Component::Collider{Geometry::Cuboid{glm::vec3{1.f}}},
 					texture);
 			}
 		}
@@ -281,7 +283,7 @@ namespace System
 			Component::Transform{pos},
 			Component::Mesh{icosphere_meshref},
 			Component::Texture{glm::vec4(0.5f, 0.5f, 0.5f, 0.6f)}, // Grey
-			Component::Collider{Geometry::Sphere{pos, 1.f}});
+			Component::Collider{Geometry::Sphere{1.f}});
 
 		auto pos2 = glm::vec3(55.f, 30.f, -50.f);
 		p_scene.m_entities.add_entity(
@@ -289,7 +291,7 @@ namespace System
 			Component::Transform{pos2},
 			Component::Mesh{icosphere_meshref},
 			Component::Texture{glm::vec4(1.f, 0.647f, 0.f, 0.6f)}, // Orange
-			Component::Collider{Geometry::Sphere{pos2, 1.f}});
+			Component::Collider{Geometry::Sphere{1.f}});
 	}
 	void SceneSystem::constructBouncingBallScene(Scene& p_scene)
 	{
@@ -310,7 +312,7 @@ namespace System
 			texture.m_diffuse = m_asset_manager.get_texture(containerDiffuse);
 			texture.m_specular = m_asset_manager.get_texture(containerSpecular);
 
-			Component::Collider collider = Component::Collider(Geometry::Sphere{transform.m_position, 0.5f});
+			Component::Collider collider = Component::Collider(Geometry::Sphere{0.5f});
 			p_scene.m_entities.add_entity(mesh, transform, collider, name);
 		}
 		{ // Floor
@@ -322,7 +324,7 @@ namespace System
 				Component::Texture{m_asset_manager.get_texture(Config::Texture_Directory / "wood_floor.png")},
 				transform,
 				Component::Mesh{m_asset_manager.m_cube},
-				Component::Collider{Geometry::Cuboid{transform.m_position, glm::vec3{100.0f, 1.0f, 100.0f}}, System::BodySettings::MotionType::Static});
+				Component::Collider{Geometry::Cuboid{glm::vec3{100.0f, 1.0f, 100.0f}}, System::BodySettings::MotionType::Static});
 		}
 		{// Lights
 			{// Point light

@@ -12,6 +12,7 @@
 #include "Utility/Logger.hpp"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <limits>
 
 // This intersections source file is composed of header definitions as well as cpp-static-functions that are used as helpers for them.
@@ -44,51 +45,35 @@ namespace Geometry
 		     && point.y >= AABB.m_min.y && point.y <= AABB.m_max.y
 		     && point.z >= AABB.m_min.z && point.z <= AABB.m_max.z);
 	}
-	bool point_inside(const Cone& cone, const glm::vec3& point)
+	bool point_inside(const Cone& cone, const glm::vec3& position, const glm::quat& orientation, const glm::vec3& point)
 	{
-		auto cone_height = glm::distance(cone.m_base, cone.m_top);
-
-		if (cone_height == 0.0f) // 0 height cone has no volume, so point cannot be inside it.
+		if (cone.m_half_height == 0.0f) // 0 height cone has no volume, so point cannot be inside it.
 			return false;
 
-		auto cone_direction = glm::normalize(cone.m_top - cone.m_base);
-		// Project tip_to_p onto the cone axis to get the point's distance along the axis
-		auto point_distance_along_axis = glm::dot(point - cone.m_base, cone_direction);
+		// Move the point into the cone's own space, where its axis runs along +Y from the base at -m_half_height to the apex at
+		// +m_half_height. orientation is a unit quaternion, so its conjugate is its inverse.
+		const glm::vec3 local_point = glm::conjugate(orientation) * (point - position);
+		if (local_point.y < -cone.m_half_height || local_point.y > cone.m_half_height)
+			return false; // Below the base or above the apex.
 
-		// Is the point orthogonally within the bounds of the cone's axis.
-		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cone_height)
-		{
-			// The distance from the point to the cone's axis.
-			auto orthogonal_distance = glm::distance(point, cone.m_base + (cone_direction * point_distance_along_axis));
-			// The radius of the cone at the point's distance along the axis.
-			auto cone_radius = cone.m_base_radius * ((cone_height - point_distance_along_axis) / cone_height);
-			// The point is inside the cone if the orthogonal distance is less than the cone's radius at that point along it's axis.
-			return orthogonal_distance <= cone_radius;
-		}
-		else
-			return false; // Outside the cone
+		// The radius of the cone at the point's height, shrinking linearly from m_base_radius at the base to 0 at the apex.
+		const float radius = cone.m_base_radius * ((cone.m_half_height - local_point.y) / (2.f * cone.m_half_height));
+		// The point is inside the cone if its distance from the axis is within the cone's radius at that height.
+		return local_point.x * local_point.x + local_point.z * local_point.z <= radius * radius;
 	}
-	bool point_inside(const Cylinder& cylinder, const glm::vec3& point)
+	bool point_inside(const Cylinder& cylinder, const glm::vec3& position, const glm::quat& orientation, const glm::vec3& point)
 	{
-		auto cylinder_height = glm::distance(cylinder.m_base, cylinder.m_top);
-
-		if (cylinder_height == 0.0f) // 0 height cylinder has no volume, so point cannot be inside it.
+		if (cylinder.m_half_height == 0.0f) // 0 height cylinder has no volume, so point cannot be inside it.
 			return false;
 
-		auto cylinder_direction = glm::normalize(cylinder.m_top - cylinder.m_base);
-		// Project tip_to_p onto the cylinder axis to get the point's distance along the axis
-		auto point_distance_along_axis = glm::dot(point - cylinder.m_base, cylinder_direction);
+		// Move the point into the cylinder's own space, where its axis runs along +Y from -m_half_height to +m_half_height.
+		// orientation is a unit quaternion, so its conjugate is its inverse.
+		const glm::vec3 local_point = glm::conjugate(orientation) * (point - position);
+		if (local_point.y < -cylinder.m_half_height || local_point.y > cylinder.m_half_height)
+			return false; // Below the base or above the top.
 
-		// Is the point orthogonally within the bounds of the cylinder's axis.
-		if (point_distance_along_axis >= 0.f && point_distance_along_axis <= cylinder_height)
-		{
-			// The distance from the point to the cylinder's axis.
-			auto orthogonal_distance = glm::distance(point, cylinder.m_base + (cylinder_direction * point_distance_along_axis));
-			// The point is inside the cylinder if the orthogonal distance is less than the cylinder's radius.
-			return orthogonal_distance <= cylinder.m_radius;
-		}
-		else
-			return false; // Outside the cylinder
+		// The point is inside the cylinder if its distance from the axis is within the cylinder's radius.
+		return local_point.x * local_point.x + local_point.z * local_point.z <= cylinder.m_radius * cylinder.m_radius;
 	}
 	bool point_inside(const Line& line, const glm::vec3& point)
 	{
@@ -404,10 +389,10 @@ namespace Geometry
 		glm::vec3 point_on_intersection_line = glm::cross(plane_1.m_distance * plane_2.m_normal - plane_2.m_distance * plane_1.m_normal, direction) / denom;
 		return Line(point_on_intersection_line, direction);
 	}
-	std::optional<glm::vec3> get_intersection(const Plane& plane, const Sphere& sphere)
+	std::optional<glm::vec3> get_intersection(const Plane& plane, const Sphere& sphere, const glm::vec3& sphere_center)
 	{
 		// Compute the distance from the sphere center to the plane
-		float distance = glm::dot(plane.m_normal, sphere.m_center) - plane.m_distance;
+		float distance = glm::dot(plane.m_normal, sphere_center) - plane.m_distance;
 
 		// If the absolute value of the distance is less than the sphere radius, then the sphere is colliding with the plane
 		if (std::abs(distance) < sphere.m_radius)
@@ -418,7 +403,7 @@ namespace Geometry
 				normal = -normal;
 
 			// The position of the contact is point on the sphere surface towards the plane
-			return sphere.m_center - normal * sphere.m_radius;
+			return sphere_center - normal * sphere.m_radius;
 		}
 		else
 			return std::nullopt;
@@ -433,10 +418,10 @@ namespace Geometry
 		else
 			return (plane_1.m_distance * u + glm::cross(plane_1.m_normal, plane_3.m_distance * plane_2.m_normal - plane_2.m_distance * plane_3.m_normal)) / denom;
 	}
-	std::optional<glm::vec3> get_intersection(const Sphere& sphere_1, const Sphere& sphere_2)
+	std::optional<glm::vec3> get_intersection(const Sphere& sphere_1, const glm::vec3& center_1, const Sphere& sphere_2, const glm::vec3& center_2)
 	{
 		// Compute the displacement, or the distance between the two spheres
-		glm::vec3 displacement = sphere_1.m_center - sphere_2.m_center;
+		glm::vec3 displacement = center_1 - center_2;
 		float distance = glm::length(displacement);
 
 		// If the distance is less than the sum of the two radii, then the spheres are colliding
@@ -446,7 +431,7 @@ namespace Geometry
 			// If the spheres are in the same position (distance == 0.f), the normal is arbitrary, we choose up here.
 			glm::vec3 normal = distance == 0.f ? glm::vec3(0.f, 1.f, 0.f) : displacement / distance;
 			// The position of the contact is point on the surface of sphere_1 towards sphere_2
-			return sphere_1.m_center - normal * sphere_1.m_radius;
+			return center_1 - normal * sphere_1.m_radius;
 		}
 		else
 			return std::nullopt;
@@ -575,10 +560,10 @@ namespace Geometry
 		else
 			return true;
 	}
-	bool intersecting(const Plane& plane, const Sphere& sphere)
+	bool intersecting(const Plane& plane, const Sphere& sphere, const glm::vec3& sphere_center)
 	{
 		// For a normalized plane (|p.n| = 1), evaluating the plane equation for a point gives the signed distance of the point to the plane
-		float dist = glm::dot(sphere.m_center, plane.m_normal) - plane.m_distance;
+		float dist = glm::dot(sphere_center, plane.m_normal) - plane.m_distance;
 		// If sphere center within +/-radius from plane, plane intersects sphere
 		return std::abs(dist) <= sphere.m_radius;
 	}
@@ -589,10 +574,10 @@ namespace Geometry
 		// If the projection is equal to the distance of the plane, then the point is on the plane.
 		return glm::abs(glm::dot(plane.m_normal, point) - plane.m_distance) < tolerance;
 	}
-	bool intersecting(const Sphere& sphere_1, const Sphere& sphere_2)
+	bool intersecting(const Sphere& sphere_1, const glm::vec3& center_1, const Sphere& sphere_2, const glm::vec3& center_2)
 	{
 		// Returns true if the spheres are intersecting.
-		auto distance_between_centers = glm::distance(sphere_1.m_center, sphere_2.m_center);
+		auto distance_between_centers = glm::distance(center_1, center_2);
 		auto radius_sum               = sphere_1.m_radius + sphere_2.m_radius;
 		return distance_between_centers <= radius_sum;
 	}
